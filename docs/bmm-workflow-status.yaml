@@ -25,7 +25,7 @@ workflow_status:
         command: "/bmad:bmm:workflows:research"
 
       - id: "product-brief"
-        status: "required"
+        status: "docs/brief.md"
         agent: "analyst"
         command: "/bmad:bmm:workflows:product-brief"
 
@@ -34,7 +34,7 @@ workflow_status:
     name: "Planning"
     workflows:
       - id: "prd"
-        status: "required"
+        status: "docs/prd.md"
         agent: "pm"
         command: "/bmad:bmm:workflows:prd"
         output: "Product Requirements Document with FRs and NFRs"
@@ -55,7 +55,7 @@ workflow_status:
     name: "Solutioning"
     workflows:
       - id: "architecture"
-        status: "required"
+        status: "docs/architecture.md"
         agent: "architect"
         command: "/bmad:bmm:workflows:architecture"
         output: "System architecture document"
