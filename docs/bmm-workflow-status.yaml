@@ -60,7 +60,7 @@ workflow_status:
         output: "System architecture document"
 
       - id: "create-epics-and-stories"
-        status: "required"
+        status: "docs/epics.md"
         agent: "pm"
         command: "/bmad:bmm:workflows:create-epics-and-stories"
 
@@ -75,7 +75,7 @@ workflow_status:
         command: "/bmad:bmm:workflows:validate-architecture"
 
       - id: "implementation-readiness"
-        status: "required"
+        status: "docs/implementation-readiness-report-2025-11-29.md"
         agent: "architect"
         command: "/bmad:bmm:workflows:implementation-readiness"
 
