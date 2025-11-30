@@ -1,0 +1,571 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <metadata>
+    <story-key>1-4-layout-shell-and-navigation</story-key>
+    <generated-at>2025-11-29</generated-at>
+    <epic>Epic 1 - Foundation</epic>
+    <status>drafted</status>
+    <priority>P0 - Critical Path (UI Foundation)</priority>
+  </metadata>
+
+  <story-summary>
+    <description>
+      Create a consistent navigation header and footer across all pages with sticky positioning,
+      backdrop blur effect, active link styling, and responsive mobile hamburger menu using
+      shadcn/ui Sheet component. The header is 64px tall, uses Instrument Serif for the site
+      title, and provides Home and About navigation links with gold (#C9A962) underline for
+      active state.
+    </description>
+    <user-story>
+      As a user, I want a consistent navigation header across all pages, so that I can always
+      return home and understand where I am.
+    </user-story>
+    <estimated-time>115 minutes</estimated-time>
+    <fr-coverage>
+      <fr id="FR24">Site has clear primary navigation (Home, Timeline, Categories, About)</fr>
+      <fr id="FR25">Users can navigate to homepage from any page</fr>
+    </fr-coverage>
+  </story-summary>
+
+  <acceptance-criteria>
+    <criterion id="AC-1.4.1">
+      <description>Header visible on all pages</description>
+      <testable-condition>Header component renders in root layout</testable-condition>
+      <implementation-notes>
+        Add Header component to src/app/layout.tsx, wrapping children. Header should be
+        placed before main content and will appear on all pages due to root layout.
+      </implementation-notes>
+    </criterion>
+    <criterion id="AC-1.4.2">
+      <description>Site title links to home</description>
+      <testable-condition>Clicking "AI Obituaries" navigates to /</testable-condition>
+      <implementation-notes>
+        Use next/link for the site title with href="/". Apply font-serif class for
+        Instrument Serif font. Style with text-xl and text-[--text-primary].
+      </implementation-notes>
+    </criterion>
+    <criterion id="AC-1.4.3">
+      <description>Navigation links present</description>
+      <testable-condition>"Home" and "About" links visible</testable-condition>
+      <implementation-notes>
+        Create NavLink component that wraps next/link. Desktop nav shows links inline
+        (hidden md:flex). About page doesn't exist yet but link should be functional.
+      </implementation-notes>
+    </criterion>
+    <criterion id="AC-1.4.4">
+      <description>Active link styled</description>
+      <testable-condition>Current route shows gold underline</testable-condition>
+      <implementation-notes>
+        Use usePathname() hook to detect active route. Apply border-b-2 border-[--accent-primary]
+        for active state. Use text-[--accent-primary] for active text color vs text-[--text-secondary]
+        for inactive.
+      </implementation-notes>
+    </criterion>
+    <criterion id="AC-1.4.5">
+      <description>Header is sticky</description>
+      <testable-condition>Header stays at top during scroll</testable-condition>
+      <implementation-notes>
+        Apply sticky top-0 z-50 classes. Ensure header remains visible when scrolling
+        long content.
+      </implementation-notes>
+    </criterion>
+    <criterion id="AC-1.4.6">
+      <description>Backdrop blur effect</description>
+      <testable-condition>Header has backdrop-filter: blur()</testable-condition>
+      <implementation-notes>
+        Apply backdrop-blur-md class (8px blur). Use bg-[--bg-primary]/80 for semi-transparent
+        background. Add border-b border-[--border] for subtle separation.
+      </implementation-notes>
+    </criterion>
+    <criterion id="AC-1.4.7">
+      <description>Title uses Instrument Serif</description>
+      <testable-condition>Logo/title renders in serif font</testable-condition>
+      <implementation-notes>
+        Apply font-serif class which maps to --font-instrument-serif CSS variable
+        (Instrument Serif display font). Font is already configured in layout.tsx and globals.css.
+      </implementation-notes>
+    </criterion>
+    <criterion id="AC-1.4.8">
+      <description>Mobile hamburger menu visible</description>
+      <testable-condition>On viewports &lt; 768px (md breakpoint), navigation links hidden and hamburger icon button visible</testable-condition>
+      <implementation-notes>
+        Desktop nav: hidden md:flex. Mobile nav trigger: flex md:hidden. Use lucide-react
+        Menu icon for hamburger. Apply 44px minimum touch target.
+      </implementation-notes>
+    </criterion>
+    <criterion id="AC-1.4.9">
+      <description>Mobile menu interaction</description>
+      <testable-condition>Clicking hamburger opens Sheet overlay with nav links; clicking a link or outside closes Sheet</testable-condition>
+      <implementation-notes>
+        Install shadcn/ui Sheet component (pnpm dlx shadcn@latest add sheet). Sheet slides
+        from right. Close sheet on SheetClose or link click. Use Sheet's built-in overlay
+        click handling.
+      </implementation-notes>
+    </criterion>
+    <criterion id="AC-1.4.10">
+      <description>Footer present</description>
+      <testable-condition>Footer renders below main content</testable-condition>
+      <implementation-notes>
+        Add Footer component to layout.tsx after main content. Use flex-col min-h-screen
+        structure to push footer to bottom.
+      </implementation-notes>
+    </criterion>
+    <criterion id="AC-1.4.11">
+      <description>Footer has copyright</description>
+      <testable-condition>Copyright text visible in footer</testable-condition>
+      <implementation-notes>
+        Display dynamic year with new Date().getFullYear(). Text: "2025 AI Obituaries".
+        Style with text-[--text-muted] and text-sm.
+      </implementation-notes>
+    </criterion>
+    <criterion id="AC-1.4.12">
+      <description>Header height consistent</description>
+      <testable-condition>Header is 64px height</testable-condition>
+      <implementation-notes>
+        Apply h-16 class (64px in Tailwind). The layout structure uses flex-col min-h-screen
+        on the outer container with the main element set to flex-1, which fills remaining space
+        and prevents content from overlapping the sticky header. This ensures proper spacing
+        between header and content while keeping footer pushed to bottom.
+      </implementation-notes>
+    </criterion>
+  </acceptance-criteria>
+
+  <technical-context>
+    <architecture-decisions>
+      <decision id="ADR-004">
+        <title>URL State with nuqs</title>
+        <impact>nuqs is installed but not needed for this story. Navigation uses standard next/link.</impact>
+      </decision>
+    </architecture-decisions>
+
+    <component-organization>
+      <principle>Server Components are the default; only use 'use client' when interactivity required</principle>
+      <principle>Layout components go in src/components/layout/</principle>
+      <principle>File naming: kebab-case (header.tsx, mobile-nav.tsx)</principle>
+      <principle>Component naming: PascalCase (Header, MobileNav)</principle>
+    </component-organization>
+
+    <styling-approach>
+      <note>Tailwind CSS v4 uses CSS-first approach</note>
+      <note>Use CSS variables directly: bg-[--bg-primary], text-[--text-primary]</note>
+      <note>shadcn utilities: bg-background, text-foreground (mapped to Deep Archive)</note>
+      <note>cn() utility from @/lib/utils for class merging</note>
+    </styling-approach>
+
+    <import-order>
+      <order position="1">React/Next.js imports</order>
+      <order position="2">Third-party libraries (lucide-react)</order>
+      <order position="3">Internal lib/utils (@/lib/utils)</order>
+      <order position="4">Internal components (@/components/)</order>
+      <order position="5">Internal types</order>
+    </import-order>
+  </technical-context>
+
+  <component-specifications>
+    <component name="Header" file="src/components/layout/header.tsx">
+      <description>Main header component with sticky positioning and backdrop blur</description>
+      <client-component>false</client-component>
+      <structure>
+        <![CDATA[
+<header className="sticky top-0 h-16 bg-[--bg-primary]/80 backdrop-blur-md border-b border-[--border] z-50">
+  <nav className="container mx-auto px-4 h-full flex items-center justify-between">
+    <Link href="/" className="font-serif text-xl text-[--text-primary]">
+      AI Obituaries
+    </Link>
+    {/* Desktop nav - hidden on mobile */}
+    <div className="hidden md:flex gap-6">
+      <Nav />
+    </div>
+    {/* Mobile nav - visible only on mobile */}
+    <div className="flex md:hidden">
+      <MobileNav />
+    </div>
+  </nav>
+</header>
+        ]]>
+      </structure>
+      <imports>
+        <import>Link from 'next/link'</import>
+        <import>{ Nav } from './nav'</import>
+        <import>{ MobileNav } from './mobile-nav'</import>
+      </imports>
+    </component>
+
+    <component name="Nav" file="src/components/layout/nav.tsx">
+      <description>Desktop navigation with NavLink components for active state detection</description>
+      <client-component>true</client-component>
+      <reason-for-client>Uses usePathname() hook for active state detection</reason-for-client>
+      <structure>
+        <![CDATA[
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { cn } from '@/lib/utils'
+
+interface NavLinkProps {
+  href: string
+  children: React.ReactNode
+}
+
+function NavLink({ href, children }: NavLinkProps) {
+  const pathname = usePathname()
+  const isActive = pathname === href
+
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'text-sm font-medium transition-colors pb-1',
+        isActive
+          ? 'text-[--accent-primary] border-b-2 border-[--accent-primary]'
+          : 'text-[--text-secondary] hover:text-[--text-primary]'
+      )}
+    >
+      {children}
+    </Link>
+  )
+}
+
+export function Nav() {
+  return (
+    <>
+      <NavLink href="/">Home</NavLink>
+      <NavLink href="/about">About</NavLink>
+    </>
+  )
+}
+        ]]>
+      </structure>
+    </component>
+
+    <component name="MobileNav" file="src/components/layout/mobile-nav.tsx">
+      <description>Mobile navigation using shadcn/ui Sheet component</description>
+      <client-component>true</client-component>
+      <reason-for-client>Uses Sheet component with open/close state and usePathname()</reason-for-client>
+      <shadcn-dependency>Sheet</shadcn-dependency>
+      <animation-notes>Sheet component includes transition-all duration-200 for smooth open/close animations</animation-notes>
+      <structure>
+        <![CDATA[
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { Menu } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
+import { cn } from '@/lib/utils'
+
+export function MobileNav() {
+  const [open, setOpen] = useState(false)
+  const pathname = usePathname()
+
+  const links = [
+    { href: '/', label: 'Home' },
+    { href: '/about', label: 'About' },
+  ]
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label="Open menu">
+          <Menu className="h-5 w-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right">
+        <SheetHeader>
+          <SheetTitle className="font-serif">AI Obituaries</SheetTitle>
+        </SheetHeader>
+        <nav className="flex flex-col gap-4 mt-8">
+          {links.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setOpen(false)}
+              className={cn(
+                'text-lg font-medium transition-colors',
+                pathname === link.href
+                  ? 'text-[--accent-primary]'
+                  : 'text-[--text-secondary] hover:text-[--text-primary]'
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      </SheetContent>
+    </Sheet>
+  )
+}
+        ]]>
+      </structure>
+    </component>
+
+    <component name="Footer" file="src/components/layout/footer.tsx">
+      <description>Footer component with copyright text</description>
+      <client-component>false</client-component>
+      <structure>
+        <![CDATA[
+export function Footer() {
+  const currentYear = new Date().getFullYear()
+
+  return (
+    <footer className="border-t border-[--border] py-6 mt-auto">
+      <div className="container mx-auto px-4 text-center">
+        <p className="text-sm text-[--text-muted]">
+          {currentYear} AI Obituaries
+        </p>
+      </div>
+    </footer>
+  )
+}
+        ]]>
+      </structure>
+    </component>
+  </component-specifications>
+
+  <existing-code>
+    <file path="src/app/layout.tsx">
+      <description>Root layout - needs modification to include Header and Footer</description>
+      <relevant-patterns>
+        <pattern>Font configuration with CSS variables (--font-geist-sans, --font-instrument-serif)</pattern>
+        <pattern>antialiased class applied to body</pattern>
+        <pattern>Font variables applied to body className</pattern>
+      </relevant-patterns>
+      <modification-needed>
+        <![CDATA[
+Wrap children with flex structure and add Header/Footer:
+
+<body className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased`}>
+  <div className="flex flex-col min-h-screen">
+    <Header />
+    <main className="flex-1">
+      {children}
+    </main>
+    <Footer />
+  </div>
+</body>
+        ]]>
+      </modification-needed>
+    </file>
+
+    <file path="src/app/globals.css">
+      <description>CSS variables for Deep Archive theme</description>
+      <relevant-variables>
+        <variable name="--bg-primary">#0C0C0F - Page background</variable>
+        <variable name="--bg-secondary">#14141A - Section backgrounds</variable>
+        <variable name="--border">#2A2A35 - Borders, dividers</variable>
+        <variable name="--text-primary">#E8E6E3 - Headlines, body text</variable>
+        <variable name="--text-secondary">#A8A5A0 - Secondary text</variable>
+        <variable name="--text-muted">#6B6860 - Captions, timestamps</variable>
+        <variable name="--accent-primary">#C9A962 - Primary actions, active states</variable>
+        <variable name="--font-serif">var(--font-instrument-serif) - Headlines</variable>
+        <variable name="--font-sans">var(--font-geist-sans) - Body text</variable>
+      </relevant-variables>
+    </file>
+
+    <file path="src/components/ui/button.tsx">
+      <description>shadcn/ui Button component - reference pattern</description>
+      <patterns-to-follow>
+        <pattern>Use cn() from @/lib/utils for class merging</pattern>
+        <pattern>cva for variant styling with class-variance-authority</pattern>
+        <pattern>Export both component and variants</pattern>
+        <pattern>data-slot attribute for styling hooks</pattern>
+      </patterns-to-follow>
+    </file>
+
+    <file path="src/lib/utils.ts">
+      <description>cn() utility for Tailwind class merging</description>
+      <usage>import { cn } from '@/lib/utils'</usage>
+    </file>
+
+    <file path="components.json">
+      <description>shadcn/ui configuration</description>
+      <relevant-config>
+        <style>new-york</style>
+        <icon-library>lucide</icon-library>
+        <aliases>
+          <ui>@/components/ui</ui>
+          <components>@/components</components>
+          <utils>@/lib/utils</utils>
+        </aliases>
+      </relevant-config>
+    </file>
+  </existing-code>
+
+  <implementation-plan>
+    <step order="1" time="2min">
+      <task>Create src/components/layout/ directory if not exists</task>
+      <command>mkdir -p src/components/layout</command>
+    </step>
+    <step order="2" time="5min">
+      <task>Install shadcn/ui Sheet component</task>
+      <command>pnpm dlx shadcn@latest add sheet</command>
+      <note>This will add Sheet component to src/components/ui/sheet.tsx</note>
+    </step>
+    <step order="3" time="15min">
+      <task>Create nav.tsx with NavLink component</task>
+      <file>src/components/layout/nav.tsx</file>
+      <details>Client component with usePathname() hook for active state detection</details>
+    </step>
+    <step order="4" time="20min">
+      <task>Create header.tsx with sticky header</task>
+      <file>src/components/layout/header.tsx</file>
+      <details>Server component that imports Nav and MobileNav</details>
+    </step>
+    <step order="5" time="20min">
+      <task>Create mobile-nav.tsx with Sheet and hamburger</task>
+      <file>src/components/layout/mobile-nav.tsx</file>
+      <details>Client component with Sheet, Menu icon, and link click handling</details>
+    </step>
+    <step order="6" time="10min">
+      <task>Create footer.tsx with copyright</task>
+      <file>src/components/layout/footer.tsx</file>
+      <details>Server component with dynamic year</details>
+    </step>
+    <step order="7" time="10min">
+      <task>Modify layout.tsx to include Header and Footer</task>
+      <file>src/app/layout.tsx</file>
+      <details>Add flex container, Header, main wrapper, and Footer</details>
+    </step>
+    <step order="8" time="10min">
+      <task>Test desktop navigation and active link styling</task>
+      <details>Verify Home/About links render, active state shows gold underline</details>
+    </step>
+    <step order="9" time="10min">
+      <task>Test mobile hamburger menu opens/closes correctly</task>
+      <details>Test at &lt;768px viewport, verify Sheet behavior</details>
+    </step>
+    <step order="10" time="5min">
+      <task>Verify sticky header with backdrop blur on scroll</task>
+      <details>Add temporary tall content to test scroll behavior</details>
+    </step>
+    <step order="11" time="5min">
+      <task>Verify header height is consistent (64px)</task>
+      <details>Use browser dev tools to confirm h-16 = 64px</details>
+    </step>
+    <step order="12" time="5min">
+      <task>Run pnpm run build and pnpm run lint</task>
+      <command>pnpm run build &amp;&amp; pnpm run lint</command>
+      <details>Ensure no build errors or lint warnings</details>
+    </step>
+  </implementation-plan>
+
+  <dependencies>
+    <shadcn-components>
+      <component name="Sheet" install-command="pnpm dlx shadcn@latest add sheet">
+        Used for mobile navigation overlay. Includes SheetTrigger, SheetContent,
+        SheetHeader, SheetTitle components.
+      </component>
+      <component name="Button" status="already-installed">
+        Used for hamburger menu trigger button.
+      </component>
+    </shadcn-components>
+    <npm-packages>
+      <package name="lucide-react" status="already-installed">
+        Provides Menu icon for hamburger button.
+      </package>
+    </npm-packages>
+    <story-dependencies>
+      <dependency story="1-1" status="complete">Project Initialization - Next.js, shadcn/ui setup</dependency>
+      <dependency story="1-2" status="complete">Design System Setup - CSS variables, fonts</dependency>
+      <dependency story="1-3" status="complete">Sanity CMS Integration - establishes project patterns</dependency>
+    </story-dependencies>
+  </dependencies>
+
+  <testing-requirements>
+    <component-tests>
+      <test file="tests/components/layout/header.test.tsx">
+        <scenario>Header renders with sticky positioning</scenario>
+        <scenario>Site title "AI Obituaries" links to /</scenario>
+        <scenario>Desktop nav visible at md+ breakpoint</scenario>
+        <scenario>Mobile nav trigger visible below md breakpoint</scenario>
+      </test>
+      <test file="tests/components/layout/nav.test.tsx">
+        <scenario>NavLink shows active state for current path</scenario>
+        <scenario>NavLink shows inactive state for other paths</scenario>
+        <scenario>Home and About links render correctly</scenario>
+      </test>
+      <test file="tests/components/layout/mobile-nav.test.tsx">
+        <scenario>Sheet opens on hamburger click</scenario>
+        <scenario>Sheet closes on link click</scenario>
+        <scenario>Sheet closes on outside click</scenario>
+        <scenario>Correct active state in mobile menu</scenario>
+      </test>
+      <test file="tests/components/layout/footer.test.tsx">
+        <scenario>Footer renders with current year</scenario>
+        <scenario>Copyright text visible</scenario>
+      </test>
+    </component-tests>
+    <visual-tests>
+      <test>Header backdrop blur visible on scroll</test>
+      <test>Gold underline on active navigation link</test>
+      <test>Header height is exactly 64px</test>
+      <test>Mobile menu slides in from right</test>
+    </visual-tests>
+    <accessibility-tests>
+      <test>Hamburger button has aria-label</test>
+      <test>Sheet has proper focus management</test>
+      <test>All links keyboard accessible</test>
+      <test>Focus visible indicators present</test>
+    </accessibility-tests>
+  </testing-requirements>
+
+  <learnings-from-previous-stories>
+    <learning source="Story 1-2">
+      Tailwind CSS v4 is CSS-first: Use CSS variables directly (e.g., bg-[--bg-primary])
+      rather than tailwind.config.ts mappings.
+    </learning>
+    <learning source="Story 1-1">
+      pnpm Usage: Continue using pnpm for all package operations including shadcn
+      (pnpm dlx shadcn@latest add sheet).
+    </learning>
+    <learning source="Story 1-2">
+      Theme variables available: All Deep Archive colors are defined as CSS variables
+      in globals.css.
+    </learning>
+    <learning source="Story 1-2">
+      Font classes: Instrument Serif available via font-serif class, Geist via font-sans.
+    </learning>
+    <learning source="All">
+      Build verification: Always run pnpm run build and pnpm run lint before marking complete.
+    </learning>
+  </learnings-from-previous-stories>
+
+  <ux-design-context>
+    <navigation-pattern>
+      <active-state>Gold underline or fill for current page</active-state>
+      <back-behavior>Browser back works, preserves timeline position</back-behavior>
+      <deep-linking>Full URL support for obituary pages</deep-linking>
+    </navigation-pattern>
+    <header-spec>
+      <position>Sticky top-0</position>
+      <height>64px (h-16)</height>
+      <background>Semi-transparent with backdrop blur</background>
+      <title-font>Instrument Serif</title-font>
+    </header-spec>
+    <mobile-breakpoint>768px (md breakpoint)</mobile-breakpoint>
+    <animation-timing>
+      <hover-states>150ms ease-out</hover-states>
+      <modal-open-close>300ms ease-out / ease-in</modal-open-close>
+    </animation-timing>
+  </ux-design-context>
+
+  <warnings-and-gaps>
+    <warning>
+      About page (/about) does not exist yet. Link will work but show 404.
+      This is expected - About page is deferred to a later epic.
+    </warning>
+    <note>
+      Timeline, Categories, and other nav items mentioned in FR24 are for future epics.
+      This story only implements Home and About links per the AC.
+    </note>
+  </warnings-and-gaps>
+</story-context>
