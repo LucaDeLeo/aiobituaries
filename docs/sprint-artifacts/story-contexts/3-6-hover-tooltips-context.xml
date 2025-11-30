@@ -1,0 +1,499 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>3-6-hover-tooltips</storyId>
+    <title>Hover Tooltips</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-30</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/3-6-hover-tooltips.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>visitor</asA>
+    <iWant>to see a preview when hovering over a dot</iWant>
+    <soThat>I can quickly scan claims without clicking</soThat>
+    <tasks>
+      <task id="1">Create TooltipCard Component (35 min)</task>
+      <task id="2">Add Tooltip State to ScatterPlot (25 min)</task>
+      <task id="3">Update ScatterPoint Integration (20 min)</task>
+      <task id="4">Render Tooltip with Portal (20 min)</task>
+      <task id="5">Implement Date Formatting Utility (15 min)</task>
+      <task id="6">Add Boundary Detection Edge Cases (25 min)</task>
+      <task id="7">Enhance Dot Hover Visual State (15 min)</task>
+      <task id="8">Test Debounce Timing (15 min)</task>
+      <task id="9">Write Unit Tests for TooltipCard (30 min)</task>
+      <task id="10">Manual Testing (25 min)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-3.6.1">
+      <description>Tooltip appears after hover delay</description>
+      <given>I hover over a timeline dot</given>
+      <when>hover duration exceeds 300ms</when>
+      <then>tooltip appears showing claim (100 chars), source, date</then>
+    </criterion>
+    <criterion id="AC-3.6.2">
+      <description>Tooltip styling matches design</description>
+      <given>tooltip appears</given>
+      <when>I view styling</when>
+      <then>it has dark bg (#1C1C24), gold border, 8px radius, 280px max-width</then>
+    </criterion>
+    <criterion id="AC-3.6.3">
+      <description>Tooltip animates on appear</description>
+      <given>tooltip appears</given>
+      <when>I check animation</when>
+      <then>it fades in (150ms) with slight scale (0.95-1)</then>
+    </criterion>
+    <criterion id="AC-3.6.4">
+      <description>Tooltip dismisses on mouse leave</description>
+      <given>I move mouse away</given>
+      <when>cursor leaves dot</when>
+      <then>tooltip fades out immediately</then>
+    </criterion>
+    <criterion id="AC-3.6.5">
+      <description>Dot visual state changes on hover</description>
+      <given>dot is hovered</given>
+      <when>I view dot</when>
+      <then>it scales to 1.3x with intensified glow</then>
+    </criterion>
+    <criterion id="AC-3.6.6">
+      <description>Tooltip repositions at screen edges</description>
+      <given>tooltip would go off-screen</given>
+      <when>I hover near edge</when>
+      <then>tooltip flips position to stay visible</then>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact path="docs/sprint-artifacts/epic-tech-specs/epic-3-tech-spec.md">
+        <description>Epic 3 Technical Specification - Contains TooltipCard design spec (Section 4.4), animation spec, positioning logic, hover delay requirements, and integration patterns</description>
+        <relevantSections>
+          <section>4.4 TooltipCard - Complete component specification with props, design, content layout, and animation details</section>
+          <section>6.1 Shared Animation Configuration - tooltipAppear variants, DURATIONS.fast (150ms), spring physics</section>
+          <section>7.1 useZoom Hook - ViewState interface and state management patterns</section>
+          <section>Epic 3 Integration Points - Data flow diagram showing tooltip integration with ScatterPlot</section>
+        </relevantSections>
+      </artifact>
+      <artifact path="docs/sprint-artifacts/stories/3-6-hover-tooltips.md">
+        <description>Story 3-6 definition - Contains user story, acceptance criteria, technical approach with reference implementation code, and detailed task breakdown</description>
+        <relevantSections>
+          <section>Technical Approach - Complete implementation overview including TooltipCard component, hover state management, positioning logic, dot hover state, animation details, and performance considerations</section>
+          <section>Reference Implementation - Full code examples for TooltipCard component and scatter-plot.tsx integration</section>
+          <section>Tasks - Detailed 10-task breakdown with specific implementation steps</section>
+        </relevantSections>
+      </artifact>
+    </docs>
+
+    <code>
+      <artifact path="src/components/visualization/scatter-plot.tsx">
+        <description>Main timeline visualization component - Already contains hover state infrastructure (hoveredId state), containerRef for bounds calculations, ScatterPoint integration with onMouseEnter/onMouseLeave callbacks, and AnimatePresence for portal-like rendering patterns (used for cluster badges)</description>
+        <interfaces>
+          <interface>ScatterPlotInner component with state management: viewState, hoveredId, containerRef</interface>
+          <interface>Data mapping loop rendering ScatterPoint components with calculated x/y positions</interface>
+          <interface>AnimatePresence pattern for rendering cluster badges outside SVG context</interface>
+        </interfaces>
+        <patterns>
+          <pattern>State management with useState for hover tracking (line 170: hoveredClusterId)</pattern>
+          <pattern>Container ref pattern for bounds (line 155: containerRef)</pattern>
+          <pattern>AnimatePresence for conditional rendering with animations (lines 595-606)</pattern>
+          <pattern>Position calculation in data.map loop (lines 573-592)</pattern>
+        </patterns>
+        <notes>
+          - hoveredId state exists but not currently used for individual points
+          - containerRef available for tooltip boundary detection
+          - AnimatePresence already imported and used for cluster badges
+          - x/y positions calculated via xScale(date) and yScale(jitter)
+        </notes>
+      </artifact>
+
+      <artifact path="src/components/visualization/scatter-point.tsx">
+        <description>Individual data point component - Already implements hover visual states with motion.circle, whileHover scale animation, and glow filter effects. Has onMouseEnter/onMouseLeave/onClick prop support</description>
+        <interfaces>
+          <interface>ScatterPointProps with optional onMouseEnter, onMouseLeave, onClick callbacks</interface>
+          <interface>motion.circle with animated opacity and scale properties</interface>
+        </interfaces>
+        <patterns>
+          <pattern>Hover scale animation: animate.scale = isHovered ? 1.3 : 1 (line 54)</pattern>
+          <pattern>Glow intensity: glowIntensity = isHovered ? 6 : 4 (line 37)</pattern>
+          <pattern>Spring animation config: type: 'spring', stiffness: 300, damping: 20 (line 58)</pattern>
+          <pattern>Filter-based glow: filter: drop-shadow(0 0 ${glowIntensity}px ${color}) (line 47)</pattern>
+        </patterns>
+        <notes>
+          - Hover glow already intensifies from 4px to 6px on hover
+          - Scale animation to 1.3x already implemented
+          - Event handler props ready for tooltip integration
+          - isHovered prop controls visual state
+        </notes>
+      </artifact>
+
+      <artifact path="src/lib/utils/animation.ts">
+        <description>Animation presets and utilities - Contains DURATIONS.fast (150ms), SPRINGS configurations, and shouldReduceMotion helper. Missing tooltipAppear variants which need to be added</description>
+        <interfaces>
+          <interface>DURATIONS constant with fast (0.15s), normal (0.2s), slow (0.3s)</interface>
+          <interface>SPRINGS constant with hover, zoom, pan spring configurations</interface>
+          <interface>shouldReduceMotion() function for accessibility</interface>
+        </interfaces>
+        <patterns>
+          <pattern>Duration constants exported for consistency (line 11-18)</pattern>
+          <pattern>Spring physics tuned for different interaction types (line 27-34)</pattern>
+          <pattern>Reduced motion detection via matchMedia (line 42-46)</pattern>
+        </patterns>
+        <notes>
+          - DURATIONS.fast (150ms) matches tooltip animation requirement
+          - Need to add tooltipAppear variants: { initial: { opacity: 0, scale: 0.95, y: 5 }, animate: { opacity: 1, scale: 1, y: 0 }, exit: { opacity: 0, scale: 0.95 } }
+          - SPRINGS.hover already exists for interactive elements
+        </notes>
+      </artifact>
+
+      <artifact path="src/types/visualization.ts">
+        <description>Visualization type definitions - Contains ViewState, ScatterPlotProps, and PointCluster interfaces. Need to add TooltipData interface</description>
+        <interfaces>
+          <interface>ViewState: { scale: number, translateX: number, translateY: number }</interface>
+          <interface>ScatterPlotProps with data, mode, activeCategories, onSelect, height</interface>
+          <interface>PointCluster with id, x, y, count, obituaryIds, primaryCategory, minDate, maxDate</interface>
+        </interfaces>
+        <notes>
+          - Need to add TooltipData interface: { obituary: ObituarySummary, x: number, y: number }
+          - ViewState already exists for state management patterns
+        </notes>
+      </artifact>
+
+      <artifact path="src/types/obituary.ts">
+        <description>Obituary data model - Defines ObituarySummary interface used in tooltip display</description>
+        <interfaces>
+          <interface>ObituarySummary: { _id: string, slug: string, claim: string, source: string, date: string, categories: Category[] }</interface>
+          <interface>Category type: 'market' | 'capability' | 'agi' | 'dismissive'</interface>
+        </interfaces>
+        <notes>
+          - ObituarySummary.claim will be truncated to 100 chars in tooltip
+          - ObituarySummary.source displayed in tooltip footer
+          - ObituarySummary.date (ISO 8601 string) needs formatting for display
+        </notes>
+      </artifact>
+
+      <artifact path="src/lib/utils/scatter-helpers.ts">
+        <description>Scatter plot utility functions - Contains category colors, jitter algorithm, and color helpers</description>
+        <interfaces>
+          <interface>CATEGORY_HEX_COLORS: Record with capability, market, agi, dismissive hex values</interface>
+          <interface>hashToJitter(id: string): number - deterministic Y positioning</interface>
+          <interface>getCategoryColor(categories: Category[]): string - color extraction</interface>
+        </interfaces>
+        <notes>
+          - Category colors already defined for visualization
+          - No date formatting utilities exist yet - need to create
+        </notes>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <dependency type="npm-package">motion/react - AnimatePresence, motion.div for tooltip animations</dependency>
+      <dependency type="npm-package">@visx/tooltip - OPTIONAL: Can use for portal-based rendering, but custom portal approach also viable</dependency>
+      <dependency type="story">Story 3-1 (Scatter Plot Foundation) - REQUIRED: ScatterPlot container, containerRef, scale functions</dependency>
+      <dependency type="story">Story 3-2 (Timeline Data Points) - REQUIRED: ScatterPoint component with onMouseEnter/onMouseLeave callbacks, x/y position calculations</dependency>
+      <dependency type="story">Story 3-5 (Density Visualization) - REFERENCE: AnimatePresence pattern for rendering outside SVG already implemented for cluster badges</dependency>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">
+      <title>Portal-based Tooltip Rendering</title>
+      <description>Tooltip must render outside SVG DOM to avoid z-index and clipping issues. Use AnimatePresence pattern established in cluster badges (scatter-plot.tsx lines 595-606)</description>
+      <rationale>SVG elements have complex stacking context and CSS positioning limitations. Rendering tooltip as HTML outside SVG provides proper layering, CSS styling support, and boundary detection</rationale>
+    </constraint>
+
+    <constraint type="performance">
+      <title>300ms Hover Debounce Required</title>
+      <description>Tooltip must not appear until hover duration exceeds 300ms to prevent flicker when cursor quickly crosses multiple dots</description>
+      <implementation>Use setTimeout with 300ms delay on mouseEnter, clear timeout on mouseLeave. Set hoveredId immediately for dot visual state but delay tooltip data state</implementation>
+    </constraint>
+
+    <constraint type="design">
+      <title>Design System Color Variables</title>
+      <description>Tooltip must use CSS variables from Deep Archive theme: --bg-tertiary (#1C1C24), --accent-primary (#C9A962), --text-primary, --text-secondary</description>
+      <rationale>Maintains consistency with established design system and enables future theme switching</rationale>
+    </constraint>
+
+    <constraint type="accessibility">
+      <title>Reduced Motion Support</title>
+      <description>Tooltip animations must respect prefers-reduced-motion preference. Use shouldReduceMotion() from animation.ts or Motion's useReducedMotion() hook</description>
+      <implementation>When reduced motion enabled, tooltip should appear/disappear instantly without fade or scale transitions</implementation>
+    </constraint>
+
+    <constraint type="ux">
+      <title>Immediate Tooltip Dismissal</title>
+      <description>When mouse leaves dot, tooltip must disappear immediately (no exit animation delay) to prevent tooltip lingering during rapid exploration</description>
+      <implementation>Clear tooltip state on mouseLeave without delay. AnimatePresence exit animation runs but state clears immediately</implementation>
+    </constraint>
+
+    <constraint type="layout">
+      <title>Boundary Detection Required</title>
+      <description>Tooltip positioning must detect viewport edges and flip position to prevent clipping. Default position is above and centered on dot</description>
+      <algorithm>
+        1. Calculate default position: x = dotX - tooltipWidth/2, y = dotY - tooltipHeight - padding
+        2. Check right edge: if x + tooltipWidth > containerWidth, align left edge
+        3. Check left edge: if x &lt; 0, set x = padding
+        4. Check top edge: if y &lt; 0, flip to below dot (y = dotY + padding + dotRadius)
+        5. Use 12px padding from edges
+      </algorithm>
+    </constraint>
+
+    <constraint type="data">
+      <title>Claim Truncation</title>
+      <description>Obituary claims longer than 100 characters must be truncated with "..." ellipsis in tooltip display</description>
+      <implementation>const truncatedClaim = claim.length > 100 ? `${claim.slice(0, 100)}...` : claim</implementation>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="TooltipCardProps">
+      <description>Props interface for TooltipCard component</description>
+      <definition>
+interface TooltipCardProps {
+  obituary: ObituarySummary  // Full obituary data from scatter-plot
+  x: number                  // X position in pixels (from ScatterPoint position)
+  y: number                  // Y position in pixels (from ScatterPoint position)
+  containerBounds: DOMRect   // Container bounding rect for edge detection
+}
+      </definition>
+      <usage>
+        - obituary: Pass from tooltipData state when not null
+        - x, y: Cached from ScatterPoint coordinates when setting tooltip state
+        - containerBounds: Get via containerRef.current.getBoundingClientRect()
+      </usage>
+    </interface>
+
+    <interface name="TooltipData">
+      <description>State interface for tooltip display data (add to types/visualization.ts)</description>
+      <definition>
+export interface TooltipData {
+  obituary: ObituarySummary  // Obituary being shown
+  x: number                  // Tooltip X position (pixel coordinate)
+  y: number                  // Tooltip Y position (pixel coordinate)
+}
+      </definition>
+      <usage>
+        - Store in ScatterPlot state: const [tooltipData, setTooltipData] = useState&lt;TooltipData | null&gt;(null)
+        - Set on mouseEnter after 300ms debounce
+        - Clear on mouseLeave immediately
+      </usage>
+    </interface>
+
+    <interface name="formatDate">
+      <description>Date formatting utility function (create in src/lib/utils/date.ts)</description>
+      <definition>
+/**
+ * Format ISO 8601 date string to human-readable format
+ * @param dateString - ISO date string (e.g., "2023-03-14")
+ * @returns Formatted date (e.g., "Mar 14, 2023")
+ */
+export function formatDate(dateString: string): string {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+      </definition>
+      <usage>Import in TooltipCard: import { formatDate } from '@/lib/utils/date'</usage>
+    </interface>
+
+    <interface name="tooltipAppear">
+      <description>Animation variants for tooltip fade-in/scale (add to lib/utils/animation.ts)</description>
+      <definition>
+import type { Variants } from 'motion/react'
+
+/**
+ * Tooltip appear animation.
+ * Subtle fade-in with slight scale and upward movement.
+ */
+export const tooltipAppear: Variants = {
+  initial: { opacity: 0, scale: 0.95, y: 5 },
+  animate: { opacity: 1, scale: 1, y: 0 },
+  exit: { opacity: 0, scale: 0.95 },
+}
+      </definition>
+      <usage>
+        - Apply to motion.div wrapper in TooltipCard
+        - Use with AnimatePresence for enter/exit animations
+        - Transition duration: DURATIONS.fast (150ms)
+      </usage>
+    </interface>
+
+    <interface name="ScatterPlot State Updates">
+      <description>New state additions to ScatterPlot component</description>
+      <definition>
+// Add to ScatterPlotInner component state declarations:
+
+// Tooltip state (with obituary data and position)
+const [tooltipData, setTooltipData] = useState&lt;TooltipData | null&gt;(null)
+
+// Debounce ref for 300ms delay
+const tooltipTimeoutRef = useRef&lt;NodeJS.Timeout | null&gt;(null)
+
+// Cleanup effect
+useEffect(() => {
+  return () => {
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current)
+    }
+  }
+}, [])
+      </definition>
+    </interface>
+
+    <interface name="ScatterPoint Callback Updates">
+      <description>Handler functions to pass to ScatterPoint components</description>
+      <definition>
+// Add to ScatterPlotInner before data.map loop:
+
+const handlePointMouseEnter = useCallback(
+  (obituary: ObituarySummary, x: number, y: number) => {
+    // Clear existing timeout
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current)
+    }
+
+    // Set hoveredId immediately for dot visual state
+    setHoveredId(obituary._id)
+
+    // Debounce tooltip appearance by 300ms
+    tooltipTimeoutRef.current = setTimeout(() => {
+      setTooltipData({ obituary, x, y })
+    }, 300)
+  },
+  []
+)
+
+const handlePointMouseLeave = useCallback(() => {
+  // Clear timeout if tooltip hasn't appeared yet
+  if (tooltipTimeoutRef.current) {
+    clearTimeout(tooltipTimeoutRef.current)
+    tooltipTimeoutRef.current = null
+  }
+
+  // Clear states immediately
+  setHoveredId(null)
+  setTooltipData(null)
+}, [])
+
+// In data.map loop, calculate positions before ScatterPoint:
+const xPos = xScale(new Date(obituary.date))
+const yPos = yScale(hashToJitter(obituary._id))
+
+// Pass to ScatterPoint:
+&lt;ScatterPoint
+  ...
+  isHovered={hoveredId === obituary._id}
+  onMouseEnter={() => handlePointMouseEnter(obituary, xPos, yPos)}
+  onMouseLeave={handlePointMouseLeave}
+/&gt;
+      </definition>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <standard>Unit tests using Vitest and React Testing Library</standard>
+      <standard>Component tests focus on rendering, props, and user interactions</standard>
+      <standard>E2E tests using Playwright for hover timing and boundary detection</standard>
+      <standard>All data-testid attributes required for test selection: data-testid="tooltip-card"</standard>
+      <standard>Test reduced motion preference with emulateMedia</standard>
+    </standards>
+
+    <locations>
+      <location>tests/unit/components/visualization/tooltip-card.test.tsx - Unit tests for TooltipCard component</location>
+      <location>tests/unit/lib/utils/date.test.ts - Unit tests for formatDate function</location>
+      <location>tests/e2e/timeline.spec.ts - E2E tests for hover interactions (add to existing file)</location>
+    </locations>
+
+    <ideas>
+      <testCase>
+        <name>TooltipCard renders with obituary data</name>
+        <scenario>Render TooltipCard with mock obituary, verify claim text, source, and formatted date appear in document</scenario>
+        <assertion>expect(screen.getByText(/test claim/i)).toBeInTheDocument()</assertion>
+      </testCase>
+
+      <testCase>
+        <name>Claim truncation to 100 characters</name>
+        <scenario>Render TooltipCard with 150-char claim, verify text is truncated to 100 chars with "..." ellipsis</scenario>
+        <assertion>expect(claimText).toHaveLength(104) // 100 + "..."</assertion>
+      </testCase>
+
+      <testCase>
+        <name>Tooltip positioning above dot by default</name>
+        <scenario>Render TooltipCard with x=200, y=100, verify style.top is less than 100 (positioned above)</scenario>
+        <assertion>expect(tooltip.style.top).toBe('some negative offset from y')</assertion>
+      </testCase>
+
+      <testCase>
+        <name>Tooltip flips below when near top edge</name>
+        <scenario>Render TooltipCard with y=50 (near top), verify style.top is greater than 50 (flipped below)</scenario>
+        <assertion>expect(tooltipY).toBeGreaterThan(50)</assertion>
+      </testCase>
+
+      <testCase>
+        <name>Tooltip stays within bounds near right edge</name>
+        <scenario>Render TooltipCard with x near containerWidth, verify tooltip left edge doesn't exceed container</scenario>
+        <assertion>expect(parseInt(tooltip.style.left)).toBeLessThan(containerWidth - tooltipWidth)</assertion>
+      </testCase>
+
+      <testCase>
+        <name>Tooltip appears after 300ms hover delay</name>
+        <scenario>Hover over scatter point, wait 350ms, verify tooltip appears with data-testid="tooltip-card"</scenario>
+        <assertion>await waitFor(() => expect(screen.getByTestId('tooltip-card')).toBeVisible(), { timeout: 400 })</assertion>
+      </testCase>
+
+      <testCase>
+        <name>Tooltip does NOT appear on quick hover</name>
+        <scenario>Hover over scatter point, move away after 200ms, verify tooltip never appears</scenario>
+        <assertion>await waitFor(() => expect(screen.queryByTestId('tooltip-card')).not.toBeInTheDocument())</assertion>
+      </testCase>
+
+      <testCase>
+        <name>Tooltip dismisses immediately on mouse leave</name>
+        <scenario>Show tooltip, move mouse away, verify tooltip disappears without delay</scenario>
+        <assertion>fireEvent.mouseLeave(point); expect(screen.queryByTestId('tooltip-card')).not.toBeInTheDocument()</assertion>
+      </testCase>
+
+      <testCase>
+        <name>Dot scale increases to 1.3x on hover</name>
+        <scenario>Hover over scatter point, verify scale animation applies 1.3x transform</scenario>
+        <assertion>expect(point.getAttribute('animate')).toContain('scale: 1.3')</assertion>
+      </testCase>
+
+      <testCase>
+        <name>Dot glow intensifies on hover</name>
+        <scenario>Hover over scatter point, verify filter changes from 4px to 6px drop-shadow</scenario>
+        <assertion>expect(point.style.filter).toContain('drop-shadow(0 0 6px')</assertion>
+      </testCase>
+
+      <testCase>
+        <name>formatDate formats ISO dates correctly</name>
+        <scenario>Call formatDate('2023-03-14'), verify returns "Mar 14, 2023"</scenario>
+        <assertion>expect(formatDate('2023-03-14')).toBe('Mar 14, 2023')</assertion>
+      </testCase>
+
+      <testCase>
+        <name>Reduced motion disables tooltip animations</name>
+        <scenario>Enable prefers-reduced-motion, hover over point, verify tooltip appears without fade/scale animation</scenario>
+        <assertion>await page.emulateMedia({ reducedMotion: 'reduce' }); // tooltip appears instantly</assertion>
+      </testCase>
+
+      <testCase>
+        <name>Multiple rapid hovers show only one tooltip</name>
+        <scenario>Quickly hover over 3 different points, verify only last hovered point shows tooltip after 300ms</scenario>
+        <assertion>expect(screen.getAllByTestId('tooltip-card')).toHaveLength(1)</assertion>
+      </testCase>
+
+      <testCase>
+        <name>Tooltip has correct styling</name>
+        <scenario>Render TooltipCard, verify background color, border color, border radius, max-width, and shadow</scenario>
+        <assertion>expect(tooltip).toHaveStyle({ backgroundColor: '#1C1C24', borderColor: '#C9A962', borderRadius: '8px', maxWidth: '280px' })</assertion>
+      </testCase>
+    </ideas>
+  </tests>
+</story-context>

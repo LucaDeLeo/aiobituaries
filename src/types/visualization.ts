@@ -59,3 +59,16 @@ export interface PointCluster {
   /** Latest date in cluster - for click-to-zoom bounds calculation */
   maxDate: Date
 }
+
+/**
+ * Tooltip display data for hover tooltips.
+ * Used to track which point is being hovered and where to render the tooltip.
+ */
+export interface TooltipData {
+  /** Obituary being shown in tooltip */
+  obituary: ObituarySummary
+  /** Tooltip X position (pixel coordinate from ScatterPoint) */
+  x: number
+  /** Tooltip Y position (pixel coordinate from ScatterPoint) */
+  y: number
+}

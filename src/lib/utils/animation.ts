@@ -5,6 +5,8 @@
  * across the application. Includes spring configurations and reduced motion support.
  */
 
+import type { Variants } from 'motion/react'
+
 /**
  * Standard duration presets (in seconds)
  */
@@ -57,4 +59,15 @@ export function getTransition(key: keyof typeof SPRINGS): typeof SPRINGS[keyof t
     return { duration: 0 }
   }
   return SPRINGS[key]
+}
+
+/**
+ * Tooltip appear animation.
+ * Subtle fade-in with slight scale and upward movement.
+ * Used for hover tooltips on timeline data points.
+ */
+export const tooltipAppear: Variants = {
+  initial: { opacity: 0, scale: 0.95, y: 5 },
+  animate: { opacity: 1, scale: 1, y: 0 },
+  exit: { opacity: 0, scale: 0.95 },
 }

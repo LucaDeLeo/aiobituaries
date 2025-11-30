@@ -15,10 +15,11 @@ import { GridColumns } from '@visx/grid'
 import { Group } from '@visx/group'
 import { timeFormat } from 'd3-time-format'
 import type { ObituarySummary } from '@/types/obituary'
-import type { ViewState, PointCluster } from '@/types/visualization'
+import type { ViewState, PointCluster, TooltipData } from '@/types/visualization'
 import { ScatterPoint } from './scatter-point'
 import { ZoomControls } from './zoom-controls'
 import { ClusterBadge } from './cluster-badge'
+import { TooltipCard } from './tooltip-card'
 import { hashToJitter, getCategoryColor } from '@/lib/utils/scatter-helpers'
 import { useZoom, MAX_SCALE } from '@/lib/hooks/use-zoom'
 import { SPRINGS } from '@/lib/utils/animation'
@@ -169,6 +170,12 @@ export function ScatterPlotInner({
   // State for hovered cluster badge
   const [hoveredClusterId, setHoveredClusterId] = useState<string | null>(null)
 
+  // Tooltip state
+  const [tooltipData, setTooltipData] = useState<TooltipData | null>(null)
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [containerBounds, setContainerBounds] = useState<DOMRect | null>(null)
+  const tooltipTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   // Compute inner dimensions
   const innerWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
   const innerHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
@@ -266,6 +273,51 @@ export function ScatterPlotInner({
     },
     [xScale, innerWidth, setViewState]
   )
+
+  // Handler for point mouse enter with 300ms debounce
+  const handlePointMouseEnter = useCallback(
+    (obituary: ObituarySummary, xPos: number, yPos: number) => {
+      // Clear existing timeout
+      if (tooltipTimeoutRef.current) {
+        clearTimeout(tooltipTimeoutRef.current)
+      }
+
+      // Set hoveredId immediately for dot visual state
+      setHoveredId(obituary._id)
+
+      // Debounce tooltip appearance by 300ms
+      tooltipTimeoutRef.current = setTimeout(() => {
+        // Get fresh bounds when showing tooltip
+        if (containerRef.current) {
+          setContainerBounds(containerRef.current.getBoundingClientRect())
+        }
+        setTooltipData({ obituary, x: xPos, y: yPos })
+      }, 300)
+    },
+    []
+  )
+
+  // Handler for point mouse leave (immediate)
+  const handlePointMouseLeave = useCallback(() => {
+    // Clear timeout if tooltip hasn't appeared yet
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current)
+      tooltipTimeoutRef.current = null
+    }
+
+    // Clear states immediately
+    setHoveredId(null)
+    setTooltipData(null)
+  }, [])
+
+  // Cleanup tooltip timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (tooltipTimeoutRef.current) {
+        clearTimeout(tooltipTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // Calculate pan bounds (adjusted for zoom)
   const panBounds = useMemo(() => {
@@ -586,6 +638,9 @@ export function ScatterPlotInner({
                     y={yPos}
                     color={color}
                     isClustered={isClustered}
+                    isHovered={hoveredId === obituary._id}
+                    onMouseEnter={() => handlePointMouseEnter(obituary, xPos, yPos)}
+                    onMouseLeave={handlePointMouseLeave}
                   />
                 )
               })}
@@ -617,6 +672,18 @@ export function ScatterPlotInner({
         isMinZoom={isMinZoom}
         isMaxZoom={isMaxZoom}
       />
+
+      {/* Tooltip - render outside SVG with portal-like positioning */}
+      <AnimatePresence>
+        {tooltipData && containerBounds && (
+          <TooltipCard
+            obituary={tooltipData.obituary}
+            x={tooltipData.x + MARGIN.left}
+            y={tooltipData.y + MARGIN.top}
+            containerBounds={containerBounds}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
