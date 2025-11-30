@@ -1,12 +1,15 @@
 'use client'
 
 import { useMemo } from 'react'
+import { motion } from 'motion/react'
 import { ParentSize } from '@visx/responsive'
 import { scaleTime, scaleLinear } from '@visx/scale'
 import { AxisBottom } from '@visx/axis'
 import { GridColumns } from '@visx/grid'
 import { Group } from '@visx/group'
 import type { ObituarySummary } from '@/types/obituary'
+import { ScatterPoint } from './scatter-point'
+import { hashToJitter, getCategoryColor } from '@/lib/utils/scatter-helpers'
 
 export interface ScatterPlotProps {
   data: ObituarySummary[]
@@ -57,9 +60,6 @@ export function ScatterPlotInner({
       range: [innerHeight, 0],
     })
   }, [innerHeight])
-
-  // Suppress unused variable warning - yScale is prepared for Story 3.2
-  void yScale
 
   // Empty state
   if (data.length === 0) {
@@ -115,7 +115,36 @@ export function ScatterPlotInner({
           numTicks={Math.min(innerWidth / 100, 10)}
         />
 
-        {/* Data points will be rendered in Story 3.2 */}
+        {/* Data Points with staggered animation */}
+        <motion.g
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: {},
+            visible: {
+              transition: {
+                staggerChildren: 0.05, // 50ms between dots
+                delayChildren: 0.1, // 100ms initial delay
+              },
+            },
+          }}
+        >
+          {data.map((obituary) => {
+            const xPos = xScale(new Date(obituary.date))
+            const yPos = yScale(hashToJitter(obituary._id))
+            const color = getCategoryColor(obituary.categories)
+
+            return (
+              <ScatterPoint
+                key={obituary._id}
+                obituary={obituary}
+                x={xPos}
+                y={yPos}
+                color={color}
+              />
+            )
+          })}
+        </motion.g>
       </Group>
     </svg>
   )

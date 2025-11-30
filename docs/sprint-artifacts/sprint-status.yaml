@@ -59,7 +59,7 @@ development_status:
   # Epic 3: Timeline Visualization
   epic-3: contexted
   3-1-scatter-plot-foundation: done
-  3-2-timeline-data-points: backlog
+  3-2-timeline-data-points: done
   3-3-horizontal-scroll-pan: backlog
   3-4-zoom-functionality: backlog
   3-5-density-visualization: backlog

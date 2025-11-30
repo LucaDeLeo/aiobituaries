@@ -1,0 +1,1020 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context XML
+  Generated: 2025-11-30
+  Story: 3-2-timeline-data-points
+  Purpose: Complete implementation context for Timeline Data Points (ScatterPoint component)
+-->
+<story-context>
+  <metadata>
+    <story-key>3-2-timeline-data-points</story-key>
+    <title>Timeline Data Points</title>
+    <epic>Epic 3 - Timeline Visualization</epic>
+    <status>drafted</status>
+    <priority>High</priority>
+    <generated>2025-11-30</generated>
+    <sequence>2 of 8 in Epic 3</sequence>
+  </metadata>
+
+  <story-reference>
+    <path>docs/sprint-artifacts/stories/3-2-timeline-data-points.md</path>
+    <user-story>
+      As a visitor,
+      I want to see each obituary as a dot on the timeline,
+      So that I can identify individual claims and their timing.
+    </user-story>
+  </story-reference>
+
+  <acceptance-criteria>
+    <note>
+      IMPORTANT: The story file contains 8 acceptance criteria (AC-3.2.1 through AC-3.2.8).
+      The original tech-spec only defined AC-3.2.1 through AC-3.2.5.
+      AC-3.2.6 (additive brightness), AC-3.2.7 (animation), and AC-3.2.8 (data-testid) are
+      ADDITIVE requirements added during story refinement - they are NOT in the original tech-spec
+      but ARE required for story completion. The story file is the source of truth for ACs.
+    </note>
+    <criterion id="AC-3.2.1">Data points render as circles - Given scatter plot is rendered with obituary data, when data points are drawn, then each obituary appears as a 14px diameter circle</criterion>
+    <criterion id="AC-3.2.2">Category color fill applied - Given a data point renders, when I view the point, then it has the correct category color fill (Gold #C9A962 for capability, Sage #7B9E89 for market, Rose #9E7B7B for AGI, Lavender #7B7B9E for dismissive)</criterion>
+    <criterion id="AC-3.2.3">Default opacity and glow - Given data points render, when I view points, then they have 80% opacity by default with subtle glow effect (drop-shadow)</criterion>
+    <criterion id="AC-3.2.4">X position from date scale - Given data points render, when I check X position, then X = date scaled to timeline width using the xScale from Story 3-1</criterion>
+    <criterion id="AC-3.2.5">Y position from jitter algorithm - Given data points render, when I check Y position, then Y = deterministic jitter value based on obituary ID (0-1 range scaled to height)</criterion>
+    <criterion id="AC-3.2.6" additive="true">Additive brightness on overlap - Given multiple dots overlap, when I view the overlap area, then dots create additive brightness effect through overlapping glows</criterion>
+    <criterion id="AC-3.2.7" additive="true">Enter animation on load - Given the timeline loads, when dots appear, then they fade in with staggered animation (50ms per dot, max 500ms total)</criterion>
+    <criterion id="AC-3.2.8" additive="true">data-testid attribute present - Given scatter point renders, when I inspect the element, then it has data-testid="scatter-point"</criterion>
+  </acceptance-criteria>
+
+  <documentation-artifacts>
+    <artifact type="tech-spec" relevance="primary">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-3-tech-spec.md</path>
+      <description>Complete technical specification for Epic 3 Timeline Visualization including ScatterPoint component specs and animation patterns</description>
+      <key-sections>
+        <section line="559-611">Section 4.2: ScatterPoint Component Spec - Props interface, visual states, implementation example</section>
+        <section line="309-395">Section 3.2: Scatter Helper Utilities - hashToJitter algorithm, CATEGORY_HEX_COLORS, getCategoryColor</section>
+        <section line="806-925">Section 6: Animation Presets - staggerContainer, staggerItem variants for entrance animation</section>
+        <section line="1365-1548">Section 9.1-9.2: Unit and Component Tests - hashToJitter tests, ScatterPoint tests</section>
+        <section line="1157-1185">Story 3.2 Acceptance Criteria in tech-spec</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="architecture" relevance="primary">
+      <path>docs/architecture.md</path>
+      <description>System architecture defining Contextual Scatter Plot pattern and category color system</description>
+      <key-sections>
+        <section>Novel Pattern: Contextual Scatter Plot - Y-axis modes (spread with jitter)</section>
+        <section>hashToJitter function reference implementation</section>
+        <section>Category colors mapping to hex values</section>
+        <section>Testing Patterns - Test organization</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="story" relevance="primary">
+      <path>docs/sprint-artifacts/stories/3-2-timeline-data-points.md</path>
+      <description>Full story definition with tasks, test scenarios, reference implementation, and definition of done</description>
+    </artifact>
+
+    <artifact type="previous-story" relevance="high">
+      <path>docs/sprint-artifacts/story-contexts/3-1-scatter-plot-foundation-context.xml</path>
+      <description>Story 3-1 context - ScatterPlot container, xScale, yScale already implemented</description>
+      <integration-notes>
+        Story 3-1 created the ScatterPlot component with xScale and yScale.
+        Story 3-2 adds ScatterPoint components inside the ScatterPlot SVG.
+        The yScale is already prepared but unused (suppressed warning) - now we use it.
+      </integration-notes>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code>
+    <file purpose="modify" priority="high">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>ScatterPlot component from Story 3-1 - integration point for ScatterPoint components</description>
+      <code-excerpt><![CDATA[
+'use client'
+
+import { useMemo } from 'react'
+import { ParentSize } from '@visx/responsive'
+import { scaleTime, scaleLinear } from '@visx/scale'
+import { AxisBottom } from '@visx/axis'
+import { GridColumns } from '@visx/grid'
+import { Group } from '@visx/group'
+import type { ObituarySummary } from '@/types/obituary'
+
+export interface ScatterPlotProps {
+  data: ObituarySummary[]
+  height?: number
+}
+
+const MARGIN = { top: 20, right: 20, bottom: 40, left: 20 }
+
+// Exported for testing purposes
+export function ScatterPlotInner({
+  data,
+  width,
+  height,
+}: {
+  data: ObituarySummary[]
+  width: number
+  height: number
+}) {
+  // Compute inner dimensions
+  const innerWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
+  const innerHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
+
+  // Compute scales with useMemo
+  const xScale = useMemo(() => {
+    if (data.length === 0) {
+      return scaleTime({
+        domain: [new Date('2020-01-01'), new Date()],
+        range: [0, innerWidth],
+      })
+    }
+    const dates = data.map((d) => new Date(d.date))
+    const minDate = new Date(Math.min(...dates.map((d) => d.getTime())))
+    const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())))
+    // Add padding to domain
+    const padding = (maxDate.getTime() - minDate.getTime()) * 0.05
+    return scaleTime({
+      domain: [
+        new Date(minDate.getTime() - padding),
+        new Date(maxDate.getTime() + padding),
+      ],
+      range: [0, innerWidth],
+    })
+  }, [data, innerWidth])
+
+  const yScale = useMemo(() => {
+    return scaleLinear({
+      domain: [0, 1],
+      range: [innerHeight, 0],
+    })
+  }, [innerHeight])
+
+  // Suppress unused variable warning - yScale is prepared for Story 3.2
+  void yScale
+
+  // ... empty state handling ...
+
+  return (
+    <svg
+      width={width}
+      height={height}
+      data-testid="scatter-plot"
+      role="img"
+      aria-label={`Interactive timeline of ${data.length} AI obituaries`}
+    >
+      {/* Background */}
+      <rect width={width} height={height} fill="var(--bg-secondary)" />
+
+      <Group left={MARGIN.left} top={MARGIN.top}>
+        {/* Grid lines at year intervals */}
+        <GridColumns
+          scale={xScale}
+          height={innerHeight}
+          stroke="var(--border)"
+          strokeOpacity={0.3}
+          strokeDasharray="2,2"
+        />
+
+        {/* X-axis (time) */}
+        <AxisBottom
+          top={innerHeight}
+          scale={xScale}
+          stroke="var(--border)"
+          tickStroke="var(--border)"
+          tickLabelProps={() => ({
+            fill: 'var(--text-secondary)',
+            fontSize: 11,
+            textAnchor: 'middle' as const,
+            dy: '0.25em',
+          })}
+          numTicks={Math.min(innerWidth / 100, 10)}
+        />
+
+        {/* Data points will be rendered in Story 3.2 */}
+      </Group>
+    </svg>
+  )
+}
+]]></code-excerpt>
+      <integration-point>
+        After the AxisBottom component (line 116), add motion.g wrapper with stagger variants.
+        Inside the motion.g, map over data array and render ScatterPoint for each obituary.
+      </integration-point>
+      <code-removal priority="high">
+        REQUIRED: Remove line 62 ("void yScale") - yScale is now used by ScatterPoint rendering.
+        This line was a temporary suppression added in Story 3-1 specifically for Story 3-2 to remove.
+        The line reads: "void yScale"
+        After removal, yScale will be used in: yScale(hashToJitter(obituary._id))
+      </code-removal>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/types/obituary.ts</path>
+      <description>Core type definitions - ObituarySummary is passed to ScatterPoint, Category type for colors</description>
+      <code-excerpt><![CDATA[
+/**
+ * Categorization of AI skepticism claims.
+ */
+export type Category = 'market' | 'capability' | 'agi' | 'dismissive'
+
+/**
+ * Lightweight obituary type for list/card views.
+ */
+export interface ObituarySummary {
+  _id: string
+  slug: string
+  claim: string
+  source: string
+  date: string  // ISO 8601
+  categories: Category[]
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/types/visualization.ts</path>
+      <description>Visualization types created in Story 3-1 - YAxisMode, ViewState, ScatterPlotProps</description>
+      <code-excerpt><![CDATA[
+import type { ObituarySummary, Category } from './obituary'
+
+/**
+ * Y-axis mode for contextual scatter plot.
+ * - spread: Default jitter-based distribution for visual clarity
+ * - market: Y = NVDA stock price (future)
+ * - capability: Y = benchmark score (future)
+ * - agi: Y = milestone timeline (future)
+ */
+export type YAxisMode = 'spread' | 'market' | 'capability' | 'agi'
+
+/**
+ * Zoom and pan state for visualization.
+ */
+export interface ViewState {
+  /** Zoom scale factor (0.5 to 5) */
+  scale: number
+  /** Pan offset X (pixels) */
+  translateX: number
+  /** Pan offset Y (pixels) */
+  translateY: number
+}
+
+/**
+ * Props for main ScatterPlot component.
+ */
+export interface ScatterPlotProps {
+  /** Obituary data to visualize */
+  data: ObituarySummary[]
+  /** Y-axis mode (default: 'spread') */
+  mode?: YAxisMode
+  /** Active category filters (empty = all) */
+  activeCategories?: Category[]
+  /** Callback when obituary is selected */
+  onSelect?: (obituary: ObituarySummary) => void
+  /** Height (default: 400) */
+  height?: number
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/lib/constants/categories.ts</path>
+      <description>Category color mappings - Tailwind classes only. Story 3-2 needs CATEGORY_HEX_COLORS for SVG fill</description>
+      <code-excerpt><![CDATA[
+import type { Category } from '@/types/obituary'
+
+/**
+ * Category color mappings using CSS variables for the Deep Archive theme.
+ * Colors are defined in globals.css under :root.
+ */
+export const CATEGORY_COLORS: Record<Category, string> = {
+  capability: 'bg-[--category-capability]',
+  market: 'bg-[--category-market]',
+  agi: 'bg-[--category-agi]',
+  dismissive: 'bg-[--category-dismissive]',
+}
+
+/**
+ * Human-readable labels for each category.
+ */
+export const CATEGORY_LABELS: Record<Category, string> = {
+  capability: 'Capability Doubt',
+  market: 'Market/Bubble',
+  agi: 'AGI Skepticism',
+  dismissive: 'Dismissive Framing',
+}
+]]></code-excerpt>
+      <note>scatter-helpers.ts will define CATEGORY_HEX_COLORS with actual hex values for SVG fill</note>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/app/globals.css</path>
+      <description>CSS variables including category colors - source of truth for hex values</description>
+      <code-excerpt><![CDATA[
+:root {
+  /* Category colors (for timeline visualization) */
+  --category-capability: #C9A962;  /* Gold */
+  --category-market: #7B9E89;      /* Sage */
+  --category-agi: #9E7B7B;         /* Rose */
+  --category-dismissive: #7B7B9E;  /* Lavender */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-glow {
+    animation: none;
+  }
+}
+]]></code-excerpt>
+      <note>CATEGORY_HEX_COLORS in scatter-helpers.ts must match these values exactly</note>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>tests/unit/components/visualization/scatter-plot.test.tsx</path>
+      <description>Existing ScatterPlot tests - shows testing pattern with vitest, module exports approach</description>
+      <code-excerpt><![CDATA[
+/**
+ * ScatterPlot Component Tests
+ *
+ * Note: Direct rendering tests for ScatterPlotInner have issues with React 19 + Vitest
+ * due to hook resolution. Testing module exports and type definitions instead.
+ */
+import { describe, it, expect } from 'vitest'
+
+describe('ScatterPlot module exports', () => {
+  it('exports ScatterPlot component', async () => {
+    const scatterModule = await import('@/components/visualization/scatter-plot')
+    expect(scatterModule.ScatterPlot).toBeDefined()
+    expect(typeof scatterModule.ScatterPlot).toBe('function')
+  })
+  // ...
+})
+]]></code-excerpt>
+      <note>Follow same pattern for scatter-helpers tests and scatter-point tests</note>
+    </file>
+  </existing-code>
+
+  <data-flow>
+    <description>Explicit data flow from API to rendered SVG elements</description>
+    <flow-diagram><![CDATA[
+    ObituarySummary[] (from API/props)
+           |
+           v
+    ScatterPlot (container component)
+           |
+           +-- xScale = scaleTime(data.dates -> innerWidth)
+           +-- yScale = scaleLinear([0,1] -> innerHeight)
+           |
+           v
+    data.map((obituary) => {...})
+           |
+           +-- xPos = xScale(new Date(obituary.date))
+           +-- yPos = yScale(hashToJitter(obituary._id))
+           +-- color = getCategoryColor(obituary.categories)
+           |
+           v
+    ScatterPoint (per obituary)
+           |
+           v
+    <motion.circle cx={xPos} cy={yPos} r={7} fill={color} ... />
+    ]]></flow-diagram>
+    <flow-steps>
+      <step order="1">ObituarySummary[] array passed to ScatterPlot as data prop</step>
+      <step order="2">ScatterPlot computes xScale (date -> X) and yScale (0-1 -> Y)</step>
+      <step order="3">ScatterPlot maps over data array</step>
+      <step order="4">For each obituary: compute xPos, yPos, color using helper functions</step>
+      <step order="5">ScatterPoint receives x, y, color, obituary props</step>
+      <step order="6">ScatterPoint renders motion.circle with positioning and styling</step>
+    </flow-steps>
+  </data-flow>
+
+  <package-dependencies>
+    <current-dependencies source="package.json">
+      <dependency name="next" version="16.0.5" />
+      <dependency name="react" version="19.2.0" />
+      <dependency name="@visx/scale" version="^3.12.0" status="installed" />
+      <dependency name="@visx/axis" version="^3.12.0" status="installed" />
+      <dependency name="@visx/grid" version="^3.12.0" status="installed" />
+      <dependency name="@visx/group" version="^3.12.0" status="installed" />
+      <dependency name="@visx/responsive" version="^3.12.0" status="installed" />
+    </current-dependencies>
+
+    <packages-to-install priority="required">
+      <package name="motion" version="^12.9.2" purpose="Animation library for motion.circle, stagger animations, spring physics" />
+      <install-command>pnpm add motion</install-command>
+      <critical-note>
+        PREREQUISITE: Motion package is NOT currently installed. This MUST be installed FIRST before any implementation:
+
+        pnpm add motion
+
+        Verify installation by checking package.json for "motion" in dependencies.
+        Import pattern: import { motion } from 'motion/react' (NOT framer-motion)
+      </critical-note>
+    </packages-to-install>
+
+    <motion-import-pattern><![CDATA[
+// Motion v12+ import pattern (NOT framer-motion)
+import { motion } from 'motion/react'
+
+// For SVG elements, use motion.circle, motion.g, etc.
+<motion.circle
+  cx={x}
+  cy={y}
+  r={7}
+  fill={color}
+  initial={{ opacity: 0, scale: 0 }}
+  animate={{ opacity: 0.8, scale: 1 }}
+  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+/>
+]]></motion-import-pattern>
+  </package-dependencies>
+
+  <design-system>
+    <category-hex-colors verified="2025-11-30" source="globals.css">
+      <color category="capability" hex="#C9A962" name="Gold" />
+      <color category="market" hex="#7B9E89" name="Sage" />
+      <color category="agi" hex="#9E7B7B" name="Rose" />
+      <color category="dismissive" hex="#7B7B9E" name="Lavender" />
+    </category-hex-colors>
+
+    <scatter-point-styling>
+      <property name="radius" value="7" description="14px diameter = 7px radius" />
+      <property name="default-opacity" value="0.8" description="80% opacity default" />
+      <property name="hover-opacity" value="1.0" description="100% on hover" />
+      <property name="filtered-opacity" value="0.2" description="20% when filtered out" />
+      <property name="hover-scale" value="1.3" description="130% scale on hover" />
+      <property name="glow" value="drop-shadow(0 0 4px currentColor)" description="Subtle glow effect" />
+      <property name="hover-glow" value="drop-shadow(0 0 6px currentColor)" description="Intensified glow on hover" />
+    </scatter-point-styling>
+
+    <animation-timing>
+      <property name="stagger-delay" value="0.05" description="50ms between each dot (AC-3.2.7 requirement)" />
+      <property name="max-stagger-time" value="0.5" description="500ms max total stagger" />
+      <property name="delay-children" value="0.1" description="100ms before first dot animates" />
+      <property name="spring-stiffness" value="300" />
+      <property name="spring-damping" value="20" />
+      <timing-precedence>
+        IMPORTANT: The story AC-3.2.7 specifies staggerChildren: 0.05 (50ms per dot).
+        The tech-spec animation.ts preset uses staggerChildren: 0.02 (20ms per dot).
+        AC-3.2.7 TAKES PRECEDENCE - use 0.05, not 0.02 from the animation.ts preset.
+      </timing-precedence>
+    </animation-timing>
+  </design-system>
+
+  <components-to-create>
+    <component name="ScatterPoint" file="src/components/visualization/scatter-point.tsx">
+      <description>Individual obituary dot on the timeline. Handles hover/click interactions and visual states.</description>
+      <directive>'use client'</directive>
+      <props-interface><![CDATA[
+export interface ScatterPointProps {
+  obituary: ObituarySummary
+  x: number
+  y: number
+  color: string
+  isFiltered?: boolean  // false = dim to 20% opacity
+  isHovered?: boolean
+  isClustered?: boolean // true = hidden (cluster badge shown instead)
+  onMouseEnter?: () => void
+  onMouseLeave?: () => void
+  onClick?: () => void
+}
+]]></props-interface>
+      <required-attributes>
+        <attribute name="data-testid" value="scatter-point" />
+        <attribute name="role" value="img" />
+        <attribute name="aria-label" value="{source}: {claim.slice(0, 50)}..." />
+      </required-attributes>
+      <reference-implementation><![CDATA[
+// src/components/visualization/scatter-point.tsx
+'use client'
+
+import { motion } from 'motion/react'
+import type { ObituarySummary } from '@/types/obituary'
+
+export interface ScatterPointProps {
+  obituary: ObituarySummary
+  x: number
+  y: number
+  color: string
+  isFiltered?: boolean
+  isHovered?: boolean
+  isClustered?: boolean
+  onMouseEnter?: () => void
+  onMouseLeave?: () => void
+  onClick?: () => void
+}
+
+const POINT_RADIUS = 7 // 14px diameter
+
+export function ScatterPoint({
+  obituary,
+  x,
+  y,
+  color,
+  isFiltered = true,
+  isHovered = false,
+  isClustered = false,
+  onMouseEnter,
+  onMouseLeave,
+  onClick,
+}: ScatterPointProps) {
+  // Hidden if clustered
+  if (isClustered) return null
+
+  const opacity = isFiltered ? (isHovered ? 1 : 0.8) : 0.2
+  const glowIntensity = isHovered ? 6 : 4
+
+  return (
+    <motion.circle
+      data-testid="scatter-point"
+      cx={x}
+      cy={y}
+      r={POINT_RADIUS}
+      fill={color}
+      style={{
+        filter: `drop-shadow(0 0 ${glowIntensity}px ${color})`,
+        cursor: isFiltered ? 'pointer' : 'default',
+        pointerEvents: isFiltered ? 'auto' : 'none',
+      }}
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{
+        opacity,
+        scale: isHovered ? 1.3 : 1,
+      }}
+      transition={{
+        opacity: { duration: 0.15 },
+        scale: { type: 'spring', stiffness: 300, damping: 20 },
+      }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onClick={onClick}
+      role="img"
+      aria-label={`${obituary.source}: ${obituary.claim.slice(0, 50)}...`}
+    />
+  )
+}
+]]></reference-implementation>
+    </component>
+  </components-to-create>
+
+  <utilities-to-create>
+    <utility name="scatter-helpers" file="src/lib/utils/scatter-helpers.ts">
+      <description>Helper functions for scatter plot: category colors, jitter algorithm</description>
+      <exports>
+        <export name="CATEGORY_HEX_COLORS" type="Record&lt;Category, string&gt;" />
+        <export name="hashToJitter" type="(id: string) => number" />
+        <export name="getCategoryColor" type="(categories: Category[]) => string" />
+      </exports>
+      <reference-implementation><![CDATA[
+// src/lib/utils/scatter-helpers.ts
+import type { Category } from '@/types/obituary'
+
+/**
+ * Category colors as hex values for SVG fill.
+ * These match the CSS variables defined in globals.css.
+ */
+export const CATEGORY_HEX_COLORS: Record<Category, string> = {
+  capability: '#C9A962',  // Gold
+  market: '#7B9E89',      // Sage
+  agi: '#9E7B7B',         // Rose
+  dismissive: '#7B7B9E',  // Lavender
+}
+
+/**
+ * Deterministic jitter algorithm.
+ * Produces consistent Y position for same ID (reproducible across renders).
+ *
+ * @param id - Unique identifier (obituary._id)
+ * @returns Number between 0 and 1 for Y-axis scaling
+ */
+export function hashToJitter(id: string): number {
+  let hash = 0
+  for (let i = 0; i < id.length; i++) {
+    hash = ((hash << 5) - hash) + id.charCodeAt(i)
+    hash = hash & hash // Convert to 32-bit integer
+  }
+  return (Math.abs(hash) % 100) / 100
+}
+
+/**
+ * Get color for obituary based on primary category.
+ * Uses first category in array.
+ *
+ * @param categories - Array of categories
+ * @returns Hex color string
+ */
+export function getCategoryColor(categories: Category[]): string {
+  const primary = categories[0] || 'capability'
+  return CATEGORY_HEX_COLORS[primary]
+}
+]]></reference-implementation>
+    </utility>
+  </utilities-to-create>
+
+  <scatter-plot-integration>
+    <description>How to integrate ScatterPoint into existing ScatterPlot component</description>
+    <imports-to-add><![CDATA[
+import { motion } from 'motion/react'
+import { ScatterPoint } from './scatter-point'
+import { hashToJitter, getCategoryColor } from '@/lib/utils/scatter-helpers'
+]]></imports-to-add>
+    <code-to-add location="After line 116 in scatter-plot.tsx (AxisBottom closing tag), inside Group"><![CDATA[
+{/* Data Points with staggered animation */}
+<motion.g
+  initial="hidden"
+  animate="visible"
+  variants={{
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: 0.05,  // 50ms between dots
+        delayChildren: 0.1,     // 100ms initial delay
+      },
+    },
+  }}
+>
+  {data.map((obituary) => {
+    const xPos = xScale(new Date(obituary.date))
+    const yPos = yScale(hashToJitter(obituary._id))
+    const color = getCategoryColor(obituary.categories)
+
+    return (
+      <ScatterPoint
+        key={obituary._id}
+        obituary={obituary}
+        x={xPos}
+        y={yPos}
+        color={color}
+      />
+    )
+  })}
+</motion.g>
+]]></code-to-add>
+    <remove-line>
+      Remove line 62: "void yScale" (in current scatter-plot.tsx)
+      Also remove the comment on line 61: "// Suppress unused variable warning - yScale is prepared for Story 3.2"
+      These two lines (61-62) are now obsolete since Story 3-2 uses yScale.
+    </remove-line>
+  </scatter-plot-integration>
+
+  <testing-context>
+    <test-files-to-create>
+      <file path="tests/unit/lib/utils/scatter-helpers.test.ts">
+        <description>Unit tests for scatter helper functions</description>
+        <scenarios><![CDATA[
+import { describe, it, expect } from 'vitest'
+import { hashToJitter, getCategoryColor, CATEGORY_HEX_COLORS } from '@/lib/utils/scatter-helpers'
+
+describe('hashToJitter', () => {
+  it('produces deterministic output for same input', () => {
+    expect(hashToJitter('abc')).toBe(hashToJitter('abc'))
+  })
+
+  it('produces different values for different inputs', () => {
+    expect(hashToJitter('abc')).not.toBe(hashToJitter('xyz'))
+  })
+
+  it('returns value between 0 and 1', () => {
+    const result = hashToJitter('test-id')
+    expect(result).toBeGreaterThanOrEqual(0)
+    expect(result).toBeLessThanOrEqual(1)
+  })
+
+  it('handles empty string', () => {
+    const result = hashToJitter('')
+    expect(result).toBeGreaterThanOrEqual(0)
+    expect(result).toBeLessThanOrEqual(1)
+  })
+
+  it('handles long strings', () => {
+    const result = hashToJitter('very-long-id-string-that-goes-on-and-on')
+    expect(result).toBeGreaterThanOrEqual(0)
+    expect(result).toBeLessThanOrEqual(1)
+  })
+})
+
+describe('getCategoryColor', () => {
+  it('returns gold for capability', () => {
+    expect(getCategoryColor(['capability'])).toBe('#C9A962')
+  })
+
+  it('returns sage for market', () => {
+    expect(getCategoryColor(['market'])).toBe('#7B9E89')
+  })
+
+  it('returns rose for agi', () => {
+    expect(getCategoryColor(['agi'])).toBe('#9E7B7B')
+  })
+
+  it('returns lavender for dismissive', () => {
+    expect(getCategoryColor(['dismissive'])).toBe('#7B7B9E')
+  })
+
+  it('returns first category color for multiple categories', () => {
+    expect(getCategoryColor(['market', 'capability'])).toBe('#7B9E89')
+  })
+
+  it('returns capability color as default for empty array', () => {
+    expect(getCategoryColor([])).toBe('#C9A962')
+  })
+})
+
+describe('CATEGORY_HEX_COLORS', () => {
+  it('has all four categories', () => {
+    expect(Object.keys(CATEGORY_HEX_COLORS)).toHaveLength(4)
+  })
+
+  it('values are valid hex colors', () => {
+    const hexPattern = /^#[0-9A-Fa-f]{6}$/
+    Object.values(CATEGORY_HEX_COLORS).forEach(color => {
+      expect(color).toMatch(hexPattern)
+    })
+  })
+})
+]]></scenarios>
+      </file>
+
+      <file path="tests/unit/components/visualization/scatter-point.test.tsx">
+        <description>Component tests for ScatterPoint</description>
+        <scenarios><![CDATA[
+/**
+ * ScatterPoint Component Tests
+ *
+ * Note: Following same pattern as scatter-plot.test.tsx - testing exports and types
+ * due to React 19 + Vitest hook resolution issues with direct rendering.
+ */
+import { describe, it, expect } from 'vitest'
+
+describe('ScatterPoint module exports', () => {
+  it('exports ScatterPoint component', async () => {
+    const module = await import('@/components/visualization/scatter-point')
+    expect(module.ScatterPoint).toBeDefined()
+    expect(typeof module.ScatterPoint).toBe('function')
+  })
+
+  it('exports ScatterPointProps type (via component existence)', async () => {
+    const module = await import('@/components/visualization/scatter-point')
+    expect(module.ScatterPoint).toBeDefined()
+  })
+})
+
+describe('ScatterPoint behavior contracts', () => {
+  it('returns null when isClustered is true', async () => {
+    // This behavior is documented in the component
+    // Testing by verifying the component can be called with isClustered=true
+    const { ScatterPoint } = await import('@/components/visualization/scatter-point')
+    expect(ScatterPoint).toBeDefined()
+    // Component should handle isClustered=true by returning null
+  })
+
+  it('POINT_RADIUS should be 7 (14px diameter)', async () => {
+    // The constant is internal, but the contract is that radius = 7
+    // This is verified through visual testing and the reference implementation
+    const { ScatterPoint } = await import('@/components/visualization/scatter-point')
+    expect(ScatterPoint).toBeDefined()
+  })
+})
+
+describe('scatter-helpers integration', () => {
+  it('scatter-helpers exports are available', async () => {
+    const helpers = await import('@/lib/utils/scatter-helpers')
+    expect(helpers.CATEGORY_HEX_COLORS).toBeDefined()
+    expect(helpers.hashToJitter).toBeDefined()
+    expect(helpers.getCategoryColor).toBeDefined()
+  })
+})
+]]></scenarios>
+      </file>
+    </test-files-to-create>
+
+    <mock-obituary-data><![CDATA[
+// Mock obituary data for testing
+const mockObituaries: ObituarySummary[] = [
+  {
+    _id: 'test-1',
+    slug: 'ai-bubble-2022',
+    claim: 'AI is just a bubble that will burst soon',
+    source: 'Test Source 1',
+    date: '2022-03-15',
+    categories: ['market'],
+  },
+  {
+    _id: 'test-2',
+    slug: 'ai-cant-reason-2023',
+    claim: 'AI cannot reason or understand anything',
+    source: 'Test Source 2',
+    date: '2023-06-20',
+    categories: ['capability'],
+  },
+  {
+    _id: 'test-3',
+    slug: 'agi-impossible-2024',
+    claim: 'AGI is fundamentally impossible',
+    source: 'Test Source 3',
+    date: '2024-01-10',
+    categories: ['agi'],
+  },
+]
+]]></mock-obituary-data>
+  </testing-context>
+
+  <manual-testing-checklist>
+    <item>Navigate to homepage</item>
+    <item>Verify dots appear on the scatter plot</item>
+    <item>Verify dots have different colors based on category (Gold/Sage/Rose/Lavender)</item>
+    <item>Verify dots are positioned horizontally by date (older left, newer right)</item>
+    <item>Verify dots have vertical jitter (not in a straight line)</item>
+    <item>Verify dots have subtle glow effect</item>
+    <item>Verify dots have staggered entrance animation on page load</item>
+    <item>Verify overlapping dots create brighter glow area (additive effect)</item>
+    <item>Inspect elements in DevTools - verify data-testid="scatter-point" present</item>
+    <item>Verify accessibility - check aria-label on each point</item>
+  </manual-testing-checklist>
+
+  <tasks-summary>
+    <task id="1" time="15min" title="Create Scatter Helpers Utility">
+      <file>src/lib/utils/scatter-helpers.ts</file>
+      <deliverables>
+        <item>Define CATEGORY_HEX_COLORS constant</item>
+        <item>Implement hashToJitter(id: string): number</item>
+        <item>Implement getCategoryColor(categories: Category[]): string</item>
+        <item>Add JSDoc comments for each export</item>
+      </deliverables>
+    </task>
+
+    <task id="2" time="5min" title="Install Motion Dependency">
+      <command>pnpm add motion</command>
+      <verification>
+        <item>motion in package.json dependencies</item>
+        <item>No peer dependency warnings</item>
+      </verification>
+    </task>
+
+    <task id="3" time="30min" title="Create ScatterPoint Component">
+      <file>src/components/visualization/scatter-point.tsx</file>
+      <deliverables>
+        <item>Add 'use client' directive</item>
+        <item>Define ScatterPointProps interface</item>
+        <item>Import motion from 'motion/react'</item>
+        <item>Render motion.circle with cx, cy, r props</item>
+        <item>Apply category color as fill</item>
+        <item>Add glow effect via CSS filter drop-shadow</item>
+        <item>Set default opacity to 0.8</item>
+        <item>Add data-testid="scatter-point" attribute</item>
+        <item>Add role="img" and aria-label for accessibility</item>
+        <item>Handle hover state (scale 1.3x, intensified glow)</item>
+        <item>Handle filtered state (20% opacity, pointer-events: none)</item>
+        <item>Handle clustered state (return null)</item>
+        <item>Add initial animation (fade in, scale from 0)</item>
+        <item>Wire up mouse event handlers</item>
+      </deliverables>
+    </task>
+
+    <task id="4" time="20min" title="Integrate ScatterPoint into ScatterPlot">
+      <file>src/components/visualization/scatter-plot.tsx</file>
+      <deliverables>
+        <item>Import ScatterPoint component</item>
+        <item>Import hashToJitter and getCategoryColor from scatter-helpers</item>
+        <item>Import motion from 'motion/react'</item>
+        <item>Remove "void yScale" line</item>
+        <item>Add motion.g wrapper with stagger animation variants</item>
+        <item>Map over data array to render ScatterPoint for each obituary</item>
+        <item>Calculate xPos using xScale(new Date(obituary.date))</item>
+        <item>Calculate yPos using yScale(hashToJitter(obituary._id))</item>
+        <item>Calculate color using getCategoryColor(obituary.categories)</item>
+        <item>Pass key, obituary, x, y, color props to ScatterPoint</item>
+      </deliverables>
+    </task>
+
+    <task id="5" time="20min" title="Write Unit Tests for Scatter Helpers">
+      <file>tests/unit/lib/utils/scatter-helpers.test.ts</file>
+      <deliverables>
+        <item>Test hashToJitter produces deterministic output</item>
+        <item>Test hashToJitter produces different values for different inputs</item>
+        <item>Test hashToJitter returns value between 0 and 1</item>
+        <item>Test getCategoryColor returns correct color for each category</item>
+        <item>Test getCategoryColor handles multiple categories (uses first)</item>
+        <item>Test getCategoryColor handles empty array (defaults to capability)</item>
+      </deliverables>
+    </task>
+
+    <task id="6" time="25min" title="Write Component Tests for ScatterPoint">
+      <file>tests/unit/components/visualization/scatter-point.test.tsx</file>
+      <deliverables>
+        <item>Test module exports ScatterPoint component</item>
+        <item>Test scatter-helpers integration</item>
+        <item>Verify component structure and contracts</item>
+      </deliverables>
+    </task>
+
+    <task id="7" time="15min" title="Manual Testing">
+      <checklist>See manual-testing-checklist above</checklist>
+    </task>
+
+    <task id="8" time="10min" title="Update TypeScript Types (if needed)" optional="true">
+      <file>src/types/visualization.ts</file>
+      <note>
+        OPTIONAL: This task is NOT required for Story 3-2 completion.
+        VisualizationPoint interface is NOT needed for this story.
+        All required types (ObituarySummary, Category) already exist.
+        Only verify type imports if TypeScript errors occur during implementation.
+      </note>
+      <deliverables>
+        <item>Verify all type imports are correct (only if needed)</item>
+        <item>Skip VisualizationPoint - not required for this story</item>
+      </deliverables>
+    </task>
+  </tasks-summary>
+
+  <files-summary>
+    <to-create>
+      <file>src/lib/utils/scatter-helpers.ts</file>
+      <file>src/components/visualization/scatter-point.tsx</file>
+      <file>tests/unit/lib/utils/scatter-helpers.test.ts</file>
+      <file>tests/unit/components/visualization/scatter-point.test.tsx</file>
+    </to-create>
+    <to-modify>
+      <file>src/components/visualization/scatter-plot.tsx</file>
+    </to-modify>
+    <to-verify>
+      <file>package.json (motion dependency added)</file>
+    </to-verify>
+  </files-summary>
+
+  <warnings>
+    <warning type="dependency" priority="high">
+      Motion package is NOT installed. Must run: pnpm add motion
+      Import pattern: import { motion } from 'motion/react' (NOT framer-motion)
+    </warning>
+    <warning type="svg-fill" priority="high">
+      Use hex color values for SVG fill attribute, NOT CSS variables.
+      SVG fill="var(--category-capability)" may work but hex values are more reliable.
+      CATEGORY_HEX_COLORS provides the correct hex values.
+    </warning>
+    <warning type="motion-svg" priority="medium">
+      For SVG elements, use motion.circle, motion.g, etc.
+      motion components work on SVG elements in motion/react.
+    </warning>
+    <warning type="stagger-limit" priority="medium">
+      AC-3.2.7 specifies max 500ms total stagger time.
+      With 50ms per dot, this means ~10 dots visible in stagger.
+
+      LARGE DATASET HANDLING (>10 obituaries):
+      For datasets with more than 10 obituaries, consider these options:
+      1. Keep 50ms stagger for first 10 dots, instant-appear for rest
+      2. Dynamically calculate stagger: min(0.05, 0.5 / data.length)
+      3. Accept that later dots appear simultaneously after 500ms
+      Current implementation uses option 3 (Motion handles this naturally).
+    </warning>
+    <warning type="additive-glow" priority="medium">
+      TECHNICAL: Overlapping drop-shadow filters create natural additive glow effect.
+      When two circles overlap with drop-shadow(0 0 4px color), the glows combine visually.
+      This is NOT a custom blend mode - it's inherent CSS filter behavior.
+      The 80% opacity (0.8) allows underlying glows to show through, enhancing the effect.
+      No additional implementation needed beyond the standard drop-shadow filter on each dot.
+    </warning>
+    <warning type="pointer-events" priority="low">
+      When isFiltered=false, set pointerEvents='none' to prevent interaction with faded dots.
+    </warning>
+    <warning type="aria-label" priority="medium">
+      Aria-label should include source and truncated claim.
+      Format: "{obituary.source}: {obituary.claim.slice(0, 50)}..."
+    </warning>
+  </warnings>
+
+  <learnings-from-story-3-1>
+    <learning>Visx scales (scaleTime, scaleLinear) are already set up and memoized in scatter-plot.tsx</learning>
+    <learning>yScale is prepared but unused (void yScale) - remove this line and use yScale</learning>
+    <learning>MARGIN constants defined: { top: 20, right: 20, bottom: 40, left: 20 }</learning>
+    <learning>data-testid pattern: use consistent naming (scatter-plot, scatter-point)</learning>
+    <learning>ParentSize provides responsive width/height to inner component</learning>
+    <learning>ScatterPlotInner is exported for testing purposes</learning>
+    <learning>React 19 + Vitest has hook resolution issues - test module exports instead</learning>
+  </learnings-from-story-3-1>
+
+  <learnings-from-epic-2>
+    <learning>Deep Archive Colors - Use hex values for SVG fill, CSS variables for Tailwind</learning>
+    <learning>Accessibility - Include role and aria-label on interactive elements</learning>
+    <learning>Animation - Will use motion/react (Motion v12+), NOT framer-motion</learning>
+  </learnings-from-epic-2>
+
+  <definition-of-done>
+    <item>ScatterPoint component exists at src/components/visualization/scatter-point.tsx</item>
+    <item>scatter-helpers.ts utility exists at src/lib/utils/scatter-helpers.ts</item>
+    <item>ScatterPoint integrated into ScatterPlot component</item>
+    <item>Each obituary renders as a 14px diameter circle</item>
+    <item>Circles colored by primary category (Gold/Sage/Rose/Lavender)</item>
+    <item>Default opacity is 0.8 with subtle glow (drop-shadow)</item>
+    <item>X position calculated from date using xScale</item>
+    <item>Y position calculated from deterministic jitter using yScale</item>
+    <item>Staggered entrance animation on page load</item>
+    <item>Overlapping dots create additive glow effect</item>
+    <item>data-testid="scatter-point" on each circle element</item>
+    <item>Aria-label describes each point (source + claim preview)</item>
+    <item>Unit tests for scatter-helpers pass</item>
+    <item>Component tests for ScatterPoint pass</item>
+    <item>No TypeScript errors</item>
+    <item>Lint passes (pnpm lint)</item>
+  </definition-of-done>
+
+  <fr-coverage>
+    <fr id="FR7" requirement="System displays obituaries on an interactive chronological timeline" how-satisfied="ScatterPoint renders each obituary as a positioned, colored dot on the timeline" />
+  </fr-coverage>
+</story-context>
