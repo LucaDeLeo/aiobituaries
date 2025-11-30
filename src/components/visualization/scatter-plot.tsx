@@ -20,6 +20,7 @@ import { ScatterPoint } from './scatter-point'
 import { ZoomControls } from './zoom-controls'
 import { ClusterBadge } from './cluster-badge'
 import { TooltipCard } from './tooltip-card'
+import { ObituaryModal } from '@/components/obituary/obituary-modal'
 import { hashToJitter, getCategoryColor } from '@/lib/utils/scatter-helpers'
 import { useZoom, MAX_SCALE } from '@/lib/hooks/use-zoom'
 import { SPRINGS } from '@/lib/utils/animation'
@@ -176,6 +177,11 @@ export function ScatterPlotInner({
   const [containerBounds, setContainerBounds] = useState<DOMRect | null>(null)
   const tooltipTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Modal state
+  const [selectedSummary, setSelectedSummary] = useState<ObituarySummary | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const clickedPointRef = useRef<HTMLElement | null>(null)
+
   // Compute inner dimensions
   const innerWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
   const innerHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
@@ -308,6 +314,25 @@ export function ScatterPlotInner({
     // Clear states immediately
     setHoveredId(null)
     setTooltipData(null)
+  }, [])
+
+  // Handler for point click
+  const handlePointClick = useCallback(
+    (obituary: ObituarySummary, element: HTMLElement) => {
+      setSelectedSummary(obituary)
+      setIsModalOpen(true)
+      clickedPointRef.current = element
+    },
+    []
+  )
+
+  // Handler for modal close
+  const handleModalClose = useCallback(() => {
+    setIsModalOpen(false)
+    // Delay clearing selectedSummary to allow exit animation
+    setTimeout(() => {
+      setSelectedSummary(null)
+    }, 300)
   }, [])
 
   // Cleanup tooltip timeout on unmount
@@ -641,6 +666,7 @@ export function ScatterPlotInner({
                     isHovered={hoveredId === obituary._id}
                     onMouseEnter={() => handlePointMouseEnter(obituary, xPos, yPos)}
                     onMouseLeave={handlePointMouseLeave}
+                    onClick={(element) => handlePointClick(obituary, element)}
                   />
                 )
               })}
@@ -684,6 +710,14 @@ export function ScatterPlotInner({
           />
         )}
       </AnimatePresence>
+
+      {/* Obituary Modal */}
+      <ObituaryModal
+        selectedSummary={selectedSummary}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        triggerRef={clickedPointRef}
+      />
     </div>
   )
 }

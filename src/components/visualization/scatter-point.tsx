@@ -1,5 +1,6 @@
 'use client'
 
+import { useRef } from 'react'
 import { motion } from 'motion/react'
 import type { ObituarySummary } from '@/types/obituary'
 
@@ -13,7 +14,7 @@ export interface ScatterPointProps {
   isClustered?: boolean
   onMouseEnter?: () => void
   onMouseLeave?: () => void
-  onClick?: () => void
+  onClick?: (element: HTMLElement) => void
 }
 
 const POINT_RADIUS = 7 // 14px diameter
@@ -30,14 +31,23 @@ export function ScatterPoint({
   onMouseLeave,
   onClick,
 }: ScatterPointProps) {
+  const circleRef = useRef<SVGCircleElement>(null)
+
   // Hidden if clustered
   if (isClustered) return null
 
   const opacity = isFiltered ? (isHovered ? 1 : 0.8) : 0.2
   const glowIntensity = isHovered ? 6 : 4
 
+  const handleClick = () => {
+    if (circleRef.current && onClick) {
+      onClick(circleRef.current as unknown as HTMLElement)
+    }
+  }
+
   return (
     <motion.circle
+      ref={circleRef}
       data-testid="scatter-point"
       cx={x}
       cy={y}
@@ -59,7 +69,7 @@ export function ScatterPoint({
       }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      onClick={onClick}
+      onClick={handleClick}
       role="img"
       aria-label={`${obituary.source}: ${obituary.claim.slice(0, 50)}...`}
     />

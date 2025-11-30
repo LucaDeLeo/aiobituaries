@@ -1,0 +1,881 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Story Context for: Story 3-7 Click to Modal
+Generated: 2025-11-30
+Epic: Epic 3 - Timeline Visualization
+Purpose: Single source of truth for implementing click-to-modal functionality
+-->
+
+<story-context>
+  <metadata>
+    <story-key>3-7-click-to-modal</story-key>
+    <story-title>Click to Modal</story-title>
+    <epic-id>3</epic-id>
+    <epic-title>Timeline Visualization</epic-title>
+    <status>ready-for-dev</status>
+    <created>2025-11-30</created>
+  </metadata>
+
+  <!-- ========== STORY REFERENCE ========== -->
+  <story-reference>
+    <file>docs/sprint-artifacts/stories/3-7-click-to-modal.md</file>
+    <description>Complete story specification with user story, acceptance criteria, technical approach, tasks, and test scenarios</description>
+  </story-reference>
+
+  <!-- ========== EPIC CONTEXT ========== -->
+  <epic-context>
+    <epic-file>docs/sprint-artifacts/epic-tech-specs/epic-3-tech-spec.md</epic-file>
+    <relevant-sections>
+      <section id="4.7" title="ObituaryModal Component Specification">
+        <location>Lines 729-767</location>
+        <summary>Complete specification for ObituaryModal component including props, content layout, animation, and implementation using shadcn/ui Sheet</summary>
+        <key-points>
+          <point>Use shadcn/ui Sheet component with side="right"</point>
+          <point>Content layout: Close button, claim, source with link, date, category badges, context section, action buttons</point>
+          <point>Animation: Slides in from right edge (300ms ease-out), backdrop with blur</point>
+          <point>Focus trap within modal, Escape/backdrop close behavior</point>
+          <point>Reuse ObituaryContext from Epic 2, CopyButton from Epic 2</point>
+          <point>Required data-testid="obituary-modal" for testing</point>
+        </key-points>
+      </section>
+      <section id="6.1" title="Animation Presets">
+        <location>Lines 810-925</location>
+        <summary>Shared animation configuration including modalSlideIn variants</summary>
+        <key-points>
+          <point>modalSlideIn variants: initial: { x: '100%', opacity: 0 }, animate: { x: 0, opacity: 1 }, exit: { x: '100%', opacity: 0 }</point>
+          <point>DURATIONS.slow = 0.3 (300ms for modal open/close)</point>
+          <point>Reduced motion support via shouldReduceMotion() function</point>
+        </key-points>
+      </section>
+      <section id="5.3" title="Full Obituary Fetch for Modal">
+        <location>Lines 790-803</location>
+        <summary>Data fetching strategy when user clicks a point</summary>
+        <key-points>
+          <point>ScatterPoint receives ObituarySummary (lightweight data)</point>
+          <point>On click, fetch full Obituary with context using getObituaryBySlug</point>
+          <point>Show loading state while fetching</point>
+          <point>Handle errors gracefully</point>
+        </key-points>
+      </section>
+    </relevant-sections>
+  </epic-context>
+
+  <!-- ========== DOCUMENTATION ARTIFACTS ========== -->
+  <documentation>
+    <artifact type="story">
+      <path>docs/sprint-artifacts/stories/3-7-click-to-modal.md</path>
+      <description>Story 3-7 specification including acceptance criteria, technical approach, reference implementation, tasks, dependencies, and test scenarios</description>
+      <relevance>Primary specification document - defines all requirements and implementation guidance</relevance>
+    </artifact>
+
+    <artifact type="epic-tech-spec">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-3-tech-spec.md</path>
+      <description>Epic 3 technical specification with component specs, animation presets, data flow, and integration points</description>
+      <relevance>Provides ObituaryModal component specification (Section 4.7), modalSlideIn animation variants (Section 6.1), and data fetching strategy (Section 5.3)</relevance>
+    </artifact>
+  </documentation>
+
+  <!-- ========== EXISTING CODE INTERFACES ========== -->
+  <existing-code>
+    <interface type="component">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>Main timeline visualization component managing zoom, pan, hover, and selection state</description>
+      <key-exports>
+        <export name="ScatterPlot">Main container component with ParentSize wrapper</export>
+        <export name="ScatterPlotInner">Inner component with state management, currently handles hover tooltips</export>
+      </key-exports>
+      <integration-points>
+        <point>Add selectedSummary state: useState&lt;ObituarySummary | null&gt;(null)</point>
+        <point>Add isModalOpen state: useState&lt;boolean&gt;(false)</point>
+        <point>Add clickedPointRef: useRef&lt;HTMLElement | null&gt;(null)</point>
+        <point>Create handlePointClick callback to set selectedSummary, isModalOpen=true, store element ref</point>
+        <point>Create handleModalClose callback to set isModalOpen=false, delay clearing selectedSummary (300ms)</point>
+        <point>Update ScatterPoint onClick prop to pass handlePointClick with obituary and element</point>
+        <point>Render ObituaryModal component after SVG with selectedSummary, isModalOpen, handleModalClose, clickedPointRef props</point>
+      </integration-points>
+      <patterns-to-follow>
+        <pattern>Tooltip pattern: State managed in ScatterPlotInner, positioned outside SVG, AnimatePresence wrapper</pattern>
+        <pattern>Focus management: Store trigger element ref for restoration after modal close</pattern>
+        <pattern>Motion integration: Use motion components from motion/react, spring animations via SPRINGS presets</pattern>
+      </patterns-to-follow>
+    </interface>
+
+    <interface type="component">
+      <path>src/components/visualization/scatter-point.tsx</path>
+      <description>Individual obituary dot on timeline with hover/click interactions</description>
+      <current-props>
+        <prop name="obituary" type="ObituarySummary">Obituary data</prop>
+        <prop name="x" type="number">X coordinate</prop>
+        <prop name="y" type="number">Y coordinate</prop>
+        <prop name="color" type="string">Category color</prop>
+        <prop name="isFiltered" type="boolean" optional="true">Filter state</prop>
+        <prop name="isHovered" type="boolean" optional="true">Hover state</prop>
+        <prop name="isClustered" type="boolean" optional="true">Cluster state</prop>
+        <prop name="onMouseEnter" type="function" optional="true">Hover enter handler</prop>
+        <prop name="onMouseLeave" type="function" optional="true">Hover leave handler</prop>
+        <prop name="onClick" type="function" optional="true">Click handler - CURRENTLY UNUSED, needs implementation</prop>
+      </current-props>
+      <required-changes>
+        <change>Update onClick prop signature to: (element: HTMLElement) =&gt; void</change>
+        <change>Add circleRef: useRef&lt;SVGCircleElement&gt;(null)</change>
+        <change>Attach ref to motion.circle element</change>
+        <change>Create handleClick function that calls onClick prop with circleRef.current</change>
+        <change>Add onClick={handleClick} to motion.circle</change>
+        <change>Cursor already set to 'pointer' when isFiltered=true</change>
+      </required-changes>
+    </interface>
+
+    <interface type="component">
+      <path>src/components/obituary/obituary-context.tsx</path>
+      <description>Reusable component for displaying contextual data (stock prices, benchmarks, milestones)</description>
+      <signature>
+        function ObituaryContext({ context }: { context: ContextMetadata }): JSX.Element
+      </signature>
+      <usage-in-modal>
+        Render in modal content after category badges, wrapped in border-t section
+      </usage-in-modal>
+      <note>Component handles empty/partial context gracefully - safe to pass context even if some fields are undefined</note>
+    </interface>
+
+    <interface type="component">
+      <path>src/components/ui/copy-button.tsx</path>
+      <description>Button component for copying current page URL to clipboard</description>
+      <current-signature>
+        function CopyButton({ className }: { className?: string }): JSX.Element
+      </current-signature>
+      <current-behavior>
+        Copies window.location.href to clipboard, shows toast notification, toggles between Link2 and Check icons
+      </current-behavior>
+      <required-changes>
+        <change type="props">Add "text" prop to allow custom URL instead of always using window.location.href</change>
+        <change type="props">Add "label" prop to customize button text (default: "Copy link")</change>
+        <change type="signature">New signature: ({ text, label, className }: { text?: string, label?: string, className?: string })</change>
+        <change type="implementation">Use text prop if provided, otherwise fallback to window.location.href</change>
+        <change type="implementation">Use label prop if provided, otherwise fallback to "Copy link" / "Copied!"</change>
+      </required-changes>
+      <modal-usage>
+        &lt;CopyButton text={`${window.location.origin}/obituary/${obituary.slug}`} label="Copy link" /&gt;
+      </modal-usage>
+    </interface>
+
+    <interface type="component">
+      <path>src/components/ui/sheet.tsx</path>
+      <description>shadcn/ui Sheet component (drawer/modal) built on Radix UI Dialog</description>
+      <exports>
+        <export name="Sheet">Root component - accepts open, onOpenChange props</export>
+        <export name="SheetContent">Content container - accepts side prop ("right", "left", "top", "bottom")</export>
+        <export name="SheetHeader">Header section wrapper</export>
+        <export name="SheetTitle">Accessible title (required for a11y, can be sr-only)</export>
+        <export name="SheetClose">Close button component</export>
+      </exports>
+      <built-in-features>
+        <feature>Focus trap automatically handled by Radix Dialog</feature>
+        <feature>Escape key closes modal</feature>
+        <feature>Backdrop click closes modal</feature>
+        <feature>Slide-in/out animations via Tailwind classes</feature>
+        <feature>Close button (X) automatically rendered in top-right corner</feature>
+      </built-in-features>
+      <usage-pattern>
+        &lt;Sheet open={isOpen} onOpenChange={handleClose}&gt;
+          &lt;SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto"&gt;
+            &lt;SheetHeader&gt;&lt;SheetTitle className="sr-only"&gt;Title&lt;/SheetTitle&gt;&lt;/SheetHeader&gt;
+            {content}
+          &lt;/SheetContent&gt;
+        &lt;/Sheet&gt;
+      </usage-pattern>
+    </interface>
+
+    <interface type="utility">
+      <path>src/lib/utils/animation.ts</path>
+      <description>Animation presets and utilities for consistent motion behavior</description>
+      <exports>
+        <export name="DURATIONS">Duration presets: fast (0.15s), normal (0.2s), slow (0.3s)</export>
+        <export name="SPRINGS">Spring configs: hover, zoom, pan</export>
+        <export name="tooltipAppear">Variants for tooltip fade-in</export>
+        <export name="shouldReduceMotion">Function to check prefers-reduced-motion</export>
+      </exports>
+      <required-addition>
+        <name>modalSlideIn</name>
+        <type>Variants</type>
+        <definition>
+          export const modalSlideIn: Variants = {
+            initial: { x: '100%', opacity: 0 },
+            animate: { x: 0, opacity: 1 },
+            exit: { x: '100%', opacity: 0 },
+          }
+        </definition>
+        <note>Check if modalSlideIn already exists before adding (may have been added in previous story)</note>
+      </required-addition>
+    </interface>
+
+    <interface type="query">
+      <path>src/lib/sanity/queries.ts</path>
+      <description>Sanity CMS query functions for fetching obituary data</description>
+      <relevant-function>
+        <name>getObituaryBySlug</name>
+        <signature>async function getObituaryBySlug(slug: string): Promise&lt;Obituary | null&gt;</signature>
+        <returns>Full Obituary object with context, sourceUrl, or null if not found</returns>
+        <cache-strategy>Uses ISR with 'obituaries' tag for cache revalidation</cache-strategy>
+        <fallback>Returns mock data if CMS unavailable or slug not found</fallback>
+      </relevant-function>
+      <usage-in-modal>
+        Call when modal opens to fetch full obituary data from selectedSummary.slug
+      </usage-in-modal>
+    </interface>
+
+    <interface type="utility">
+      <path>src/lib/utils/scatter-helpers.ts</path>
+      <description>Helper functions for scatter plot (jitter, colors)</description>
+      <relevant-function>
+        <name>getCategoryColor</name>
+        <signature>function getCategoryColor(categories: Category[]): string</signature>
+        <returns>Hex color string for category badges</returns>
+        <usage>Apply to Badge component style for border and text color</usage>
+      </relevant-function>
+    </interface>
+
+    <interface type="type">
+      <path>src/types/obituary.ts</path>
+      <description>Core obituary type definitions</description>
+      <types>
+        <type name="Category">'market' | 'capability' | 'agi' | 'dismissive'</type>
+        <type name="ObituarySummary">Lightweight type: _id, slug, claim, source, date, categories (excludes context, sourceUrl)</type>
+        <type name="Obituary">Full type extends ObituarySummary: adds sourceUrl, context (ContextMetadata)</type>
+      </types>
+      <note>Modal receives ObituarySummary initially, fetches full Obituary for display</note>
+    </interface>
+
+    <interface type="type">
+      <path>src/types/visualization.ts</path>
+      <description>Visualization-specific type definitions</description>
+      <relevant-types>
+        <type name="TooltipData">{ obituary: ObituarySummary, x: number, y: number }</type>
+      </relevant-types>
+      <note>Modal doesn't need new types - uses existing Obituary and ObituarySummary from obituary.ts</note>
+    </interface>
+  </existing-code>
+
+  <!-- ========== DEVELOPMENT CONSTRAINTS ========== -->
+  <constraints>
+    <architectural>
+      <constraint id="arch-1">
+        <title>Client Component Requirement</title>
+        <description>ObituaryModal must use 'use client' directive - requires DOM/interactivity for focus management and data fetching</description>
+        <rationale>Sheet component, useEffect for data fetching, useState for loading/error states all require client-side execution</rationale>
+      </constraint>
+
+      <constraint id="arch-2">
+        <title>Focus Management Pattern</title>
+        <description>Must restore focus to clicked dot after modal closes</description>
+        <implementation>Store ref to trigger element, use setTimeout with 250ms delay (allows exit animation), then focus trigger element</implementation>
+        <rationale>Accessibility requirement - keyboard users need focus returned to context after modal dismissal</rationale>
+      </constraint>
+
+      <constraint id="arch-3">
+        <title>Data Fetching Strategy</title>
+        <description>Modal fetches full Obituary data on open, shows loading state during fetch</description>
+        <rationale>ScatterPoint only has ObituarySummary (no context or sourceUrl). Modal needs full data for context section and source link</rationale>
+        <implementation>useEffect with [isOpen, selectedSummary] dependencies, fetch getObituaryBySlug(selectedSummary.slug)</implementation>
+      </constraint>
+
+      <constraint id="arch-4">
+        <title>Animation Timing</title>
+        <description>Modal slide-in: 300ms ease-out (entry), 200ms ease-in (exit)</description>
+        <rationale>Specified in Epic 3 tech spec Section 6.1, matches Sheet component default animation duration</rationale>
+      </constraint>
+
+      <constraint id="arch-5">
+        <title>Component Reuse Pattern</title>
+        <description>Reuse ObituaryContext and CopyButton components from Epic 2</description>
+        <rationale>Consistency with full obituary page, DRY principle</rationale>
+        <note>CopyButton needs props update to accept custom text/label</note>
+      </constraint>
+    </architectural>
+
+    <technical>
+      <constraint id="tech-1">
+        <title>Motion Library Integration</title>
+        <description>Use motion/react for animations, apply modalSlideIn variants</description>
+        <implementation>Wrap content in motion.div with variants={modalSlideIn}, transition={{ duration: 0.3, ease: 'easeOut' }}</implementation>
+      </constraint>
+
+      <constraint id="tech-2">
+        <title>Required data-testid Attribute</title>
+        <description>Add data-testid="obituary-modal" to SheetContent for E2E testing</description>
+        <rationale>Playwright tests need reliable selector to verify modal opens/closes</rationale>
+      </constraint>
+
+      <constraint id="tech-3">
+        <title>Error Handling</title>
+        <description>Handle three states: loading, error, success</description>
+        <states>
+          <state>Loading: Show centered "Loading..." message with spinner/skeleton</state>
+          <state>Error: Show centered error message in red text</state>
+          <state>Success: Render full modal content</state>
+        </states>
+      </constraint>
+
+      <constraint id="tech-4">
+        <title>TypeScript Strict Mode</title>
+        <description>All props must be properly typed, no implicit any</description>
+        <types>
+          <type>selectedSummary: ObituarySummary | null</type>
+          <type>isOpen: boolean</type>
+          <type>onClose: () =&gt; void</type>
+          <type>triggerRef?: React.RefObject&lt;HTMLElement&gt;</type>
+        </types>
+      </constraint>
+    </technical>
+
+    <styling>
+      <constraint id="style-1">
+        <title>Deep Archive Theme Compliance</title>
+        <description>Use CSS variables for all colors</description>
+        <variables>
+          <var>--text-primary: Main text (claim)</var>
+          <var>--text-secondary: Date, source</var>
+          <var>--text-error: Error messages</var>
+          <var>--accent-primary: Source link hover, category border</var>
+          <var>--border: Section separators</var>
+          <var>--bg-card: Context card backgrounds</var>
+        </variables>
+      </constraint>
+
+      <constraint id="style-2">
+        <title>Typography</title>
+        <description>Claim uses Instrument Serif font (large, readable)</description>
+        <implementation>className="text-xl sm:text-2xl font-serif leading-relaxed"</implementation>
+      </constraint>
+
+      <constraint id="style-3">
+        <title>Responsive Design</title>
+        <description>Sheet width: w-full on mobile, sm:max-w-lg on desktop</description>
+        <implementation>SheetContent className="w-full sm:max-w-lg overflow-y-auto"</implementation>
+      </constraint>
+    </styling>
+  </constraints>
+
+  <!-- ========== DEPENDENCIES ========== -->
+  <dependencies>
+    <internal>
+      <dependency type="story" status="required">
+        <id>3-1</id>
+        <title>Scatter Plot Foundation</title>
+        <reason>ScatterPlot component and container structure</reason>
+        <status>completed</status>
+      </dependency>
+
+      <dependency type="story" status="required">
+        <id>3-2</id>
+        <title>Timeline Data Points</title>
+        <reason>ScatterPoint component with click handling infrastructure</reason>
+        <status>completed</status>
+      </dependency>
+
+      <dependency type="story" status="optional">
+        <id>3-6</id>
+        <title>Hover Tooltips</title>
+        <reason>Tooltip and modal can coexist (both use AnimatePresence pattern)</reason>
+        <status>completed</status>
+        <note>Pattern reference for positioning UI outside SVG</note>
+      </dependency>
+
+      <dependency type="story" status="required">
+        <id>2-4</id>
+        <title>Contextual Snapshot Display</title>
+        <reason>ObituaryContext component for reuse in modal</reason>
+        <epic>2</epic>
+        <status>completed</status>
+      </dependency>
+
+      <dependency type="story" status="required">
+        <id>2-8</id>
+        <title>Share/Copy Link</title>
+        <reason>CopyButton component for reuse (needs props update)</reason>
+        <epic>2</epic>
+        <status>completed</status>
+      </dependency>
+    </internal>
+
+    <external>
+      <dependency type="package">
+        <name>@radix-ui/react-dialog</name>
+        <version>^1.0.0</version>
+        <usage>Sheet component foundation (already installed via shadcn/ui)</usage>
+      </dependency>
+
+      <dependency type="package">
+        <name>motion</name>
+        <version>12.9.2</version>
+        <usage>Animation for slide-in effect, motion.div wrapper</usage>
+      </dependency>
+
+      <dependency type="package">
+        <name>lucide-react</name>
+        <version>latest</version>
+        <usage>ExternalLink icon for source link</usage>
+      </dependency>
+    </external>
+  </dependencies>
+
+  <!-- ========== TESTING CONTEXT ========== -->
+  <testing>
+    <requirements>
+      <requirement id="test-1">
+        <title>Modal Opens on Click</title>
+        <ac-id>AC-3.7.1</ac-id>
+        <test-approach>Click scatter-point, verify obituary-modal becomes visible, check slide-in animation</test-approach>
+      </requirement>
+
+      <requirement id="test-2">
+        <title>Modal Content Complete</title>
+        <ac-id>AC-3.7.2</ac-id>
+        <test-approach>Verify claim, source link, date, category badges, context section all render with correct data</test-approach>
+      </requirement>
+
+      <requirement id="test-3">
+        <title>Action Buttons Present</title>
+        <ac-id>AC-3.7.3</ac-id>
+        <test-approach>Verify "View full page" button and Copy link button are visible and functional</test-approach>
+      </requirement>
+
+      <requirement id="test-4">
+        <title>Close Mechanisms</title>
+        <ac-ids>AC-3.7.5, AC-3.7.6</ac-ids>
+        <test-approach>Test Escape key, backdrop click, X button all close modal</test-approach>
+      </requirement>
+
+      <requirement id="test-5">
+        <title>Focus Management</title>
+        <ac-ids>AC-3.7.7, AC-3.7.8</ac-ids>
+        <test-approach>Verify focus moves to modal on open, returns to clicked dot on close</test-approach>
+      </requirement>
+
+      <requirement id="test-6">
+        <title>Loading and Error States</title>
+        <test-approach>Mock getObituaryBySlug to test loading spinner and error message display</test-approach>
+      </requirement>
+    </requirements>
+
+    <test-files>
+      <file>
+        <path>tests/unit/components/obituary/obituary-modal.test.tsx</path>
+        <description>Unit tests for ObituaryModal component</description>
+        <test-cases>
+          <case>Component exports successfully</case>
+          <case>Sheet component imported and used</case>
+          <case>Motion integration works (modalSlideIn variants)</case>
+          <case>ObituaryContext imported from Epic 2</case>
+          <case>CopyButton imported from Epic 2</case>
+          <case>getObituaryBySlug called when modal opens</case>
+          <case>Loading state displays</case>
+          <case>Error state displays</case>
+          <case>Full content displays with obituary data</case>
+          <case>handleClose callback triggers</case>
+          <case>Navigation to full page works</case>
+        </test-cases>
+      </file>
+
+      <file>
+        <path>tests/e2e/timeline.spec.ts</path>
+        <description>E2E tests for timeline modal interaction (extend existing file)</description>
+        <test-cases>
+          <case>Opens modal on click (already exists)</case>
+          <case>Closes modal on escape (already exists)</case>
+          <case>Add: Modal content verification</case>
+          <case>Add: Backdrop click closes</case>
+          <case>Add: Focus restoration verification</case>
+          <case>Add: View full page navigation</case>
+          <case>Add: Copy link functionality</case>
+        </test-cases>
+      </file>
+    </test-files>
+
+    <accessibility-testing>
+      <test>Keyboard navigation: Tab through modal elements (links, buttons)</test>
+      <test>Screen reader: Verify SheetTitle is accessible (sr-only is acceptable)</test>
+      <test>Focus trap: Ensure Tab cycles within modal when open</test>
+      <test>Focus restoration: Verify focus returns to trigger dot after close</test>
+      <test>Escape key: Confirm modal closes on Escape press</test>
+      <test>ARIA: Verify proper ARIA attributes on Sheet component (handled by Radix)</test>
+    </accessibility-testing>
+  </testing>
+
+  <!-- ========== IMPLEMENTATION NOTES ========== -->
+  <implementation-notes>
+    <note id="note-1" priority="high">
+      <title>CopyButton Props Update Required</title>
+      <description>CopyButton component needs props modification before use in modal</description>
+      <current-behavior>Always copies window.location.href</current-behavior>
+      <required-change>Add "text" and "label" props to allow custom URL and button text</required-change>
+      <modal-usage>Pass constructed URL: `${window.location.origin}/obituary/${obituary.slug}`</modal-usage>
+    </note>
+
+    <note id="note-2" priority="high">
+      <title>modalSlideIn Variants</title>
+      <description>Check if modalSlideIn already exists in animation.ts before adding</description>
+      <reason>May have been added in a previous story or during animation polish (Story 3-8)</reason>
+      <action>If exists, import and use. If not, add definition per tech spec Section 6.1</action>
+    </note>
+
+    <note id="note-3" priority="medium">
+      <title>Loading State Design</title>
+      <description>Loading state should be simple and non-intrusive</description>
+      <recommendation>Centered "Loading..." text with optional spinner (avoid skeleton for simplicity)</recommendation>
+      <rationale>Fetch should be fast (ISR cached), elaborate loading UI not needed</rationale>
+    </note>
+
+    <note id="note-4" priority="medium">
+      <title>Delay Clearing selectedSummary</title>
+      <description>After setting isModalOpen=false, delay clearing selectedSummary by 300ms</description>
+      <reason>Allows exit animation to complete before unmounting content</reason>
+      <implementation>setTimeout(() =&gt; setSelectedSummary(null), 300) in handleModalClose</implementation>
+    </note>
+
+    <note id="note-5" priority="low">
+      <title>Context Section Conditional Rendering</title>
+      <description>ObituaryContext component handles empty context gracefully</description>
+      <implementation>Safe to always render: {obituary.context &amp;&amp; &lt;ObituaryContext context={obituary.context} /&gt;}</implementation>
+      <note>Component shows "Context data unavailable" if all fields are undefined</note>
+    </note>
+
+    <note id="note-6" priority="high">
+      <title>Focus Restoration Timing</title>
+      <description>Focus restoration needs 250ms delay after modal close</description>
+      <reason>Allows Sheet exit animation to complete (200ms) before attempting focus</reason>
+      <implementation>setTimeout(() =&gt; triggerRef?.current?.focus(), 250)</implementation>
+    </note>
+
+    <note id="note-7" priority="medium">
+      <title>View Full Page Navigation</title>
+      <description>Use Next.js router.push for navigation, not anchor tag</description>
+      <implementation>Import useRouter from next/navigation, call router.push(`/obituary/${obituary.slug}`)</implementation>
+      <rationale>Client-side navigation, prefetching, better UX than full page reload</rationale>
+    </note>
+
+    <note id="note-8" priority="low">
+      <title>Category Badge Styling</title>
+      <description>Apply category color to both border and text using inline styles</description>
+      <implementation>
+        &lt;Badge
+          variant="outline"
+          style={{
+            borderColor: getCategoryColor([category]),
+            color: getCategoryColor([category]),
+          }}
+        &gt;{category}&lt;/Badge&gt;
+      </implementation>
+    </note>
+
+    <note id="note-9" priority="medium">
+      <title>ScatterPoint Click Handler Update</title>
+      <description>ScatterPoint already has onClick prop defined but not fully wired</description>
+      <required-changes>
+        <change>Add circleRef to capture SVG element</change>
+        <change>Update onClick signature to pass element reference</change>
+        <change>ScatterPlot passes (element) =&gt; handlePointClick(obituary, element)</change>
+      </required-changes>
+    </note>
+
+    <note id="note-10" priority="high">
+      <title>Error State Message</title>
+      <description>Distinguish between "Obituary not found" and "Failed to load obituary"</description>
+      <implementation>
+        If getObituaryBySlug returns null: setError('Obituary not found')
+        If fetch throws error: setError('Failed to load obituary')
+      </implementation>
+    </note>
+  </implementation-notes>
+
+  <!-- ========== VALIDATION CHECKLIST ========== -->
+  <validation>
+    <checklist>
+      <item id="val-1" category="functionality">
+        <check>Modal opens when timeline dot is clicked</check>
+        <ac>AC-3.7.1</ac>
+      </item>
+
+      <item id="val-2" category="functionality">
+        <check>Modal slides in from right with 300ms animation</check>
+        <ac>AC-3.7.4</ac>
+      </item>
+
+      <item id="val-3" category="content">
+        <check>Full claim text displays in large serif font</check>
+        <ac>AC-3.7.2</ac>
+      </item>
+
+      <item id="val-4" category="content">
+        <check>Source link displays with external link icon and opens in new tab</check>
+        <ac>AC-3.7.2</ac>
+      </item>
+
+      <item id="val-5" category="content">
+        <check>Date formatted and displayed correctly</check>
+        <ac>AC-3.7.2</ac>
+      </item>
+
+      <item id="val-6" category="content">
+        <check>Category badges display with correct colors</check>
+        <ac>AC-3.7.2</ac>
+      </item>
+
+      <item id="val-7" category="content">
+        <check>Context section displays when context data exists</check>
+        <ac>AC-3.7.2</ac>
+      </item>
+
+      <item id="val-8" category="functionality">
+        <check>"View full page" button navigates to /obituary/[slug]</check>
+        <ac>AC-3.7.3</ac>
+      </item>
+
+      <item id="val-9" category="functionality">
+        <check>Copy link button copies URL to clipboard</check>
+        <ac>AC-3.7.3</ac>
+      </item>
+
+      <item id="val-10" category="interaction">
+        <check>Escape key closes modal</check>
+        <ac>AC-3.7.5</ac>
+      </item>
+
+      <item id="val-11" category="interaction">
+        <check>Backdrop click closes modal</check>
+        <ac>AC-3.7.6</ac>
+      </item>
+
+      <item id="val-12" category="interaction">
+        <check>X button closes modal</check>
+        <ac>Implicit</ac>
+      </item>
+
+      <item id="val-13" category="accessibility">
+        <check>Focus moves to modal when opened</check>
+        <ac>AC-3.7.7</ac>
+      </item>
+
+      <item id="val-14" category="accessibility">
+        <check>Focus trapped within modal (Tab cycles through elements)</check>
+        <ac>AC-3.7.7</ac>
+      </item>
+
+      <item id="val-15" category="accessibility">
+        <check>Focus returns to clicked dot when modal closes</check>
+        <ac>AC-3.7.8</ac>
+      </item>
+
+      <item id="val-16" category="states">
+        <check>Loading state displays while fetching obituary data</check>
+        <ac>Implicit</ac>
+      </item>
+
+      <item id="val-17" category="states">
+        <check>Error state handles fetch failures gracefully</check>
+        <ac>Implicit</ac>
+      </item>
+
+      <item id="val-18" category="styling">
+        <check>Backdrop appears with blur effect</check>
+        <ac>AC-3.7.4</ac>
+      </item>
+
+      <item id="val-19" category="testing">
+        <check>data-testid="obituary-modal" present on modal container</check>
+        <ac>Testing requirement</ac>
+      </item>
+
+      <item id="val-20" category="typescript">
+        <check>No TypeScript errors in ObituaryModal component</check>
+        <ac>Technical requirement</ac>
+      </item>
+
+      <item id="val-21" category="responsive">
+        <check>Modal responsive on mobile (full width)</check>
+        <ac>Implicit</ac>
+      </item>
+
+      <item id="val-22" category="responsive">
+        <check>Modal max-width enforced on desktop (sm:max-w-lg)</check>
+        <ac>Implicit</ac>
+      </item>
+    </checklist>
+  </validation>
+
+  <!-- ========== REFERENCE IMPLEMENTATION ========== -->
+  <reference-implementation>
+    <note>
+      Complete reference implementation provided in story file (lines 92-330).
+      Key files to create/modify listed below with critical implementation details.
+    </note>
+
+    <file-to-create>
+      <path>src/components/obituary/obituary-modal.tsx</path>
+      <purpose>Modal component for displaying full obituary details</purpose>
+      <key-imports>
+        <import>useEffect, useState, useRef from 'react'</import>
+        <import>motion from 'motion/react'</import>
+        <import>ExternalLink from 'lucide-react'</import>
+        <import>Sheet, SheetContent, SheetHeader, SheetTitle from '@/components/ui/sheet'</import>
+        <import>Button, Badge from shadcn/ui</import>
+        <import>ObituaryContext from '@/components/obituary/obituary-context'</import>
+        <import>CopyButton from '@/components/ui/copy-button'</import>
+        <import>getObituaryBySlug from '@/lib/sanity/queries'</import>
+        <import>formatDate from '@/lib/utils/date'</import>
+        <import>getCategoryColor from '@/lib/utils/scatter-helpers'</import>
+        <import>modalSlideIn from '@/lib/utils/animation'</import>
+        <import>Obituary, ObituarySummary from '@/types/obituary'</import>
+        <import>useRouter from 'next/navigation'</import>
+      </key-imports>
+      <props-interface>
+        selectedSummary: ObituarySummary | null
+        isOpen: boolean
+        onClose: () =&gt; void
+        triggerRef?: React.RefObject&lt;HTMLElement&gt;
+      </props-interface>
+      <state-variables>
+        obituary: Obituary | null
+        isLoading: boolean
+        error: string | null
+      </state-variables>
+      <critical-logic>
+        <logic>useEffect to fetch full obituary when modal opens (dependencies: [isOpen, selectedSummary])</logic>
+        <logic>handleClose with focus restoration: onClose(), setTimeout(() =&gt; triggerRef?.current?.focus(), 250)</logic>
+        <logic>handleViewFullPage: router.push(`/obituary/${obituary.slug}`)</logic>
+        <logic>Conditional rendering: loading state, error state, success state</logic>
+      </critical-logic>
+    </file-to-create>
+
+    <file-to-modify>
+      <path>src/lib/utils/animation.ts</path>
+      <changes>
+        <change>Add modalSlideIn variants if not present (check first)</change>
+        <change>Export modalSlideIn: Variants</change>
+      </changes>
+    </file-to-modify>
+
+    <file-to-modify>
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <changes>
+        <change>Import ObituaryModal component</change>
+        <change>Add state: selectedSummary, isModalOpen, clickedPointRef</change>
+        <change>Add handlePointClick callback</change>
+        <change>Add handleModalClose callback</change>
+        <change>Update ScatterPoint onClick prop in data.map</change>
+        <change>Render ObituaryModal after SVG with props</change>
+      </changes>
+      <location>Inside ScatterPlotInner component after tooltip rendering</location>
+    </file-to-modify>
+
+    <file-to-modify>
+      <path>src/components/visualization/scatter-point.tsx</path>
+      <changes>
+        <change>Update onClick prop type: (element: HTMLElement) =&gt; void</change>
+        <change>Add circleRef: useRef&lt;SVGCircleElement&gt;(null)</change>
+        <change>Attach ref to motion.circle</change>
+        <change>Create handleClick function</change>
+        <change>Add onClick={handleClick} to motion.circle</change>
+      </changes>
+    </file-to-modify>
+
+    <file-to-modify>
+      <path>src/components/ui/copy-button.tsx</path>
+      <changes>
+        <change>Add text prop: string (optional, default: window.location.href)</change>
+        <change>Add label prop: string (optional, default: "Copy link")</change>
+        <change>Update handleCopy to use text prop</change>
+        <change>Update button text to use label prop</change>
+      </changes>
+      <backward-compatibility>Maintain backward compatibility - props are optional with sensible defaults</backward-compatibility>
+    </file-to-modify>
+  </reference-implementation>
+
+  <!-- ========== WARNINGS AND GOTCHAS ========== -->
+  <warnings>
+    <warning id="warn-1" severity="high">
+      <title>ObituarySummary vs Obituary Distinction</title>
+      <description>ScatterPoint receives ObituarySummary (no context/sourceUrl), modal needs full Obituary</description>
+      <gotcha>Don't try to access obituary.context or obituary.sourceUrl from selectedSummary - these fields don't exist on ObituarySummary</gotcha>
+      <solution>Always fetch full Obituary using getObituaryBySlug when modal opens</solution>
+    </warning>
+
+    <warning id="warn-2" severity="medium">
+      <title>Focus Restoration Timing</title>
+      <description>Attempting to focus element too early will fail</description>
+      <gotcha>If focus() called immediately after onClose(), modal is still animating out and focus is trapped</gotcha>
+      <solution>Use 250ms setTimeout to allow exit animation (200ms) to complete before focusing trigger</solution>
+    </warning>
+
+    <warning id="warn-3" severity="medium">
+      <title>State Clearing Delay</title>
+      <description>Clearing selectedSummary immediately causes content to unmount before exit animation</description>
+      <gotcha>User sees blank modal sliding out if selectedSummary cleared synchronously</gotcha>
+      <solution>Delay clearing selectedSummary by 300ms (exit animation duration) in handleModalClose</solution>
+    </warning>
+
+    <warning id="warn-4" severity="low">
+      <title>Window Object Access</title>
+      <description>window.location.origin only available in client component</description>
+      <gotcha>Can't construct URL in server component or during SSR</gotcha>
+      <solution>ObituaryModal is client component ('use client'), safe to use window.location.origin in CopyButton</solution>
+    </warning>
+
+    <warning id="warn-5" severity="medium">
+      <title>SVG Element to HTMLElement Cast</title>
+      <description>ScatterPoint circleRef is SVGCircleElement, but onClick expects HTMLElement</description>
+      <gotcha>TypeScript error if passing circleRef.current directly without cast</gotcha>
+      <solution>Cast to HTMLElement: onClick(circleRef.current as unknown as HTMLElement)</solution>
+    </warning>
+
+    <warning id="warn-6" severity="low">
+      <title>Empty Context Handling</title>
+      <description>Some obituaries may have empty or partial context data</description>
+      <gotcha>Modal should still open and display other content even if context is empty</gotcha>
+      <solution>ObituaryContext component handles empty data gracefully - safe to always render</solution>
+    </warning>
+  </warnings>
+
+  <!-- ========== SUCCESS CRITERIA ========== -->
+  <success-criteria>
+    <criterion id="success-1">
+      <title>All Acceptance Criteria Met</title>
+      <description>All 8 acceptance criteria (AC-3.7.1 through AC-3.7.8) pass manual and automated tests</description>
+    </criterion>
+
+    <criterion id="success-2">
+      <title>Unit Tests Pass</title>
+      <description>New unit test file tests/unit/components/obituary/obituary-modal.test.tsx passes with 100% coverage of ObituaryModal component</description>
+    </criterion>
+
+    <criterion id="success-3">
+      <title>E2E Tests Pass</title>
+      <description>Extended E2E tests in tests/e2e/timeline.spec.ts verify modal interaction flows</description>
+    </criterion>
+
+    <criterion id="success-4">
+      <title>No TypeScript Errors</title>
+      <description>pnpm typecheck passes with no errors in new or modified files</description>
+    </criterion>
+
+    <criterion id="success-5">
+      <title>Lint Passes</title>
+      <description>pnpm lint passes with no errors or warnings</description>
+    </criterion>
+
+    <criterion id="success-6">
+      <title>Component Reuse Verified</title>
+      <description>ObituaryContext and CopyButton components successfully reused from Epic 2 without modification to their core logic</description>
+      <note>CopyButton props updated for flexibility, but existing usage unaffected</note>
+    </criterion>
+
+    <criterion id="success-7">
+      <title>Accessibility Standards Met</title>
+      <description>Focus management, keyboard navigation, and ARIA attributes all function correctly per WCAG 2.1 AA standards</description>
+    </criterion>
+
+    <criterion id="success-8">
+      <title>Animation Performance</title>
+      <description>Modal slide-in/out runs at 60fps with no jank (verified via Chrome DevTools Performance tab)</description>
+    </criterion>
+  </success-criteria>
+</story-context>

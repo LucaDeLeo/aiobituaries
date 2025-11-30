@@ -71,3 +71,14 @@ export const tooltipAppear: Variants = {
   animate: { opacity: 1, scale: 1, y: 0 },
   exit: { opacity: 0, scale: 0.95 },
 }
+
+/**
+ * Modal slide-in animation from right.
+ * Slides in from right edge with fade-in effect.
+ * Used for obituary modal drawer component.
+ */
+export const modalSlideIn: Variants = {
+  initial: { x: '100%', opacity: 0 },
+  animate: { x: 0, opacity: 1 },
+  exit: { x: '100%', opacity: 0 },
+}

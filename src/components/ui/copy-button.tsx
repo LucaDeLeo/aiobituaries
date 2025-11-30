@@ -6,14 +6,18 @@ import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 interface CopyButtonProps {
+  /** Custom text to copy (defaults to current URL) */
+  text?: string
+  /** Custom button label (defaults to "Copy link") */
+  label?: string
   className?: string
 }
 
-export function CopyButton({ className }: CopyButtonProps) {
+export function CopyButton({ text, label, className }: CopyButtonProps) {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = async () => {
-    const url = window.location.href
+    const url = text ?? window.location.href
 
     try {
       await navigator.clipboard.writeText(url)
@@ -55,7 +59,7 @@ export function CopyButton({ className }: CopyButtonProps) {
       ) : (
         <Link2 className="w-4 h-4" />
       )}
-      {copied ? 'Copied!' : 'Copy link'}
+      {copied ? 'Copied!' : (label ?? 'Copy link')}
     </button>
   )
 }
