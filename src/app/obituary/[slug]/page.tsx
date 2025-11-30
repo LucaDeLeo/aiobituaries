@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { getObituaryBySlug, getAllObituarySlugs } from '@/lib/sanity/queries'
 import { ObituaryDetail } from '@/components/obituary/obituary-detail'
 import { ObituaryContext } from '@/components/obituary/obituary-context'
+import { JsonLd } from '@/components/seo/json-ld'
 import { generateObituaryMetadata } from '@/lib/utils/seo'
 
 interface PageProps {
@@ -42,9 +43,12 @@ export default async function ObituaryPage({ params }: PageProps) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-12">
-      <ObituaryDetail obituary={obituary} />
-      <ObituaryContext context={obituary.context} />
-    </div>
+    <>
+      <JsonLd obituary={obituary} />
+      <div className="max-w-3xl mx-auto px-4 py-12">
+        <ObituaryDetail obituary={obituary} />
+        <ObituaryContext context={obituary.context} />
+      </div>
+    </>
   )
 }
