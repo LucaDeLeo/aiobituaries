@@ -41,12 +41,12 @@ development_status:
   1-2-design-system-setup: done
   1-3-sanity-cms-integration: done
   1-4-layout-shell-and-navigation: done
-  1-5-isr-revalidation-webhook: review
+  1-5-isr-revalidation-webhook: done
   epic-1-retrospective: optional
 
   # Epic 2: Core Content Display
-  epic-2: backlog
-  2-1-hero-count-display: backlog
+  epic-2: contexted
+  2-1-hero-count-display: done
   2-2-obituary-list-display: backlog
   2-3-individual-obituary-pages: backlog
   2-4-contextual-snapshot-display: backlog

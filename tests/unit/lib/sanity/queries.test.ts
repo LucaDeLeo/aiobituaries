@@ -151,12 +151,16 @@ describe('Sanity queries', () => {
       expect(result).toBe(0)
     })
 
-    it('calls fetch with correct GROQ count query', async () => {
+    it('calls fetch with correct GROQ count query and cache tag', async () => {
       vi.mocked(client.fetch).mockResolvedValue(0)
 
       await getObituaryCount()
 
-      expect(client.fetch).toHaveBeenCalledWith('count(*[_type == "obituary"])')
+      expect(client.fetch).toHaveBeenCalledWith(
+        'count(*[_type == "obituary"])',
+        undefined,
+        { next: { tags: ['obituary'] } }
+      )
     })
   })
 })

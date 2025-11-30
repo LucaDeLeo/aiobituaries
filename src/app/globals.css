@@ -132,3 +132,24 @@
     font-family: var(--font-sans), system-ui, sans-serif;
   }
 }
+
+/* Pulsing glow animation for count display */
+@keyframes pulse-glow {
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(201, 169, 98, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(201, 169, 98, 0.6),
+                 0 0 30px rgba(201, 169, 98, 0.3);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-glow {
+    animation: none;
+  }
+}

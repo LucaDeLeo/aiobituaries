@@ -1,0 +1,778 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <metadata>
+    <story-key>2-1-hero-count-display</story-key>
+    <generated-at>2025-11-29</generated-at>
+    <epic>Epic 2 - Core Content Display</epic>
+    <status>drafted</status>
+  </metadata>
+
+  <story-summary>
+    Create a Server Component that fetches the obituary count from Sanity CMS and displays it
+    prominently on the homepage with Deep Archive theme styling. The count should use Geist Mono
+    font, gold accent color, and feature a pulsing glow animation that respects reduced motion
+    preferences. This is the first visible feature of Epic 2 that showcases "the scale of documented
+    AI skepticism" to visitors.
+  </story-summary>
+
+  <acceptance-criteria>
+    <criterion id="AC-2.1.1">
+      <description>Count displays prominently on homepage</description>
+      <testable-condition>Large number visible in hero section</testable-condition>
+      <implementation-note>Create CountDisplay component, integrate into src/app/page.tsx hero section</implementation-note>
+    </criterion>
+    <criterion id="AC-2.1.2">
+      <description>Count uses Geist Mono font</description>
+      <testable-condition>Font family is monospace (Geist Mono)</testable-condition>
+      <implementation-note>Use `font-mono` Tailwind class which maps to --font-geist-mono CSS variable</implementation-note>
+    </criterion>
+    <criterion id="AC-2.1.3">
+      <description>Count is 4rem (64px) on desktop</description>
+      <testable-condition>Computed font-size is 64px at >= 1024px viewport</testable-condition>
+      <implementation-note>Use `lg:text-[4rem]` Tailwind class</implementation-note>
+    </criterion>
+    <criterion id="AC-2.1.4">
+      <description>Count scales down on mobile</description>
+      <testable-condition>Font-size reduces appropriately at less than 768px</testable-condition>
+      <implementation-note>Use responsive sizing: `text-4xl md:text-5xl lg:text-[4rem]`</implementation-note>
+    </criterion>
+    <criterion id="AC-2.1.5">
+      <description>Count uses gold color</description>
+      <testable-condition>Text color is #C9A962 (--accent-primary)</testable-condition>
+      <implementation-note>Use `text-[--accent-primary]` Tailwind arbitrary value</implementation-note>
+    </criterion>
+    <criterion id="AC-2.1.6">
+      <description>Pulsing glow animation present</description>
+      <testable-condition>Box-shadow pulses with 3s ease-in-out infinite</testable-condition>
+      <implementation-note>Create @keyframes pulse-glow in globals.css with text-shadow animation</implementation-note>
+    </criterion>
+    <criterion id="AC-2.1.7">
+      <description>"obituaries" label displayed</description>
+      <testable-condition>Text "obituaries" appears below the number</testable-condition>
+      <implementation-note>Add label with text-[--text-secondary] for muted appearance</implementation-note>
+    </criterion>
+    <criterion id="AC-2.1.8">
+      <description>Count fetched server-side</description>
+      <testable-condition>`getObituaryCount()` called in Server Component</testable-condition>
+      <implementation-note>CountDisplay is async Server Component that awaits getObituaryCount()</implementation-note>
+    </criterion>
+    <criterion id="AC-2.1.9">
+      <description>Count formatted with locale</description>
+      <testable-condition>Number displays as "1,247" not "1247"</testable-condition>
+      <implementation-note>Use `new Intl.NumberFormat('en-US').format(count)`</implementation-note>
+    </criterion>
+    <criterion id="AC-2.1.10">
+      <description>Reduced motion disables animation</description>
+      <testable-condition>`prefers-reduced-motion: reduce` stops pulsing</testable-condition>
+      <implementation-note>Use `motion-reduce:animate-none` class AND @media query fallback</implementation-note>
+    </criterion>
+  </acceptance-criteria>
+
+  <technical-context>
+    <server-component-pattern>
+      <description>
+        Next.js Server Components (the default in App Router) can be async functions that
+        fetch data directly. No "use client" directive needed. Data fetching happens at
+        build time or request time, not on the client.
+      </description>
+      <pattern>
+        - Export async function as default or named component
+        - Await data fetching inside the component body
+        - No useState/useEffect (those require "use client")
+        - Can import from lib modules directly
+      </pattern>
+    </server-component-pattern>
+
+    <font-configuration>
+      <description>
+        Fonts are configured in src/app/layout.tsx using next/font/google.
+        CSS variables are set on the body element and mapped in globals.css.
+      </description>
+      <available-fonts>
+        <font name="Geist Sans" variable="--font-geist-sans" tailwind="font-sans">Body text</font>
+        <font name="Geist Mono" variable="--font-geist-mono" tailwind="font-mono">Numbers, code</font>
+        <font name="Instrument Serif" variable="--font-instrument-serif" tailwind="font-serif">Headlines, quotes</font>
+      </available-fonts>
+    </font-configuration>
+
+    <css-variables>
+      <description>
+        Deep Archive theme variables defined in src/app/globals.css.
+        Use Tailwind arbitrary value syntax: `text-[--variable-name]`.
+      </description>
+      <relevant-variables>
+        <variable name="--accent-primary">#C9A962 (gold)</variable>
+        <variable name="--text-primary">#E8E6E3</variable>
+        <variable name="--text-secondary">#A8A5A0</variable>
+        <variable name="--text-muted">#6B6860</variable>
+        <variable name="--bg-primary">#0C0C0F</variable>
+        <variable name="--bg-card">#18181F</variable>
+      </relevant-variables>
+    </css-variables>
+
+    <tailwind-responsive-breakpoints>
+      <breakpoint prefix="sm" min-width="640px" />
+      <breakpoint prefix="md" min-width="768px" />
+      <breakpoint prefix="lg" min-width="1024px" />
+      <breakpoint prefix="xl" min-width="1280px" />
+    </tailwind-responsive-breakpoints>
+
+    <intl-number-format>
+      <description>
+        JavaScript Intl.NumberFormat API provides locale-aware number formatting.
+        For US English, it adds comma separators for thousands.
+      </description>
+      <usage>new Intl.NumberFormat('en-US').format(1247) returns "1,247"</usage>
+    </intl-number-format>
+  </technical-context>
+
+  <existing-code>
+    <file path="src/lib/sanity/queries.ts">
+      <description>Sanity GROQ queries including getObituaryCount() function</description>
+      <relevance>Contains the data fetching function to use in CountDisplay</relevance>
+      <content><![CDATA[
+import { client } from './client'
+import type { Obituary } from '@/types/obituary'
+
+/**
+ * GROQ projection for obituary fields.
+ * Extracts slug.current as "slug" for cleaner API.
+ */
+const obituaryProjection = `{
+  _id,
+  "slug": slug.current,
+  claim,
+  source,
+  sourceUrl,
+  date,
+  categories,
+  context
+}`
+
+/**
+ * Fetch all obituaries ordered by date descending.
+ * Uses CDN for fast reads.
+ */
+export async function getObituaries(): Promise<Obituary[]> {
+  return client.fetch(
+    `*[_type == "obituary"] | order(date desc) ${obituaryProjection}`
+  )
+}
+
+/**
+ * Fetch a single obituary by slug.
+ * Returns null if not found.
+ */
+export async function getObituaryBySlug(slug: string): Promise<Obituary | null> {
+  return client.fetch(
+    `*[_type == "obituary" && slug.current == $slug][0] ${obituaryProjection}`,
+    { slug }
+  )
+}
+
+/**
+ * Get total count of obituaries.
+ * Useful for homepage statistics.
+ */
+export async function getObituaryCount(): Promise<number> {
+  return client.fetch(`count(*[_type == "obituary"])`)
+}
+      ]]></content>
+    </file>
+
+    <file path="src/app/page.tsx">
+      <description>Current homepage - will be modified to include CountDisplay</description>
+      <relevance>This is where the CountDisplay component will be integrated</relevance>
+      <content><![CDATA[
+import { Button } from "@/components/ui/button";
+
+export default function Home() {
+  return (
+    <main className="min-h-screen p-8 space-y-8">
+      {/* Typography Test */}
+      <section className="space-y-4">
+        <h1 className="font-serif text-4xl text-[--text-primary]">
+          AI Obituaries - Deep Archive Theme
+        </h1>
+        <p className="text-[--text-secondary]">
+          Testing Deep Archive theme with Instrument Serif headlines
+        </p>
+        <p className="text-[--text-muted] text-sm">
+          Muted text for captions and timestamps
+        </p>
+      </section>
+
+      {/* ... rest of theme test content ... */}
+    </main>
+  );
+}
+      ]]></content>
+      <modification-plan>
+        Replace test content with CountDisplay in hero section at the top.
+        The hero should be centered and prominently display the count.
+      </modification-plan>
+    </file>
+
+    <file path="src/app/globals.css">
+      <description>Global CSS with Deep Archive theme variables</description>
+      <relevance>Add @keyframes pulse-glow and .animate-pulse-glow class here</relevance>
+      <relevant-content><![CDATA[
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root { /* CSS variables */ }
+
+@theme inline { /* Tailwind v4 color/font mappings (lines 75-124) */ }
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans), system-ui, sans-serif;
+  }
+}
+/* END OF FILE at line 135 */
+      ]]></relevant-content>
+      <modification-plan>
+        Add AFTER the @layer base block (at end of file, line 135+):
+        1. @keyframes pulse-glow animation
+        2. .animate-pulse-glow utility class
+        3. @media (prefers-reduced-motion: reduce) override
+
+        NOTE: Tailwind v4 uses @theme inline for configuration, not @layer components.
+        Custom keyframes and utility classes go after @layer base.
+      </modification-plan>
+    </file>
+
+    <file path="src/app/layout.tsx">
+      <description>Root layout with font configuration and Header/Footer</description>
+      <relevance>Shows font setup pattern - fonts already configured correctly</relevance>
+      <content><![CDATA[
+import type { Metadata } from "next";
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import "./globals.css";
+import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
+  subsets: ["latin"],
+  weight: "400",
+});
+
+export const metadata: Metadata = {
+  title: "AI Obituaries",
+  description: "A memorial to the ever-dying predictions of AI doom",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased`}
+      >
+        <div className="flex flex-col min-h-screen">
+          <Header />
+          <main className="flex-1">
+            {children}
+          </main>
+          <Footer />
+        </div>
+      </body>
+    </html>
+  );
+}
+      ]]></content>
+    </file>
+
+    <file path="src/lib/utils.ts">
+      <description>Utility functions including cn() for class name merging</description>
+      <relevance>Use cn() for combining Tailwind classes if conditional styling needed</relevance>
+      <content><![CDATA[
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+      ]]></content>
+    </file>
+
+    <file path="src/lib/sanity/client.ts">
+      <description>Sanity client configuration</description>
+      <relevance>Used by queries.ts - no changes needed</relevance>
+      <content><![CDATA[
+import { createClient } from 'next-sanity'
+
+export const client = createClient({
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
+  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
+  apiVersion: '2024-01-01',
+  useCdn: true,
+})
+      ]]></content>
+    </file>
+
+    <file path="tests/unit/lib/sanity/queries.test.ts">
+      <description>Existing test file for Sanity queries</description>
+      <relevance>Contains test for getObituaryCount() - verify it passes</relevance>
+      <existing-tests>
+        <test>getObituaryCount returns number for count</test>
+        <test>getObituaryCount returns 0 when no obituaries exist</test>
+        <test>getObituaryCount calls fetch with correct GROQ count query</test>
+      </existing-tests>
+    </file>
+
+    <file path="tests/setup.ts">
+      <description>Vitest test setup file</description>
+      <relevance>Shows testing patterns - imports @testing-library/jest-dom</relevance>
+    </file>
+  </existing-code>
+
+  <interface-contracts>
+    <function name="getObituaryCount">
+      <signature>async function getObituaryCount(): Promise&lt;number&gt;</signature>
+      <location>src/lib/sanity/queries.ts</location>
+      <returns>Number of obituaries in Sanity CMS</returns>
+      <usage>const count = await getObituaryCount()</usage>
+    </function>
+
+    <component name="CountDisplay">
+      <signature>async function CountDisplay(): Promise&lt;JSX.Element&gt;</signature>
+      <location>src/components/obituary/count-display.tsx (to be created)</location>
+      <props>None (data fetched internally)</props>
+      <returns>JSX with formatted count and "obituaries" label</returns>
+    </component>
+
+    <css-class name="animate-pulse-glow">
+      <location>src/app/globals.css (to be added)</location>
+      <behavior>3s ease-in-out infinite text-shadow animation</behavior>
+      <keyframes>
+        - 0%, 100%: text-shadow 0 0 10px rgba(201, 169, 98, 0.3)
+        - 50%: text-shadow 0 0 20px rgba(201, 169, 98, 0.6), 0 0 30px rgba(201, 169, 98, 0.3)
+      </keyframes>
+    </css-class>
+  </interface-contracts>
+
+  <implementation-plan>
+    <step number="1" estimated-time="10 min">
+      <title>Add CSS Animation Keyframes</title>
+      <tasks>
+        <task>Open src/app/globals.css</task>
+        <task>Add @keyframes pulse-glow animation AFTER the @layer base block (at end of file, line 135+)</task>
+        <task>Add .animate-pulse-glow utility class</task>
+        <task>Add @media (prefers-reduced-motion: reduce) query to disable animation</task>
+      </tasks>
+      <note>Tailwind v4 uses @theme inline instead of @layer. The @layer base block ends at line 134. Add new CSS after it.</note>
+      <code-snippet><![CDATA[
+/* Pulsing glow animation for count display */
+@keyframes pulse-glow {
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(201, 169, 98, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(201, 169, 98, 0.6),
+                 0 0 30px rgba(201, 169, 98, 0.3);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-glow {
+    animation: none;
+  }
+}
+      ]]></code-snippet>
+    </step>
+
+    <step number="2" estimated-time="20 min">
+      <title>Create CountDisplay Component</title>
+      <tasks>
+        <task>Create directory src/components/obituary/ if not exists</task>
+        <task>Create count-display.tsx as async Server Component</task>
+        <task>Import and call getObituaryCount() from Sanity queries</task>
+        <task>Format count with Intl.NumberFormat('en-US')</task>
+        <task>Apply styling: font-mono, responsive sizing, gold color, animation</task>
+        <task>Add "obituaries" label with secondary text color</task>
+      </tasks>
+      <code-snippet><![CDATA[
+import { getObituaryCount } from '@/lib/sanity/queries'
+
+export async function CountDisplay() {
+  const count = await getObituaryCount()
+  const formattedCount = new Intl.NumberFormat('en-US').format(count)
+
+  return (
+    <div className="text-center">
+      <span
+        className="font-mono text-4xl md:text-5xl lg:text-[4rem] text-[--accent-primary]
+                   animate-pulse-glow motion-reduce:animate-none"
+      >
+        {formattedCount}
+      </span>
+      <p className="text-[--text-secondary] mt-2 text-lg">obituaries</p>
+    </div>
+  )
+}
+      ]]></code-snippet>
+    </step>
+
+    <step number="3" estimated-time="15 min">
+      <title>Integrate CountDisplay into Homepage</title>
+      <tasks>
+        <task>Open src/app/page.tsx</task>
+        <task>Import CountDisplay component</task>
+        <task>Replace test content with hero section containing CountDisplay</task>
+        <task>Ensure proper spacing and centering</task>
+      </tasks>
+      <code-snippet><![CDATA[
+import { CountDisplay } from "@/components/obituary/count-display";
+
+export default function Home() {
+  return (
+    <main className="min-h-screen">
+      {/* Hero Section with Count */}
+      <section className="flex flex-col items-center justify-center py-24 px-4">
+        <CountDisplay />
+      </section>
+    </main>
+  );
+}
+      ]]></code-snippet>
+    </step>
+
+    <step number="4" estimated-time="30 min">
+      <title>Write Unit Tests</title>
+      <tasks>
+        <task>Create tests/unit/components/obituary/count-display.test.tsx</task>
+        <task>Test component renders with formatted count</task>
+        <task>Test animation class is present</task>
+        <task>Test motion-reduce class is applied</task>
+        <task>Test font-mono class is applied</task>
+        <task>Test "obituaries" label is rendered</task>
+      </tasks>
+      <test-file-path>tests/unit/components/obituary/count-display.test.tsx</test-file-path>
+    </step>
+
+    <step number="5" estimated-time="15 min">
+      <title>Manual Testing</title>
+      <tasks>
+        <task>Run dev server: npm run dev</task>
+        <task>Verify count displays correctly on homepage</task>
+        <task>Test responsive sizing at different breakpoints (320px, 768px, 1024px)</task>
+        <task>Verify pulsing glow animation is visible</task>
+        <task>Test animation stops with reduced motion preference (System Preferences -> Accessibility)</task>
+        <task>Verify count uses comma formatting for large numbers</task>
+      </tasks>
+    </step>
+  </implementation-plan>
+
+  <testing-requirements>
+    <test-file>tests/unit/components/obituary/count-display.test.tsx</test-file>
+
+    <test-scenario id="1" type="unit">
+      <name>Component Renders Count</name>
+      <description>Mock getObituaryCount() to return 42, expect "42" in rendered output</description>
+      <expected>Text "42" is visible in the component</expected>
+    </test-scenario>
+
+    <test-scenario id="2" type="unit">
+      <name>Large Number Formatting</name>
+      <description>Mock getObituaryCount() to return 1247, expect "1,247" with comma</description>
+      <expected>Text "1,247" is visible (locale-formatted)</expected>
+    </test-scenario>
+
+    <test-scenario id="3" type="unit">
+      <name>Animation Class Present</name>
+      <description>Render component, check for animate-pulse-glow class</description>
+      <expected>Element has className containing "animate-pulse-glow"</expected>
+    </test-scenario>
+
+    <test-scenario id="4" type="unit">
+      <name>Motion Reduce Class Present</name>
+      <description>Render component, check for motion-reduce:animate-none class</description>
+      <expected>Element has className containing "motion-reduce:animate-none"</expected>
+    </test-scenario>
+
+    <test-scenario id="5" type="unit">
+      <name>Font Class Present</name>
+      <description>Render component, check for font-mono class</description>
+      <expected>Element has className containing "font-mono"</expected>
+    </test-scenario>
+
+    <test-scenario id="6" type="unit">
+      <name>Label Rendered</name>
+      <description>Render component, check for "obituaries" text</description>
+      <expected>Text "obituaries" is present in the document</expected>
+    </test-scenario>
+
+    <mocking-requirements>
+      <mock module="@/lib/sanity/queries">
+        <function>getObituaryCount</function>
+        <note>Mock to return controlled number for predictable test assertions</note>
+      </mock>
+    </mocking-requirements>
+
+    <manual-testing-checklist>
+      <item>Homepage displays count prominently</item>
+      <item>Count uses monospace font (Geist Mono)</item>
+      <item>Count is gold colored on dark background</item>
+      <item>Glow pulses smoothly (3s cycle)</item>
+      <item>Test at 320px width - count is smaller</item>
+      <item>Test at 768px width - count is medium</item>
+      <item>Test at 1024px+ width - count is 64px</item>
+      <item>Enable reduced motion in OS settings - animation stops</item>
+    </manual-testing-checklist>
+  </testing-requirements>
+
+  <files-to-create>
+    <file action="create">
+      <path>src/components/obituary/count-display.tsx</path>
+      <description>Hero count Server Component</description>
+    </file>
+    <file action="create">
+      <path>tests/unit/components/obituary/count-display.test.tsx</path>
+      <description>Unit tests for CountDisplay component (matches project convention: tests/unit/)</description>
+    </file>
+  </files-to-create>
+
+  <files-to-modify>
+    <file action="modify">
+      <path>src/app/globals.css</path>
+      <description>Add pulse-glow animation keyframes and utility class</description>
+      <change>Add @keyframes pulse-glow, .animate-pulse-glow, and reduced motion media query</change>
+    </file>
+    <file action="modify">
+      <path>src/app/page.tsx</path>
+      <description>Replace test content with hero section containing CountDisplay</description>
+      <change>Import CountDisplay, create hero section, render component prominently</change>
+    </file>
+  </files-to-modify>
+
+  <reference-implementation>
+    <file path="src/components/obituary/count-display.tsx"><![CDATA[
+import { getObituaryCount } from '@/lib/sanity/queries'
+
+/**
+ * Hero count display component.
+ * Server Component that fetches obituary count from Sanity and displays it
+ * prominently with gold styling and pulsing glow animation.
+ *
+ * Features:
+ * - Geist Mono font for the number
+ * - Responsive sizing (4rem on desktop, scales down on mobile)
+ * - Gold accent color (#C9A962)
+ * - Pulsing glow animation (disabled with prefers-reduced-motion)
+ * - Locale-aware number formatting with commas
+ */
+export async function CountDisplay() {
+  const count = await getObituaryCount()
+  const formattedCount = new Intl.NumberFormat('en-US').format(count)
+
+  return (
+    <div className="text-center">
+      <span
+        className="font-mono text-4xl md:text-5xl lg:text-[4rem] text-[--accent-primary]
+                   animate-pulse-glow motion-reduce:animate-none"
+      >
+        {formattedCount}
+      </span>
+      <p className="text-[--text-secondary] mt-2 text-lg">obituaries</p>
+    </div>
+  )
+}
+    ]]></file>
+
+    <file path="src/app/globals.css" type="additions"><![CDATA[
+/* Add AFTER the @layer base block (at end of file, line 135+) */
+/* Tailwind v4 note: @theme inline is for config, custom CSS goes after @layer base */
+
+/* Pulsing glow animation for count display */
+@keyframes pulse-glow {
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(201, 169, 98, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(201, 169, 98, 0.6),
+                 0 0 30px rgba(201, 169, 98, 0.3);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-glow {
+    animation: none;
+  }
+}
+    ]]></file>
+
+    <file path="src/app/page.tsx"><![CDATA[
+import { CountDisplay } from "@/components/obituary/count-display";
+
+export default function Home() {
+  return (
+    <main className="min-h-screen">
+      {/* Hero Section with Count */}
+      <section className="flex flex-col items-center justify-center py-24 px-4">
+        <CountDisplay />
+      </section>
+    </main>
+  );
+}
+    ]]></file>
+
+    <file path="tests/unit/components/obituary/count-display.test.tsx"><![CDATA[
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen } from '@testing-library/react'
+
+// Mock the queries module
+vi.mock('@/lib/sanity/queries', () => ({
+  getObituaryCount: vi.fn(),
+}))
+
+// Import after mock setup
+import { getObituaryCount } from '@/lib/sanity/queries'
+import { CountDisplay } from '@/components/obituary/count-display'
+
+describe('CountDisplay', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('renders with formatted count', async () => {
+    vi.mocked(getObituaryCount).mockResolvedValue(42)
+
+    const Component = await CountDisplay()
+    render(Component)
+
+    expect(screen.getByText('42')).toBeInTheDocument()
+  })
+
+  it('formats large numbers with commas', async () => {
+    vi.mocked(getObituaryCount).mockResolvedValue(1247)
+
+    const Component = await CountDisplay()
+    render(Component)
+
+    expect(screen.getByText('1,247')).toBeInTheDocument()
+  })
+
+  it('renders "obituaries" label', async () => {
+    vi.mocked(getObituaryCount).mockResolvedValue(0)
+
+    const Component = await CountDisplay()
+    render(Component)
+
+    expect(screen.getByText('obituaries')).toBeInTheDocument()
+  })
+
+  it('applies font-mono class', async () => {
+    vi.mocked(getObituaryCount).mockResolvedValue(100)
+
+    const Component = await CountDisplay()
+    render(Component)
+
+    const countElement = screen.getByText('100')
+    expect(countElement.className).toContain('font-mono')
+  })
+
+  it('applies animate-pulse-glow class', async () => {
+    vi.mocked(getObituaryCount).mockResolvedValue(100)
+
+    const Component = await CountDisplay()
+    render(Component)
+
+    const countElement = screen.getByText('100')
+    expect(countElement.className).toContain('animate-pulse-glow')
+  })
+
+  it('applies motion-reduce class for accessibility', async () => {
+    vi.mocked(getObituaryCount).mockResolvedValue(100)
+
+    const Component = await CountDisplay()
+    render(Component)
+
+    const countElement = screen.getByText('100')
+    expect(countElement.className).toContain('motion-reduce:animate-none')
+  })
+
+  it('handles zero count', async () => {
+    vi.mocked(getObituaryCount).mockResolvedValue(0)
+
+    const Component = await CountDisplay()
+    render(Component)
+
+    expect(screen.getByText('0')).toBeInTheDocument()
+  })
+})
+    ]]></file>
+  </reference-implementation>
+
+  <coding-standards>
+    <standard name="File Naming">kebab-case: count-display.tsx</standard>
+    <standard name="Component Naming">PascalCase: CountDisplay</standard>
+    <standard name="Function Naming">camelCase: getObituaryCount</standard>
+    <standard name="Import Order">
+      1. Third-party (none needed for this component)
+      2. Internal lib (getObituaryCount from @/lib/sanity/queries)
+      3. Internal components (none)
+      4. Types (none needed)
+    </standard>
+    <standard name="CSS Class Order">Tailwind classes grouped: layout, sizing, typography, colors, animation</standard>
+    <standard name="Server Components">Default to Server Components, no "use client" unless interactivity needed</standard>
+  </coding-standards>
+
+  <fr-coverage>
+    <requirement id="FR1">
+      <description>System displays total obituary count prominently on homepage</description>
+      <how-satisfied>CountDisplay component fetches count from Sanity and displays it in hero section with prominent gold styling and pulsing glow animation</how-satisfied>
+    </requirement>
+  </fr-coverage>
+
+  <dependencies>
+    <story-dependency id="1-1" status="complete">Project Initialization - Next.js with Tailwind</story-dependency>
+    <story-dependency id="1-2" status="complete">Design System Setup - CSS variables and fonts configured</story-dependency>
+    <story-dependency id="1-3" status="complete">Sanity CMS Integration - getObituaryCount() query exists</story-dependency>
+    <story-dependency id="1-4" status="complete">Layout Shell and Navigation - Homepage and layout structure</story-dependency>
+    <story-dependency id="1-5" status="complete">ISR Revalidation Webhook - Count updates when content changes</story-dependency>
+  </dependencies>
+
+  <warnings>
+    <warning type="testing-note">
+      Server Components in tests require special handling. The test file renders the awaited
+      result of the async component rather than rendering the component directly.
+    </warning>
+    <warning type="sanity-data">
+      If no obituaries exist in Sanity, count will display as "0". Consider adding
+      sample data to Sanity for development/testing if not already done.
+    </warning>
+    <warning type="browser-support">
+      The animation uses text-shadow which is well-supported. The motion-reduce media query
+      requires browser support for prefers-reduced-motion (all modern browsers support this).
+    </warning>
+  </warnings>
+</story-context>

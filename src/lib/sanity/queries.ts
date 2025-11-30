@@ -40,7 +40,10 @@ export async function getObituaryBySlug(slug: string): Promise<Obituary | null> 
 /**
  * Get total count of obituaries.
  * Useful for homepage statistics.
+ * Uses ISR with 'obituary' tag for cache revalidation.
  */
 export async function getObituaryCount(): Promise<number> {
-  return client.fetch(`count(*[_type == "obituary"])`)
+  return client.fetch(`count(*[_type == "obituary"])`, undefined, {
+    next: { tags: ['obituary'] },
+  })
 }
