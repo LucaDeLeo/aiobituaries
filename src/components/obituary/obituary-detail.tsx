@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { format } from 'date-fns'
 import { ExternalLink, ArrowLeft } from 'lucide-react'
 import { CATEGORY_LABELS } from '@/lib/constants/categories'
+import { CopyButton } from '@/components/ui/copy-button'
 import type { Obituary, Category } from '@/types/obituary'
 
 /**
@@ -76,6 +77,10 @@ export function ObituaryDetail({ obituary }: ObituaryDetailProps) {
             {CATEGORY_LABELS[category]}
           </span>
         ))}
+      </div>
+
+      <div className="flex justify-center">
+        <CopyButton />
       </div>
     </article>
   )

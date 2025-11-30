@@ -27,6 +27,15 @@ vi.mock('next/link', () => {
   }
 })
 
+// Mock CopyButton to avoid client component issues in tests
+vi.mock('@/components/ui/copy-button', () => {
+  return {
+    CopyButton: function MockCopyButton() {
+      return React.createElement('button', { 'data-testid': 'copy-button' }, 'Copy link')
+    },
+  }
+})
+
 // Import after mock setup
 import { ObituaryDetail } from '@/components/obituary/obituary-detail'
 
