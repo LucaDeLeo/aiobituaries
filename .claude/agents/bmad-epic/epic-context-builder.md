@@ -1,7 +1,7 @@
 ---
 name: bmm-epic-context-builder
 description: Generates Epic Tech Spec from PRD and Architecture. use PROACTIVELY when creating epic technical context before story development
-model: sonnet
+model: opus
 color: blue
 ---
 

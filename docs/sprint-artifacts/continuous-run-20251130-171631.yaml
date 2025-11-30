@@ -1,0 +1,14 @@
+run_id: "continuous-run-20251130-171631"
+started_at: "2025-11-30T17:16:31Z"
+branch: "main"
+initial_commit: "2abb418"
+
+checkpoint: null
+
+epics_contexted: []
+stories_processed: []
+
+statistics:
+  total: 0
+  success: 0
+  failed: 0

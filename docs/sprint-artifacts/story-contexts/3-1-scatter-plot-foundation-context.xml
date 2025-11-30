@@ -1,0 +1,1130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context XML
+  Generated: 2025-11-30
+  Story: 3-1-scatter-plot-foundation
+  Purpose: Complete implementation context for Scatter Plot Foundation
+-->
+<story-context>
+  <metadata>
+    <story-key>3-1-scatter-plot-foundation</story-key>
+    <title>Scatter Plot Foundation</title>
+    <epic>Epic 3 - Timeline Visualization</epic>
+    <status>drafted</status>
+    <priority>High</priority>
+    <generated>2025-11-30</generated>
+  </metadata>
+
+  <story-reference>
+    <path>docs/sprint-artifacts/stories/3-1-scatter-plot-foundation.md</path>
+    <user-story>
+      As a visitor,
+      I want to see obituaries plotted on a timeline,
+      So that I can visualize the pattern of AI skepticism over time.
+    </user-story>
+  </story-reference>
+
+  <acceptance-criteria>
+    <criterion id="AC-3.1.1">Scatter plot displays when data loaded - Given obituary data is loaded, when the homepage renders, then a scatter plot visualization is displayed</criterion>
+    <criterion id="AC-3.1.2">Container takes full width - Scatter plot container takes full width of parent container</criterion>
+    <criterion id="AC-3.1.3">Minimum height enforced - Desktop: minimum 400px height; Mobile: minimum 300px height</criterion>
+    <criterion id="AC-3.1.4">Dark background applied - Background uses --bg-secondary (#14141A) color</criterion>
+    <criterion id="AC-3.1.5">Grid lines at year intervals - Subtle vertical grid lines appear at year boundaries</criterion>
+    <criterion id="AC-3.1.6">X-axis represents time - Horizontal axis shows dates with appropriate tick marks</criterion>
+    <criterion id="AC-3.1.7">Y-axis uses spread mode - Vertical axis distributes points using jitter algorithm for visual clarity</criterion>
+    <criterion id="AC-3.1.8">Empty state handled - When no obituaries exist, shows "No obituaries yet" message</criterion>
+    <criterion id="AC-3.1.9">Responsive width - Uses ParentSize or ResizeObserver for responsive width handling</criterion>
+    <criterion id="AC-3.1.10">Scales computed with useMemo - Time and linear scales memoized to avoid recalculation</criterion>
+  </acceptance-criteria>
+
+  <documentation-artifacts>
+    <artifact type="tech-spec" relevance="primary">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-3-tech-spec.md</path>
+      <description>Complete technical specification for Epic 3 Timeline Visualization including Visx setup, component specs, and animation patterns</description>
+      <key-sections>
+        <section line="88-96">Section 2.2: Technology Stack - Visx (version verified after install), Motion (version verified in Story 3.8)</section>
+        <section line="214-307">Section 3.1: Visualization Type Definitions - YAxisMode, ViewState, ScatterPlotProps interfaces</section>
+        <section line="309-395">Section 3.2: Scatter Helper Utilities - hashToJitter algorithm, category color mappings</section>
+        <section line="517-558">Section 4.1: ScatterPlot Component Spec - Required data-testid, props, state management</section>
+        <section line="806-925">Section 6: Animation Presets - DURATIONS, SPRINGS, shouldReduceMotion helper</section>
+        <section line="929-1065">Section 7.1: useZoom Hook - Zoom/pan state management</section>
+        <section line="1365-1643">Section 9: Testing Strategy - Unit tests for scatter-helpers, component tests</section>
+        <section line="1646-1730">Section 10: Performance Requirements - Bundle size target &lt;50KB gzipped</section>
+      </key-sections>
+      <version-notes>
+        <note>Visx version: Specified as 3.12.0 in tech-spec; actual version will be verified after pnpm install</note>
+        <note>Motion version: Specified as 12.9.2 in tech-spec; verify current version in Story 3.8 when Motion is installed</note>
+      </version-notes>
+    </artifact>
+
+    <artifact type="architecture" relevance="primary">
+      <path>docs/architecture.md</path>
+      <description>System architecture defining Contextual Scatter Plot pattern, project structure, and coding standards</description>
+      <key-sections>
+        <section>Novel Pattern: Contextual Scatter Plot - Y-axis modes (spread, market, capability, agi)</section>
+        <section>Project Structure - Component at src/components/visualization/scatter-plot.tsx</section>
+        <section>Naming Conventions - File naming (kebab-case), component naming (PascalCase)</section>
+        <section>Component Pattern - 'use client' directive for visualization components</section>
+        <section>Testing Patterns - Test organization under tests/unit/, tests/components/</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="story" relevance="primary">
+      <path>docs/sprint-artifacts/stories/3-1-scatter-plot-foundation.md</path>
+      <description>Full story definition with tasks, test scenarios, reference implementation, and definition of done</description>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code>
+    <file purpose="modify" priority="high">
+      <path>src/app/page.tsx</path>
+      <description>Homepage - ScatterPlot will be integrated between CountDisplay and ObituaryList sections</description>
+      <code-excerpt><![CDATA[
+import { CountDisplay } from "@/components/obituary/count-display";
+import { ObituaryList } from "@/components/obituary/obituary-list";
+import { JsonLd } from "@/components/seo/json-ld";
+import { homepageMetadata } from "@/lib/utils/seo";
+
+export const metadata = homepageMetadata;
+
+export default function Home() {
+  return (
+    <>
+      <JsonLd type="website" />
+      <main className="min-h-screen">
+        {/* Hero Section with Count */}
+        <section className="flex flex-col items-center justify-center py-24 px-4">
+          <CountDisplay />
+        </section>
+
+        {/* Obituary List Section */}
+        <section className="px-4 pb-24 max-w-7xl mx-auto">
+          <ObituaryList />
+        </section>
+      </main>
+    </>
+  );
+}
+]]></code-excerpt>
+      <integration-point>
+        Add ScatterPlot section between CountDisplay and ObituaryList sections.
+        ScatterPlot requires obituary data - must convert page to async Server Component to fetch data.
+      </integration-point>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/types/obituary.ts</path>
+      <description>Core type definitions - ObituarySummary is the data type passed to ScatterPlot</description>
+      <code-excerpt><![CDATA[
+import type { ContextMetadata } from './context'
+
+/**
+ * Categorization of AI skepticism claims.
+ * Each obituary can have multiple categories.
+ * Categories determine Y-axis behavior in the contextual scatter plot visualization.
+ */
+export type Category = 'market' | 'capability' | 'agi' | 'dismissive'
+
+/**
+ * Core data model representing an AI skepticism claim documented as an "obituary".
+ */
+export interface Obituary {
+  _id: string
+  slug: string
+  claim: string
+  source: string
+  sourceUrl: string
+  date: string  // ISO 8601
+  categories: Category[]
+  context: ContextMetadata
+}
+
+/**
+ * Lightweight obituary type for list/card views.
+ * Excludes context metadata and sourceUrl for smaller payload and faster rendering.
+ */
+export interface ObituarySummary {
+  _id: string
+  slug: string
+  claim: string
+  source: string
+  date: string  // ISO 8601
+  categories: Category[]
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/lib/sanity/queries.ts</path>
+      <description>Sanity queries - getObituaries() provides data for ScatterPlot</description>
+      <code-excerpt><![CDATA[
+import { client } from './client'
+import type { Obituary, ObituarySummary } from '@/types/obituary'
+
+const summaryProjection = `{
+  _id,
+  "slug": slug.current,
+  claim,
+  source,
+  date,
+  categories
+}`
+
+/**
+ * Fetch all obituaries ordered by date descending.
+ * Returns summary data for list/card views.
+ * Uses ISR with 'obituaries' tag for cache revalidation.
+ */
+export async function getObituaries(): Promise<ObituarySummary[]> {
+  return client.fetch(
+    `*[_type == "obituary"] | order(date desc) ${summaryProjection}`,
+    undefined,
+    { next: { tags: ['obituaries'] } }
+  )
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/lib/constants/categories.ts</path>
+      <description>Category color mappings - will need hex values for SVG fill (not Tailwind classes)</description>
+      <code-excerpt><![CDATA[
+import type { Category } from '@/types/obituary'
+
+/**
+ * Category color mappings using CSS variables for the Deep Archive theme.
+ * Colors are defined in globals.css under :root.
+ */
+export const CATEGORY_COLORS: Record<Category, string> = {
+  capability: 'bg-[--category-capability]',
+  market: 'bg-[--category-market]',
+  agi: 'bg-[--category-agi]',
+  dismissive: 'bg-[--category-dismissive]',
+}
+
+/**
+ * Human-readable labels for each category.
+ */
+export const CATEGORY_LABELS: Record<Category, string> = {
+  capability: 'Capability Doubt',
+  market: 'Market/Bubble',
+  agi: 'AGI Skepticism',
+  dismissive: 'Dismissive Framing',
+}
+]]></code-excerpt>
+      <note>Story 3.2 will need CATEGORY_HEX_COLORS for SVG fill attributes. Story 3.1 focuses on container/axes only.</note>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/app/globals.css</path>
+      <description>CSS variables and Deep Archive theme - includes all color definitions needed for visualization</description>
+      <code-excerpt><![CDATA[
+:root {
+  /* Deep Archive Theme - Background colors */
+  --bg-primary: #0C0C0F;
+  --bg-secondary: #14141A;   /* <-- ScatterPlot background */
+  --bg-card: #18181F;
+  --bg-tertiary: #1C1C24;
+
+  /* Border */
+  --border: #2A2A35;          /* <-- Grid lines color */
+
+  /* Text colors */
+  --text-primary: #E8E6E3;
+  --text-secondary: #A8A5A0;  /* <-- Axis tick labels */
+  --text-muted: #6B6860;      /* <-- Empty state message */
+
+  /* Accent */
+  --accent-primary: #C9A962;
+
+  /* Category colors (for timeline visualization) */
+  --category-capability: #C9A962;  /* Gold */
+  --category-market: #7B9E89;      /* Sage */
+  --category-agi: #9E7B7B;         /* Rose */
+  --category-dismissive: #7B7B9E;  /* Lavender */
+}
+
+/* Reduced motion support pattern */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-glow {
+    animation: none;
+  }
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>src/components/obituary/obituary-card.tsx</path>
+      <description>Example client component pattern for reference - shows Tailwind/CSS variable usage</description>
+      <code-excerpt><![CDATA[
+import Link from 'next/link'
+import { format } from 'date-fns'
+import { cn } from '@/lib/utils'
+import { CATEGORY_COLORS } from '@/lib/constants/categories'
+import type { ObituarySummary } from '@/types/obituary'
+
+interface ObituaryCardProps {
+  obituary: ObituarySummary
+}
+
+export function ObituaryCard({ obituary }: ObituaryCardProps) {
+  const primaryCategory = obituary.categories?.[0]
+  const categoryColorClass = primaryCategory
+    ? CATEGORY_COLORS[primaryCategory]
+    : 'bg-[--text-muted]'
+
+  return (
+    <Link
+      href={`/obituary/${obituary.slug}`}
+      className={cn(
+        'block p-6 rounded-xl',
+        'bg-[--bg-card] border border-[--border]',
+        'hover:-translate-y-0.5 hover:shadow-lg',
+        'transition-all duration-200'
+      )}
+    >
+      {/* ... */}
+    </Link>
+  )
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>src/components/ui/sheet.tsx</path>
+      <description>shadcn Sheet component exists - will be used in Story 3.7 for obituary modal</description>
+      <note>Available for use: Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription</note>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>src/lib/utils.ts</path>
+      <description>cn() utility function for className merging</description>
+      <code-excerpt><![CDATA[
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+]]></code-excerpt>
+    </file>
+  </existing-code>
+
+  <package-dependencies>
+    <current-dependencies source="package.json">
+      <dependency name="next" version="16.0.5" />
+      <dependency name="react" version="19.2.0" />
+      <dependency name="react-dom" version="19.2.0" />
+      <dependency name="date-fns" version="^4.1.0" />
+      <dependency name="nuqs" version="^2.8.1" />
+      <dependency name="clsx" version="^2.1.1" />
+      <dependency name="tailwind-merge" version="^3.4.0" />
+      <dependency name="lucide-react" version="^0.555.0" />
+    </current-dependencies>
+
+    <packages-to-install priority="required">
+      <package name="@visx/scale" purpose="scaleTime, scaleLinear for axis scales" />
+      <package name="@visx/axis" purpose="AxisBottom component for X-axis" />
+      <package name="@visx/grid" purpose="GridColumns for year interval grid lines" />
+      <package name="@visx/group" purpose="Group component for SVG positioning" />
+      <package name="@visx/responsive" purpose="ParentSize wrapper for responsive width" />
+      <install-command>pnpm add @visx/scale @visx/axis @visx/grid @visx/group @visx/responsive</install-command>
+    </packages-to-install>
+
+    <packages-future note="Not needed for Story 3.1, but documented for Epic 3">
+      <package name="@visx/shape" purpose="Circle, Line for data points (Story 3.2)" />
+      <package name="@visx/tooltip" purpose="Tooltip primitives (Story 3.6)" />
+      <package name="motion" purpose="Animation (Story 3.8)" />
+    </packages-future>
+  </package-dependencies>
+
+  <design-system>
+    <css-variables source="src/app/globals.css" verified="2025-11-30">
+      <variable name="--bg-secondary" value="#14141A" usage="ScatterPlot SVG background fill" line="9" />
+      <variable name="--border" value="#2A2A35" usage="Grid lines stroke color (at 30% opacity)" line="14" />
+      <variable name="--text-secondary" value="#A8A5A0" usage="Axis tick label fill color" line="18" />
+      <variable name="--text-muted" value="#6B6860" usage="Empty state message fill color" line="19" />
+      <variable name="--category-capability" value="#C9A962" usage="Category color - Gold" line="25" />
+      <variable name="--category-market" value="#7B9E89" usage="Category color - Sage" line="26" />
+      <variable name="--category-agi" value="#9E7B7B" usage="Category color - Rose" line="27" />
+      <variable name="--category-dismissive" value="#7B7B9E" usage="Category color - Lavender" line="28" />
+    </css-variables>
+
+    <responsive-breakpoints>
+      <breakpoint name="default" value="0px" usage="min-h-[300px] for mobile" />
+      <breakpoint name="md" value="768px" usage="md:min-h-[400px] for desktop" />
+    </responsive-breakpoints>
+
+    <tailwind-patterns>
+      <pattern name="scatter-container">w-full min-h-[300px] md:min-h-[400px]</pattern>
+      <pattern name="section-wrapper">container mx-auto px-4 py-8</pattern>
+    </tailwind-patterns>
+  </design-system>
+
+  <type-definitions-to-create>
+    <file path="src/types/visualization.ts">
+      <description>Visualization-specific type definitions for Epic 3</description>
+      <types><![CDATA[
+import type { ObituarySummary, Category } from './obituary'
+
+/**
+ * Y-axis mode for contextual scatter plot.
+ * - spread: Default jitter-based distribution for visual clarity
+ * - market: Y = NVDA stock price (future)
+ * - capability: Y = benchmark score (future)
+ * - agi: Y = milestone timeline (future)
+ */
+export type YAxisMode = 'spread' | 'market' | 'capability' | 'agi'
+
+/**
+ * Zoom and pan state for visualization.
+ */
+export interface ViewState {
+  /** Zoom scale factor (0.5 to 5) */
+  scale: number
+  /** Pan offset X (pixels) */
+  translateX: number
+  /** Pan offset Y (pixels) */
+  translateY: number
+}
+
+/**
+ * Props for main ScatterPlot component.
+ */
+export interface ScatterPlotProps {
+  /** Obituary data to visualize */
+  data: ObituarySummary[]
+  /** Y-axis mode (default: 'spread') */
+  mode?: YAxisMode
+  /** Active category filters (empty = all) */
+  activeCategories?: Category[]
+  /** Callback when obituary is selected */
+  onSelect?: (obituary: ObituarySummary) => void
+  /** Height (default: 400) */
+  height?: number
+}
+]]></types>
+    </file>
+  </type-definitions-to-create>
+
+  <component-hierarchy>
+    <description>Visual hierarchy of ScatterPlot component structure for Story 3.1</description>
+    <diagram><![CDATA[
+┌─────────────────────────────────────────────────────────────────┐
+│  page.tsx (Server Component - async)                            │
+│  ├── Fetches: getObituaries() -> ObituarySummary[]              │
+│  └── Renders:                                                   │
+│      ┌─────────────────────────────────────────────────────────┐│
+│      │  <ScatterPlot data={obituaries} />                      ││
+│      │  (Client Component - 'use client')                       ││
+│      │                                                          ││
+│      │  ┌─────────────────────────────────────────────────────┐││
+│      │  │  <div> (Container: w-full min-h-[300px] md:400px)  │││
+│      │  │                                                     │││
+│      │  │  ┌─────────────────────────────────────────────────┐│││
+│      │  │  │  <ParentSize> (@visx/responsive)                ││││
+│      │  │  │  └── Provides: { width, height }                ││││
+│      │  │  │                                                  ││││
+│      │  │  │  ┌─────────────────────────────────────────────┐││││
+│      │  │  │  │  ScatterPlotInner                           │││││
+│      │  │  │  │  ├── xScale: scaleTime (useMemo)            │││││
+│      │  │  │  │  ├── yScale: scaleLinear (useMemo)          │││││
+│      │  │  │  │  │                                          │││││
+│      │  │  │  │  │  ┌──────────────────────────────────────┐│││││
+│      │  │  │  │  │  │  <svg> (data-testid="scatter-plot")  ││││││
+│      │  │  │  │  │  │  ├── <rect> (background fill)        ││││││
+│      │  │  │  │  │  │  │                                   ││││││
+│      │  │  │  │  │  │  │  ┌────────────────────────────┐   ││││││
+│      │  │  │  │  │  │  │  │  <Group> (@visx/group)     │   ││││││
+│      │  │  │  │  │  │  │  │  ├── <GridColumns>         │   ││││││
+│      │  │  │  │  │  │  │  │  │   (@visx/grid)          │   ││││││
+│      │  │  │  │  │  │  │  │  │                         │   ││││││
+│      │  │  │  │  │  │  │  │  └── <AxisBottom>          │   ││││││
+│      │  │  │  │  │  │  │  │      (@visx/axis)          │   ││││││
+│      │  │  │  │  │  │  │  └────────────────────────────┘   ││││││
+│      │  │  │  │  │  │  │                                   ││││││
+│      │  │  │  │  │  │  │  {/* Story 3.2: Data points */}   ││││││
+│      │  │  │  │  │  └──────────────────────────────────────┘│││││
+│      │  │  │  └─────────────────────────────────────────────┘││││
+│      │  │  └─────────────────────────────────────────────────┘│││
+│      │  └─────────────────────────────────────────────────────┘││
+│      └─────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+
+Empty State Branch (data.length === 0):
+┌─────────────────────────────────────────┐
+│  <svg> (data-testid="scatter-plot")     │
+│  ├── <rect> (background)                │
+│  └── <text> "No obituaries yet"         │
+│       (centered, --text-muted)          │
+└─────────────────────────────────────────┘
+]]></diagram>
+  </component-hierarchy>
+
+  <bundle-size-baseline>
+    <description>Bundle size measurement instructions - CRITICAL for performance tracking</description>
+    <instructions><![CDATA[
+BEFORE installing Visx packages, measure current bundle baseline:
+
+1. Run production build:
+   pnpm build
+
+2. Record baseline metrics from build output:
+   - First Load JS: _____ KB
+   - Page-specific chunks (page.tsx): _____ KB
+
+3. After Visx install, re-run build and compare:
+   - Delta should be < 20KB gzipped for @visx/scale, @visx/axis, @visx/grid, @visx/group, @visx/responsive
+
+4. Document in Dev Agent Record:
+   - Pre-Visx baseline
+   - Post-Visx measurement
+   - Individual package contributions (if analyzable)
+
+Target: Total visualization bundle < 50KB gzipped
+]]></instructions>
+    <expected-visx-sizes note="estimates from tech-spec">
+      <package name="@visx/scale">~3KB gzipped</package>
+      <package name="@visx/axis">~5KB gzipped</package>
+      <package name="@visx/grid">~2KB gzipped</package>
+      <package name="@visx/group">~1KB gzipped</package>
+      <package name="@visx/responsive">~1KB gzipped</package>
+      <total>~12KB gzipped (Story 3.1 packages only)</total>
+    </expected-visx-sizes>
+  </bundle-size-baseline>
+
+  <interface-contracts>
+    <component name="ScatterPlot" status="to-create">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <props><![CDATA[
+interface ScatterPlotProps {
+  data: ObituarySummary[]
+  height?: number  // Default: 400
+}
+]]></props>
+      <required-attributes>
+        <attribute name="data-testid" value="scatter-plot" element="main container div" />
+        <attribute name="role" value="img" element="SVG element" />
+        <attribute name="aria-label" value="Interactive timeline of {count} AI obituaries" element="SVG element" />
+      </required-attributes>
+      <description>
+        Main scatter plot visualization component. Client Component ('use client').
+        Uses @visx/responsive ParentSize for responsive width.
+        Renders SVG with dark background, time-based X-axis, and grid lines.
+        Story 3.1 focuses on container/axes only - data points added in Story 3.2.
+      </description>
+    </component>
+
+    <component name="ScatterPlotInner" status="to-create">
+      <description>Internal component rendered inside ParentSize, receives width/height from parent</description>
+      <props><![CDATA[
+interface ScatterPlotInnerProps {
+  data: ObituarySummary[]
+  width: number
+  height: number
+}
+]]></props>
+    </component>
+  </interface-contracts>
+
+  <visx-patterns>
+    <scale-setup><![CDATA[
+import { scaleTime, scaleLinear } from '@visx/scale'
+
+// X-axis: Time scale
+const xScale = useMemo(() => {
+  if (data.length === 0) {
+    return scaleTime({
+      domain: [new Date('2020-01-01'), new Date()],
+      range: [0, innerWidth],
+    })
+  }
+  const dates = data.map(d => new Date(d.date))
+  const minDate = new Date(Math.min(...dates.map(d => d.getTime())))
+  const maxDate = new Date(Math.max(...dates.map(d => d.getTime())))
+  // Add 5% padding to domain
+  const padding = (maxDate.getTime() - minDate.getTime()) * 0.05
+  return scaleTime({
+    domain: [
+      new Date(minDate.getTime() - padding),
+      new Date(maxDate.getTime() + padding),
+    ],
+    range: [0, innerWidth],
+  })
+}, [data, innerWidth])
+
+// Y-axis: Linear scale for jitter (0-1 range)
+const yScale = useMemo(() => {
+  return scaleLinear({
+    domain: [0, 1],
+    range: [innerHeight, 0],  // Inverted for SVG coordinates
+  })
+}, [innerHeight])
+]]></scale-setup>
+
+    <axis-bottom-usage><![CDATA[
+import { AxisBottom } from '@visx/axis'
+
+<AxisBottom
+  top={innerHeight}
+  scale={xScale}
+  stroke="var(--border)"
+  tickStroke="var(--border)"
+  tickLabelProps={() => ({
+    fill: 'var(--text-secondary)',
+    fontSize: 11,
+    textAnchor: 'middle',
+    dy: '0.25em',
+  })}
+  numTicks={Math.min(innerWidth / 100, 10)}  // Adaptive tick count
+/>
+]]></axis-bottom-usage>
+
+    <grid-columns-usage><![CDATA[
+import { GridColumns } from '@visx/grid'
+
+<GridColumns
+  scale={xScale}
+  height={innerHeight}
+  stroke="var(--border)"
+  strokeOpacity={0.3}
+  strokeDasharray="2,2"
+/>
+]]></grid-columns-usage>
+
+    <parent-size-usage><![CDATA[
+import { ParentSize } from '@visx/responsive'
+
+<div className="w-full min-h-[300px] md:min-h-[400px]">
+  <ParentSize>
+    {({ width, height: parentHeight }) => (
+      <ScatterPlotInner
+        data={data}
+        width={width}
+        height={height || Math.max(parentHeight, 300)}
+      />
+    )}
+  </ParentSize>
+</div>
+]]></parent-size-usage>
+
+    <group-usage><![CDATA[
+import { Group } from '@visx/group'
+
+<Group left={MARGIN.left} top={MARGIN.top}>
+  {/* Grid lines and axis go here */}
+</Group>
+]]></group-usage>
+  </visx-patterns>
+
+  <implementation-constants><![CDATA[
+// Margin configuration for axes
+const MARGIN = { top: 20, right: 20, bottom: 40, left: 20 }
+
+// Minimum heights (matching Tailwind classes)
+const MIN_HEIGHT_DESKTOP = 400
+const MIN_HEIGHT_MOBILE = 300
+
+// Inner dimensions calculation
+const innerWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
+const innerHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
+]]></implementation-constants>
+
+  <empty-state-handling><![CDATA[
+// Empty state renders SVG with centered message
+if (data.length === 0) {
+  return (
+    <svg width={width} height={height} data-testid="scatter-plot">
+      <rect width={width} height={height} fill="var(--bg-secondary)" />
+      <text
+        x={width / 2}
+        y={height / 2}
+        textAnchor="middle"
+        fill="var(--text-muted)"
+        className="text-sm"
+      >
+        No obituaries yet
+      </text>
+    </svg>
+  )
+}
+]]></empty-state-handling>
+
+  <testing-context>
+    <test-file-convention>
+      <pattern>tests/unit/components/{component-path}/{component-name}.test.tsx</pattern>
+      <pattern>tests/unit/lib/utils/{utility-name}.test.ts</pattern>
+    </test-file-convention>
+
+    <test-files-to-create>
+      <file path="tests/unit/components/visualization/scatter-plot.test.tsx">
+        <description>Unit tests for ScatterPlot component</description>
+        <scenarios>
+          <scenario id="1" ac="AC-3.1.1">
+            <title>Renders SVG Element with data-testid</title>
+            <input>ScatterPlot with mock obituary data</input>
+            <expected>SVG element with data-testid="scatter-plot" rendered</expected>
+          </scenario>
+          <scenario id="2" ac="AC-3.1.8">
+            <title>Empty State Shows Message</title>
+            <input>ScatterPlot with empty data array</input>
+            <expected>"No obituaries yet" text visible</expected>
+          </scenario>
+          <scenario id="3" ac="AC-3.1.4">
+            <title>Background Color Applied</title>
+            <input>ScatterPlot with data</input>
+            <expected>rect element with fill="var(--bg-secondary)"</expected>
+          </scenario>
+          <scenario id="4" ac="AC-3.1.1">
+            <title>ARIA Label Includes Count</title>
+            <input>ScatterPlot with 5 obituaries</input>
+            <expected>aria-label contains "5 AI obituaries"</expected>
+          </scenario>
+          <scenario id="5" ac="AC-3.1.6">
+            <title>X-Axis Renders</title>
+            <input>ScatterPlot with data</input>
+            <expected>AxisBottom component rendered</expected>
+          </scenario>
+          <scenario id="6" ac="AC-3.1.5">
+            <title>Grid Lines Render</title>
+            <input>ScatterPlot with data</input>
+            <expected>GridColumns component rendered with correct stroke properties</expected>
+          </scenario>
+          <scenario id="7" ac="AC-3.1.10">
+            <title>Date Domain Computed Correctly</title>
+            <input>Obituaries spanning 2022-2024</input>
+            <expected>xScale domain includes full date range with padding</expected>
+          </scenario>
+        </scenarios>
+      </file>
+    </test-files-to-create>
+
+    <test-patterns-reference source="tests/unit/components/obituary/obituary-card.test.tsx">
+      <pattern name="vitest-imports"><![CDATA[
+import { describe, it, expect, vi } from 'vitest'
+]]></pattern>
+      <pattern name="module-import-test"><![CDATA[
+it('has required exports', async () => {
+  const module = await import('@/lib/constants/categories')
+  expect(module.CATEGORY_COLORS).toBeDefined()
+})
+]]></pattern>
+    </test-patterns-reference>
+
+    <mock-obituary-data><![CDATA[
+// Mock obituary data for testing
+const mockObituaries: ObituarySummary[] = [
+  {
+    _id: 'test-1',
+    slug: 'ai-bubble-2022',
+    claim: 'AI is just a bubble',
+    source: 'Test Source 1',
+    date: '2022-03-15',
+    categories: ['market'],
+  },
+  {
+    _id: 'test-2',
+    slug: 'ai-cant-reason-2023',
+    claim: 'AI cannot reason',
+    source: 'Test Source 2',
+    date: '2023-06-20',
+    categories: ['capability'],
+  },
+  {
+    _id: 'test-3',
+    slug: 'agi-impossible-2024',
+    claim: 'AGI is impossible',
+    source: 'Test Source 3',
+    date: '2024-01-10',
+    categories: ['agi'],
+  },
+]
+
+// Empty data for empty state testing
+const emptyObituaries: ObituarySummary[] = []
+]]></mock-obituary-data>
+
+    <vitest-visx-mocking><![CDATA[
+// Note: Visx components render to SVG elements
+// Testing approach: Check for rendered SVG elements rather than mocking Visx
+
+// Example: Testing for AxisBottom
+const svg = container.querySelector('svg')
+const axisGroup = svg?.querySelector('.visx-axis-bottom')
+expect(axisGroup).toBeInTheDocument()
+
+// Or check for specific SVG elements
+const gridLines = svg?.querySelectorAll('line')
+expect(gridLines?.length).toBeGreaterThan(0)
+]]></vitest-visx-mocking>
+  </testing-context>
+
+  <homepage-integration>
+    <current-structure>
+      <section name="Hero" component="CountDisplay" />
+      <section name="List" component="ObituaryList" />
+    </current-structure>
+
+    <new-structure>
+      <section name="Hero" component="CountDisplay" />
+      <section name="Timeline" component="ScatterPlot" note="NEW - Story 3.1" />
+      <section name="List" component="ObituaryList" />
+    </new-structure>
+
+    <integration-code><![CDATA[
+// src/app/page.tsx (modification)
+import { CountDisplay } from "@/components/obituary/count-display";
+import { ObituaryList } from "@/components/obituary/obituary-list";
+import { ScatterPlot } from "@/components/visualization/scatter-plot";
+import { JsonLd } from "@/components/seo/json-ld";
+import { homepageMetadata } from "@/lib/utils/seo";
+import { getObituaries } from "@/lib/sanity/queries";
+
+export const metadata = homepageMetadata;
+
+export default async function Home() {
+  const obituaries = await getObituaries();
+
+  return (
+    <>
+      <JsonLd type="website" />
+      <main className="min-h-screen">
+        {/* Hero Section with Count */}
+        <section className="flex flex-col items-center justify-center py-24 px-4">
+          <CountDisplay />
+        </section>
+
+        {/* Timeline Visualization */}
+        <section className="container mx-auto px-4 py-8">
+          <ScatterPlot data={obituaries} />
+        </section>
+
+        {/* Obituary List Section */}
+        <section className="px-4 pb-24 max-w-7xl mx-auto">
+          <ObituaryList />
+        </section>
+      </main>
+    </>
+  );
+}
+]]></integration-code>
+  </homepage-integration>
+
+  <reference-implementation>
+    <description>Complete ScatterPlot component reference from story markdown</description>
+    <code><![CDATA[
+// src/components/visualization/scatter-plot.tsx
+'use client'
+
+import { useMemo } from 'react'
+import { ParentSize } from '@visx/responsive'
+import { scaleTime, scaleLinear } from '@visx/scale'
+import { AxisBottom } from '@visx/axis'
+import { GridColumns } from '@visx/grid'
+import { Group } from '@visx/group'
+import type { ObituarySummary } from '@/types/obituary'
+
+export interface ScatterPlotProps {
+  data: ObituarySummary[]
+  height?: number
+}
+
+const MARGIN = { top: 20, right: 20, bottom: 40, left: 20 }
+const MIN_HEIGHT_DESKTOP = 400
+const MIN_HEIGHT_MOBILE = 300
+
+function ScatterPlotInner({
+  data,
+  width,
+  height,
+}: {
+  data: ObituarySummary[]
+  width: number
+  height: number
+}) {
+  // Compute inner dimensions
+  const innerWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
+  const innerHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
+
+  // Compute scales with useMemo
+  const xScale = useMemo(() => {
+    if (data.length === 0) {
+      return scaleTime({
+        domain: [new Date('2020-01-01'), new Date()],
+        range: [0, innerWidth],
+      })
+    }
+    const dates = data.map(d => new Date(d.date))
+    const minDate = new Date(Math.min(...dates.map(d => d.getTime())))
+    const maxDate = new Date(Math.max(...dates.map(d => d.getTime())))
+    // Add padding to domain
+    const padding = (maxDate.getTime() - minDate.getTime()) * 0.05
+    return scaleTime({
+      domain: [
+        new Date(minDate.getTime() - padding),
+        new Date(maxDate.getTime() + padding),
+      ],
+      range: [0, innerWidth],
+    })
+  }, [data, innerWidth])
+
+  const yScale = useMemo(() => {
+    return scaleLinear({
+      domain: [0, 1],
+      range: [innerHeight, 0],
+    })
+  }, [innerHeight])
+
+  // Empty state
+  if (data.length === 0) {
+    return (
+      <svg width={width} height={height} data-testid="scatter-plot">
+        <rect width={width} height={height} fill="var(--bg-secondary)" />
+        <text
+          x={width / 2}
+          y={height / 2}
+          textAnchor="middle"
+          fill="var(--text-muted)"
+          className="text-sm"
+        >
+          No obituaries yet
+        </text>
+      </svg>
+    )
+  }
+
+  return (
+    <svg
+      width={width}
+      height={height}
+      data-testid="scatter-plot"
+      role="img"
+      aria-label={`Interactive timeline of ${data.length} AI obituaries`}
+    >
+      {/* Background */}
+      <rect width={width} height={height} fill="var(--bg-secondary)" />
+
+      <Group left={MARGIN.left} top={MARGIN.top}>
+        {/* Grid lines at year intervals */}
+        <GridColumns
+          scale={xScale}
+          height={innerHeight}
+          stroke="var(--border)"
+          strokeOpacity={0.3}
+          strokeDasharray="2,2"
+        />
+
+        {/* X-axis (time) */}
+        <AxisBottom
+          top={innerHeight}
+          scale={xScale}
+          stroke="var(--border)"
+          tickStroke="var(--border)"
+          tickLabelProps={() => ({
+            fill: 'var(--text-secondary)',
+            fontSize: 11,
+            textAnchor: 'middle',
+            dy: '0.25em',
+          })}
+          numTicks={Math.min(innerWidth / 100, 10)}
+        />
+
+        {/* Data points will be rendered in Story 3.2 */}
+      </Group>
+    </svg>
+  )
+}
+
+export function ScatterPlot({ data, height }: ScatterPlotProps) {
+  return (
+    <div
+      className="w-full min-h-[300px] md:min-h-[400px]"
+      style={{ height: height || 'auto' }}
+    >
+      <ParentSize>
+        {({ width, height: parentHeight }) => (
+          <ScatterPlotInner
+            data={data}
+            width={width}
+            height={height || Math.max(parentHeight, 300)}
+          />
+        )}
+      </ParentSize>
+    </div>
+  )
+}
+]]></code>
+  </reference-implementation>
+
+  <tasks-summary>
+    <task id="1" time="10min" title="Create Type Definitions">
+      <file>src/types/visualization.ts</file>
+      <deliverables>
+        <item>YAxisMode type union</item>
+        <item>ViewState interface</item>
+        <item>ScatterPlotProps interface</item>
+      </deliverables>
+    </task>
+
+    <task id="2" time="5min" title="Install Visx Dependencies">
+      <command>pnpm add @visx/scale @visx/axis @visx/grid @visx/group @visx/responsive</command>
+      <verification>
+        <item>All packages in package.json dependencies</item>
+        <item>No peer dependency warnings</item>
+      </verification>
+    </task>
+
+    <task id="3" time="45min" title="Create ScatterPlot Component">
+      <file>src/components/visualization/scatter-plot.tsx</file>
+      <deliverables>
+        <item>Client component with 'use client' directive</item>
+        <item>ParentSize wrapper for responsive sizing</item>
+        <item>xScale (scaleTime) with useMemo</item>
+        <item>yScale (scaleLinear) with useMemo</item>
+        <item>SVG container with background color</item>
+        <item>GridColumns for year intervals</item>
+        <item>AxisBottom for time axis</item>
+        <item>data-testid="scatter-plot" attribute</item>
+        <item>role="img" and aria-label for accessibility</item>
+      </deliverables>
+    </task>
+
+    <task id="4" time="15min" title="Implement Empty State">
+      <deliverables>
+        <item>Check for empty data array</item>
+        <item>Centered "No obituaries yet" message</item>
+        <item>Muted text color styling</item>
+      </deliverables>
+    </task>
+
+    <task id="5" time="15min" title="Integrate with Homepage">
+      <file>src/app/page.tsx</file>
+      <deliverables>
+        <item>Import ScatterPlot component</item>
+        <item>Add getObituaries() data fetch</item>
+        <item>Add timeline section between count and list</item>
+        <item>Pass obituaries data to ScatterPlot</item>
+      </deliverables>
+    </task>
+
+    <task id="6" time="30min" title="Write Unit Tests">
+      <file>tests/unit/components/visualization/scatter-plot.test.tsx</file>
+      <deliverables>
+        <item>Test: Renders SVG with data-testid</item>
+        <item>Test: Shows empty state when no data</item>
+        <item>Test: Has correct background color</item>
+        <item>Test: Has aria-label with obituary count</item>
+        <item>Test: Renders AxisBottom</item>
+        <item>Test: Renders GridColumns</item>
+        <item>Test: Computes correct date domain</item>
+      </deliverables>
+    </task>
+
+    <task id="7" time="15min" title="Manual Testing">
+      <checklist>
+        <item>Navigate to homepage</item>
+        <item>Verify scatter plot container visible</item>
+        <item>Verify dark background (--bg-secondary)</item>
+        <item>Verify X-axis shows date ticks</item>
+        <item>Verify grid lines at year intervals</item>
+        <item>Verify responsive width on resize</item>
+        <item>Verify minimum height on mobile viewport</item>
+        <item>Test empty state (modify query temporarily)</item>
+      </checklist>
+    </task>
+
+    <task id="8" time="10min" title="Bundle Size Verification">
+      <command>pnpm build</command>
+      <deliverables>
+        <item>Check visualization chunk size in build output</item>
+        <item>Verify Visx imports are tree-shaken</item>
+        <item>Document bundle size in Dev Agent Record</item>
+      </deliverables>
+      <target>Total visualization bundle &lt;50KB gzipped</target>
+    </task>
+  </tasks-summary>
+
+  <files-summary>
+    <to-create>
+      <file>src/types/visualization.ts</file>
+      <file>src/components/visualization/scatter-plot.tsx</file>
+      <file>tests/unit/components/visualization/scatter-plot.test.tsx</file>
+    </to-create>
+    <to-modify>
+      <file>src/app/page.tsx</file>
+    </to-modify>
+    <to-verify>
+      <file>package.json (new Visx dependencies)</file>
+    </to-verify>
+  </files-summary>
+
+  <warnings>
+    <warning type="dependency" priority="high">
+      Visx packages are NOT installed. Must run: pnpm add @visx/scale @visx/axis @visx/grid @visx/group @visx/responsive
+    </warning>
+    <warning type="client-component" priority="high">
+      ScatterPlot MUST be a Client Component ('use client' directive required).
+      Visx components require DOM access and won't work as Server Components.
+    </warning>
+    <warning type="css-variables" priority="medium">
+      Use CSS variable syntax in SVG: fill="var(--bg-secondary)" NOT Tailwind classes.
+      SVG attributes don't support Tailwind class syntax like bg-[--bg-secondary].
+    </warning>
+    <warning type="homepage" priority="medium">
+      Homepage must become async Server Component to fetch obituary data.
+      Add getObituaries() call and pass data as prop to ScatterPlot.
+    </warning>
+    <warning type="visx-types" priority="low">
+      Visx has its own TypeScript types. Use ScaleTime from @visx/scale for xScale type.
+    </warning>
+    <warning type="story-scope" priority="info">
+      Story 3.1 focuses on CONTAINER and AXES only. Data points (circles) are added in Story 3.2.
+      Do not implement ScatterPoint component in this story.
+    </warning>
+  </warnings>
+
+  <verification-checklist>
+    <item status="verified">ObituarySummary type exists with _id, slug, claim, source, date, categories</item>
+    <item status="verified">getObituaries() query exists and returns ObituarySummary[]</item>
+    <item status="verified">CSS variables for --bg-secondary, --border, --text-secondary, --text-muted exist</item>
+    <item status="verified">Category color CSS variables exist</item>
+    <item status="verified">Homepage structure has CountDisplay and ObituaryList sections</item>
+    <item status="verified">cn() utility available at @/lib/utils</item>
+    <item status="not-installed">@visx/scale - must be installed</item>
+    <item status="not-installed">@visx/axis - must be installed</item>
+    <item status="not-installed">@visx/grid - must be installed</item>
+    <item status="not-installed">@visx/group - must be installed</item>
+    <item status="not-installed">@visx/responsive - must be installed</item>
+  </verification-checklist>
+
+  <learnings-from-previous>
+    <learning story="2-8">Client Component Pattern - Use 'use client' directive at top of file for interactive components</learning>
+    <learning story="2-4">Deep Archive Colors - Use CSS variable references like var(--bg-secondary) for theme consistency</learning>
+    <learning story="2-3">Responsive Design - Use Tailwind responsive classes (md:min-h-[400px]) for breakpoint styling</learning>
+    <learning story="2-2">data-testid Pattern - Add data-testid attributes for E2E test selectors</learning>
+    <learning story="2-1">useMemo for Performance - Memoize expensive computations (scales) to prevent re-renders</learning>
+    <learning story="2-1">Component Location - Place visualization components in src/components/visualization/</learning>
+    <learning story="2-1">Type Exports - Define types in dedicated files under src/types/ for reuse</learning>
+    <learning story="2-1">React 19 Testing - Async Server Components may require wrapping render() in act()</learning>
+  </learnings-from-previous>
+
+  <definition-of-done>
+    <item>ScatterPlot component exists at src/components/visualization/scatter-plot.tsx</item>
+    <item>visualization.ts types exist at src/types/visualization.ts</item>
+    <item>Component integrated into homepage</item>
+    <item>Container takes full width of parent</item>
+    <item>Minimum height enforced (400px desktop, 300px mobile)</item>
+    <item>Background uses --bg-secondary color</item>
+    <item>X-axis shows time with date ticks</item>
+    <item>Grid lines visible at year intervals</item>
+    <item>Empty state shows "No obituaries yet"</item>
+    <item>Component is responsive (uses ParentSize)</item>
+    <item>Scales computed with useMemo for performance</item>
+    <item>data-testid="scatter-plot" attribute present</item>
+    <item>ARIA label describes visualization</item>
+    <item>Unit tests pass</item>
+    <item>No TypeScript errors</item>
+    <item>Lint passes (pnpm lint)</item>
+    <item>Bundle size verified (Visx tree-shaken)</item>
+  </definition-of-done>
+</story-context>

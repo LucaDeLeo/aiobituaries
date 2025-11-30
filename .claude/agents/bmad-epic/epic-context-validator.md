@@ -1,7 +1,7 @@
 ---
 name: bmm-epic-context-validator
 description: Validates Epic Tech Spec against completeness checklist. use PROACTIVELY when verifying epic technical context before story creation
-model: sonnet
+model: opus
 color: yellow
 ---
 

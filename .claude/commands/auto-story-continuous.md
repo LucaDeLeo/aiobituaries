@@ -120,7 +120,7 @@ Output (JSON in response):
 ### bmm-epic-context-validator
 
 **Purpose:** Validate tech spec completeness
-**Model:** `haiku`
+**Model:** `sonnet`
 
 ```yaml
 Input:
@@ -182,7 +182,7 @@ Output (JSON):
 ### bmm-story-context-validator
 
 **Purpose:** Validate story context completeness
-**Model:** `haiku`
+**Model:** `sonnet`
 
 ```yaml
 Input:
@@ -248,10 +248,10 @@ Output (JSON):
 | Sub-Agent | Model | Rationale |
 |-----------|-------|-----------|
 | bmm-epic-context-builder | opus | Complex architecture reasoning |
-| bmm-epic-context-validator | haiku | Checklist validation |
+| bmm-epic-context-validator | sonnet | Checklist validation |
 | bmm-story-creator | opus | Template filling |
 | bmm-story-context-builder | opus | File discovery |
-| bmm-story-context-validator | haiku | Checklist validation |
+| bmm-story-context-validator | sonnet | Checklist validation |
 | bmm-story-implementer | opus | Complex code generation |
 | bmm-story-reviewer | opus | Nuanced code review |
 
@@ -354,7 +354,7 @@ IF status == "backlog":
     FOR attempt IN 1..max_validation_attempts:
         Task tool:
           subagent_type: "bmm-epic-context-validator"
-          model: "haiku"
+          model: "sonnet"
           description: "Validate epic {epic_id} tech spec (attempt {attempt})"
           prompt: |
             Validate tech spec for Epic {epic_id}.
@@ -459,7 +459,7 @@ FOR attempt IN 1..max_validation_attempts:
     # VALIDATE
     Task tool:
       subagent_type: "bmm-story-context-validator"
-      model: "haiku"
+      model: "sonnet"
       description: "Validate context for {story_key} (attempt {attempt})"
       prompt: |
         Validate story context for {story_key}.
@@ -928,7 +928,7 @@ IF checkpoint exists:
 │ PHASE: Context Validation (attempt 1/3)
 └─────────────────────────────────────────────────────────────────────────────────
   🔬 Validating context completeness...
-     Agent: bmm-story-context-validator (haiku)
+     Agent: bmm-story-context-validator (sonnet)
 
      Issues Found:
        • 0 critical
