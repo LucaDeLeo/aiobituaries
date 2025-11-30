@@ -2,9 +2,21 @@ import { notFound } from 'next/navigation'
 import { getObituaryBySlug, getAllObituarySlugs } from '@/lib/sanity/queries'
 import { ObituaryDetail } from '@/components/obituary/obituary-detail'
 import { ObituaryContext } from '@/components/obituary/obituary-context'
+import { generateObituaryMetadata } from '@/lib/utils/seo'
 
 interface PageProps {
   params: Promise<{ slug: string }>
+}
+
+/**
+ * Generate SEO metadata for each obituary page.
+ * Includes title, description, Open Graph, and Twitter Card tags.
+ */
+export async function generateMetadata({ params }: PageProps) {
+  const { slug } = await params
+  const obituary = await getObituaryBySlug(slug)
+  if (!obituary) return {}
+  return generateObituaryMetadata(obituary)
 }
 
 /**

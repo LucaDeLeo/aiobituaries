@@ -1,5 +1,8 @@
 import { CountDisplay } from "@/components/obituary/count-display";
 import { ObituaryList } from "@/components/obituary/obituary-list";
+import { homepageMetadata } from "@/lib/utils/seo";
+
+export const metadata = homepageMetadata;
 
 export default function Home() {
   return (
