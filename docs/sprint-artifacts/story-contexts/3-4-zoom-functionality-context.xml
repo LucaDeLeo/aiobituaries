@@ -1,0 +1,1234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context XML
+  Generated: 2025-11-30
+  Story: 3-4-zoom-functionality
+  Purpose: Complete implementation context for Zoom Functionality
+-->
+<story-context>
+  <metadata>
+    <story-key>3-4-zoom-functionality</story-key>
+    <title>Zoom Functionality</title>
+    <epic>Epic 3 - Timeline Visualization</epic>
+    <status>drafted</status>
+    <priority>High</priority>
+    <generated>2025-11-30</generated>
+    <sequence>4 of 8 in Epic 3</sequence>
+  </metadata>
+
+  <story-reference>
+    <path>docs/sprint-artifacts/stories/3-4-zoom-functionality.md</path>
+    <user-story>
+      As a visitor,
+      I want to zoom in and out on the timeline,
+      So that I can see dense clusters or the full picture.
+    </user-story>
+  </story-reference>
+
+  <acceptance-criteria>
+    <criterion id="AC-3.4.1">Smooth zoom with scroll wheel and pinch - Given timeline is displayed, when user zooms with scroll wheel or pinch gesture, then timeline scale changes smoothly with spring animation (~200ms)</criterion>
+    <criterion id="AC-3.4.2">Zoom centers on cursor position - Given user zooms, when zoom event fires, then zoom transformation centers on cursor/pinch position (not center of viewport)</criterion>
+    <criterion id="AC-3.4.3">Zoom scale limits enforced - Given user zooms, when zoom reaches limits, then scale is clamped to range 0.5x (min) to 5x (max)</criterion>
+    <criterion id="AC-3.4.4">Time axis granularity adapts to zoom - Given user zooms in, when zoom exceeds 1.5x, then time axis shows more granular markers (months, then weeks at 3x+)</criterion>
+    <criterion id="AC-3.4.5">Dots spread apart when zooming in - Given user zooms in past 1.5x, when dots are rendered, then they spread apart with less overlap. NOTE: The scale transform applied to motion.g naturally spreads all points apart proportionally - no per-point repositioning logic is required.</criterion>
+    <criterion id="AC-3.4.6">Zoom controls visible and functional - Given zoom controls are visible, when user clicks +/- buttons, then zoom increments/decrements by 20% steps</criterion>
+    <criterion id="AC-3.4.7">Zoom controls disabled at limits - Given zoom is at min or max, when user views controls, then corresponding +/- button is disabled</criterion>
+    <criterion id="AC-3.4.8">Reset button returns to 1x - Given zoom is not at 1x, when user clicks reset button, then zoom animates back to 1x scale</criterion>
+  </acceptance-criteria>
+
+  <documentation-artifacts>
+    <artifact type="tech-spec" relevance="primary">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-3-tech-spec.md</path>
+      <description>Complete technical specification for Epic 3 Timeline Visualization including zoom specifications</description>
+      <key-sections>
+        <section line="806-925">Section 6: Animation Presets - SPRINGS.zoom = { stiffness: 300, damping: 30 } for zoom animation</section>
+        <section line="930-1065">Section 7.1: useZoom Hook - Complete hook specification with interfaces and implementation</section>
+        <section line="689-710">Section 4.5: ZoomControls Component - UI control specifications</section>
+        <section line="268-276">Section 3.1: ViewState Interface - scale field for zoom tracking</section>
+        <section line="617-642">Section 4.3: AxisTime Component - Tick granularity table based on zoom level</section>
+        <section line="1219-1240">Story 3.4 Acceptance Criteria in tech-spec</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="architecture" relevance="primary">
+      <path>docs/architecture.md</path>
+      <description>System architecture defining Contextual Scatter Plot pattern and interaction states</description>
+      <key-sections>
+        <section>Interaction States table - Zoomed state: Scale transforms, axis rescales</section>
+        <section>Animation Presets - zoom transition settings (stiffness: 300, damping: 30)</section>
+        <section>Edge Cases - Zoom out of bounds: clamp to min/max, disable zoom buttons</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="story" relevance="primary">
+      <path>docs/sprint-artifacts/stories/3-4-zoom-functionality.md</path>
+      <description>Full story definition with 9 tasks, test scenarios, reference implementation, and definition of done</description>
+      <reference-implementation-included>true</reference-implementation-included>
+      <task-count>9</task-count>
+    </artifact>
+
+    <artifact type="previous-context" relevance="high">
+      <path>docs/sprint-artifacts/story-contexts/3-1-scatter-plot-foundation-context.xml</path>
+      <description>Story 3-1 context - ScatterPlot container structure, MARGIN constants, xScale/yScale</description>
+    </artifact>
+
+    <artifact type="previous-context" relevance="high">
+      <path>docs/sprint-artifacts/story-contexts/3-2-timeline-data-points-context.xml</path>
+      <description>Story 3-2 context - ScatterPoint rendering, motion integration patterns, spring physics usage</description>
+    </artifact>
+
+    <artifact type="previous-context" relevance="critical">
+      <path>docs/sprint-artifacts/story-contexts/3-3-horizontal-scroll-pan-context.xml</path>
+      <description>Story 3-3 context - Pan implementation with ViewState, wheel handler, motion values - zoom builds on this</description>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code>
+    <file purpose="modify" priority="critical">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>ScatterPlot component - main modification target for zoom functionality. Already has pan from Story 3-3.</description>
+      <current-state>
+        Implements scatter plot with pan functionality:
+        - ParentSize responsive container
+        - ViewState useState for scale, translateX, translateY
+        - xScale (scaleTime) for date positioning
+        - yScale (scaleLinear 0-1) for jitter positioning
+        - Motion values: translateXMotion, springX for pan animation
+        - Pan handlers: handlePanStart, handlePanMove, handlePanEnd
+        - Mouse/touch/wheel handlers for pan interaction
+        - Edge gradients for pan visibility
+        - Cursor states (grab/grabbing)
+        - data-testid="scatter-plot" on SVG
+        - motion.g wrapper with style={{ x: springX }} for pan transform
+      </current-state>
+      <integration-points>
+        - Add useZoom hook call
+        - Extend handleWheel to distinguish zoom (vertical, no-shift) from pan (shift/horizontal)
+        - Apply scale transform to motion.g alongside translateX
+        - Create scaleMotion value and springScale for animated zoom
+        - Render ZoomControls component
+        - Pass zoomScale to AxisBottom for granularity adaptation
+      </integration-points>
+      <code-excerpt><![CDATA[
+'use client'
+
+import { useMemo, useRef, useState, useCallback } from 'react'
+import { motion, useMotionValue, useSpring, animate } from 'motion/react'
+import { ParentSize } from '@visx/responsive'
+import { scaleTime, scaleLinear } from '@visx/scale'
+import { AxisBottom } from '@visx/axis'
+import { GridColumns } from '@visx/grid'
+import { Group } from '@visx/group'
+import type { ObituarySummary } from '@/types/obituary'
+import type { ViewState } from '@/types/visualization'
+import { ScatterPoint } from './scatter-point'
+import { hashToJitter, getCategoryColor } from '@/lib/utils/scatter-helpers'
+
+export interface ScatterPlotProps {
+  data: ObituarySummary[]
+  height?: number
+}
+
+const MARGIN = { top: 20, right: 20, bottom: 40, left: 20 }
+
+// EdgeGradients component already exists...
+
+export function ScatterPlotInner({
+  data,
+  width,
+  height,
+}: {
+  data: ObituarySummary[]
+  width: number
+  height: number
+}) {
+  // ViewState for tracking pan and zoom position
+  const [viewState, setViewState] = useState<ViewState>({
+    scale: 1,
+    translateX: 0,
+    translateY: 0,
+  })
+
+  // Pan state refs
+  const containerRef = useRef<SVGSVGElement>(null)
+  const isPanningRef = useRef(false)
+  const startXRef = useRef(0)
+  const velocityRef = useRef(0)
+  const lastMoveTimeRef = useRef(0)
+
+  // State for cursor
+  const [isDragging, setIsDragging] = useState(false)
+
+  // Motion values for pan animation
+  const translateXMotion = useMotionValue(viewState.translateX)
+  const springX = useSpring(translateXMotion, { stiffness: 100, damping: 20 })
+
+  // Wheel handler (Shift+scroll for horizontal pan)
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      // Horizontal scroll (trackpad) or Shift+vertical scroll
+      const deltaX = e.shiftKey ? e.deltaY : e.deltaX
+      if (Math.abs(deltaX) > 0) {
+        e.preventDefault()
+        const newTranslateX = clampTranslateX(translateXMotion.get() - deltaX)
+        translateXMotion.set(newTranslateX)
+        setViewState((prev) => ({ ...prev, translateX: newTranslateX }))
+      }
+    },
+    [clampTranslateX, translateXMotion]
+  )
+
+  // ... rest of component
+
+  return (
+    <div className="relative" style={{ cursor: isDragging ? 'grabbing' : 'grab' }}>
+      <EdgeGradients ... />
+      <svg ref={containerRef} ...>
+        <rect ... />
+        <Group left={MARGIN.left} top={MARGIN.top}>
+          <GridColumns ... />
+          <AxisBottom ... />
+          <motion.g style={{ x: springX }}>
+            {/* Points render here */}
+          </motion.g>
+        </Group>
+      </svg>
+    </div>
+  )
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/components/visualization/scatter-point.tsx</path>
+      <description>ScatterPoint component - no modification needed, zoom scaling handled at parent level</description>
+      <code-excerpt><![CDATA[
+'use client'
+
+import { motion } from 'motion/react'
+import type { ObituarySummary } from '@/types/obituary'
+
+export interface ScatterPointProps {
+  obituary: ObituarySummary
+  x: number
+  y: number
+  color: string
+  isFiltered?: boolean
+  isHovered?: boolean
+  isClustered?: boolean
+  onMouseEnter?: () => void
+  onMouseLeave?: () => void
+  onClick?: () => void
+}
+
+const POINT_RADIUS = 7 // 14px diameter
+
+export function ScatterPoint({ ... }: ScatterPointProps) {
+  if (isClustered) return null
+
+  const opacity = isFiltered ? (isHovered ? 1 : 0.8) : 0.2
+  const glowIntensity = isHovered ? 6 : 4
+
+  return (
+    <motion.circle
+      data-testid="scatter-point"
+      cx={x}
+      cy={y}
+      r={POINT_RADIUS}
+      fill={color}
+      style={{
+        filter: `drop-shadow(0 0 ${glowIntensity}px ${color})`,
+        cursor: isFiltered ? 'pointer' : 'default',
+        pointerEvents: isFiltered ? 'auto' : 'none',
+      }}
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{
+        opacity,
+        scale: isHovered ? 1.3 : 1,
+      }}
+      transition={{
+        opacity: { duration: 0.15 },
+        scale: { type: 'spring', stiffness: 300, damping: 20 },
+      }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onClick={onClick}
+      role="img"
+      aria-label={`${obituary.source}: ${obituary.claim.slice(0, 50)}...`}
+    />
+  )
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/types/visualization.ts</path>
+      <description>Type definitions including ViewState with scale field already defined</description>
+      <code-excerpt><![CDATA[
+import type { ObituarySummary, Category } from './obituary'
+
+export type YAxisMode = 'spread' | 'market' | 'capability' | 'agi'
+
+/**
+ * Zoom and pan state for visualization.
+ */
+export interface ViewState {
+  /** Zoom scale factor (0.5 to 5) */
+  scale: number
+  /** Pan offset X (pixels) */
+  translateX: number
+  /** Pan offset Y (pixels) */
+  translateY: number
+}
+
+export interface ScatterPlotProps {
+  data: ObituarySummary[]
+  mode?: YAxisMode
+  activeCategories?: Category[]
+  onSelect?: (obituary: ObituarySummary) => void
+  height?: number
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>src/lib/utils/scatter-helpers.ts</path>
+      <description>Scatter plot utilities - hashToJitter, getCategoryColor</description>
+      <code-excerpt><![CDATA[
+import type { Category } from '@/types/obituary'
+
+export const CATEGORY_HEX_COLORS: Record<Category, string> = {
+  capability: '#C9A962',
+  market: '#7B9E89',
+  agi: '#9E7B7B',
+  dismissive: '#7B7B9E',
+}
+
+export function hashToJitter(id: string): number {
+  let hash = 0
+  for (let i = 0; i < id.length; i++) {
+    hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0
+  }
+  return (Math.abs(hash) % 100) / 100
+}
+
+export function getCategoryColor(categories: Category[]): string {
+  const primary = categories[0] || 'capability'
+  return CATEGORY_HEX_COLORS[primary]
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/components/ui/button.tsx</path>
+      <description>shadcn/ui Button component - use for ZoomControls buttons</description>
+      <usage-notes>
+        Use variant="ghost" and size="icon" for zoom control buttons.
+        Apply disabled state via disabled prop.
+        Button has built-in accessibility (focus states, disabled styling).
+      </usage-notes>
+      <code-excerpt><![CDATA[
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 ...",
+  {
+    variants: {
+      variant: {
+        ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+        // ...
+      },
+      size: {
+        icon: "size-9",
+        "icon-sm": "size-8",
+        // ...
+      },
+    },
+  }
+)
+]]></code-excerpt>
+    </file>
+
+    <file purpose="test-reference" priority="medium">
+      <path>tests/unit/components/visualization/scatter-plot-pan.test.tsx</path>
+      <description>Test pattern for pan functionality - use same module export testing pattern</description>
+      <test-pattern>Module exports testing due to React 19 + Vitest hook resolution issues</test-pattern>
+      <code-excerpt><![CDATA[
+import { describe, it, expect } from 'vitest'
+
+describe('ScatterPlot pan module exports', () => {
+  it('exports createClampTranslateX helper', async () => {
+    const scatterModule = await import('@/components/visualization/scatter-plot')
+    expect(scatterModule.createClampTranslateX).toBeDefined()
+    expect(typeof scatterModule.createClampTranslateX).toBe('function')
+  })
+})
+
+describe('createClampTranslateX', () => {
+  it('clamps value to min when below min', async () => {
+    const { createClampTranslateX } = await import('@/components/visualization/scatter-plot')
+    const clamp = createClampTranslateX({ min: -100, max: 50 })
+    expect(clamp(-200)).toBe(-100)
+  })
+  // ... more tests
+})
+]]></code-excerpt>
+    </file>
+
+    <file purpose="test-reference" priority="medium">
+      <path>tests/unit/lib/utils/scatter-helpers.test.ts</path>
+      <description>Unit test pattern for helper functions</description>
+      <test-pattern>Standard Vitest describe/it/expect pattern</test-pattern>
+    </file>
+  </existing-code>
+
+  <development-constraints>
+    <constraint type="architecture" source="tech-spec">
+      <description>ViewState interface already includes scale field (0.5 to 5) for zoom tracking</description>
+      <implementation-note>ViewState is already being used for pan, extend to use scale property</implementation-note>
+    </constraint>
+
+    <constraint type="animation" source="tech-spec">
+      <description>Use SPRINGS.zoom = { stiffness: 300, damping: 30 } for zoom animation</description>
+      <implementation-note>Different from pan spring (stiffness: 100, damping: 20) - zoom is snappier</implementation-note>
+    </constraint>
+
+    <constraint type="wheel-handler" source="story">
+      <description>Wheel handler must distinguish between pan and zoom</description>
+      <rules>
+        <rule>Shift+vertical scroll = horizontal pan (existing)</rule>
+        <rule>Horizontal scroll (trackpad) = horizontal pan (existing)</rule>
+        <rule>Vertical scroll (no shift) = zoom in/out (NEW)</rule>
+      </rules>
+      <implementation-note>Check event.shiftKey and compare Math.abs(deltaX) vs Math.abs(deltaY)</implementation-note>
+    </constraint>
+
+    <constraint type="zoom-center" source="story">
+      <description>Zoom must center on cursor position, not viewport center</description>
+      <formula>newTranslate = zoomPoint - (zoomPoint - oldTranslate) * (newScale / oldScale)</formula>
+      <implementation-note>Requires calculating mouse position relative to SVG container</implementation-note>
+    </constraint>
+
+    <constraint type="scale-limits" source="story">
+      <description>Scale clamped to 0.5x (min) to 5x (max)</description>
+      <constants>MIN_SCALE = 0.5, MAX_SCALE = 5, ZOOM_STEP = 1.2 (20% per step)</constants>
+    </constraint>
+
+    <constraint type="axis-granularity" source="tech-spec">
+      <description>Time axis tick granularity adapts based on zoom level</description>
+      <granularity-table>
+        <level zoom="less-than-0.7">Years only - "%Y" (e.g., "2024")</level>
+        <level zoom="0.7-to-1.5">Quarters - "Q1 2024" format. NOTE: d3-time-format does not have a native quarter specifier (%q). Implement custom formatting: `Q${Math.ceil((date.getMonth() + 1) / 3)} ${date.getFullYear()}`</level>
+        <level zoom="1.5-to-3.0">Months - "%b %Y" (e.g., "Jan 2024")</level>
+        <level zoom="greater-than-3.0">Weeks - "%b %d" (e.g., "Jan 15")</level>
+      </granularity-table>
+    </constraint>
+
+    <constraint type="pinch-zoom" source="story">
+      <description>Two-finger pinch gesture for mobile/tablet zoom</description>
+      <implementation-note>
+        Track initial pinch distance on touchstart with 2 touches.
+        Calculate scale delta on touchmove.
+        Center on pinch midpoint.
+        Story 3-3 established single-touch pan - two-touch now triggers zoom.
+      </implementation-note>
+    </constraint>
+
+    <constraint type="reduced-motion" source="story">
+      <description>Respect prefers-reduced-motion preference</description>
+      <implementation-note>
+        Use Motion's useReducedMotion hook or shouldReduceMotion() utility.
+        If reduced motion preferred, use instant scale changes (no spring animation).
+      </implementation-note>
+    </constraint>
+
+    <constraint type="testing" source="existing-tests">
+      <description>Follow existing test pattern - module export testing due to React 19 + Vitest hook resolution issues</description>
+    </constraint>
+  </development-constraints>
+
+  <data-flow>
+    <description>Zoom and pan interaction sequence from user input to render</description>
+    <flow name="wheel-zoom">
+      <step order="1">Event: User scrolls vertically (no Shift key)</step>
+      <step order="2">Detection: handleWheel checks !shiftKey AND |deltaY| > |deltaX|</step>
+      <step order="3">Handler: handleZoomWheel calculates new scale and center-adjusted translates</step>
+      <step order="4">ViewState: setViewState updates { scale, translateX, translateY }</step>
+      <step order="5">Motion: useEffect syncs scaleMotion.set(viewState.scale), springScale animates</step>
+      <step order="6">Render: motion.g applies { x: springX, scale: springScale } transform</step>
+    </flow>
+    <flow name="wheel-pan">
+      <step order="1">Event: User scrolls horizontally OR Shift+vertical scroll</step>
+      <step order="2">Detection: handleWheel checks shiftKey OR |deltaX| > |deltaY|</step>
+      <step order="3">Handler: Pan logic calculates new translateX, clamps to bounds</step>
+      <step order="4">ViewState: setViewState updates { translateX }</step>
+      <step order="5">Motion: translateXMotion.set(newTranslateX), springX animates</step>
+      <step order="6">Render: motion.g applies { x: springX } transform</step>
+    </flow>
+    <flow name="pinch-zoom">
+      <step order="1">Event: User touches with 2 fingers (touchstart with touches.length === 2)</step>
+      <step order="2">Detection: handleTouchStart stores initialPinchDistance and pinchCenter</step>
+      <step order="3">Handler: handleTouchMove calculates pinchScale = currentDistance / initialDistance</step>
+      <step order="4">ViewState: handlePinch calls setScale with center-point adjustment</step>
+      <step order="5">Motion: scaleMotion updates, springScale animates</step>
+      <step order="6">Render: motion.g applies { scale: springScale } with transformOrigin at pinch center</step>
+    </flow>
+    <flow name="zoom-controls">
+      <step order="1">Event: User clicks +, -, or reset button</step>
+      <step order="2">Handler: zoomIn/zoomOut/resetZoom called directly</step>
+      <step order="3">ViewState: setViewState updates scale (and translates for reset)</step>
+      <step order="4">Motion: scaleMotion updates, springScale animates</step>
+      <step order="5">Render: motion.g applies new scale transform</step>
+    </flow>
+    <interaction-notes>
+      <note>Pan and zoom share the motion.g transform: style={{ x: springX, scale: springScale }}</note>
+      <note>ViewState is single source of truth; motion values are derived for animation</note>
+      <note>Zoom spring (stiffness: 300, damping: 30) is snappier than pan spring (100, 20)</note>
+    </interaction-notes>
+  </data-flow>
+
+  <dependencies>
+    <dependency type="internal-story" required="true">
+      <name>Story 3-1 (Scatter Plot Foundation)</name>
+      <status>completed</status>
+      <provides>ScatterPlot container, ViewState, xScale, yScale, MARGIN constants</provides>
+    </dependency>
+
+    <dependency type="internal-story" required="true">
+      <name>Story 3-2 (Timeline Data Points)</name>
+      <status>completed</status>
+      <provides>ScatterPoint rendering, motion integration, spring physics patterns</provides>
+    </dependency>
+
+    <dependency type="internal-story" required="true">
+      <name>Story 3-3 (Horizontal Scroll/Pan)</name>
+      <status>completed</status>
+      <provides>Pan state management, wheel handler structure, motion values pattern, ViewState usage</provides>
+    </dependency>
+
+    <dependency type="package" required="true">
+      <name>motion</name>
+      <version>^12.23.24</version>
+      <imports>motion, useMotionValue, useSpring, animate, useReducedMotion from 'motion/react'</imports>
+      <purpose>Motion values for smooth zoom animation, spring physics, reduced motion detection</purpose>
+    </dependency>
+
+    <dependency type="package" required="true">
+      <name>lucide-react</name>
+      <version>^0.555.0</version>
+      <imports>Plus, Minus, RotateCcw</imports>
+      <purpose>Icons for zoom controls (+, -, reset)</purpose>
+      <status>already-installed</status>
+    </dependency>
+
+    <dependency type="package" required="true">
+      <name>@visx/axis</name>
+      <version>^3.12.0</version>
+      <status>already-installed</status>
+      <purpose>AxisBottom with dynamic tick formatting based on zoom</purpose>
+    </dependency>
+
+    <dependency type="component" required="true">
+      <name>Button</name>
+      <path>src/components/ui/button.tsx</path>
+      <purpose>Ghost variant buttons for zoom controls</purpose>
+    </dependency>
+  </dependencies>
+
+  <testing-context>
+    <test-framework>Vitest 4.0.14</test-framework>
+    <test-library>@testing-library/react 16.3.0</test-library>
+    <dom-environment>jsdom 27.2.0</dom-environment>
+
+    <test-patterns>
+      <pattern name="module-exports">
+        Due to React 19 + Vitest hook resolution issues, test module exports and helper functions
+        rather than direct component rendering. See existing scatter-plot-pan.test.tsx for pattern.
+      </pattern>
+      <pattern name="unit-tests">
+        Pure function testing with describe/it/expect. See scatter-helpers.test.ts for example.
+      </pattern>
+    </test-patterns>
+
+    <test-files-to-create>
+      <file>
+        <path>tests/unit/lib/hooks/use-zoom.test.ts</path>
+        <test-scenarios>
+          <scenario>clampScale respects min/max bounds</scenario>
+          <scenario>zoomIn multiplies scale by zoomStep (1.2)</scenario>
+          <scenario>zoomOut divides scale by zoomStep</scenario>
+          <scenario>resetZoom sets scale to 1 and resets translates</scenario>
+          <scenario>isMinZoom true when scale &lt;= minScale</scenario>
+          <scenario>isMaxZoom true when scale &gt;= maxScale</scenario>
+          <scenario>handleWheel calculates correct new scale</scenario>
+          <scenario>center-point zoom math adjusts translate correctly</scenario>
+        </test-scenarios>
+      </file>
+
+      <file>
+        <path>tests/unit/components/visualization/zoom-controls.test.tsx</path>
+        <test-scenarios>
+          <scenario>renders three buttons (+, -, reset)</scenario>
+          <scenario>displays zoom percentage</scenario>
+          <scenario>zoom in button disabled when isMaxZoom</scenario>
+          <scenario>zoom out button disabled when isMinZoom</scenario>
+          <scenario>reset button disabled when scale is 1</scenario>
+          <scenario>clicking buttons calls appropriate callbacks</scenario>
+        </test-scenarios>
+      </file>
+    </test-files-to-create>
+
+    <manual-test-checklist>
+      <item>Scroll wheel: scroll up zooms in</item>
+      <item>Scroll wheel: scroll down zooms out</item>
+      <item>Zoom centers on cursor position</item>
+      <item>Shift+scroll: still pans horizontally (not zoom)</item>
+      <item>Pinch: two-finger pinch zooms on touch devices</item>
+      <item>Pinch: centers on pinch midpoint</item>
+      <item>Zoom controls: + increases zoom by ~20%</item>
+      <item>Zoom controls: - decreases zoom by ~20%</item>
+      <item>Zoom controls: reset returns to 100%</item>
+      <item>+ disabled at 500% zoom (5x)</item>
+      <item>- disabled at 50% zoom (0.5x)</item>
+      <item>Reset disabled at 100% (1x)</item>
+      <item>Time axis: years only at 50% zoom</item>
+      <item>Time axis: months visible at 200% zoom</item>
+      <item>Time axis: weeks visible at 400% zoom</item>
+      <item>Dots spread apart at high zoom</item>
+      <item>Animation is smooth (60fps)</item>
+      <item>Reduced motion: instant zoom changes (no spring)</item>
+    </manual-test-checklist>
+  </testing-context>
+
+  <files-to-create>
+    <file action="create" priority="critical">
+      <path>src/lib/hooks/use-zoom.ts</path>
+      <purpose>Reusable zoom state management hook</purpose>
+      <interface><![CDATA[
+export interface UseZoomOptions {
+  minScale?: number     // Default: 0.5
+  maxScale?: number     // Default: 5
+  initialScale?: number // Default: 1
+  zoomStep?: number     // Default: 1.2 (20% increments)
+}
+
+export interface UseZoomReturn {
+  scale: number
+  zoomIn: () => void
+  zoomOut: () => void
+  resetZoom: () => void
+  setScale: (scale: number, centerX?: number, centerY?: number) => void
+  handleWheel: (event: WheelEvent, containerRect: DOMRect) => void
+  handlePinch: (scale: number, centerX: number, centerY: number) => void
+  isMinZoom: boolean
+  isMaxZoom: boolean
+}
+]]></interface>
+      <key-functions>
+        <function>clampScale(scale: number) - clamp to min/max bounds</function>
+        <function>zoomIn() - multiply scale by zoomStep (1.2)</function>
+        <function>zoomOut() - divide scale by zoomStep</function>
+        <function>resetZoom() - set scale to 1, reset translates to 0</function>
+        <function>setScale(scale, centerX?, centerY?) - set scale with optional center point adjustment</function>
+        <function>handleWheel(event, containerRect) - process wheel event for zoom</function>
+        <function>handlePinch(pinchScale, centerX, centerY) - process pinch gesture</function>
+      </key-functions>
+    </file>
+
+    <file action="create" priority="high">
+      <path>src/components/visualization/zoom-controls.tsx</path>
+      <purpose>UI controls for zoom (+, -, reset buttons)</purpose>
+      <interface><![CDATA[
+interface ZoomControlsProps {
+  scale: number
+  onZoomIn: () => void
+  onZoomOut: () => void
+  onReset: () => void
+  isMinZoom: boolean
+  isMaxZoom: boolean
+}
+]]></interface>
+      <design-notes>
+        - Position: absolute bottom-4 right-4 z-20
+        - Container: flex, gap-1, rounded-lg, border, backdrop-blur-md
+        - Buttons: ghost variant, size icon (h-8 w-8)
+        - Icons: Minus, Plus, RotateCcw from lucide-react (h-4 w-4)
+        - Display: zoom percentage (e.g., "100%") between buttons
+        - Divider: vertical 1px line before reset button
+        - Entrance animation: fade in, slide up (opacity 0 to 1, y 10 to 0)
+        - data-testid="zoom-controls" on container
+        - aria-labels on all buttons
+      </design-notes>
+    </file>
+
+    <file action="create" priority="medium">
+      <path>src/lib/utils/animation.ts</path>
+      <purpose>Shared animation presets (SPRINGS, DURATIONS, shouldReduceMotion)</purpose>
+      <exports><![CDATA[
+export const DURATIONS = {
+  fast: 0.15,     // 150ms - hover, tooltips
+  normal: 0.2,    // 200ms - state changes
+  slow: 0.3,      // 300ms - modal open/close
+}
+
+export const SPRINGS = {
+  hover: { type: 'spring', stiffness: 300, damping: 20 },
+  zoom: { type: 'spring', stiffness: 300, damping: 30 },
+  pan: { type: 'spring', stiffness: 100, damping: 20 },
+}
+
+export function shouldReduceMotion(): boolean
+export function getTransition(key: keyof typeof SPRINGS | keyof typeof DURATIONS): Transition
+]]></exports>
+    </file>
+
+    <file action="create" priority="high">
+      <path>tests/unit/lib/hooks/use-zoom.test.ts</path>
+      <purpose>Unit tests for useZoom hook</purpose>
+    </file>
+
+    <file action="create" priority="high">
+      <path>tests/unit/components/visualization/zoom-controls.test.tsx</path>
+      <purpose>Component tests for ZoomControls</purpose>
+    </file>
+  </files-to-create>
+
+  <files-to-modify>
+    <file action="modify" priority="critical">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <changes>
+        <change>Import useZoom hook from @/lib/hooks/use-zoom</change>
+        <change>Import ZoomControls component</change>
+        <change>Call useZoom(viewState, setViewState) to get zoom functions</change>
+        <change>Create scaleMotion and springScale motion values for animated zoom</change>
+        <change>Update handleWheel to call handleZoomWheel for vertical scroll (no shift)</change>
+        <change>Add pinch state refs: initialPinchDistance, pinchCenter</change>
+        <change>Modify handleTouchStart to detect two-finger touch for pinch</change>
+        <change>Add handleTouchMovePinch for pinch gesture handling</change>
+        <change>Apply scale transform to motion.g (alongside translateX)</change>
+        <change>Pass zoomScale to AxisBottom for tick granularity</change>
+        <change>Render ZoomControls in bottom-right corner</change>
+        <change>Export helper functions for testing (createClampScale, etc.)</change>
+      </changes>
+    </file>
+
+    <file action="modify" priority="medium">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>AxisBottom is inline in scatter-plot.tsx (axis-time.tsx does NOT exist as a separate file)</description>
+      <changes>
+        <change>Add getTickFormat(zoomScale) helper function inline or export from scatter-helpers.ts</change>
+        <change>Add getTickCount(zoomScale, width) helper function inline or export from scatter-helpers.ts</change>
+        <change>Update AxisBottom tickFormat prop to use getTickFormat(viewState.scale)</change>
+        <change>Update AxisBottom numTicks prop to use getTickCount(viewState.scale, innerWidth)</change>
+      </changes>
+      <note>axis-time.tsx does NOT exist - all axis changes are inline in scatter-plot.tsx</note>
+    </file>
+  </files-to-modify>
+
+  <reference-implementation>
+    <description>
+      The story file contains comprehensive reference implementation. Key code patterns:
+    </description>
+
+    <code-pattern name="use-zoom-hook">
+      <code><![CDATA[
+// src/lib/hooks/use-zoom.ts
+'use client'
+
+import { useCallback } from 'react'
+import type { ViewState } from '@/types/visualization'
+
+export interface UseZoomOptions {
+  minScale?: number     // Default: 0.5
+  maxScale?: number     // Default: 5
+  zoomStep?: number     // Default: 1.2 (20% increments)
+}
+
+export interface UseZoomReturn {
+  scale: number
+  zoomIn: () => void
+  zoomOut: () => void
+  resetZoom: () => void
+  setScale: (scale: number, centerX?: number, centerY?: number) => void
+  handleWheel: (event: WheelEvent, containerRect: DOMRect) => void
+  handlePinch: (scale: number, centerX: number, centerY: number) => void
+  isMinZoom: boolean
+  isMaxZoom: boolean
+}
+
+export function useZoom(
+  viewState: ViewState,
+  setViewState: React.Dispatch<React.SetStateAction<ViewState>>,
+  options: UseZoomOptions = {}
+): UseZoomReturn {
+  const {
+    minScale = 0.5,
+    maxScale = 5,
+    zoomStep = 1.2,
+  } = options
+
+  const clampScale = useCallback((scale: number) => {
+    return Math.max(minScale, Math.min(maxScale, scale))
+  }, [minScale, maxScale])
+
+  const zoomIn = useCallback(() => {
+    setViewState(prev => ({
+      ...prev,
+      scale: clampScale(prev.scale * zoomStep),
+    }))
+  }, [clampScale, zoomStep, setViewState])
+
+  const zoomOut = useCallback(() => {
+    setViewState(prev => ({
+      ...prev,
+      scale: clampScale(prev.scale / zoomStep),
+    }))
+  }, [clampScale, zoomStep, setViewState])
+
+  const resetZoom = useCallback(() => {
+    setViewState(prev => ({
+      ...prev,
+      scale: 1,
+      translateX: 0,
+      translateY: 0,
+    }))
+  }, [setViewState])
+
+  const setScale = useCallback((
+    newScale: number,
+    centerX?: number,
+    centerY?: number
+  ) => {
+    const clamped = clampScale(newScale)
+    setViewState(prev => {
+      if (centerX !== undefined && centerY !== undefined) {
+        // Adjust translate to keep zoom point stationary
+        const scaleDelta = clamped / prev.scale
+        const newTranslateX = centerX - (centerX - prev.translateX) * scaleDelta
+        const newTranslateY = centerY - (centerY - prev.translateY) * scaleDelta
+        return {
+          ...prev,
+          scale: clamped,
+          translateX: newTranslateX,
+          translateY: newTranslateY,
+        }
+      }
+      return { ...prev, scale: clamped }
+    })
+  }, [clampScale, setViewState])
+
+  const handleWheel = useCallback((
+    event: WheelEvent,
+    containerRect: DOMRect
+  ) => {
+    // Skip if shift is held (reserved for horizontal pan from Story 3-3)
+    if (event.shiftKey) return
+    // Skip horizontal scroll (trackpad pan)
+    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return
+
+    event.preventDefault()
+    const delta = event.deltaY > 0 ? 1 / zoomStep : zoomStep
+    const centerX = event.clientX - containerRect.left
+    const centerY = event.clientY - containerRect.top
+
+    setViewState(prev => {
+      const newScale = clampScale(prev.scale * delta)
+      const scaleDelta = newScale / prev.scale
+      const newTranslateX = centerX - (centerX - prev.translateX) * scaleDelta
+      const newTranslateY = centerY - (centerY - prev.translateY) * scaleDelta
+      return {
+        ...prev,
+        scale: newScale,
+        translateX: newTranslateX,
+        translateY: newTranslateY,
+      }
+    })
+  }, [clampScale, zoomStep, setViewState])
+
+  const handlePinch = useCallback((
+    pinchScale: number,
+    centerX: number,
+    centerY: number
+  ) => {
+    setScale(viewState.scale * pinchScale, centerX, centerY)
+  }, [viewState.scale, setScale])
+
+  return {
+    scale: viewState.scale,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    setScale,
+    handleWheel,
+    handlePinch,
+    isMinZoom: viewState.scale <= minScale,
+    isMaxZoom: viewState.scale >= maxScale,
+  }
+}
+
+// Export for testing
+export function createClampScale(minScale: number, maxScale: number) {
+  return (scale: number) => Math.max(minScale, Math.min(maxScale, scale))
+}
+]]></code>
+    </code-pattern>
+
+    <code-pattern name="zoom-controls-component">
+      <code><![CDATA[
+// src/components/visualization/zoom-controls.tsx
+'use client'
+
+import { motion } from 'motion/react'
+import { Plus, Minus, RotateCcw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+
+interface ZoomControlsProps {
+  scale: number
+  onZoomIn: () => void
+  onZoomOut: () => void
+  onReset: () => void
+  isMinZoom: boolean
+  isMaxZoom: boolean
+}
+
+export function ZoomControls({
+  scale,
+  onZoomIn,
+  onZoomOut,
+  onReset,
+  isMinZoom,
+  isMaxZoom,
+}: ZoomControlsProps) {
+  const isDefaultZoom = Math.abs(scale - 1) < 0.01
+
+  return (
+    <motion.div
+      className="absolute bottom-4 right-4 z-20 flex items-center gap-1 rounded-lg border border-[--border] bg-[--bg-secondary]/80 p-1 backdrop-blur-md"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, delay: 0.5 }}
+      data-testid="zoom-controls"
+    >
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onZoomOut}
+        disabled={isMinZoom}
+        className="h-8 w-8 text-[--text-secondary] hover:text-[--text-primary] disabled:opacity-30"
+        aria-label="Zoom out"
+      >
+        <Minus className="h-4 w-4" />
+      </Button>
+
+      <span className="min-w-[3rem] text-center text-xs text-[--text-secondary]">
+        {Math.round(scale * 100)}%
+      </span>
+
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onZoomIn}
+        disabled={isMaxZoom}
+        className="h-8 w-8 text-[--text-secondary] hover:text-[--text-primary] disabled:opacity-30"
+        aria-label="Zoom in"
+      >
+        <Plus className="h-4 w-4" />
+      </Button>
+
+      <div className="mx-1 h-4 w-px bg-[--border]" />
+
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onReset}
+        disabled={isDefaultZoom}
+        className="h-8 w-8 text-[--text-secondary] hover:text-[--text-primary] disabled:opacity-30"
+        aria-label="Reset zoom"
+      >
+        <RotateCcw className="h-4 w-4" />
+      </Button>
+    </motion.div>
+  )
+}
+]]></code>
+    </code-pattern>
+
+    <code-pattern name="axis-tick-granularity">
+      <code><![CDATA[
+// Inline in scatter-plot.tsx (axis-time.tsx does NOT exist)
+import { timeFormat } from 'd3-time-format'
+
+// Helper: format date as quarter (d3 has no native %q specifier)
+function formatQuarter(date: Date): string {
+  const quarter = Math.ceil((date.getMonth() + 1) / 3)
+  return `Q${quarter} ${date.getFullYear()}`
+}
+
+// Get tick format string or custom formatter based on zoom level
+function getTickFormatter(zoomScale: number): (date: Date) => string {
+  if (zoomScale > 3) return timeFormat('%b %d')      // "Jan 15" (weeks)
+  if (zoomScale > 1.5) return timeFormat('%b %Y')    // "Jan 2024" (months)
+  if (zoomScale > 0.7) return formatQuarter          // "Q1 2024" (quarters - custom)
+  return timeFormat('%Y')                            // "2024" (years only)
+}
+
+function getTickCount(zoomScale: number, width: number): number {
+  const baseCount = Math.floor(width / 120) // ~120px between ticks
+  return Math.max(3, Math.min(12, Math.floor(baseCount * zoomScale)))
+}
+
+// Usage in AxisBottom
+<AxisBottom
+  top={innerHeight}
+  scale={xScale}
+  stroke="var(--border)"
+  tickStroke="var(--border)"
+  tickFormat={(date) => getTickFormatter(viewState.scale)(date as Date)}
+  numTicks={getTickCount(viewState.scale, innerWidth)}
+  tickLabelProps={() => ({
+    fill: 'var(--text-secondary)',
+    fontSize: 11,
+    textAnchor: 'middle' as const,
+    dy: '0.25em',
+  })}
+/>
+]]></code>
+    </code-pattern>
+
+    <code-pattern name="scatter-plot-zoom-integration">
+      <code><![CDATA[
+// Updates to scatter-plot.tsx for zoom integration
+import { useZoom } from '@/lib/hooks/use-zoom'
+import { ZoomControls } from './zoom-controls'
+
+// Inside ScatterPlotInner:
+const {
+  scale,
+  zoomIn,
+  zoomOut,
+  resetZoom,
+  handleWheel: handleZoomWheel,
+  isMinZoom,
+  isMaxZoom,
+} = useZoom(viewState, setViewState)
+
+// Motion values for animated scale
+const scaleMotion = useMotionValue(viewState.scale)
+const springScale = useSpring(scaleMotion, { stiffness: 300, damping: 30 })
+
+// Sync scale with motion value when viewState changes
+useEffect(() => {
+  scaleMotion.set(viewState.scale)
+}, [viewState.scale, scaleMotion])
+
+// Updated wheel handler to distinguish pan vs zoom
+const handleWheel = useCallback((e: React.WheelEvent) => {
+  const rect = containerRef.current?.getBoundingClientRect()
+  if (!rect) return
+
+  // Horizontal scroll or Shift+scroll = pan (from Story 3-3)
+  if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+    // Existing pan logic...
+    const deltaX = e.shiftKey ? e.deltaY : e.deltaX
+    if (Math.abs(deltaX) > 0) {
+      e.preventDefault()
+      const newTranslateX = clampTranslateX(translateXMotion.get() - deltaX)
+      translateXMotion.set(newTranslateX)
+      setViewState((prev) => ({ ...prev, translateX: newTranslateX }))
+    }
+    return
+  }
+
+  // Vertical scroll without shift = zoom
+  handleZoomWheel(e.nativeEvent, rect)
+}, [handleZoomWheel, clampTranslateX, translateXMotion])
+
+// Apply scale to motion.g transform
+<motion.g
+  style={{
+    x: springX,
+    scale: springScale,
+    transformOrigin: `${MARGIN.left}px ${MARGIN.top}px`,
+  }}
+>
+  {/* Content */}
+</motion.g>
+
+// Render ZoomControls
+<ZoomControls
+  scale={viewState.scale}
+  onZoomIn={zoomIn}
+  onZoomOut={zoomOut}
+  onReset={resetZoom}
+  isMinZoom={isMinZoom}
+  isMaxZoom={isMaxZoom}
+/>
+]]></code>
+    </code-pattern>
+
+    <code-pattern name="pinch-zoom-handling">
+      <code><![CDATA[
+// Pinch zoom state refs
+const initialPinchDistanceRef = useRef<number | null>(null)
+const pinchCenterRef = useRef<{ x: number; y: number } | null>(null)
+const lastPinchScaleRef = useRef(1)
+
+// Get distance between two touch points
+function getTouchDistance(touch1: Touch, touch2: Touch): number {
+  const dx = touch2.clientX - touch1.clientX
+  const dy = touch2.clientY - touch1.clientY
+  return Math.sqrt(dx * dx + dy * dy)
+}
+
+// Get center point between two touches
+function getTouchCenter(touch1: Touch, touch2: Touch, rect: DOMRect): { x: number; y: number } {
+  return {
+    x: (touch1.clientX + touch2.clientX) / 2 - rect.left,
+    y: (touch1.clientY + touch2.clientY) / 2 - rect.top,
+  }
+}
+
+// Modified touch handlers
+const handleTouchStart = useCallback((e: React.TouchEvent) => {
+  if (e.touches.length === 2) {
+    // Two-finger: pinch zoom
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return
+
+    initialPinchDistanceRef.current = getTouchDistance(e.touches[0], e.touches[1])
+    pinchCenterRef.current = getTouchCenter(e.touches[0], e.touches[1], rect)
+    lastPinchScaleRef.current = viewState.scale
+
+    // Cancel any ongoing pan
+    if (isPanningRef.current) {
+      isPanningRef.current = false
+      setIsDragging(false)
+    }
+  } else if (e.touches.length === 1) {
+    // Single-finger: pan (existing logic from Story 3-3)
+    handlePanStart(e.touches[0].clientX)
+  }
+}, [handlePanStart, viewState.scale])
+
+const handleTouchMove = useCallback((e: React.TouchEvent) => {
+  if (e.touches.length === 2 && initialPinchDistanceRef.current !== null) {
+    // Two-finger: pinch zoom
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return
+
+    e.preventDefault()
+    const currentDistance = getTouchDistance(e.touches[0], e.touches[1])
+    const pinchScale = currentDistance / initialPinchDistanceRef.current
+    const newScale = lastPinchScaleRef.current * pinchScale
+
+    if (pinchCenterRef.current) {
+      handlePinch(pinchScale, pinchCenterRef.current.x, pinchCenterRef.current.y)
+    }
+  } else if (e.touches.length === 1) {
+    // Single-finger: pan (existing logic)
+    handlePanMove(e.touches[0].clientX)
+  }
+}, [handlePanMove, handlePinch])
+
+const handleTouchEnd = useCallback(() => {
+  // Reset pinch state
+  initialPinchDistanceRef.current = null
+  pinchCenterRef.current = null
+  lastPinchScaleRef.current = viewState.scale
+
+  // End pan
+  handlePanEnd()
+}, [handlePanEnd, viewState.scale])
+]]></code>
+    </code-pattern>
+  </reference-implementation>
+
+  <implementation-notes>
+    <note priority="high">
+      The wheel handler must check BOTH event.shiftKey AND compare deltaX vs deltaY magnitudes.
+      Shift+vertical = pan, horizontal (trackpad) = pan, vertical without shift = zoom.
+    </note>
+    <note priority="high">
+      Zoom animation uses different spring than pan: { stiffness: 300, damping: 30 } vs { stiffness: 100, damping: 20 }.
+      Zoom should feel snappier than the smooth pan momentum.
+    </note>
+    <note priority="high">
+      Center-point zoom formula is critical: newTranslate = zoomPoint - (zoomPoint - oldTranslate) * (newScale / oldScale).
+      This keeps the point under the cursor stationary during zoom.
+    </note>
+    <note priority="medium">
+      Pinch zoom overrides single-finger pan when 2 touches detected.
+      Track initialPinchDistance on touchstart with 2 touches, then calculate relative scale on touchmove.
+    </note>
+    <note priority="medium">
+      For tick format, use d3-time-format or date-fns format. If using Visx AxisBottom with
+      tickFormat prop, pass a function that returns formatted string based on zoom level.
+    </note>
+    <note priority="low">
+      Consider creating animation.ts utility file for shared SPRINGS constants to avoid duplication.
+      This file can also export shouldReduceMotion() and getTransition() helpers.
+    </note>
+  </implementation-notes>
+
+  <learnings-from-previous-stories>
+    <learning source="Story 3-1">
+      ViewState Interface already includes scale field (0.5 to 5)
+    </learning>
+    <learning source="Story 3-1">
+      MARGIN constants defined: { top: 20, right: 20, bottom: 40, left: 20 }
+    </learning>
+    <learning source="Story 3-1">
+      xScale/yScale already memoized with useMemo
+    </learning>
+    <learning source="Story 3-2">
+      motion/react already imported (motion, useMotionValue, useSpring, animate)
+    </learning>
+    <learning source="Story 3-2">
+      Spring physics patterns established: stiffness/damping values
+    </learning>
+    <learning source="Story 3-3">
+      ViewState useState already in place with translateX tracking
+    </learning>
+    <learning source="Story 3-3">
+      Motion values pattern: translateXMotion + springX for animated pan
+    </learning>
+    <learning source="Story 3-3">
+      Wheel handler structure exists - extend to add zoom detection
+    </learning>
+    <learning source="Story 3-3">
+      Touch handling: single-touch pan established, add two-touch pinch
+    </learning>
+    <learning source="Story 3-3">
+      touch-action: none already applied to SVG
+    </learning>
+    <learning source="Story 3-3">
+      containerRef already defined for SVG element
+    </learning>
+  </learnings-from-previous-stories>
+
+  <definition-of-done>
+    <item>Scroll wheel zoom in/out works smoothly</item>
+    <item>Zoom centers on cursor position</item>
+    <item>Pinch zoom works on touch devices</item>
+    <item>Zoom is limited to 0.5x - 5x range</item>
+    <item>Zoom controls (+/-/reset) are visible and functional</item>
+    <item>Zoom controls disabled at limits</item>
+    <item>Reset button returns to 1x with animation</item>
+    <item>Time axis shows more granular ticks when zoomed in</item>
+    <item>Dots spread apart when zoomed in > 1.5x</item>
+    <item>Zoom animation runs at 60fps</item>
+    <item>Reduced motion is respected</item>
+    <item>Unit tests pass for useZoom hook</item>
+    <item>Component tests pass for ZoomControls</item>
+    <item>No TypeScript errors</item>
+    <item>Lint passes (pnpm lint)</item>
+  </definition-of-done>
+
+  <fr-coverage>
+    <fr id="FR9" satisfied="true">
+      Users can zoom in/out on timeline to adjust time scale granularity
+    </fr>
+    <implementation-note>
+      Wheel zoom, pinch zoom, and zoom controls implemented with center-point behavior,
+      scale limits (0.5x-5x), and dynamic axis granularity (years/months/weeks based on zoom)
+    </implementation-note>
+  </fr-coverage>
+</story-context>

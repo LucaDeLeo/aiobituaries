@@ -1,16 +1,20 @@
 'use client'
 
-import { useMemo, useRef, useState, useCallback } from 'react'
+import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
 import { motion, useMotionValue, useSpring, animate } from 'motion/react'
 import { ParentSize } from '@visx/responsive'
 import { scaleTime, scaleLinear } from '@visx/scale'
 import { AxisBottom } from '@visx/axis'
 import { GridColumns } from '@visx/grid'
 import { Group } from '@visx/group'
+import { timeFormat } from 'd3-time-format'
 import type { ObituarySummary } from '@/types/obituary'
 import type { ViewState } from '@/types/visualization'
 import { ScatterPoint } from './scatter-point'
+import { ZoomControls } from './zoom-controls'
 import { hashToJitter, getCategoryColor } from '@/lib/utils/scatter-helpers'
+import { useZoom } from '@/lib/hooks/use-zoom'
+import { SPRINGS } from '@/lib/utils/animation'
 
 export interface ScatterPlotProps {
   data: ObituarySummary[]
@@ -57,6 +61,66 @@ function EdgeGradients({
   )
 }
 
+/**
+ * Format date as quarter (d3 has no native %q specifier)
+ * Returns "Q1 2024" format
+ */
+export function formatQuarter(date: Date): string {
+  const quarter = Math.ceil((date.getMonth() + 1) / 3)
+  return `Q${quarter} ${date.getFullYear()}`
+}
+
+/**
+ * Get tick formatter based on zoom level
+ * - <0.7x: Years only ("%Y")
+ * - 0.7-1.5x: Quarters ("Q1 2024")
+ * - 1.5-3.0x: Months ("%b %Y")
+ * - >3.0x: Weeks ("%b %d")
+ */
+export function getTickFormatter(zoomScale: number): (date: Date) => string {
+  if (zoomScale > 3) return timeFormat('%b %d') // "Jan 15" (weeks)
+  if (zoomScale > 1.5) return timeFormat('%b %Y') // "Jan 2024" (months)
+  if (zoomScale > 0.7) return formatQuarter // "Q1 2024" (quarters - custom)
+  return timeFormat('%Y') // "2024" (years only)
+}
+
+/**
+ * Get tick count based on zoom level and container width
+ */
+export function getTickCount(zoomScale: number, width: number): number {
+  const baseCount = Math.floor(width / 120) // ~120px between ticks
+  return Math.max(3, Math.min(12, Math.floor(baseCount * zoomScale)))
+}
+
+/** Minimal touch interface for our needs */
+interface TouchPoint {
+  clientX: number
+  clientY: number
+}
+
+/**
+ * Get distance between two touch points
+ */
+function getTouchDistance(touch1: TouchPoint, touch2: TouchPoint): number {
+  const dx = touch2.clientX - touch1.clientX
+  const dy = touch2.clientY - touch1.clientY
+  return Math.sqrt(dx * dx + dy * dy)
+}
+
+/**
+ * Get center point between two touches relative to container
+ */
+function getTouchCenter(
+  touch1: TouchPoint,
+  touch2: TouchPoint,
+  rect: DOMRect
+): { x: number; y: number } {
+  return {
+    x: (touch1.clientX + touch2.clientX) / 2 - rect.left,
+    y: (touch1.clientY + touch2.clientY) / 2 - rect.top,
+  }
+}
+
 // Exported for testing purposes
 export function ScatterPlotInner({
   data,
@@ -67,7 +131,7 @@ export function ScatterPlotInner({
   width: number
   height: number
 }) {
-  // ViewState for tracking pan position
+  // ViewState for tracking pan and zoom position
   const [viewState, setViewState] = useState<ViewState>({
     scale: 1,
     translateX: 0,
@@ -80,6 +144,11 @@ export function ScatterPlotInner({
   const startXRef = useRef(0)
   const velocityRef = useRef(0)
   const lastMoveTimeRef = useRef(0)
+
+  // Pinch zoom state refs
+  const initialPinchDistanceRef = useRef<number | null>(null)
+  const pinchCenterRef = useRef<{ x: number; y: number } | null>(null)
+  const lastPinchScaleRef = useRef(1)
 
   // State for cursor (triggers re-render for cursor change)
   const [isDragging, setIsDragging] = useState(false)
@@ -117,11 +186,31 @@ export function ScatterPlotInner({
     })
   }, [innerHeight])
 
-  // Motion values for smooth animation
+  // Motion values for smooth pan animation
   const translateXMotion = useMotionValue(viewState.translateX)
-  const springX = useSpring(translateXMotion, { stiffness: 100, damping: 20 })
+  const springX = useSpring(translateXMotion, SPRINGS.pan)
 
-  // Calculate pan bounds
+  // Motion values for smooth zoom animation
+  const scaleMotion = useMotionValue(viewState.scale)
+  const springScale = useSpring(scaleMotion, SPRINGS.zoom)
+
+  // Sync scale motion value with viewState
+  useEffect(() => {
+    scaleMotion.set(viewState.scale)
+  }, [viewState.scale, scaleMotion])
+
+  // Use zoom hook
+  const {
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    handleWheel: handleZoomWheel,
+    handlePinch,
+    isMinZoom,
+    isMaxZoom,
+  } = useZoom(viewState, setViewState)
+
+  // Calculate pan bounds (adjusted for zoom)
   const panBounds = useMemo(() => {
     if (data.length === 0) return { min: 0, max: 0 }
     const dates = data.map((d) => new Date(d.date).getTime())
@@ -131,17 +220,20 @@ export function ScatterPlotInner({
     const containerWidth = width - MARGIN.left - MARGIN.right
     const padding = 50
 
-    // If data fits in container, no panning needed
-    if (dataWidth <= containerWidth) {
+    // Scale data width by zoom level
+    const scaledDataWidth = dataWidth * viewState.scale
+
+    // If data fits in container (even when scaled), no panning needed
+    if (scaledDataWidth <= containerWidth) {
       return { min: 0, max: 0 }
     }
 
     // Allow panning from right edge (negative translateX) to left edge
     return {
-      min: -(dataWidth - containerWidth + padding),
+      min: -(scaledDataWidth - containerWidth + padding),
       max: padding,
     }
-  }, [data, xScale, width])
+  }, [data, xScale, width, viewState.scale])
 
   // Clamp helper
   const clampTranslateX = useCallback(
@@ -195,8 +287,8 @@ export function ScatterPlotInner({
 
     animate(translateXMotion, targetX, {
       type: 'spring',
-      stiffness: 100,
-      damping: 20,
+      stiffness: SPRINGS.pan.stiffness,
+      damping: SPRINGS.pan.damping,
       onComplete: () => {
         setViewState((prev) => ({ ...prev, translateX: targetX }))
       },
@@ -227,42 +319,96 @@ export function ScatterPlotInner({
     if (isPanningRef.current) handlePanEnd()
   }, [handlePanEnd])
 
-  // Touch event handlers (single-touch only for pan)
+  // Touch event handlers (single-touch pan, two-touch pinch zoom)
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
-      if (e.touches.length === 1) {
+      if (e.touches.length === 2) {
+        // Two-finger: pinch zoom
+        const rect = containerRef.current?.getBoundingClientRect()
+        if (!rect) return
+
+        initialPinchDistanceRef.current = getTouchDistance(
+          e.touches[0],
+          e.touches[1]
+        )
+        pinchCenterRef.current = getTouchCenter(
+          e.touches[0],
+          e.touches[1],
+          rect
+        )
+        lastPinchScaleRef.current = viewState.scale
+
+        // Cancel any ongoing pan
+        if (isPanningRef.current) {
+          isPanningRef.current = false
+          setIsDragging(false)
+        }
+      } else if (e.touches.length === 1) {
+        // Single-finger: pan
         handlePanStart(e.touches[0].clientX)
       }
     },
-    [handlePanStart]
+    [handlePanStart, viewState.scale]
   )
 
   const handleTouchMove = useCallback(
     (e: React.TouchEvent) => {
-      if (e.touches.length === 1) {
+      if (
+        e.touches.length === 2 &&
+        initialPinchDistanceRef.current !== null &&
+        pinchCenterRef.current !== null
+      ) {
+        // Two-finger: pinch zoom
+        e.preventDefault()
+        const currentDistance = getTouchDistance(e.touches[0], e.touches[1])
+        const pinchScale = currentDistance / initialPinchDistanceRef.current
+
+        handlePinch(pinchScale, pinchCenterRef.current.x, pinchCenterRef.current.y)
+        lastPinchScaleRef.current = viewState.scale * pinchScale
+      } else if (e.touches.length === 1) {
+        // Single-finger: pan
         handlePanMove(e.touches[0].clientX)
       }
     },
-    [handlePanMove]
+    [handlePanMove, handlePinch, viewState.scale]
   )
 
   const handleTouchEnd = useCallback(() => {
-    handlePanEnd()
-  }, [handlePanEnd])
+    // Reset pinch state
+    initialPinchDistanceRef.current = null
+    pinchCenterRef.current = null
+    lastPinchScaleRef.current = viewState.scale
 
-  // Wheel handler (Shift+scroll for horizontal pan)
+    // End pan
+    handlePanEnd()
+  }, [handlePanEnd, viewState.scale])
+
+  // Wheel handler - distinguish between pan (Shift/horizontal) and zoom (vertical)
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
-      // Horizontal scroll (trackpad) or Shift+vertical scroll
-      const deltaX = e.shiftKey ? e.deltaY : e.deltaX
-      if (Math.abs(deltaX) > 0) {
-        e.preventDefault()
-        const newTranslateX = clampTranslateX(translateXMotion.get() - deltaX)
-        translateXMotion.set(newTranslateX)
-        setViewState((prev) => ({ ...prev, translateX: newTranslateX }))
+      const rect = containerRef.current?.getBoundingClientRect()
+      if (!rect) return
+
+      // Check if this should be pan (Shift+scroll or horizontal scroll)
+      const isHorizontalScroll = Math.abs(e.deltaX) > Math.abs(e.deltaY)
+      const isShiftScroll = e.shiftKey
+
+      if (isShiftScroll || isHorizontalScroll) {
+        // Pan behavior (from Story 3-3)
+        const deltaX = e.shiftKey ? e.deltaY : e.deltaX
+        if (Math.abs(deltaX) > 0) {
+          e.preventDefault()
+          const newTranslateX = clampTranslateX(translateXMotion.get() - deltaX)
+          translateXMotion.set(newTranslateX)
+          setViewState((prev) => ({ ...prev, translateX: newTranslateX }))
+        }
+        return
       }
+
+      // Vertical scroll without shift = zoom
+      handleZoomWheel(e.nativeEvent, rect)
     },
-    [clampTranslateX, translateXMotion]
+    [clampTranslateX, translateXMotion, handleZoomWheel]
   )
 
   // Edge gradient visibility
@@ -327,23 +473,32 @@ export function ScatterPlotInner({
             strokeDasharray="2,2"
           />
 
-          {/* X-axis (time) */}
+          {/* X-axis (time) with dynamic tick granularity */}
           <AxisBottom
             top={innerHeight}
             scale={xScale}
             stroke="var(--border)"
             tickStroke="var(--border)"
+            tickFormat={(date) =>
+              getTickFormatter(viewState.scale)(date as Date)
+            }
             tickLabelProps={() => ({
               fill: 'var(--text-secondary)',
               fontSize: 11,
               textAnchor: 'middle' as const,
               dy: '0.25em',
             })}
-            numTicks={Math.min(innerWidth / 100, 10)}
+            numTicks={getTickCount(viewState.scale, innerWidth)}
           />
 
-          {/* Panning content group - apply translateX transform */}
-          <motion.g style={{ x: springX }}>
+          {/* Panning and zooming content group - apply both translateX and scale transforms */}
+          <motion.g
+            style={{
+              x: springX,
+              scale: springScale,
+              transformOrigin: `${MARGIN.left}px ${MARGIN.top}px`,
+            }}
+          >
             {/* Data Points with staggered animation */}
             <motion.g
               initial="hidden"
@@ -377,6 +532,16 @@ export function ScatterPlotInner({
           </motion.g>
         </Group>
       </svg>
+
+      {/* Zoom Controls */}
+      <ZoomControls
+        scale={viewState.scale}
+        onZoomIn={zoomIn}
+        onZoomOut={zoomOut}
+        onReset={resetZoom}
+        isMinZoom={isMinZoom}
+        isMaxZoom={isMaxZoom}
+      />
     </div>
   )
 }
