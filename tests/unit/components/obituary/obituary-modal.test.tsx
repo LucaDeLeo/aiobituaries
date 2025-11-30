@@ -9,15 +9,15 @@ import { describe, it, expect } from 'vitest'
 
 describe('ObituaryModal module exports', () => {
   it('exports ObituaryModal component', async () => {
-    const module = await import('@/components/obituary/obituary-modal')
-    expect(module.ObituaryModal).toBeDefined()
-    expect(typeof module.ObituaryModal).toBe('function')
+    const mod = await import('@/components/obituary/obituary-modal')
+    expect(mod.ObituaryModal).toBeDefined()
+    expect(typeof mod.ObituaryModal).toBe('function')
   })
 
   it('exports ObituaryModalProps interface (via component)', async () => {
-    const module = await import('@/components/obituary/obituary-modal')
+    const mod = await import('@/components/obituary/obituary-modal')
     // Component should accept the expected props shape
-    expect(module.ObituaryModal).toBeDefined()
+    expect(mod.ObituaryModal).toBeDefined()
   })
 })
 
@@ -54,37 +54,37 @@ describe('Animation variants for modal', () => {
 
 describe('CopyButton props enhancement', () => {
   it('CopyButton accepts text prop', async () => {
-    const module = await import('@/components/ui/copy-button')
-    expect(module.CopyButton).toBeDefined()
+    const mod = await import('@/components/ui/copy-button')
+    expect(mod.CopyButton).toBeDefined()
   })
 
   it('CopyButton accepts label prop', async () => {
-    const module = await import('@/components/ui/copy-button')
-    expect(module.CopyButton).toBeDefined()
+    const mod = await import('@/components/ui/copy-button')
+    expect(mod.CopyButton).toBeDefined()
   })
 })
 
 describe('ScatterPoint click integration', () => {
   it('ScatterPoint module is importable', async () => {
-    const module = await import('@/components/visualization/scatter-point')
-    expect(module.ScatterPoint).toBeDefined()
+    const mod = await import('@/components/visualization/scatter-point')
+    expect(mod.ScatterPoint).toBeDefined()
   })
 })
 
 describe('Sheet component availability', () => {
   it('Sheet components are importable', async () => {
-    const module = await import('@/components/ui/sheet')
-    expect(module.Sheet).toBeDefined()
-    expect(module.SheetContent).toBeDefined()
-    expect(module.SheetHeader).toBeDefined()
-    expect(module.SheetTitle).toBeDefined()
+    const mod = await import('@/components/ui/sheet')
+    expect(mod.Sheet).toBeDefined()
+    expect(mod.SheetContent).toBeDefined()
+    expect(mod.SheetHeader).toBeDefined()
+    expect(mod.SheetTitle).toBeDefined()
   })
 })
 
 describe('ObituaryContext component for modal content', () => {
   it('ObituaryContext is available for reuse', async () => {
-    const module = await import('@/components/obituary/obituary-context')
-    expect(module.ObituaryContext).toBeDefined()
+    const mod = await import('@/components/obituary/obituary-context')
+    expect(mod.ObituaryContext).toBeDefined()
   })
 })
 
@@ -99,8 +99,8 @@ describe('getObituaryBySlug query availability', () => {
 describe('Modal integration with ScatterPlot', () => {
   it('ScatterPlot imports ObituaryModal', async () => {
     // Verify ScatterPlot module loads without errors
-    const module = await import('@/components/visualization/scatter-plot')
-    expect(module.ScatterPlot).toBeDefined()
+    const mod = await import('@/components/visualization/scatter-plot')
+    expect(mod.ScatterPlot).toBeDefined()
   })
 })
 
@@ -134,20 +134,20 @@ describe('Category badge colors', () => {
 describe('Modal behavior contracts', () => {
   it('modal requires selectedSummary prop', async () => {
     // Type check - modal component should require these props
-    const module = await import('@/components/obituary/obituary-modal')
-    const Modal = module.ObituaryModal
+    const mod = await import('@/components/obituary/obituary-modal')
+    const Modal = mod.ObituaryModal
     expect(Modal).toBeDefined()
     // Props are: selectedSummary, isOpen, onClose, triggerRef (optional)
   })
 
   it('modal requires isOpen prop', async () => {
-    const module = await import('@/components/obituary/obituary-modal')
-    expect(module.ObituaryModal).toBeDefined()
+    const mod = await import('@/components/obituary/obituary-modal')
+    expect(mod.ObituaryModal).toBeDefined()
   })
 
   it('modal requires onClose callback', async () => {
-    const module = await import('@/components/obituary/obituary-modal')
-    expect(module.ObituaryModal).toBeDefined()
+    const mod = await import('@/components/obituary/obituary-modal')
+    expect(mod.ObituaryModal).toBeDefined()
   })
 })
 

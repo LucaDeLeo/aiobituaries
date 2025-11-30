@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import { ExternalLink } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,7 @@ import { ObituaryContext } from '@/components/obituary/obituary-context'
 import { CopyButton } from '@/components/ui/copy-button'
 import { getObituaryBySlug } from '@/lib/sanity/queries'
 import { formatDate } from '@/lib/utils/date'
-import { modalSlideIn } from '@/lib/utils/animation'
+import { modalSlideIn, DURATIONS } from '@/lib/utils/animation'
 import { CATEGORY_LABELS } from '@/lib/constants/categories'
 import type { Obituary, ObituarySummary, Category } from '@/types/obituary'
 import { useRouter } from 'next/navigation'
@@ -46,6 +46,9 @@ export function ObituaryModal({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+
+  // Check reduced motion preference
+  const shouldReduceMotion = useReducedMotion()
 
   // Fetch full obituary data when modal opens
   useEffect(() => {
@@ -125,11 +128,18 @@ export function ObituaryModal({
 
         {obituary && !isLoading && !error && (
           <motion.div
-            variants={modalSlideIn}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.3, ease: 'easeOut' }}
+            variants={shouldReduceMotion ? undefined : modalSlideIn}
+            initial={shouldReduceMotion ? undefined : "initial"}
+            animate={shouldReduceMotion ? undefined : "animate"}
+            exit={shouldReduceMotion ? undefined : "exit"}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : { duration: DURATIONS.slow, ease: 'easeOut' }
+            }
+            style={{
+              willChange: shouldReduceMotion ? 'auto' : 'transform',
+            }}
             className="space-y-6"
           >
             <SheetHeader>

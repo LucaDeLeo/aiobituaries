@@ -1,7 +1,8 @@
 'use client'
 
 import { useRef } from 'react'
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
+import { staggerItem } from '@/lib/utils/animation'
 import type { ObituarySummary } from '@/types/obituary'
 
 export interface ScatterPointProps {
@@ -15,6 +16,8 @@ export interface ScatterPointProps {
   onMouseEnter?: () => void
   onMouseLeave?: () => void
   onClick?: (element: HTMLElement) => void
+  /** Override reduced motion for testing purposes */
+  shouldReduceMotion?: boolean
 }
 
 const POINT_RADIUS = 7 // 14px diameter
@@ -30,8 +33,14 @@ export function ScatterPoint({
   onMouseEnter,
   onMouseLeave,
   onClick,
+  shouldReduceMotion: shouldReduceMotionProp,
 }: ScatterPointProps) {
   const circleRef = useRef<SVGCircleElement>(null)
+
+  // Check reduced motion preference - allow override for testing
+  // IMPORTANT: Call hook unconditionally before early return
+  const reducedMotionPref = useReducedMotion()
+  const prefersReducedMotion = shouldReduceMotionProp ?? reducedMotionPref
 
   // Hidden if clustered
   if (isClustered) return null
@@ -57,16 +66,27 @@ export function ScatterPoint({
         filter: `drop-shadow(0 0 ${glowIntensity}px ${color})`,
         cursor: isFiltered ? 'pointer' : 'default',
         pointerEvents: isFiltered ? 'auto' : 'none',
+        willChange: prefersReducedMotion ? 'auto' : 'transform, opacity',
       }}
-      initial={{ opacity: 0, scale: 0 }}
-      animate={{
-        opacity,
-        scale: isHovered ? 1.3 : 1,
-      }}
-      transition={{
-        opacity: { duration: 0.15 },
-        scale: { type: 'spring', stiffness: 300, damping: 20 },
-      }}
+      variants={prefersReducedMotion ? undefined : staggerItem}
+      initial={prefersReducedMotion ? undefined : { opacity: 0, scale: 0 }}
+      animate={
+        prefersReducedMotion
+          ? { opacity }
+          : {
+              opacity,
+              scale: isHovered ? 1.3 : 1,
+            }
+      }
+      whileHover={prefersReducedMotion ? undefined : { scale: 1.3 }}
+      transition={
+        prefersReducedMotion
+          ? { duration: 0 }
+          : {
+              opacity: { duration: 0.15 },
+              scale: { type: 'spring', stiffness: 300, damping: 20 },
+            }
+      }
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onClick={handleClick}

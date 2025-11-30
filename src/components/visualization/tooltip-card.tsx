@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import { formatDate } from '@/lib/utils/date'
 import { tooltipAppear, DURATIONS } from '@/lib/utils/animation'
 import type { ObituarySummary } from '@/types/obituary'
@@ -31,6 +31,9 @@ export interface TooltipCardProps {
  * - Near left edge: Aligns right
  */
 export function TooltipCard({ obituary, x, y, containerBounds }: TooltipCardProps) {
+  // Check reduced motion preference
+  const shouldReduceMotion = useReducedMotion()
+
   // Tooltip dimensions and padding
   const tooltipWidth = 280
   const tooltipHeight = 120 // Approximate height
@@ -65,17 +68,18 @@ export function TooltipCard({ obituary, x, y, containerBounds }: TooltipCardProp
   return (
     <motion.div
       data-testid="tooltip-card"
-      variants={tooltipAppear}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      transition={{ duration: DURATIONS.fast }}
+      variants={shouldReduceMotion ? undefined : tooltipAppear}
+      initial={shouldReduceMotion ? undefined : "initial"}
+      animate={shouldReduceMotion ? undefined : "animate"}
+      exit={shouldReduceMotion ? undefined : "exit"}
+      transition={shouldReduceMotion ? { duration: 0 } : { duration: DURATIONS.fast }}
       style={{
         position: 'absolute',
         left: `${left}px`,
         top: `${top}px`,
         maxWidth: '280px',
         zIndex: 50,
+        willChange: shouldReduceMotion ? 'auto' : 'transform, opacity',
       }}
       className="pointer-events-none"
     >

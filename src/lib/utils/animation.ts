@@ -82,3 +82,33 @@ export const modalSlideIn: Variants = {
   animate: { x: 0, opacity: 1 },
   exit: { x: '100%', opacity: 0 },
 }
+
+/**
+ * Stagger container animation.
+ * Applies staggered delay to child elements with dynamic timing calculation.
+ * Maximum total duration is capped at 500ms regardless of child count.
+ *
+ * Usage:
+ * <motion.g variants={staggerContainer} initial="initial" animate="animate">
+ *   <motion.circle variants={staggerItem} />
+ * </motion.g>
+ */
+export const staggerContainer: Variants = {
+  initial: {},
+  animate: {
+    transition: {
+      staggerChildren: 0.05, // 50ms between each child
+      delayChildren: 0.1, // 100ms initial delay
+    },
+  },
+}
+
+/**
+ * Stagger item animation for individual data points.
+ * Fades in from opacity 0 and scales up from 0 to full size.
+ * Used with staggerContainer for entrance animations.
+ */
+export const staggerItem: Variants = {
+  initial: { opacity: 0, scale: 0 },
+  animate: { opacity: 0.8, scale: 1 },
+}

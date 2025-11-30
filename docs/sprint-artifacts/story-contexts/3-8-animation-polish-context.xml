@@ -1,0 +1,702 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <metadata>
+    <story-key>3-8-animation-polish</story-key>
+    <story-title>Animation Polish</story-title>
+    <epic-key>epic-3</epic-key>
+    <epic-title>Timeline Visualization</epic-title>
+    <created-date>2025-11-30</created-date>
+    <context-version>1.0</context-version>
+  </metadata>
+
+  <story-reference>
+    <file-path>docs/sprint-artifacts/stories/3-8-animation-polish.md</file-path>
+    <description>Story markdown file with full acceptance criteria, technical approach, tasks, and DoD</description>
+  </story-reference>
+
+  <epic-context>
+    <tech-spec-file>docs/sprint-artifacts/epic-tech-specs/epic-3-tech-spec.md</tech-spec-file>
+    <description>Epic 3 technical specification covering timeline visualization architecture, animation strategy, and performance targets</description>
+    <key-sections>
+      <section name="Animation Presets" lines="810-925">
+        Defines DURATIONS, SPRINGS constants, animation variants (tooltipAppear, modalSlideIn, staggerContainer, staggerItem), and shouldReduceMotion() utility
+      </section>
+      <section name="Performance Requirements" lines="1647-1730">
+        60fps target, &lt;50ms hover response, &lt;100ms click response, bundle optimization strategies, memoization patterns
+      </section>
+      <section name="Story 3.8 Acceptance Criteria" lines="1325-1362">
+        AC-3.8.1 through AC-3.8.7: 60fps performance, staggered entrance, high-volume performance, reduced motion support
+      </section>
+    </key-sections>
+  </epic-context>
+
+  <acceptance-criteria>
+    <criterion id="AC-3.8.1">
+      <description>60fps performance - any timeline interaction must run at 60fps without jank</description>
+      <verification>Profile with Chrome DevTools Performance tab, verify FPS meter shows 60fps during zoom/pan/hover</verification>
+    </criterion>
+    <criterion id="AC-3.8.2">
+      <description>Staggered entrance animation - dots appear with 50ms per dot, max 500ms total</description>
+      <verification>Visual inspection and timing measurement on page load with multiple data points</verification>
+    </criterion>
+    <criterion id="AC-3.8.3">
+      <description>High-volume performance - 200+ dots rendered without frame drops</description>
+      <verification>Test with dataset of 200+ obituaries, profile for frame drops during interactions</verification>
+    </criterion>
+    <criterion id="AC-3.8.4">
+      <description>Hover responsiveness - response time &lt; 50ms</description>
+      <verification>Measure with Performance API from mouseenter to tooltip display</verification>
+    </criterion>
+    <criterion id="AC-3.8.5">
+      <description>Click responsiveness - response time &lt; 100ms</description>
+      <verification>Measure with Performance API from click to modal open</verification>
+    </criterion>
+    <criterion id="AC-3.8.6">
+      <description>Reduced motion support - animations disabled when prefers-reduced-motion enabled</description>
+      <verification>Enable prefers-reduced-motion in browser settings, verify no animations play (zoom, pan momentum, hover scale, glow pulse disabled)</verification>
+    </criterion>
+    <criterion id="AC-3.8.7">
+      <description>Reduced motion fallback - basic instant state changes still work</description>
+      <verification>With reduced motion enabled, verify zoom/pan/click/hover still function with instant transitions</verification>
+    </criterion>
+  </acceptance-criteria>
+
+  <existing-code-interfaces>
+    <interface name="ScatterPlot Component">
+      <file-path>src/components/visualization/scatter-plot.tsx</file-path>
+      <description>Main timeline visualization component - manages zoom/pan state, renders SVG with data points, handles interactions</description>
+      <key-patterns>
+        <pattern>Uses motion.g for transform animations with springX and springScale motion values</pattern>
+        <pattern>Implements useMemo for scale calculations (xScale, yScale) - lines 190-216</pattern>
+        <pattern>Computes clusters with useMemo - lines 219-231</pattern>
+        <pattern>Has staggered animation on data points - motion.g variants lines 637-648</pattern>
+        <pattern>Debounces pan/zoom updates using requestAnimationFrame pattern</pattern>
+        <pattern>SPRINGS.pan and SPRINGS.zoom already imported and used - lines 26, 235, 239</pattern>
+      </key-patterns>
+      <current-animation-usage>
+        <usage>Line 235: springX uses SPRINGS.pan for smooth panning</usage>
+        <usage>Line 239: springScale uses SPRINGS.zoom for smooth zooming</usage>
+        <usage>Lines 637-648: Stagger animation with 50ms (0.05) between children, 100ms (0.1) initial delay</usage>
+      </current-animation-usage>
+      <missing-reduced-motion>Component does not currently use useReducedMotion hook - needs to be added</missing-reduced-motion>
+      <missing-performance-monitoring>No performance.mark/measure calls - needs to be added for dev mode profiling</missing-performance-monitoring>
+    </interface>
+
+    <interface name="ScatterPoint Component">
+      <file-path>src/components/visualization/scatter-point.tsx</file-path>
+      <description>Individual timeline dot - handles hover state, click events, visual appearance</description>
+      <key-patterns>
+        <pattern>motion.circle with initial={{opacity: 0, scale: 0}} for entrance animation - line 61</pattern>
+        <pattern>Animates to opacity based on isFiltered and isHovered props - line 63</pattern>
+        <pattern>Scale 1.3x on hover with spring transition (stiffness: 300, damping: 20) - lines 64, 68</pattern>
+        <pattern>Glow intensity changes based on hover state - line 40, 57</pattern>
+      </key-patterns>
+      <missing-reduced-motion>No useReducedMotion hook - needs to disable scale animation and set duration: 0 for transitions</missing-reduced-motion>
+      <missing-will-change>No will-change CSS property - should add 'transform, opacity' for GPU acceleration</missing-will-change>
+    </interface>
+
+    <interface name="TooltipCard Component">
+      <file-path>src/components/visualization/tooltip-card.tsx</file-path>
+      <description>Hover preview tooltip showing claim, source, date</description>
+      <current-animation>
+        <usage>Lines 66-72: Uses tooltipAppear variants with DURATIONS.fast (150ms)</usage>
+        <usage>Already has initial/animate/exit states configured</usage>
+      </current-animation>
+      <missing-reduced-motion>No useReducedMotion hook - needs to disable variants and set duration: 0 when reduced motion enabled</missing-reduced-motion>
+      <missing-will-change>No will-change CSS property in style object - should add when not reduced motion</missing-will-change>
+    </interface>
+
+    <interface name="ObituaryModal Component">
+      <file-path>src/components/obituary/obituary-modal.tsx</file-path>
+      <description>Side sheet modal for full obituary details on point click</description>
+      <current-animation>
+        <usage>Lines 127-133: motion.div with modalSlideIn variants, 300ms ease-out transition</usage>
+        <usage>Uses Sheet component from shadcn/ui for drawer behavior</usage>
+      </current-animation>
+      <missing-reduced-motion>No useReducedMotion hook - needs to disable animation variants when preference enabled</missing-reduced-motion>
+      <missing-will-change>No will-change: transform style - should add for smooth slide animation</missing-will-change>
+    </interface>
+
+    <interface name="useZoom Hook">
+      <file-path>src/lib/hooks/use-zoom.ts</file-path>
+      <description>Manages zoom and pan state with center-point zoom calculations</description>
+      <key-functions>
+        <function name="handleWheel" lines="149-182">
+          Handles wheel events for zoom, calculates center point, updates scale with clamping
+        </function>
+        <function name="handlePinch" lines="184-205">
+          Handles pinch-to-zoom gestures with center point calculations
+        </function>
+        <function name="calculateCenterPointZoom" lines="62-74">
+          Pure function for center-point zoom math - exported for testing
+        </function>
+      </key-functions>
+      <missing-reduced-motion>No useReducedMotion support - needs to return shouldReduceMotion flag and getZoomTransition helper</missing-reduced-motion>
+      <integration-notes>Hook is called by ScatterPlot component, spring transitions applied via Motion in ScatterPlot</integration-notes>
+    </interface>
+
+    <interface name="Animation Utilities">
+      <file-path>src/lib/utils/animation.ts</file-path>
+      <description>Shared animation constants and variants already defined</description>
+      <existing-constants>
+        <constant name="DURATIONS">fast: 0.15 (150ms), normal: 0.2 (200ms), slow: 0.3 (300ms)</constant>
+        <constant name="SPRINGS">hover: {stiffness: 300, damping: 20}, zoom: {stiffness: 300, damping: 30}, pan: {stiffness: 100, damping: 20}</constant>
+        <constant name="tooltipAppear">Variants for tooltip fade-in with scale and y offset</constant>
+        <constant name="modalSlideIn">Variants for modal slide from right with fade</constant>
+      </existing-constants>
+      <existing-functions>
+        <function name="shouldReduceMotion()">Static check for prefers-reduced-motion media query</function>
+        <function name="getTransition(key)">Returns spring config or {duration: 0} based on reduced motion</function>
+      </existing-functions>
+      <missing-constants>
+        <missing>staggerContainer variants - defined in epic tech spec but not in animation.ts yet</missing>
+        <missing>staggerItem variants - defined in epic tech spec but not in animation.ts yet</missing>
+      </missing-constants>
+      <note>Components should prefer Motion's useReducedMotion() hook over shouldReduceMotion() function for reactive updates</note>
+    </interface>
+  </existing-code-interfaces>
+
+  <documentation-artifacts>
+    <artifact>
+      <file-path>docs/sprint-artifacts/epic-tech-specs/epic-3-tech-spec.md</file-path>
+      <section>Section 6: Animation Presets (lines 810-925)</section>
+      <relevance>Defines all animation constants, spring configurations, and reduced motion patterns that Story 3-8 must implement</relevance>
+      <key-content>
+        - DURATIONS and SPRINGS constants already defined
+        - shouldReduceMotion() utility function pattern
+        - staggerContainer and staggerItem variants specification
+        - Usage guidance for useReducedMotion() hook vs shouldReduceMotion() function
+      </key-content>
+    </artifact>
+
+    <artifact>
+      <file-path>docs/sprint-artifacts/epic-tech-specs/epic-3-tech-spec.md</file-path>
+      <section>Section 10: Non-Functional Requirements (lines 1647-1730)</section>
+      <relevance>Performance targets and optimization strategies for 60fps animation</relevance>
+      <key-content>
+        - Performance metrics: &lt;100ms timeline render, &lt;50ms hover, &lt;100ms click, 60fps zoom/pan
+        - Optimization strategies: memoization pattern, debouncing, requestAnimationFrame batching, will-change CSS
+        - Bundle size targets: &lt;50KB gzipped for visualization
+        - Virtualization considerations for 500+ points (defer if not needed at 200)
+      </key-content>
+    </artifact>
+
+    <artifact>
+      <file-path>docs/sprint-artifacts/stories/3-8-animation-polish.md</file-path>
+      <section>Technical Approach (lines 33-469)</section>
+      <relevance>Detailed implementation instructions including code examples for all components</relevance>
+      <key-content>
+        - Reduced motion support pattern for each component
+        - Staggered entrance animation configuration (staggerChildren: 0.02, delayChildren: 0.1, max 500ms)
+        - Performance optimization checklist: memoization dependencies, debounce timings, will-change usage
+        - Animation timing consistency requirements
+        - Performance monitoring utilities specification
+      </key-content>
+    </artifact>
+
+    <artifact>
+      <file-path>docs/architecture.md</file-path>
+      <section>Motion Library and Animation Strategy</section>
+      <relevance>Architectural decisions about animation approach and accessibility</relevance>
+      <key-content>
+        - Motion v12+ with useReducedMotion hook
+        - Accessibility-first: reduced motion support mandatory
+        - Spring physics for natural feel
+        - Performance monitoring in development only
+      </key-content>
+    </artifact>
+  </documentation-artifacts>
+
+  <development-constraints>
+    <constraint category="Performance">
+      <rule>All animations must run at 60fps - no frame drops allowed</rule>
+      <verification>Profile with Chrome DevTools Performance tab, FPS meter must show consistent 60fps</verification>
+      <implementation>
+        - Use memoization (useMemo) for expensive calculations
+        - Debounce zoom/pan state updates to 16ms (one frame time)
+        - Use requestAnimationFrame for DOM updates
+        - Apply will-change CSS property sparingly to animated elements only
+      </implementation>
+    </constraint>
+
+    <constraint category="Accessibility">
+      <rule>Reduced motion preference must be fully supported</rule>
+      <verification>Enable prefers-reduced-motion in OS/browser settings, verify all animations disabled</verification>
+      <implementation>
+        - Use Motion's useReducedMotion() hook in all components (NOT static shouldReduceMotion())
+        - When reduced motion enabled: set variants to undefined, transition to {duration: 0}, will-change to 'auto'
+        - Preserve functionality: zoom/pan/hover/click must still work instantly
+        - Test on macOS, Windows, iOS, Android platforms
+      </implementation>
+    </constraint>
+
+    <constraint category="Animation Consistency">
+      <rule>All animation timings must use DURATIONS and SPRINGS constants from animation.ts</rule>
+      <verification>No hardcoded duration values in components, all transitions reference animation.ts</verification>
+      <implementation>
+        - ScatterPoint hover: SPRINGS.hover
+        - TooltipCard: DURATIONS.fast (150ms)
+        - Modal open: DURATIONS.slow (300ms)
+        - Zoom: SPRINGS.zoom
+        - Pan: SPRINGS.pan
+      </implementation>
+    </constraint>
+
+    <constraint category="Performance Monitoring">
+      <rule>Performance utilities must only run in development mode</rule>
+      <verification>Check process.env.NODE_ENV in all performance functions</verification>
+      <implementation>
+        - Wrap performance.mark/measure in development checks
+        - No performance overhead in production builds
+        - Log warnings for slow operations in development only
+      </implementation>
+    </constraint>
+
+    <constraint category="Browser Compatibility">
+      <rule>Animations must work consistently across Chrome, Firefox, Safari, Edge</rule>
+      <verification>Manual testing on all browsers, verify touch gestures on mobile devices</verification>
+      <implementation>
+        - Test will-change on Safari (known issues)
+        - Verify Motion animations work cross-browser
+        - Test touch gestures (pan/pinch) on real devices
+      </implementation>
+    </constraint>
+
+    <constraint category="Entrance Animation">
+      <rule>Staggered entrance must respect 50ms per dot, max 500ms total duration</rule>
+      <verification>Visual timing check with various dataset sizes</verification>
+      <implementation>
+        - staggerChildren: 0.02 (20ms - will be adjusted to 50ms or 0.05)
+        - delayChildren: 0.1 (100ms initial delay)
+        - For large datasets (100+ dots), cap total duration at 500ms
+        - Respect reduced motion: skip entrance animation entirely
+      </implementation>
+    </constraint>
+  </development-constraints>
+
+  <dependencies>
+    <dependency type="package">
+      <name>motion/react</name>
+      <version>12.9.2+</version>
+      <usage>useReducedMotion hook for reactive reduced motion preference, motion components for animations</usage>
+      <critical>true</critical>
+    </dependency>
+
+    <dependency type="package">
+      <name>@visx/responsive</name>
+      <usage>Already used in ScatterPlot for responsive sizing - performance memoization needed</usage>
+    </dependency>
+
+    <dependency type="browser-api">
+      <name>Performance API</name>
+      <usage>performance.mark(), performance.measure(), performance.now() for timing measurements</usage>
+      <note>Must gracefully handle missing API (not available in all contexts)</note>
+    </dependency>
+
+    <dependency type="browser-api">
+      <name>requestAnimationFrame</name>
+      <usage>Batch DOM updates during zoom/pan for smooth 60fps rendering</usage>
+      <note>Already partially used in ScatterPlot pan handlers</note>
+    </dependency>
+
+    <dependency type="internal-component">
+      <name>ScatterPlot</name>
+      <file-path>src/components/visualization/scatter-plot.tsx</file-path>
+      <modification>Add reduced motion support, performance marks, ensure memoization</modification>
+    </dependency>
+
+    <dependency type="internal-component">
+      <name>ScatterPoint</name>
+      <file-path>src/components/visualization/scatter-point.tsx</file-path>
+      <modification>Add reduced motion support, will-change CSS, staggerItem variants</modification>
+    </dependency>
+
+    <dependency type="internal-component">
+      <name>TooltipCard</name>
+      <file-path>src/components/visualization/tooltip-card.tsx</file-path>
+      <modification>Add reduced motion support, will-change CSS</modification>
+    </dependency>
+
+    <dependency type="internal-component">
+      <name>ObituaryModal</name>
+      <file-path>src/components/obituary/obituary-modal.tsx</file-path>
+      <modification>Add reduced motion support, will-change CSS</modification>
+    </dependency>
+
+    <dependency type="internal-hook">
+      <name>useZoom</name>
+      <file-path>src/lib/hooks/use-zoom.ts</file-path>
+      <modification>Add reduced motion support, return getZoomTransition helper</modification>
+    </dependency>
+
+    <dependency type="internal-utility">
+      <name>animation.ts</name>
+      <file-path>src/lib/utils/animation.ts</file-path>
+      <modification>Add staggerContainer and staggerItem variants if not already present</modification>
+    </dependency>
+
+    <dependency type="story-prerequisite">
+      <name>Story 3-1: Scatter Plot Foundation</name>
+      <status>done</status>
+      <note>ScatterPlot component exists and renders data points</note>
+    </dependency>
+
+    <dependency type="story-prerequisite">
+      <name>Story 3-2: Timeline Data Points</name>
+      <status>done</status>
+      <note>ScatterPoint component with animations already exists</note>
+    </dependency>
+
+    <dependency type="story-prerequisite">
+      <name>Story 3-3: Horizontal Scroll/Pan</name>
+      <status>done</status>
+      <note>Pan animations with momentum already implemented using SPRINGS.pan</note>
+    </dependency>
+
+    <dependency type="story-prerequisite">
+      <name>Story 3-4: Zoom Functionality</name>
+      <status>done</status>
+      <note>Zoom animations already implemented using SPRINGS.zoom</note>
+    </dependency>
+
+    <dependency type="story-prerequisite">
+      <name>Story 3-6: Hover Tooltips</name>
+      <status>done</status>
+      <note>TooltipCard with tooltipAppear animation already exists</note>
+    </dependency>
+
+    <dependency type="story-prerequisite">
+      <name>Story 3-7: Click to Modal</name>
+      <status>done</status>
+      <note>ObituaryModal with modalSlideIn animation already exists</note>
+    </dependency>
+  </dependencies>
+
+  <testing-requirements>
+    <unit-tests>
+      <test-file>tests/unit/lib/utils/performance.test.ts</test-file>
+      <description>Unit tests for performance monitoring utilities</description>
+      <coverage>
+        - measureInteraction executes callback and returns result
+        - measureInteraction measures duration correctly
+        - measureInteraction logs warning when threshold exceeded
+        - markPerformance calls performance.mark in dev mode
+        - measurePerformance calls performance.measure with threshold check
+        - monitorFrameRate tracks FPS and calls callback
+        - All utilities are no-op in production mode (process.env.NODE_ENV check)
+      </coverage>
+    </unit-tests>
+
+    <integration-tests>
+      <test-scenario>Entrance Animation</test-scenario>
+      <description>Verify staggered entrance animation plays on page load</description>
+      <verification>
+        - Dots fade in with stagger when page loads
+        - Stagger timing is 50ms per dot (or adjusted value)
+        - Total duration capped at 500ms for large datasets
+        - Animation skipped completely with reduced motion enabled
+      </verification>
+    </integration-tests>
+
+    <integration-tests>
+      <test-scenario>Reduced Motion Integration</test-scenario>
+      <description>Verify all animations disabled when preference enabled</description>
+      <verification>
+        - All animations disabled with prefers-reduced-motion
+        - Zoom/pan work instantly (no spring animation)
+        - Hover/click work instantly (no scale/fade animations)
+        - Modal opens instantly (no slide animation)
+        - Tooltip appears instantly (no delay or fade)
+        - Functionality preserved (interactions still work)
+      </verification>
+    </integration-tests>
+
+    <performance-tests>
+      <test-scenario>60fps Performance</test-scenario>
+      <description>Profile and verify 60fps during all interactions</description>
+      <verification>
+        - Chrome DevTools Performance tab recording
+        - Timeline loads in &lt;500ms with 200 dots
+        - Hover response &lt;50ms (measured with Performance API)
+        - Click response &lt;100ms (measured with Performance API)
+        - Zoom runs at 60fps (FPS meter verification)
+        - Pan runs at 60fps (FPS meter verification)
+        - No layout thrashing detected in profiler
+      </verification>
+    </performance-tests>
+
+    <manual-tests>
+      <test-checklist>
+        <item>Load timeline: entrance animation plays smoothly</item>
+        <item>Load timeline: stagger visible with multiple dots</item>
+        <item>Enable reduced motion: entrance animation disabled</item>
+        <item>Enable reduced motion: dots appear immediately</item>
+        <item>Hover dot: tooltip appears quickly (&lt;50ms)</item>
+        <item>Hover dot: scale animation smooth (if not reduced motion)</item>
+        <item>Enable reduced motion: no hover scale animation</item>
+        <item>Click dot: modal opens quickly (&lt;100ms)</item>
+        <item>Click dot: slide-in animation smooth at 60fps</item>
+        <item>Enable reduced motion: modal opens instantly</item>
+        <item>Zoom with wheel: smooth scaling at 60fps</item>
+        <item>Enable reduced motion: zoom instant</item>
+        <item>Pan with drag: smooth movement at 60fps</item>
+        <item>Enable reduced motion: pan instant, no momentum</item>
+        <item>Test 200+ dots: no frame drops</item>
+        <item>Chrome: all animations work correctly</item>
+        <item>Firefox: all animations work correctly</item>
+        <item>Safari: all animations work (verify will-change compatibility)</item>
+        <item>Edge: all animations work correctly</item>
+        <item>Mobile Safari: touch gestures work correctly</item>
+        <item>Android Chrome: touch gestures work correctly</item>
+      </test-checklist>
+    </manual-tests>
+  </testing-requirements>
+
+  <implementation-notes>
+    <note priority="high">
+      <title>Missing staggerContainer and staggerItem Variants</title>
+      <description>
+        The epic tech spec defines staggerContainer and staggerItem variants (lines 872-884),
+        but these are NOT currently in animation.ts. They need to be added before implementing
+        the entrance animation in ScatterPlot.
+      </description>
+      <action>
+        Add to animation.ts:
+        - staggerContainer: { animate: { transition: { staggerChildren: 0.05, delayChildren: 0.1 } } }
+        - staggerItem: { initial: { opacity: 0, scale: 0 }, animate: { opacity: 0.8, scale: 1 } }
+
+        Note: Story specifies 50ms per dot, but current ScatterPlot uses 0.05 (50ms). Verify this is correct.
+      </action>
+    </note>
+
+    <note priority="high">
+      <title>useReducedMotion Hook vs shouldReduceMotion Function</title>
+      <description>
+        Components must use Motion's useReducedMotion() hook (reactive, updates on preference change)
+        rather than the static shouldReduceMotion() function. The hook re-renders components when
+        the user's preference changes during a session.
+      </description>
+      <action>
+        Import: import { useReducedMotion } from 'motion/react'
+        Usage: const shouldReduce = useReducedMotion()
+        Apply: Set variants to undefined, transition to {duration: 0}, will-change to 'auto' when shouldReduce is true
+      </action>
+    </note>
+
+    <note priority="medium">
+      <title>Performance Monitoring Development-Only Pattern</title>
+      <description>
+        All performance monitoring utilities (performance.ts) must check process.env.NODE_ENV
+        and only execute in development mode. Production builds should have zero overhead.
+      </description>
+      <action>
+        Wrap all performance calls:
+        if (process.env.NODE_ENV !== 'development') return
+
+        This ensures tree-shaking removes performance code from production bundles.
+      </action>
+    </note>
+
+    <note priority="medium">
+      <title>will-change CSS Property Usage</title>
+      <description>
+        will-change should only be applied to elements that are actively animating, and only
+        when reduced motion is NOT enabled. Overuse can cause performance issues, especially on Safari.
+      </description>
+      <action>
+        Apply will-change conditionally:
+        - ScatterPoint: willChange: shouldReduce ? 'auto' : 'transform, opacity'
+        - TooltipCard: willChange: shouldReduce ? 'auto' : 'transform, opacity'
+        - ObituaryModal: willChange: shouldReduce ? 'auto' : 'transform'
+
+        Remove will-change after animation completes if possible (for static elements).
+      </action>
+    </note>
+
+    <note priority="medium">
+      <title>Memoization Dependencies</title>
+      <description>
+        ScatterPlot already has memoization for xScale and yScale. Need to verify dependencies
+        are correct and add performance marks around expensive calculations.
+      </description>
+      <action>
+        xScale dependencies: [data, innerWidth] (current: data, innerWidth)
+        yScale dependencies: [innerHeight] (current: innerHeight)
+        Clusters: [data, xScale, yScale, viewState.scale] (already correct)
+
+        Add markPerformance/measurePerformance around scale computations with appropriate thresholds.
+      </action>
+    </note>
+
+    <note priority="low">
+      <title>Stagger Animation Duration Cap</title>
+      <description>
+        Story specifies max 500ms total duration for entrance animation. With staggerChildren: 0.05 (50ms)
+        and delayChildren: 0.1 (100ms), a dataset of 100 dots would take 5100ms total. Need to implement
+        duration cap logic or adjust stagger timing for large datasets.
+      </description>
+      <action>
+        Option 1: Reduce staggerChildren dynamically based on data length (if data.length &gt; 10, use smaller stagger)
+        Option 2: Cap number of staggered items (first 10 dots get stagger, rest appear immediately)
+        Option 3: Use transition.staggerChildren with proper math to cap at 500ms total
+
+        Recommendation: Use dynamic stagger calculation to maintain effect while respecting cap.
+      </action>
+    </note>
+
+    <note priority="low">
+      <title>Browser Compatibility Testing</title>
+      <description>
+        Safari has known issues with will-change and some Motion animations. Firefox may handle
+        spring physics slightly differently. Edge (Chromium) should match Chrome behavior.
+      </description>
+      <action>
+        Test on:
+        - Chrome (latest): Primary development browser
+        - Firefox (latest): Verify spring physics and transitions
+        - Safari (latest): Verify will-change doesn't cause visual artifacts
+        - Edge (latest): Verify Chromium parity
+        - Mobile Safari (iOS): Touch gestures and reduced motion
+        - Android Chrome: Touch gestures and performance
+
+        Document any browser-specific issues and add fallbacks if needed.
+      </action>
+    </note>
+  </implementation-notes>
+
+  <file-manifest>
+    <file action="create">
+      <path>src/lib/utils/performance.ts</path>
+      <description>Performance monitoring utilities for development mode</description>
+      <content-summary>
+        - PerformanceMetric interface
+        - measureInteraction(name, callback, threshold) - measure execution time
+        - markPerformance(name) - create performance mark
+        - measurePerformance(name, startMark, endMark, threshold) - measure between marks
+        - monitorFrameRate(callback, duration) - track FPS
+        - All functions check process.env.NODE_ENV and no-op in production
+      </content-summary>
+    </file>
+
+    <file action="modify">
+      <path>src/lib/utils/animation.ts</path>
+      <description>Add missing staggerContainer and staggerItem variants</description>
+      <modifications>
+        <add>Export staggerContainer variants with staggerChildren and delayChildren config</add>
+        <add>Export staggerItem variants with initial/animate states for opacity and scale</add>
+        <verify>DURATIONS and SPRINGS constants are already present and correct</verify>
+        <verify>tooltipAppear and modalSlideIn variants are already present</verify>
+      </modifications>
+    </file>
+
+    <file action="modify">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>Add reduced motion support and performance monitoring</description>
+      <modifications>
+        <add>Import useReducedMotion from motion/react</add>
+        <add>Import markPerformance, measurePerformance from performance.ts</add>
+        <add>Call useReducedMotion() hook to get shouldReduceMotion flag</add>
+        <add>Add performance marks around scale calculations (lines 190-216)</add>
+        <add>Measure scale computation time with 10ms threshold</add>
+        <add>Pass shouldReduceMotion to ScatterPoint components</add>
+        <verify>Memoization is already present for xScale, yScale, clusters</verify>
+        <verify>Stagger animation is already configured (lines 637-648)</verify>
+        <update>Disable stagger animation when shouldReduceMotion is true</update>
+      </modifications>
+    </file>
+
+    <file action="modify">
+      <path>src/components/visualization/scatter-point.tsx</path>
+      <description>Add reduced motion support and will-change CSS</description>
+      <modifications>
+        <add>Import useReducedMotion from motion/react</add>
+        <add>Import staggerItem from animation.ts</add>
+        <add>Add shouldReduceMotion prop (optional, for testing)</add>
+        <add>Call useReducedMotion() hook: const prefersReducedMotion = shouldReduceMotion ?? useReducedMotion()</add>
+        <update>Set variants to undefined if prefersReducedMotion</update>
+        <update>Set whileHover to undefined if prefersReducedMotion (line 64)</update>
+        <update>Set transition to {duration: 0} if prefersReducedMotion</update>
+        <update>Add willChange to style: prefersReducedMotion ? 'auto' : 'transform, opacity'</update>
+      </modifications>
+    </file>
+
+    <file action="modify">
+      <path>src/components/visualization/tooltip-card.tsx</path>
+      <description>Add reduced motion support and will-change CSS</description>
+      <modifications>
+        <add>Import useReducedMotion from motion/react</add>
+        <add>Call useReducedMotion() hook</add>
+        <update>Set variants to undefined if shouldReduceMotion (line 68)</update>
+        <update>Set initial/animate/exit to undefined if shouldReduceMotion (lines 69-71)</update>
+        <update>Set transition to {duration: 0} if shouldReduceMotion (line 72)</update>
+        <update>Add willChange to style object: shouldReduceMotion ? 'auto' : 'transform, opacity'</update>
+      </modifications>
+    </file>
+
+    <file action="modify">
+      <path>src/components/obituary/obituary-modal.tsx</path>
+      <description>Add reduced motion support and will-change CSS</description>
+      <modifications>
+        <add>Import useReducedMotion from motion/react</add>
+        <add>Import DURATIONS from animation.ts (already imported modalSlideIn)</add>
+        <add>Call useReducedMotion() hook</add>
+        <update>Set variants to undefined if shouldReduceMotion (line 128)</update>
+        <update>Set initial/animate/exit to undefined if shouldReduceMotion (lines 129-131)</update>
+        <update>Set transition to {duration: 0} if shouldReduceMotion, else DURATIONS.slow (line 132)</update>
+        <update>Add style prop to motion.div: willChange: shouldReduceMotion ? 'auto' : 'transform'</update>
+      </modifications>
+    </file>
+
+    <file action="modify">
+      <path>src/lib/hooks/use-zoom.ts</path>
+      <description>Add reduced motion support and transition helper</description>
+      <modifications>
+        <add>Import useReducedMotion from motion/react</add>
+        <add>Import SPRINGS from animation.ts</add>
+        <add>Call useReducedMotion() hook in useZoom function</add>
+        <add>Create getZoomTransition callback that returns {duration: 0} if reduced motion, else SPRINGS.zoom</add>
+        <update>Add shouldReduceMotion to return object</update>
+        <update>Add getZoomTransition to return object</update>
+        <note>Spring transitions are applied in ScatterPlot, not in the hook itself</note>
+      </modifications>
+    </file>
+
+    <file action="create">
+      <path>tests/unit/lib/utils/performance.test.ts</path>
+      <description>Unit tests for performance monitoring utilities</description>
+      <test-coverage>
+        - measureInteraction executes callback and returns result
+        - measureInteraction measures duration correctly
+        - measureInteraction logs warning when threshold exceeded
+        - markPerformance calls performance.mark in dev mode
+        - measurePerformance calls performance.measure with threshold
+        - monitorFrameRate tracks FPS and calls callback
+        - All utilities no-op in production (mock process.env.NODE_ENV)
+      </test-coverage>
+    </file>
+
+    <file action="modify">
+      <path>docs/sprint-artifacts/stories/3-8-animation-polish.md</path>
+      <description>Update with final performance metrics after testing</description>
+      <modifications>
+        <update>Document baseline performance metrics</update>
+        <update>Document optimized performance metrics</update>
+        <update>Update Dev Agent Record section with implementation notes</update>
+        <update>Mark tasks as complete in checklist</update>
+      </modifications>
+    </file>
+  </file-manifest>
+
+  <validation-checklist>
+    <validation-item>All files referenced in context exist and are accessible</validation-item>
+    <validation-item>Story acceptance criteria (AC-3.8.1 through AC-3.8.7) fully documented</validation-item>
+    <validation-item>All existing code interfaces identified and patterns documented</validation-item>
+    <validation-item>Missing implementations clearly identified (reduced motion, performance monitoring)</validation-item>
+    <validation-item>Development constraints include performance, accessibility, consistency requirements</validation-item>
+    <validation-item>Dependencies list complete (packages, browser APIs, internal components, story prerequisites)</validation-item>
+    <validation-item>Testing requirements cover unit, integration, performance, and manual tests</validation-item>
+    <validation-item>Implementation notes highlight critical decisions and gotchas</validation-item>
+    <validation-item>File manifest lists all files to create/modify with clear action items</validation-item>
+    <validation-item>All file paths are project-relative (no {project-root} variable, no absolute paths)</validation-item>
+  </validation-checklist>
+</story-context>

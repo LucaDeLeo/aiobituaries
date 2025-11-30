@@ -9,6 +9,8 @@
  */
 
 import { useCallback } from 'react'
+import { useReducedMotion } from 'motion/react'
+import { SPRINGS } from '@/lib/utils/animation'
 import type { ViewState } from '@/types/visualization'
 
 // Zoom constants
@@ -44,6 +46,10 @@ export interface UseZoomReturn {
   isMinZoom: boolean
   /** True when at maximum zoom */
   isMaxZoom: boolean
+  /** True when user prefers reduced motion */
+  shouldReduceMotion: boolean
+  /** Get zoom transition config (respects reduced motion) */
+  getZoomTransition: () => typeof SPRINGS.zoom | { duration: number }
 }
 
 /**
@@ -92,10 +98,19 @@ export function useZoom(
     zoomStep = ZOOM_STEP,
   } = options
 
+  // Check reduced motion preference (null means preference unknown, treat as false)
+  const prefersReducedMotion = useReducedMotion()
+  const shouldReduceMotion = prefersReducedMotion ?? false
+
   const clampScale = useCallback(
     (scale: number) => createClampScale(minScale, maxScale)(scale),
     [minScale, maxScale]
   )
+
+  // Get transition config based on reduced motion preference
+  const getZoomTransition = useCallback(() => {
+    return shouldReduceMotion ? { duration: 0 } : SPRINGS.zoom
+  }, [shouldReduceMotion])
 
   const zoomIn = useCallback(() => {
     setViewState((prev) => ({
@@ -214,5 +229,7 @@ export function useZoom(
     handlePinch,
     isMinZoom: viewState.scale <= minScale,
     isMaxZoom: viewState.scale >= maxScale,
+    shouldReduceMotion,
+    getZoomTransition,
   }
 }

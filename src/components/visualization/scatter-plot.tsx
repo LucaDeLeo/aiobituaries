@@ -7,6 +7,7 @@ import {
   useSpring,
   animate,
   AnimatePresence,
+  useReducedMotion,
 } from 'motion/react'
 import { ParentSize } from '@visx/responsive'
 import { scaleTime, scaleLinear } from '@visx/scale'
@@ -23,7 +24,8 @@ import { TooltipCard } from './tooltip-card'
 import { ObituaryModal } from '@/components/obituary/obituary-modal'
 import { hashToJitter, getCategoryColor } from '@/lib/utils/scatter-helpers'
 import { useZoom, MAX_SCALE } from '@/lib/hooks/use-zoom'
-import { SPRINGS } from '@/lib/utils/animation'
+import { SPRINGS, staggerContainer } from '@/lib/utils/animation'
+import { markPerformance, measurePerformance } from '@/lib/utils/performance'
 import {
   computeClusters,
   isPointClustered,
@@ -171,6 +173,10 @@ export function ScatterPlotInner({
   // State for hovered cluster badge
   const [hoveredClusterId, setHoveredClusterId] = useState<string | null>(null)
 
+  // Check reduced motion preference (null means preference unknown, treat as false)
+  const prefersReducedMotion = useReducedMotion()
+  const shouldReduceMotion = prefersReducedMotion ?? false
+
   // Tooltip state
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
@@ -186,8 +192,10 @@ export function ScatterPlotInner({
   const innerWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
   const innerHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
 
-  // Compute scales with useMemo
+  // Compute scales with useMemo and performance monitoring
   const xScale = useMemo(() => {
+    markPerformance('scale-compute-start')
+
     if (data.length === 0) {
       return scaleTime({
         domain: [new Date('2020-01-01'), new Date()],
@@ -199,13 +207,18 @@ export function ScatterPlotInner({
     const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())))
     // Add padding to domain
     const padding = (maxDate.getTime() - minDate.getTime()) * 0.05
-    return scaleTime({
+    const scale = scaleTime({
       domain: [
         new Date(minDate.getTime() - padding),
         new Date(maxDate.getTime() + padding),
       ],
       range: [0, innerWidth],
     })
+
+    markPerformance('scale-compute-end')
+    measurePerformance('scale-computation', 'scale-compute-start', 'scale-compute-end', 10)
+
+    return scale
   }, [data, innerWidth])
 
   const yScale = useMemo(() => {
@@ -230,29 +243,30 @@ export function ScatterPlotInner({
     return computeClusters(positionedPoints, DEFAULT_CLUSTER_CONFIG, viewState.scale)
   }, [data, xScale, yScale, viewState.scale])
 
-  // Motion values for smooth pan animation
-  const translateXMotion = useMotionValue(viewState.translateX)
-  const springX = useSpring(translateXMotion, SPRINGS.pan)
-
-  // Motion values for smooth zoom animation
-  const scaleMotion = useMotionValue(viewState.scale)
-  const springScale = useSpring(scaleMotion, SPRINGS.zoom)
-
-  // Sync scale motion value with viewState
-  useEffect(() => {
-    scaleMotion.set(viewState.scale)
-  }, [viewState.scale, scaleMotion])
-
-  // Use zoom hook
+  // Use zoom hook with reduced motion support (must be before useSpring that uses getZoomTransition)
   const {
     zoomIn,
     zoomOut,
     resetZoom,
+    getZoomTransition,
     handleWheel: handleZoomWheel,
     handlePinch,
     isMinZoom,
     isMaxZoom,
   } = useZoom(viewState, setViewState)
+
+  // Motion values for smooth pan animation
+  const translateXMotion = useMotionValue(viewState.translateX)
+  const springX = useSpring(translateXMotion, SPRINGS.pan)
+
+  // Motion values for smooth zoom animation (respects reduced motion)
+  const scaleMotion = useMotionValue(viewState.scale)
+  const springScale = useSpring(scaleMotion, getZoomTransition())
+
+  // Sync scale motion value with viewState
+  useEffect(() => {
+    scaleMotion.set(viewState.scale)
+  }, [viewState.scale, scaleMotion])
 
   // Handler for cluster click - zoom to cluster time bounds
   const handleClusterClick = useCallback(
@@ -633,19 +647,11 @@ export function ScatterPlotInner({
               transformOrigin: `${MARGIN.left}px ${MARGIN.top}px`,
             }}
           >
-            {/* Data Points with staggered animation */}
+            {/* Data Points with staggered entrance animation */}
             <motion.g
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: {},
-                visible: {
-                  transition: {
-                    staggerChildren: 0.05, // 50ms between dots
-                    delayChildren: 0.1, // 100ms initial delay
-                  },
-                },
-              }}
+              variants={shouldReduceMotion ? undefined : staggerContainer}
+              initial={shouldReduceMotion ? undefined : "initial"}
+              animate={shouldReduceMotion ? undefined : "animate"}
             >
               {data.map((obituary) => {
                 const xPos = xScale(new Date(obituary.date))
@@ -667,6 +673,7 @@ export function ScatterPlotInner({
                     onMouseEnter={() => handlePointMouseEnter(obituary, xPos, yPos)}
                     onMouseLeave={handlePointMouseLeave}
                     onClick={(element) => handlePointClick(obituary, element)}
+                    shouldReduceMotion={shouldReduceMotion}
                   />
                 )
               })}
