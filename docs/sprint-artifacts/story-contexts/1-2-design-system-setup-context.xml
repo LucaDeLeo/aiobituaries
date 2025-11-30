@@ -1,0 +1,671 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <metadata>
+    <story-key>1-2-design-system-setup</story-key>
+    <generated-at>2025-11-29</generated-at>
+    <epic>Epic 1 - Foundation</epic>
+    <priority>P0 - Critical Path (Design Foundation)</priority>
+  </metadata>
+
+  <story-summary>
+    <description>
+      Implement the Deep Archive theme as CSS custom properties for the AI Obituaries application.
+      This story establishes the complete design system foundation including:
+      - shadcn/ui initialization with dark mode configuration
+      - Deep Archive color palette as CSS variables
+      - Font configuration (Instrument Serif for headlines, Geist for body, Geist Mono for monospace)
+      - Tailwind CSS v4 theme extension
+      - Themed shadcn Button component for validation
+    </description>
+    <user-story>
+      As a developer, I want the Deep Archive theme implemented as CSS variables,
+      so that all components use consistent visual styling.
+    </user-story>
+    <estimated-time>105 minutes</estimated-time>
+  </story-summary>
+
+  <acceptance-criteria>
+    <criterion id="AC-1.2.1">
+      <description>Deep Archive color variables defined</description>
+      <testable-condition>CSS variables accessible in any component via var(--color-name)</testable-condition>
+      <implementation-notes>Add variables under :root in globals.css</implementation-notes>
+    </criterion>
+    <criterion id="AC-1.2.2">
+      <description>Background colors configured</description>
+      <testable-condition>--bg-primary: #0C0C0F, --bg-secondary: #14141A, --bg-card: #18181F, --bg-tertiary: #1C1C24</testable-condition>
+      <implementation-notes>Define in :root selector</implementation-notes>
+    </criterion>
+    <criterion id="AC-1.2.3">
+      <description>Text colors configured</description>
+      <testable-condition>--text-primary: #E8E6E3, --text-secondary: #A8A5A0, --text-muted: #6B6860</testable-condition>
+      <implementation-notes>Define in :root selector</implementation-notes>
+    </criterion>
+    <criterion id="AC-1.2.4">
+      <description>Accent color configured</description>
+      <testable-condition>--accent-primary: #C9A962</testable-condition>
+      <implementation-notes>Gold accent color for primary actions and highlights</implementation-notes>
+    </criterion>
+    <criterion id="AC-1.2.5">
+      <description>Category colors configured</description>
+      <testable-condition>--category-capability: #C9A962, --category-market: #7B9E89, --category-agi: #9E7B7B, --category-dismissive: #7B7B9E</testable-condition>
+      <implementation-notes>These map to obituary categories for timeline visualization</implementation-notes>
+    </criterion>
+    <criterion id="AC-1.2.6">
+      <description>Semantic colors configured</description>
+      <testable-condition>--success: #7B9E89, --warning: #C9A962, --error: #9E5555, --info: #7B8B9E</testable-condition>
+      <implementation-notes>For feedback states like toasts and validation</implementation-notes>
+    </criterion>
+    <criterion id="AC-1.2.7">
+      <description>Instrument Serif font configured</description>
+      <testable-condition>Headlines render in Instrument Serif</testable-condition>
+      <implementation-notes>Use next/font/google for Instrument Serif, apply via CSS variable</implementation-notes>
+    </criterion>
+    <criterion id="AC-1.2.8">
+      <description>Geist font configured</description>
+      <testable-condition>Body text renders in Geist</testable-condition>
+      <implementation-notes>Already configured in layout.tsx as --font-geist-sans</implementation-notes>
+    </criterion>
+    <criterion id="AC-1.2.9">
+      <description>Geist Mono font configured</description>
+      <testable-condition>Monospace text renders in Geist Mono</testable-condition>
+      <implementation-notes>Already configured in layout.tsx as --font-geist-mono</implementation-notes>
+    </criterion>
+    <criterion id="AC-1.2.10">
+      <description>Body has dark background</description>
+      <testable-condition>Document body shows #0C0C0F background</testable-condition>
+      <implementation-notes>Apply bg-[--bg-primary] to body element</implementation-notes>
+    </criterion>
+    <criterion id="AC-1.2.11">
+      <description>shadcn/ui components themed</description>
+      <testable-condition>shadcn components use Deep Archive colors</testable-condition>
+      <implementation-notes>Configure components.json for dark mode, add Button component to verify</implementation-notes>
+    </criterion>
+  </acceptance-criteria>
+
+  <technical-context>
+    <tailwind-v4-notes>
+      <note>Tailwind CSS v4 is installed (^4) with @tailwindcss/postcss</note>
+      <note>No tailwind.config.ts exists - may need to create one for theme extension</note>
+      <note>Current globals.css uses @import "tailwindcss" and @theme inline directive</note>
+      <note>CSS variables are referenced via var(--variable-name) syntax</note>
+      <note>Tailwind v4 uses CSS-based config via @theme directive, not JS config</note>
+    </tailwind-v4-notes>
+
+    <shadcn-ui-setup>
+      <note>shadcn/ui is NOT yet initialized (no components.json found)</note>
+      <note>Must run: pnpm dlx shadcn@latest init</note>
+      <note>Select "New York" style for component library</note>
+      <note>Configure for dark mode as default</note>
+      <note>After init: pnpm dlx shadcn@latest add button</note>
+      <merge-strategy>
+        <step>Run shadcn init first to create components.json and initial setup</step>
+        <step>After init completes, manually replace the default CSS variables in globals.css with Deep Archive theme</step>
+        <note>shadcn init may add default light/dark mode variables - override all with Deep Archive colors</note>
+        <warning>Do NOT attempt to merge init output with Deep Archive theme during init - better to init clean then replace</warning>
+      </merge-strategy>
+    </shadcn-ui-setup>
+
+    <font-configuration>
+      <existing-fonts>
+        <font name="Geist" variable="--font-geist-sans" status="configured">
+          Already imported from next/font/google in layout.tsx
+        </font>
+        <font name="Geist_Mono" variable="--font-geist-mono" status="configured">
+          Already imported from next/font/google in layout.tsx
+        </font>
+      </existing-fonts>
+      <fonts-to-add>
+        <font name="Instrument_Serif" variable="--font-instrument-serif" status="needed">
+          Add via next/font/google for headline typography
+        </font>
+      </fonts-to-add>
+    </font-configuration>
+
+    <css-architecture>
+      <approach>
+        Use @theme inline directive in globals.css for Tailwind v4 theme extension.
+        Define all CSS custom properties under :root selector.
+        Map CSS variables to Tailwind utilities via @theme directive.
+      </approach>
+      <naming-strategy>
+        <prefix category="--bg-">Background colors (--bg-primary, --bg-secondary, --bg-card, --bg-tertiary)</prefix>
+        <prefix category="--text-">Text colors (--text-primary, --text-secondary, --text-muted)</prefix>
+        <prefix category="--accent-">Accent colors (--accent-primary for gold highlights)</prefix>
+        <prefix category="--category-">Category/Timeline colors (--category-capability, --category-market, --category-agi, --category-dismissive)</prefix>
+        <prefix category="--font-">Font variables (--font-instrument-serif, --font-geist-sans, --font-geist-mono)</prefix>
+        <note>This naming convention makes it clear what each variable controls and improves readability in components</note>
+      </naming-strategy>
+    </css-architecture>
+  </technical-context>
+
+  <existing-code>
+    <file path="src/app/globals.css">
+      <description>Current global styles - needs major update</description>
+      <content><![CDATA[
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+      ]]></content>
+      <changes-needed>
+        - Replace :root variables with Deep Archive color palette
+        - Remove prefers-color-scheme media query (always dark)
+        - Update @theme inline with new color mappings
+        - Add font-family variables for Instrument Serif
+        - Update body styles to use new variables
+      </changes-needed>
+    </file>
+
+    <file path="src/app/layout.tsx">
+      <description>Root layout with font configuration</description>
+      <content><![CDATA[
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "Create Next App",
+  description: "Generated by create next app",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        {children}
+      </body>
+    </html>
+  );
+}
+      ]]></content>
+      <changes-needed>
+        - Add Instrument_Serif import from next/font/google
+        - Add instrument serif variable to body className
+        - Update metadata title/description for AI Obituaries
+        - Add dark class to html element or rely on CSS default
+        - Apply bg-[--bg-primary] text-[--text-primary] to body
+      </changes-needed>
+    </file>
+
+    <file path="package.json">
+      <description>Current dependencies</description>
+      <relevant-deps>
+        - next: 16.0.5
+        - tailwindcss: ^4
+        - @tailwindcss/postcss: ^4
+        - react: 19.2.0
+        - lucide-react: ^0.555.0 (icons available)
+      </relevant-deps>
+      <changes-needed>
+        - No new dependencies required for this story
+        - shadcn init will add necessary component dependencies
+      </changes-needed>
+    </file>
+
+    <file path="tsconfig.json">
+      <description>TypeScript configuration with path aliases</description>
+      <relevant-config>
+        - Path alias: @/* maps to ./src/*
+        - strict: true
+        - jsx: react-jsx
+      </relevant-config>
+      <changes-needed>None - configuration is correct</changes-needed>
+    </file>
+
+    <file path="postcss.config.mjs">
+      <description>PostCSS configuration for Tailwind v4</description>
+      <content><![CDATA[
+const config = {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
+
+export default config;
+      ]]></content>
+      <changes-needed>None - correctly configured for Tailwind v4</changes-needed>
+    </file>
+  </existing-code>
+
+  <implementation-plan>
+    <step order="1" estimated-time="10 min">
+      <title>Initialize shadcn/ui</title>
+      <commands><![CDATA[
+pnpm dlx shadcn@latest init
+      ]]></commands>
+      <interactive-prompts>
+        - Style: New York
+        - Base color: Neutral or Zinc (will override anyway)
+        - CSS variables: Yes
+        - Tailwind CSS config location: Use globals.css (Tailwind v4 CSS-based config)
+        - Components location: src/components
+        - Utils location: src/lib/utils
+        - React Server Components: Yes
+      </interactive-prompts>
+      <expected-output>
+        - Creates components.json
+        - Creates src/lib/utils.ts (cn utility)
+        - May modify globals.css (will need to merge with Deep Archive theme)
+      </expected-output>
+    </step>
+
+    <step order="2" estimated-time="20 min">
+      <title>Define Deep Archive CSS variables in globals.css</title>
+      <file-changes>
+        <file path="src/app/globals.css">
+          <action>Replace contents with Deep Archive theme</action>
+          <new-content><![CDATA[
+@import "tailwindcss";
+
+:root {
+  /* Deep Archive Theme - Background colors */
+  --bg-primary: #0C0C0F;
+  --bg-secondary: #14141A;
+  --bg-card: #18181F;
+  --bg-tertiary: #1C1C24;
+
+  /* Border */
+  --border: #2A2A35;
+
+  /* Text colors */
+  --text-primary: #E8E6E3;
+  --text-secondary: #A8A5A0;
+  --text-muted: #6B6860;
+
+  /* Accent */
+  --accent-primary: #C9A962;
+
+  /* Category colors (for timeline visualization) */
+  --category-capability: #C9A962;
+  --category-market: #7B9E89;
+  --category-agi: #9E7B7B;
+  --category-dismissive: #7B7B9E;
+
+  /* Semantic colors */
+  --success: #7B9E89;
+  --warning: #C9A962;
+  --error: #9E5555;
+  --info: #7B8B9E;
+
+  /* shadcn/ui required variables (mapped to Deep Archive) */
+  --background: var(--bg-primary);
+  --foreground: var(--text-primary);
+  --card: var(--bg-card);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-card);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--accent-primary);
+  --primary-foreground: var(--bg-primary);
+  --secondary: var(--bg-secondary);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--bg-tertiary);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--bg-tertiary);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--error);
+  --destructive-foreground: var(--text-primary);
+  --border: var(--border);
+  --input: var(--border);
+  --ring: var(--accent-primary);
+  --radius: 0.5rem;
+}
+
+@theme inline {
+  /* Map to Tailwind utilities */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Font families */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-instrument-serif);
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+          ]]></new-content>
+        </file>
+      </file-changes>
+    </step>
+
+    <step order="3" estimated-time="20 min">
+      <title>Configure Instrument Serif font</title>
+      <file-changes>
+        <file path="src/app/layout.tsx">
+          <action>Add Instrument Serif import and configure fonts</action>
+          <changes>
+            - Import Instrument_Serif from next/font/google
+            - Create instrumentSerif font instance with --font-instrument-serif variable
+            - Add instrumentSerif.variable to body className
+            - Update metadata for AI Obituaries
+          </changes>
+        </file>
+      </file-changes>
+      <code-snippet><![CDATA[
+import { Instrument_Serif } from "next/font/google";
+
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
+  subsets: ["latin"],
+  weight: "400",
+});
+
+// In body className:
+className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased`}
+      ]]></code-snippet>
+    </step>
+
+    <step order="4" estimated-time="15 min">
+      <title>Create or update Tailwind config (if needed)</title>
+      <notes>
+        Tailwind v4 uses CSS-based configuration via @theme directive.
+        If shadcn/ui init creates a tailwind.config.ts, may need to reconcile.
+        Primary configuration should remain in globals.css @theme block.
+      </notes>
+      <file-changes>
+        <file path="tailwind.config.ts" action="create-if-needed">
+          <content><![CDATA[
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  darkMode: ["class"],
+  content: [
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ["var(--font-geist-sans)"],
+        mono: ["var(--font-geist-mono)"],
+        serif: ["var(--font-instrument-serif)"],
+      },
+    },
+  },
+  plugins: [],
+};
+
+export default config;
+          ]]></content>
+        </file>
+      </file-changes>
+    </step>
+
+    <step order="5" estimated-time="5 min">
+      <title>Add shadcn Button component</title>
+      <commands><![CDATA[
+pnpm dlx shadcn@latest add button
+      ]]></commands>
+      <expected-output>
+        - Creates src/components/ui/button.tsx
+        - Button component uses CSS variables for theming
+      </expected-output>
+    </step>
+
+    <step order="6" estimated-time="10 min">
+      <title>Update body styles and verify theme</title>
+      <verification>
+        - Body background should be #0C0C0F
+        - Text should be #E8E6E3
+        - Button component should use gold accent (#C9A962) as primary
+      </verification>
+      <test-component><![CDATA[
+// Add to src/app/page.tsx for testing:
+import { Button } from "@/components/ui/button";
+
+export default function Home() {
+  return (
+    <main className="min-h-screen p-8 space-y-8">
+      <h1 className="font-serif text-4xl">AI Obituaries</h1>
+      <p className="text-[--text-secondary]">Testing Deep Archive theme</p>
+      <div className="space-x-4">
+        <Button>Primary Button</Button>
+        <Button variant="secondary">Secondary</Button>
+        <Button variant="outline">Outline</Button>
+        <Button variant="ghost">Ghost</Button>
+      </div>
+      <div className="space-y-2">
+        <p className="font-mono text-[--accent-primary]">Count: 247</p>
+        <div className="flex gap-2">
+          <span className="w-4 h-4 rounded-full bg-[--category-capability]"></span>
+          <span className="w-4 h-4 rounded-full bg-[--category-market]"></span>
+          <span className="w-4 h-4 rounded-full bg-[--category-agi]"></span>
+          <span className="w-4 h-4 rounded-full bg-[--category-dismissive]"></span>
+        </div>
+      </div>
+    </main>
+  );
+}
+      ]]></test-component>
+    </step>
+
+    <step order="7" estimated-time="10 min">
+      <title>Verify all acceptance criteria</title>
+      <verification-checklist>
+        <check ac="AC-1.2.1">Open DevTools, verify CSS variables are accessible</check>
+        <check ac="AC-1.2.2">Verify --bg-* variables resolve to correct hex values</check>
+        <check ac="AC-1.2.3">Verify --text-* variables resolve to correct hex values</check>
+        <check ac="AC-1.2.4">Verify --accent-primary is #C9A962</check>
+        <check ac="AC-1.2.5">Verify all --category-* variables</check>
+        <check ac="AC-1.2.6">Verify all semantic color variables</check>
+        <check ac="AC-1.2.7">Add h1 with font-serif class, verify Instrument Serif renders</check>
+        <check ac="AC-1.2.8">Verify body text uses Geist</check>
+        <check ac="AC-1.2.9">Add element with font-mono class, verify Geist Mono renders</check>
+        <check ac="AC-1.2.10">Verify body background is #0C0C0F</check>
+        <check ac="AC-1.2.11">Verify Button component uses gold accent</check>
+      </verification-checklist>
+    </step>
+
+    <step order="8" estimated-time="10 min">
+      <title>Build verification</title>
+      <commands><![CDATA[
+pnpm run build
+pnpm run dev
+      ]]></commands>
+      <expected-output>
+        - Build completes without errors
+        - Dev server starts successfully
+        - Theme displays correctly in browser
+      </expected-output>
+    </step>
+  </implementation-plan>
+
+  <design-tokens>
+    <color-palette name="Deep Archive">
+      <category name="Background">
+        <color token="--bg-primary" hex="#0C0C0F" usage="Page background" />
+        <color token="--bg-secondary" hex="#14141A" usage="Section backgrounds" />
+        <color token="--bg-card" hex="#18181F" usage="Card surfaces" />
+        <color token="--bg-tertiary" hex="#1C1C24" usage="Elevated elements" />
+      </category>
+      <category name="Text">
+        <color token="--text-primary" hex="#E8E6E3" usage="Headlines, body text" />
+        <color token="--text-secondary" hex="#A8A5A0" usage="Secondary text" />
+        <color token="--text-muted" hex="#6B6860" usage="Captions, timestamps" />
+      </category>
+      <category name="Accent">
+        <color token="--accent-primary" hex="#C9A962" usage="Primary actions, links, count" />
+      </category>
+      <category name="Border">
+        <color token="--border" hex="#2A2A35" usage="Borders, dividers" />
+      </category>
+      <category name="Category (Timeline Dots)">
+        <color token="--category-capability" hex="#C9A962" usage="Capability Doubt (Gold)" />
+        <color token="--category-market" hex="#7B9E89" usage="Market/Bubble (Sage green)" />
+        <color token="--category-agi" hex="#9E7B7B" usage="AGI Skepticism (Dusty rose)" />
+        <color token="--category-dismissive" hex="#7B7B9E" usage="Dismissive Framing (Muted lavender)" />
+      </category>
+      <category name="Semantic">
+        <color token="--success" hex="#7B9E89" usage="Confirmations, copy success" />
+        <color token="--warning" hex="#C9A962" usage="Cautions" />
+        <color token="--error" hex="#9E5555" usage="Errors, broken links" />
+        <color token="--info" hex="#7B8B9E" usage="Informational" />
+      </category>
+    </color-palette>
+
+    <typography>
+      <font-stack>
+        <font name="Instrument Serif" usage="Headlines, quotes" variable="--font-instrument-serif" />
+        <font name="Geist" usage="Body, UI" variable="--font-geist-sans" />
+        <font name="Geist Mono" usage="Counts, dates, technical data" variable="--font-geist-mono" />
+      </font-stack>
+      <type-scale>
+        <size token="--text-hero" size="4rem" line-height="1.0" weight="700" usage="Count display" />
+        <size token="--text-display" size="2.5rem" line-height="1.2" weight="400" usage="Page title" />
+        <size token="--text-h1" size="2rem" line-height="1.3" weight="400" usage="Section headings" />
+        <size token="--text-h2" size="1.5rem" line-height="1.4" weight="500" usage="Card titles" />
+        <size token="--text-body" size="1rem" line-height="1.6" weight="400" usage="Body text" />
+        <size token="--text-sm" size="0.875rem" line-height="1.5" weight="400" usage="Secondary text" />
+        <size token="--text-xs" size="0.75rem" line-height="1.4" weight="500" usage="Labels, timestamps" />
+      </type-scale>
+    </typography>
+
+    <spacing>
+      <base-unit>4px (Tailwind default)</base-unit>
+      <border-radius default="8px" cards="12px" pills="999px" />
+      <container max-width="1400px" />
+    </spacing>
+  </design-tokens>
+
+  <dependencies>
+    <story-dependencies>
+      <dependency type="story">Story 1-1-project-initialization must be complete first</dependency>
+      <note>Story 1-1 sets up the Next.js project, package.json, and build configuration that this story depends on</note>
+    </story-dependencies>
+    <existing>
+      <package name="next" version="16.0.5" />
+      <package name="react" version="19.2.0" />
+      <package name="tailwindcss" version="^4" />
+      <package name="@tailwindcss/postcss" version="^4" />
+      <package name="lucide-react" version="^0.555.0" />
+    </existing>
+    <to-be-added-by-shadcn>
+      <package name="class-variance-authority" note="For button variants" />
+      <package name="clsx" note="For className utility" />
+      <package name="tailwind-merge" note="For merging Tailwind classes" />
+      <package name="@radix-ui/react-slot" note="For Slot component in Button" />
+    </to-be-added-by-shadcn>
+    <commands>
+      <command>pnpm dlx shadcn@latest init</command>
+      <command>pnpm dlx shadcn@latest add button</command>
+    </commands>
+  </dependencies>
+
+  <testing-requirements>
+    <visual-testing>
+      <test name="Dark background verification">
+        Verify body background is #0C0C0F via DevTools computed styles
+      </test>
+      <test name="Text color verification">
+        Verify primary text is #E8E6E3
+      </test>
+      <test name="Font rendering">
+        Verify Instrument Serif renders for font-serif class
+        Verify Geist renders for body text
+        Verify Geist Mono renders for font-mono class
+      </test>
+      <test name="CSS variable accessibility">
+        Use DevTools to verify all CSS variables resolve correctly
+      </test>
+      <test name="Button theming">
+        Verify shadcn Button uses gold (#C9A962) for primary variant
+      </test>
+    </visual-testing>
+    <build-testing>
+      <test name="Build success">pnpm run build should complete without errors</test>
+      <test name="Lint pass">pnpm run lint should pass</test>
+      <test name="Dev server">pnpm run dev should start successfully</test>
+    </build-testing>
+    <accessibility-notes>
+      <note>Color contrast verified in UX spec (14.5:1 for body text, exceeds WCAG AA)</note>
+      <note>Gold accent on dark bg has 7.8:1 contrast ratio</note>
+      <testing-recommendation>Use Chrome DevTools Lighthouse for accessibility validation after implementing the theme</testing-recommendation>
+      <testing-details>
+        <step>Open DevTools in Chrome (F12)</step>
+        <step>Go to Lighthouse tab</step>
+        <step>Run accessibility audit</step>
+        <step>Verify color contrast scores are passing (should achieve 100)</step>
+        <step>Check that all color combinations meet WCAG AAA standards where possible</step>
+      </testing-details>
+    </accessibility-notes>
+  </testing-requirements>
+
+  <warnings-and-gaps>
+    <warning severity="medium">
+      shadcn/ui init may modify globals.css - need to merge with Deep Archive theme carefully
+    </warning>
+    <warning severity="low">
+      Tailwind v4 CSS-based config is newer - shadcn/ui might expect JS config
+    </warning>
+    <note>
+      No components/ui directory exists yet - shadcn init will create it
+    </note>
+    <note>
+      May need to adjust shadcn/ui's default CSS variable mappings to match Deep Archive naming
+    </note>
+  </warnings-and-gaps>
+
+  <source-references>
+    <reference type="story">docs/sprint-artifacts/stories/1-2-design-system-setup.md</reference>
+    <reference type="tech-spec">docs/sprint-artifacts/epic-tech-specs/epic-1-tech-spec.md</reference>
+    <reference type="architecture">docs/architecture.md</reference>
+    <reference type="ux-design">docs/ux-design-specification.md</reference>
+  </source-references>
+</story-context>

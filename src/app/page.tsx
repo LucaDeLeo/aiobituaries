@@ -1,65 +1,160 @@
-import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="min-h-screen p-8 space-y-8">
+      {/* Typography Test */}
+      <section className="space-y-4">
+        <h1 className="font-serif text-4xl text-[--text-primary]">
+          AI Obituaries - Deep Archive Theme
+        </h1>
+        <p className="text-[--text-secondary]">
+          Testing Deep Archive theme with Instrument Serif headlines
+        </p>
+        <p className="text-[--text-muted] text-sm">
+          Muted text for captions and timestamps
+        </p>
+      </section>
+
+      {/* Font Showcase */}
+      <section className="space-y-4">
+        <h2 className="font-serif text-2xl text-[--text-primary]">
+          Typography Showcase
+        </h2>
+        <div className="space-y-2 p-4 bg-[--bg-card] rounded-lg border border-[--border]">
+          <p className="font-sans">Geist Sans (Body text)</p>
+          <p className="font-serif">Instrument Serif (Headlines)</p>
+          <p className="font-mono text-[--accent-primary]">
+            Geist Mono: Count 247
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* Button Variants */}
+      <section className="space-y-4">
+        <h2 className="font-serif text-2xl text-[--text-primary]">
+          Button Components
+        </h2>
+        <div className="flex flex-wrap gap-4">
+          <Button>Primary Button</Button>
+          <Button variant="secondary">Secondary</Button>
+          <Button variant="outline">Outline</Button>
+          <Button variant="ghost">Ghost</Button>
+          <Button variant="destructive">Destructive</Button>
+          <Button variant="link">Link</Button>
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* Color Palette */}
+      <section className="space-y-4">
+        <h2 className="font-serif text-2xl text-[--text-primary]">
+          Color Palette
+        </h2>
+
+        {/* Background Colors */}
+        <div className="space-y-2">
+          <h3 className="text-[--text-secondary]">Background Colors</h3>
+          <div className="flex gap-2">
+            <div className="w-16 h-16 bg-[--bg-primary] border border-[--border] rounded flex items-center justify-center text-xs text-[--text-muted]">
+              Primary
+            </div>
+            <div className="w-16 h-16 bg-[--bg-secondary] border border-[--border] rounded flex items-center justify-center text-xs text-[--text-muted]">
+              Secondary
+            </div>
+            <div className="w-16 h-16 bg-[--bg-card] border border-[--border] rounded flex items-center justify-center text-xs text-[--text-muted]">
+              Card
+            </div>
+            <div className="w-16 h-16 bg-[--bg-tertiary] border border-[--border] rounded flex items-center justify-center text-xs text-[--text-muted]">
+              Tertiary
+            </div>
+          </div>
+        </div>
+
+        {/* Text Colors */}
+        <div className="space-y-2">
+          <h3 className="text-[--text-secondary]">Text Colors</h3>
+          <div className="flex gap-4 p-4 bg-[--bg-card] rounded-lg">
+            <span className="text-[--text-primary]">Primary</span>
+            <span className="text-[--text-secondary]">Secondary</span>
+            <span className="text-[--text-muted]">Muted</span>
+          </div>
+        </div>
+
+        {/* Category Colors (Timeline Dots) */}
+        <div className="space-y-2">
+          <h3 className="text-[--text-secondary]">Category Colors</h3>
+          <div className="flex gap-4 items-center">
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 rounded-full bg-[--category-capability]"></span>
+              <span className="text-sm text-[--text-muted]">Capability</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 rounded-full bg-[--category-market]"></span>
+              <span className="text-sm text-[--text-muted]">Market</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 rounded-full bg-[--category-agi]"></span>
+              <span className="text-sm text-[--text-muted]">AGI</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 rounded-full bg-[--category-dismissive]"></span>
+              <span className="text-sm text-[--text-muted]">Dismissive</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Semantic Colors */}
+        <div className="space-y-2">
+          <h3 className="text-[--text-secondary]">Semantic Colors</h3>
+          <div className="flex gap-4">
+            <span className="px-3 py-1 rounded bg-[--success] text-[--bg-primary] text-sm">
+              Success
+            </span>
+            <span className="px-3 py-1 rounded bg-[--warning] text-[--bg-primary] text-sm">
+              Warning
+            </span>
+            <span className="px-3 py-1 rounded bg-[--error] text-[--text-primary] text-sm">
+              Error
+            </span>
+            <span className="px-3 py-1 rounded bg-[--info] text-[--text-primary] text-sm">
+              Info
+            </span>
+          </div>
+        </div>
+
+        {/* Accent */}
+        <div className="space-y-2">
+          <h3 className="text-[--text-secondary]">Accent Color</h3>
+          <div className="flex items-center gap-4">
+            <span className="text-[--accent-primary] font-mono text-2xl">
+              #C9A962
+            </span>
+            <div className="w-8 h-8 rounded-full bg-[--accent-primary]"></div>
+          </div>
+        </div>
+      </section>
+
+      {/* CSS Variables Reference */}
+      <section className="space-y-4">
+        <h2 className="font-serif text-2xl text-[--text-primary]">
+          CSS Variables Reference
+        </h2>
+        <div className="grid grid-cols-2 gap-4 p-4 bg-[--bg-card] rounded-lg border border-[--border] font-mono text-sm">
+          <div className="space-y-1">
+            <p className="text-[--text-secondary]">--bg-primary: #0C0C0F</p>
+            <p className="text-[--text-secondary]">--bg-secondary: #14141A</p>
+            <p className="text-[--text-secondary]">--bg-card: #18181F</p>
+            <p className="text-[--text-secondary]">--bg-tertiary: #1C1C24</p>
+            <p className="text-[--text-secondary]">--border: #2A2A35</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[--text-secondary]">--text-primary: #E8E6E3</p>
+            <p className="text-[--text-secondary]">--text-secondary: #A8A5A0</p>
+            <p className="text-[--text-secondary]">--text-muted: #6B6860</p>
+            <p className="text-[--accent-primary]">--accent-primary: #C9A962</p>
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }
