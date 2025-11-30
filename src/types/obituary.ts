@@ -30,3 +30,22 @@ export interface Obituary {
   /** Contextual data at time of claim */
   context: ContextMetadata
 }
+
+/**
+ * Lightweight obituary type for list/card views.
+ * Excludes context metadata and sourceUrl for smaller payload and faster rendering.
+ */
+export interface ObituarySummary {
+  /** Sanity document ID */
+  _id: string
+  /** URL-safe identifier derived from claim */
+  slug: string
+  /** The actual skepticism claim text */
+  claim: string
+  /** Publication or person who made the claim */
+  source: string
+  /** ISO 8601 date when claim was made */
+  date: string
+  /** Array of claim categories */
+  categories: Category[]
+}

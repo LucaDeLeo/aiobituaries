@@ -47,7 +47,7 @@ development_status:
   # Epic 2: Core Content Display
   epic-2: contexted
   2-1-hero-count-display: done
-  2-2-obituary-list-display: backlog
+  2-2-obituary-list-display: done
   2-3-individual-obituary-pages: backlog
   2-4-contextual-snapshot-display: backlog
   2-5-seo-meta-tags: backlog

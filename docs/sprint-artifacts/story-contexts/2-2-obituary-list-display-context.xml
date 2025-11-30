@@ -1,0 +1,677 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context XML
+  Generated: 2025-11-30
+  Story: 2-2-obituary-list-display
+  Purpose: Complete implementation context for Obituary List Display
+-->
+<story-context>
+  <metadata>
+    <story-key>2-2-obituary-list-display</story-key>
+    <title>Obituary List Display</title>
+    <epic>Epic 2 - Core Content Display</epic>
+    <status>ready-for-dev</status>
+    <priority>High</priority>
+    <generated>2025-11-30</generated>
+  </metadata>
+
+  <story-reference>
+    <path>docs/sprint-artifacts/stories/2-2-obituary-list-display.md</path>
+    <user-story>
+      As a visitor,
+      I want to see a list of all obituaries with key information,
+      So that I can browse and find interesting claims.
+    </user-story>
+  </story-reference>
+
+  <acceptance-criteria>
+    <criterion id="AC-2.2.1">Obituaries display as cards - Card components render for each obituary</criterion>
+    <criterion id="AC-2.2.2">Cards show claim text - Claim text visible (truncated to ~150 chars)</criterion>
+    <criterion id="AC-2.2.3">Cards show source name - Source attribution visible</criterion>
+    <criterion id="AC-2.2.4">Cards show formatted date - Date displays as "Mar 14, 2023"</criterion>
+    <criterion id="AC-2.2.5">Cards show category indicator - Colored dot matching category color visible</criterion>
+    <criterion id="AC-2.2.6">Cards use Deep Archive styling - Background #18181F, border-radius 12px, border #2A2A35</criterion>
+    <criterion id="AC-2.2.7">Cards have hover effect - translateY -2px and shadow on hover</criterion>
+    <criterion id="AC-2.2.8">Cards sorted by date - Newest obituaries appear first</criterion>
+    <criterion id="AC-2.2.9">Claim text uses Instrument Serif - Quote text renders in serif font, italic</criterion>
+    <criterion id="AC-2.2.10">Clicking card navigates to detail page - Click navigates to /obituary/[slug]</criterion>
+    <criterion id="AC-2.2.11">Cards are keyboard accessible - Tab focuses card, Enter/Space activates</criterion>
+  </acceptance-criteria>
+
+  <documentation-artifacts>
+    <artifact type="tech-spec" relevance="primary">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-2-tech-spec.md</path>
+      <description>Complete technical specification for Epic 2 including data models, component architecture, and reference implementations for ObituaryCard and ObituaryList</description>
+      <key-sections>
+        <section>Section 3: Data Models - ObituarySummary type definition</section>
+        <section>Section 4: Sanity Query Functions - getObituaries() query</section>
+        <section>Story 2.2: Obituary List Display - Full acceptance criteria and technical approach</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="architecture" relevance="primary">
+      <path>docs/architecture.md</path>
+      <description>System architecture defining project structure, component patterns, and coding standards</description>
+      <key-sections>
+        <section>Project Structure - Component organization under src/components/obituary/</section>
+        <section>Implementation Patterns - Server vs Client components, naming conventions</section>
+        <section>Data Architecture - Obituary and Category TypeScript types</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="story" relevance="primary">
+      <path>docs/sprint-artifacts/stories/2-2-obituary-list-display.md</path>
+      <description>Full story definition with tasks, test scenarios, and definition of done</description>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code>
+    <file purpose="reference-pattern" priority="high">
+      <path>src/components/obituary/count-display.tsx</path>
+      <description>Reference implementation for async Server Component pattern - shows how to fetch from Sanity and render with error handling</description>
+      <code-excerpt><![CDATA[
+import { getObituaryCount } from '@/lib/sanity/queries'
+
+/**
+ * Hero count display component.
+ * Server Component that fetches obituary count from Sanity and displays it
+ * prominently with gold styling and pulsing glow animation.
+ */
+export async function CountDisplay() {
+  let count: number
+  try {
+    count = await getObituaryCount()
+  } catch {
+    // Graceful fallback when Sanity fetch fails
+    count = 0
+  }
+  const formattedCount = new Intl.NumberFormat('en-US').format(count)
+
+  return (
+    <div className="text-center">
+      <span
+        className="font-mono text-4xl md:text-5xl lg:text-[4rem] text-[--accent-primary]
+                   animate-pulse-glow motion-reduce:animate-none"
+      >
+        {formattedCount}
+      </span>
+      <p className="text-[--text-secondary] mt-2 text-lg">obituaries</p>
+    </div>
+  )
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="modify" priority="high">
+      <path>src/app/page.tsx</path>
+      <description>Homepage that will integrate ObituaryList below the CountDisplay</description>
+      <code-excerpt><![CDATA[
+import { CountDisplay } from "@/components/obituary/count-display";
+
+export default function Home() {
+  return (
+    <main className="min-h-screen">
+      {/* Hero Section with Count */}
+      <section className="flex flex-col items-center justify-center py-24 px-4">
+        <CountDisplay />
+      </section>
+    </main>
+  );
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="modify" priority="high">
+      <path>src/lib/sanity/queries.ts</path>
+      <description>Sanity query functions - getObituaries() already exists but may need ISR tag update</description>
+      <code-excerpt><![CDATA[
+import { client } from './client'
+import type { Obituary } from '@/types/obituary'
+
+/**
+ * GROQ projection for obituary fields.
+ * Extracts slug.current as "slug" for cleaner API.
+ */
+const obituaryProjection = `{
+  _id,
+  "slug": slug.current,
+  claim,
+  source,
+  sourceUrl,
+  date,
+  categories,
+  context
+}`
+
+/**
+ * Fetch all obituaries ordered by date descending.
+ * Uses CDN for fast reads.
+ */
+export async function getObituaries(): Promise<Obituary[]> {
+  return client.fetch(
+    `*[_type == "obituary"] | order(date desc) ${obituaryProjection}`
+  )
+}
+
+/**
+ * Get total count of obituaries.
+ * Uses ISR with 'obituary' tag for cache revalidation.
+ */
+export async function getObituaryCount(): Promise<number> {
+  return client.fetch(`count(*[_type == "obituary"])`, undefined, {
+    next: { tags: ['obituary'] },
+  })
+}
+]]></code-excerpt>
+      <note>The getObituaries() function exists but does not have ISR caching tags. Consider adding { next: { tags: ['obituaries'] } } for consistency with getObituaryCount()</note>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>src/lib/sanity/client.ts</path>
+      <description>Sanity client configuration</description>
+      <code-excerpt><![CDATA[
+import { createClient } from 'next-sanity'
+
+export const client = createClient({
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
+  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
+  apiVersion: '2024-01-01',
+  useCdn: true,
+})
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/types/obituary.ts</path>
+      <description>Core Obituary and Category type definitions</description>
+      <code-excerpt><![CDATA[
+import type { ContextMetadata } from './context'
+
+export type Category = 'market' | 'capability' | 'agi' | 'dismissive'
+
+export interface Obituary {
+  _id: string
+  slug: string
+  claim: string
+  source: string
+  sourceUrl: string
+  date: string
+  categories: Category[]
+  context: ContextMetadata
+}
+]]></code-excerpt>
+      <note>ObituarySummary type does not exist yet - needs to be added as per tech spec</note>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>src/types/context.ts</path>
+      <description>ContextMetadata type definition</description>
+      <code-excerpt><![CDATA[
+export interface ContextMetadata {
+  nvdaPrice?: number
+  msftPrice?: number
+  googPrice?: number
+  benchmarkName?: string
+  benchmarkScore?: number
+  currentModel?: string
+  milestone?: string
+  note?: string
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="utility" priority="high">
+      <path>src/lib/utils.ts</path>
+      <description>cn() utility for className merging</description>
+      <code-excerpt><![CDATA[
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>src/components/ui/button.tsx</path>
+      <description>shadcn Button component for reference on component patterns and cn() usage</description>
+    </file>
+
+    <file purpose="test-reference" priority="high">
+      <path>tests/unit/components/obituary/count-display.test.tsx</path>
+      <description>Reference test file showing async Server Component testing patterns with vi.mock and act()</description>
+      <code-excerpt><![CDATA[
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, act } from '@testing-library/react'
+
+// Mock the queries module
+vi.mock('@/lib/sanity/queries', () => ({
+  getObituaryCount: vi.fn(),
+}))
+
+import { getObituaryCount } from '@/lib/sanity/queries'
+import { CountDisplay } from '@/components/obituary/count-display'
+
+const mockedGetObituaryCount = vi.mocked(getObituaryCount)
+
+describe('CountDisplay', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('renders with formatted count', async () => {
+    mockedGetObituaryCount.mockResolvedValue(42)
+
+    const Component = await CountDisplay()
+    await act(async () => {
+      render(Component)
+    })
+
+    expect(screen.getByText('42')).toBeInTheDocument()
+  })
+  // ... more tests
+})
+]]></code-excerpt>
+    </file>
+  </existing-code>
+
+  <design-system>
+    <css-variables source="src/app/globals.css" verified="2025-11-30">
+      <variable name="--bg-card" value="#18181F" usage="Card background color" line="10" />
+      <variable name="--border" value="#2A2A35" usage="Card border color" line="14" />
+      <variable name="--text-primary" value="#E8E6E3" usage="Primary text color" line="17" />
+      <variable name="--text-secondary" value="#A8A5A0" usage="Secondary text (source)" line="18" />
+      <variable name="--text-muted" value="#6B6860" usage="Muted text (date)" line="19" />
+      <variable name="--accent-primary" value="#C9A962" usage="Gold accent" line="22" />
+      <variable name="--ring" value="var(--accent-primary)" usage="Focus ring color - maps to accent-primary" line="55" />
+      <variable name="--category-capability" value="#C9A962" usage="Capability category - gold" line="25" verified="true" />
+      <variable name="--category-market" value="#7B9E89" usage="Market category - green" line="26" verified="true" />
+      <variable name="--category-agi" value="#9E7B7B" usage="AGI category - red/pink" line="27" verified="true" />
+      <variable name="--category-dismissive" value="#7B7B9E" usage="Dismissive category - purple" line="28" verified="true" />
+    </css-variables>
+    <verification-note>All category CSS variables (--category-*) verified present in globals.css lines 25-28. Focus ring uses --ring which maps to --accent-primary.</verification-note>
+
+    <fonts>
+      <font name="Geist Sans" variable="--font-sans" usage="Body text" />
+      <font name="Geist Mono" variable="--font-mono" usage="Monospace text" />
+      <font name="Instrument Serif" variable="--font-serif" usage="Claim quote text - italic" />
+    </fonts>
+
+    <tailwind-patterns>
+      <pattern name="card-styling">bg-[--bg-card] border border-[--border] rounded-xl</pattern>
+      <pattern name="hover-lift">hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200</pattern>
+      <pattern name="focus-ring">focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] focus-visible:ring-offset-2 focus-visible:ring-offset-[--bg-primary]</pattern>
+      <pattern name="responsive-grid">grid gap-6 md:grid-cols-2 lg:grid-cols-3</pattern>
+      <pattern name="serif-quote">font-serif italic text-[--text-primary]</pattern>
+    </tailwind-patterns>
+
+    <responsive-breakpoints>
+      <breakpoint name="sm" value="640px" usage="Not used for grid" />
+      <breakpoint name="md" value="768px" usage="2-column grid: md:grid-cols-2" />
+      <breakpoint name="lg" value="1024px" usage="3-column grid: lg:grid-cols-3" />
+      <note>Default (mobile): 1 column. Tablet (md): 2 columns. Desktop (lg+): 3 columns.</note>
+    </responsive-breakpoints>
+  </design-system>
+
+  <category-colors>
+    <category name="capability" color="#C9A962" tailwind-class="bg-[--category-capability]" label="Capability Doubt" />
+    <category name="market" color="#7B9E89" tailwind-class="bg-[--category-market]" label="Market/Bubble" />
+    <category name="agi" color="#9E7B7B" tailwind-class="bg-[--category-agi]" label="AGI Skepticism" />
+    <category name="dismissive" color="#7B7B9E" tailwind-class="bg-[--category-dismissive]" label="Dismissive Framing" />
+  </category-colors>
+
+  <interface-contracts>
+    <type name="ObituarySummary" status="to-create" file="src/types/obituary.ts">
+      <description>Lightweight obituary type for list/card views (excludes full context). Add to src/types/obituary.ts below the Obituary interface.</description>
+      <definition><![CDATA[
+/**
+ * Lightweight obituary type for list/card views.
+ * Excludes context metadata for smaller payload and faster rendering.
+ */
+export interface ObituarySummary {
+  _id: string
+  slug: string
+  claim: string
+  source: string
+  date: string
+  categories: Category[]
+}
+]]></definition>
+    </type>
+
+    <component name="ObituaryCard" status="to-create">
+      <path>src/components/obituary/obituary-card.tsx</path>
+      <props><![CDATA[
+interface ObituaryCardProps {
+  obituary: ObituarySummary
+}
+]]></props>
+      <description>Presentational component for a single obituary card. Server Component. Accepts ObituarySummary, renders truncated claim, source, date, category dot, wrapped in Link to detail page.</description>
+    </component>
+
+    <component name="ObituaryList" status="to-create">
+      <path>src/components/obituary/obituary-list.tsx</path>
+      <props>None - fetches data internally</props>
+      <description>Async Server Component that fetches obituaries and renders grid of ObituaryCard components. Handles empty state.</description>
+      <empty-state-guidance>
+        <styling>Center text, use --text-secondary color, provide helpful message</styling>
+        <example><![CDATA[
+{obituaries.length === 0 ? (
+  <div className="text-center py-12">
+    <p className="text-[--text-secondary] text-lg">No obituaries found.</p>
+    <p className="text-[--text-muted] text-sm mt-2">Check back later for new entries.</p>
+  </div>
+) : (
+  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    {obituaries.map((obituary) => (
+      <ObituaryCard key={obituary._id} obituary={obituary} />
+    ))}
+  </div>
+)}
+]]></example>
+      </empty-state-guidance>
+    </component>
+
+    <constant name="CATEGORY_COLORS" status="to-create">
+      <path>src/lib/constants/categories.ts</path>
+      <definition><![CDATA[
+export const CATEGORY_COLORS: Record<Category, string> = {
+  capability: 'bg-[--category-capability]',
+  market: 'bg-[--category-market]',
+  agi: 'bg-[--category-agi]',
+  dismissive: 'bg-[--category-dismissive]',
+}
+
+export const CATEGORY_LABELS: Record<Category, string> = {
+  capability: 'Capability Doubt',
+  market: 'Market/Bubble',
+  agi: 'AGI Skepticism',
+  dismissive: 'Dismissive Framing',
+}
+]]></definition>
+    </constant>
+  </interface-contracts>
+
+  <dependencies>
+    <runtime>
+      <dependency name="next" version="16.0.5" usage="App Router, Link component" />
+      <dependency name="react" version="19.2.0" usage="Server Components" />
+      <dependency name="next-sanity" version="11.6.10" usage="Sanity client" />
+      <dependency name="clsx" version="2.1.1" usage="cn() utility" />
+      <dependency name="tailwind-merge" version="3.4.0" usage="cn() utility" />
+      <dependency name="date-fns" status="NOT INSTALLED - MUST INSTALL FIRST" usage="Date formatting with format()" />
+    </runtime>
+    <dev>
+      <dependency name="vitest" version="4.0.14" usage="Unit testing" />
+      <dependency name="@testing-library/react" version="16.3.0" usage="Component testing" />
+      <dependency name="@testing-library/jest-dom" version="6.9.1" usage="DOM assertions" />
+    </dev>
+    <critical-prerequisite>
+      <action>npm install date-fns</action>
+      <reason>date-fns is NOT in package.json. This MUST be the first action in Task 1 before any component development.</reason>
+    </critical-prerequisite>
+  </dependencies>
+
+  <testing-context>
+    <test-file-convention>
+      <pattern>tests/unit/components/{component-path}/{component-name}.test.tsx</pattern>
+      <example>tests/unit/components/obituary/obituary-card.test.tsx</example>
+      <note>Mirror src/components structure under tests/unit/components/</note>
+    </test-file-convention>
+
+    <test-pattern>
+      <name>Async Server Component Testing</name>
+      <description>CRITICAL: Async Server Components require wrapping render() in act() for proper test execution. This prevents React warnings about state updates.</description>
+      <example><![CDATA[
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, act } from '@testing-library/react'
+
+// IMPORTANT: Always wrap async component render in act()
+const Component = await ObituaryList()
+await act(async () => {
+  render(Component)
+})
+]]></example>
+    </test-pattern>
+
+    <test-files-to-create>
+      <file path="tests/unit/components/obituary/obituary-card.test.tsx">
+        <note>ObituaryCard is sync, act() wrapper not required unless testing async interactions</note>
+        <scenarios>
+          <scenario>Card renders claim text in quotes</scenario>
+          <scenario>Card truncates long claims at ~150 chars with ellipsis</scenario>
+          <scenario>Card renders source name</scenario>
+          <scenario>Card formats date as "MMM d, yyyy"</scenario>
+          <scenario>Card shows category dot with correct color class</scenario>
+          <scenario>Card handles empty categories array with fallback color</scenario>
+          <scenario>Card links to /obituary/[slug]</scenario>
+          <scenario>Card has hover classes</scenario>
+          <scenario>Card has focus-visible ring classes</scenario>
+          <scenario>Card uses font-serif for quote</scenario>
+        </scenarios>
+      </file>
+      <file path="tests/unit/components/obituary/obituary-list.test.tsx">
+        <note>ObituaryList is async Server Component - MUST wrap render() in act()</note>
+        <scenarios>
+          <scenario>List renders multiple cards (wrap in act())</scenario>
+          <scenario>List shows empty state when no obituaries (wrap in act())</scenario>
+          <scenario>List uses responsive grid classes</scenario>
+          <scenario>List calls getObituaries()</scenario>
+          <scenario>List handles fetch error gracefully</scenario>
+        </scenarios>
+      </file>
+    </test-files-to-create>
+  </testing-context>
+
+  <implementation-guidance>
+    <tasks>
+      <task id="1" time="5min" prerequisite="true">
+        <title>Install date-fns (PREREQUISITE)</title>
+        <command>npm install date-fns</command>
+        <note>CRITICAL: date-fns is NOT in package.json. This MUST be the first action before any component development. Verify installation: check package.json for "date-fns" in dependencies.</note>
+        <verification>After running npm install, confirm date-fns appears in package.json dependencies section.</verification>
+      </task>
+
+      <task id="2" time="10min">
+        <title>Create Category Constants</title>
+        <file>src/lib/constants/categories.ts</file>
+        <details>Define CATEGORY_COLORS and CATEGORY_LABELS mappings</details>
+      </task>
+
+      <task id="3" time="5min">
+        <title>Add ObituarySummary Type</title>
+        <file>src/types/obituary.ts</file>
+        <details>
+          Add ObituarySummary interface to src/types/obituary.ts below the existing Obituary interface:
+          - _id: string
+          - slug: string
+          - claim: string
+          - source: string
+          - date: string
+          - categories: Category[]
+          Export it alongside Obituary and Category.
+        </details>
+      </task>
+
+      <task id="4" time="10min">
+        <title>Update getObituaries Query</title>
+        <file>src/lib/sanity/queries.ts</file>
+        <details>
+          1. Change return type from Obituary[] to ObituarySummary[]
+          2. Add ISR caching: { next: { tags: ['obituaries'] } }
+          3. Create summaryProjection for lighter payload (excludes context, sourceUrl):
+             const summaryProjection = `{ _id, "slug": slug.current, claim, source, date, categories }`
+          4. Use summaryProjection in getObituaries() query
+        </details>
+      </task>
+
+      <task id="5" time="25min">
+        <title>Create ObituaryCard Component</title>
+        <file>src/components/obituary/obituary-card.tsx</file>
+        <details>
+          - Import Link from next/link
+          - Import format from date-fns
+          - Import cn from @/lib/utils
+          - Import CATEGORY_COLORS from constants
+          - Implement claim truncation (150 chars)
+          - Apply Deep Archive card styling
+          - Add hover and focus states
+          - Format date as "MMM d, yyyy"
+        </details>
+      </task>
+
+      <task id="6" time="15min">
+        <title>Create ObituaryList Component</title>
+        <file>src/components/obituary/obituary-list.tsx</file>
+        <details>
+          - Async Server Component
+          - Fetch with getObituaries()
+          - Handle empty state
+          - Render responsive grid
+        </details>
+      </task>
+
+      <task id="7" time="10min">
+        <title>Integrate into Homepage</title>
+        <file>src/app/page.tsx</file>
+        <details>Add ObituaryList below CountDisplay with proper spacing</details>
+      </task>
+
+      <task id="8" time="30min">
+        <title>Write Unit Tests</title>
+        <files>
+          <file>tests/unit/components/obituary/obituary-card.test.tsx</file>
+          <file>tests/unit/components/obituary/obituary-list.test.tsx</file>
+        </files>
+      </task>
+    </tasks>
+
+    <reference-implementation>
+      <description>From tech spec - use as starting point. IMPORTANT: Import CATEGORY_COLORS from constants file, do not define inline.</description>
+      <code><![CDATA[
+// src/components/obituary/obituary-card.tsx
+import Link from 'next/link'
+import { format } from 'date-fns'
+import { cn } from '@/lib/utils'
+import { CATEGORY_COLORS } from '@/lib/constants/categories'
+import type { ObituarySummary } from '@/types/obituary'
+
+interface ObituaryCardProps {
+  obituary: ObituarySummary
+}
+
+/**
+ * Truncates claim text for card display.
+ * Uses character-based truncation at ~150 chars with word boundary respect.
+ * Alternative: CSS line-clamp-3 for dynamic truncation based on container.
+ */
+function truncateClaim(claim: string, maxLength = 150): string {
+  if (claim.length <= maxLength) return claim
+  // Find last space before maxLength to avoid cutting words
+  const truncated = claim.slice(0, maxLength)
+  const lastSpace = truncated.lastIndexOf(' ')
+  return (lastSpace > 0 ? truncated.slice(0, lastSpace) : truncated) + '...'
+}
+
+export function ObituaryCard({ obituary }: ObituaryCardProps) {
+  // Defensive: handle empty categories array
+  const primaryCategory = obituary.categories?.[0]
+  const categoryColorClass = primaryCategory
+    ? CATEGORY_COLORS[primaryCategory]
+    : 'bg-[--text-muted]' // fallback for missing category
+
+  return (
+    <Link
+      href={`/obituary/${obituary.slug}`}
+      className={cn(
+        'block p-6 rounded-xl',
+        'bg-[--bg-card] border border-[--border]',
+        'hover:-translate-y-0.5 hover:shadow-lg',
+        'transition-all duration-200',
+        'focus-visible:outline-none focus-visible:ring-2',
+        'focus-visible:ring-[--ring] focus-visible:ring-offset-2',
+        'focus-visible:ring-offset-[--bg-primary]'
+      )}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <span
+          className={cn('w-2 h-2 rounded-full', categoryColorClass)}
+          aria-hidden="true"
+        />
+        <span className="text-sm text-[--text-muted]">
+          {format(new Date(obituary.date), 'MMM d, yyyy')}
+        </span>
+      </div>
+      <p className="font-serif italic text-[--text-primary] mb-3 leading-relaxed">
+        "{truncateClaim(obituary.claim)}"
+      </p>
+      <p className="text-sm text-[--text-secondary]">
+        {obituary.source}
+      </p>
+    </Link>
+  )
+}
+]]></code>
+      <truncation-note>
+        <approach>Character-based truncation</approach>
+        <details>truncateClaim() uses ~150 char limit with word boundary respect. For CSS-based approach, use: className="line-clamp-3" which dynamically truncates based on container width.</details>
+        <recommendation>Character-based is preferred for consistent card heights across responsive breakpoints.</recommendation>
+      </truncation-note>
+    </reference-implementation>
+
+    <learnings-from-previous>
+      <learning story="2-1">React 19 Testing: Async Server Components require wrapping render() in act() for proper test execution</learning>
+      <learning story="2-1">Sanity Queries: Follow getObituaryCount() pattern with ISR caching using 'obituaries' tag</learning>
+      <learning story="2-1">Animation Keyframes: Place outside @theme block in globals.css to avoid Tailwind v4 issues</learning>
+      <learning story="1-3">Pre-existing Issues: Some test files have unrelated TypeScript errors - don't block on those</learning>
+    </learnings-from-previous>
+  </implementation-guidance>
+
+  <files-summary>
+    <to-create>
+      <file>src/components/obituary/obituary-card.tsx</file>
+      <file>src/components/obituary/obituary-list.tsx</file>
+      <file>src/lib/constants/categories.ts</file>
+      <file>tests/unit/components/obituary/obituary-card.test.tsx</file>
+      <file>tests/unit/components/obituary/obituary-list.test.tsx</file>
+    </to-create>
+    <to-modify>
+      <file>src/types/obituary.ts</file>
+      <file>src/lib/sanity/queries.ts</file>
+      <file>src/app/page.tsx</file>
+    </to-modify>
+  </files-summary>
+
+  <warnings>
+    <warning type="dependency" priority="critical">
+      date-fns is NOT installed. Run: npm install date-fns
+      This MUST be done before any component development in Task 1.
+    </warning>
+    <warning type="type" priority="critical">
+      ObituarySummary type does not exist. Must be added to src/types/obituary.ts (Task 3).
+    </warning>
+    <warning type="caching" priority="critical">
+      getObituaries() lacks ISR caching tags. Add: { next: { tags: ['obituaries'] } } (Task 4).
+    </warning>
+    <warning type="groq" priority="high">
+      getObituaries() currently returns full Obituary with context. Update GROQ projection to return ObituarySummary (exclude context, sourceUrl) for lighter payload (Task 4).
+    </warning>
+    <warning type="constants" priority="high">
+      CATEGORY_COLORS must be imported from src/lib/constants/categories.ts, NOT defined inline in ObituaryCard component.
+    </warning>
+    <warning type="defensive" priority="medium">
+      Handle empty categories array defensively: obituary.categories?.[0] with fallback color class.
+    </warning>
+  </warnings>
+
+  <verification-checklist>
+    <item status="verified">Category CSS variables exist in globals.css (lines 25-28)</item>
+    <item status="verified">Focus ring CSS variable --ring exists, maps to --accent-primary (line 55)</item>
+    <item status="verified">All responsive breakpoints documented (md: 768px, lg: 1024px)</item>
+    <item status="verified">Test file location convention documented (tests/unit/components/)</item>
+    <item status="verified">act() wrapper requirement documented for async components</item>
+    <item status="verified">Empty state styling guidance provided</item>
+    <item status="verified">Truncation approach clarified (char-based with word boundary)</item>
+  </verification-checklist>
+</story-context>

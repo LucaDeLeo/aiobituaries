@@ -1,8 +1,8 @@
 import { client } from './client'
-import type { Obituary } from '@/types/obituary'
+import type { Obituary, ObituarySummary } from '@/types/obituary'
 
 /**
- * GROQ projection for obituary fields.
+ * GROQ projection for full obituary fields.
  * Extracts slug.current as "slug" for cleaner API.
  */
 const obituaryProjection = `{
@@ -17,12 +17,28 @@ const obituaryProjection = `{
 }`
 
 /**
- * Fetch all obituaries ordered by date descending.
- * Uses CDN for fast reads.
+ * GROQ projection for summary obituary fields (list/card views).
+ * Excludes context and sourceUrl for smaller payload.
  */
-export async function getObituaries(): Promise<Obituary[]> {
+const summaryProjection = `{
+  _id,
+  "slug": slug.current,
+  claim,
+  source,
+  date,
+  categories
+}`
+
+/**
+ * Fetch all obituaries ordered by date descending.
+ * Returns summary data for list/card views.
+ * Uses ISR with 'obituaries' tag for cache revalidation.
+ */
+export async function getObituaries(): Promise<ObituarySummary[]> {
   return client.fetch(
-    `*[_type == "obituary"] | order(date desc) ${obituaryProjection}`
+    `*[_type == "obituary"] | order(date desc) ${summaryProjection}`,
+    undefined,
+    { next: { tags: ['obituaries'] } }
   )
 }
 
