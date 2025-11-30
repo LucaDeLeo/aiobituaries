@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <metadata>
+    <story-key>1-1-project-initialization</story-key>
+    <generated-at>2025-11-29</generated-at>
+    <epic>Epic 1 - Foundation</epic>
+    <priority>P0 - Critical Path (First Story)</priority>
+  </metadata>
+
+  <story-summary>
+    Initialize a Next.js 16 project with the complete development stack for AI Obituaries.
+    This is the foundation story - all subsequent epics and features depend on this setup.
+    The project must include TypeScript strict mode, Tailwind CSS v4, shadcn/ui, ESLint,
+    and both production dependencies (Sanity client, Visx, Motion, nuqs, date-fns) and
+    dev dependencies (Vitest, Testing Library, Playwright).
+  </story-summary>
+
+  <acceptance-criteria>
+    <criterion id="AC-1.1.1">
+      <description>Next.js 16 project created with App Router</description>
+      <testable-condition>npm run dev starts without errors; src/app/ directory exists</testable-condition>
+      <implementation-notes>Use create-next-app@latest with --app --src-dir flags</implementation-notes>
+    </criterion>
+    <criterion id="AC-1.1.2">
+      <description>TypeScript strict mode enabled</description>
+      <testable-condition>tsconfig.json has "strict": true</testable-condition>
+      <implementation-notes>Verify after project creation; create-next-app should set this by default</implementation-notes>
+    </criterion>
+    <criterion id="AC-1.1.3">
+      <description>Tailwind CSS v4 configured</description>
+      <testable-condition>Tailwind classes render correctly; color variables applied in globals.css</testable-condition>
+      <implementation-notes>Use --tailwind flag with create-next-app; verify v4.x is installed</implementation-notes>
+    </criterion>
+    <criterion id="AC-1.1.4">
+      <description>ESLint configured</description>
+      <testable-condition>npm run lint executes without configuration errors</testable-condition>
+      <implementation-notes>Use --eslint flag with create-next-app</implementation-notes>
+    </criterion>
+    <criterion id="AC-1.1.5">
+      <description>shadcn/ui initialized</description>
+      <testable-condition>components.json exists; can add shadcn components</testable-condition>
+      <implementation-notes>Run npx shadcn@latest init after project creation</implementation-notes>
+    </criterion>
+    <criterion id="AC-1.1.6">
+      <description>Core dependencies installed</description>
+      <testable-condition>All packages from dependency list present in package.json</testable-condition>
+      <implementation-notes>
+        Install: @sanity/client@^6.29.1, @visx/visx@^3.12.0, motion@^12.9.2, nuqs@^2.x, date-fns@^4.1.0
+      </implementation-notes>
+    </criterion>
+    <criterion id="AC-1.1.7">
+      <description>Dev dependencies installed</description>
+      <testable-condition>Vitest, Testing Library, Playwright in devDependencies</testable-condition>
+      <implementation-notes>
+        Install -D: vitest@^3.2.4, @testing-library/react, @testing-library/jest-dom, playwright@^1.57.0, jsdom
+      </implementation-notes>
+    </criterion>
+    <criterion id="AC-1.1.8">
+      <description>Project builds successfully</description>
+      <testable-condition>npm run build completes without errors</testable-condition>
+      <implementation-notes>Run build after all dependencies installed to verify configuration</implementation-notes>
+    </criterion>
+  </acceptance-criteria>
+
+  <technical-context>
+    <architecture-decisions>
+      <decision id="ADR-001">
+        <title>Sanity CMS over JSON Files</title>
+        <impact>@sanity/client must be installed in this story for later stories</impact>
+      </decision>
+      <decision id="ADR-004">
+        <title>URL State with nuqs</title>
+        <impact>nuqs must be installed in this story</impact>
+      </decision>
+    </architecture-decisions>
+
+    <technology-versions>
+      <technology name="Next.js" version="16.0.5" purpose="Framework with App Router, Cache Components, ISR"/>
+      <technology name="React" version="19.x" purpose="UI components (comes with Next.js)"/>
+      <technology name="TypeScript" version="5.x" purpose="Type safety"/>
+      <technology name="Tailwind CSS" version="4.1.x" purpose="Utility-first styling"/>
+      <technology name="shadcn/ui" version="3.5.0" purpose="Component library foundation"/>
+      <technology name="@sanity/client" version="6.29.1" purpose="CMS data fetching"/>
+      <technology name="@visx/visx" version="3.12.0" purpose="Visualization library"/>
+      <technology name="motion" version="12.9.2" purpose="Animation library"/>
+      <technology name="nuqs" version="2.x" purpose="URL state management"/>
+      <technology name="date-fns" version="4.1.0" purpose="Date formatting"/>
+      <technology name="vitest" version="3.2.4" purpose="Unit testing"/>
+      <technology name="playwright" version="1.57.0" purpose="E2E testing"/>
+    </technology-versions>
+
+    <coding-standards>
+      <standard category="File Naming">kebab-case for files: scatter-plot.tsx, use-filters.ts</standard>
+      <standard category="Component Naming">PascalCase for components: ScatterPlot, ObituaryCard</standard>
+      <standard category="Function Naming">camelCase for functions: getObituaries(), formatDate()</standard>
+      <standard category="Type Naming">PascalCase for types/interfaces: Obituary, ContextMetadata</standard>
+      <standard category="Server Components">Default; only use 'use client' when interactivity required</standard>
+    </coding-standards>
+
+    <project-structure>
+      <folder path="src/app/" description="Next.js 16 App Router pages"/>
+      <folder path="src/components/ui/" description="shadcn/ui components"/>
+      <folder path="src/components/layout/" description="Layout components (header, footer, nav)"/>
+      <folder path="src/components/visualization/" description="Visx-powered components"/>
+      <folder path="src/lib/sanity/" description="Sanity client and queries"/>
+      <folder path="src/lib/utils/" description="Utility functions"/>
+      <folder path="src/lib/hooks/" description="Custom React hooks"/>
+      <folder path="src/types/" description="TypeScript type definitions"/>
+      <folder path="tests/unit/" description="Vitest unit tests"/>
+      <folder path="tests/components/" description="Component tests"/>
+      <folder path="tests/e2e/" description="Playwright E2E tests"/>
+    </project-structure>
+  </technical-context>
+
+  <existing-code>
+    <status>GREENFIELD PROJECT</status>
+    <description>
+      This is a brand new project. There is no existing source code in the repository.
+      The docs/ directory contains planning documentation but no implementation code.
+      The src/ directory does not exist and will be created by create-next-app.
+    </description>
+    <existing-files>
+      <file path="docs/architecture.md" description="Architecture documentation with patterns and standards"/>
+      <file path="docs/sprint-artifacts/epic-tech-specs/epic-1-tech-spec.md" description="Epic 1 technical specification"/>
+      <file path="docs/sprint-artifacts/stories/1-1-project-initialization.md" description="This story's definition"/>
+    </existing-files>
+  </existing-code>
+
+  <implementation-plan>
+    <step order="1" estimated-time="5 min">
+      <action>Create Next.js 16 project</action>
+      <command>npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir</command>
+      <note>Run in the project root directory. The '.' uses current directory.</note>
+      <files-created>
+        <file>src/app/layout.tsx</file>
+        <file>src/app/page.tsx</file>
+        <file>src/app/globals.css</file>
+        <file>tailwind.config.ts</file>
+        <file>tsconfig.json</file>
+        <file>next.config.ts</file>
+        <file>package.json</file>
+      </files-created>
+    </step>
+
+    <step order="2" estimated-time="5 min">
+      <action>Initialize shadcn/ui</action>
+      <command>npx shadcn@latest init</command>
+      <note>Accept default configuration prompts</note>
+      <files-created>
+        <file>components.json</file>
+        <file>src/lib/utils.ts (cn function)</file>
+      </files-created>
+    </step>
+
+    <step order="3" estimated-time="5 min">
+      <action>Install core production dependencies</action>
+      <command>npm install @sanity/client @visx/visx motion nuqs date-fns</command>
+      <files-modified>
+        <file>package.json</file>
+        <file>package-lock.json</file>
+      </files-modified>
+    </step>
+
+    <step order="4" estimated-time="5 min">
+      <action>Install dev dependencies</action>
+      <command>npm install -D vitest @testing-library/react @testing-library/jest-dom playwright jsdom</command>
+      <files-modified>
+        <file>package.json</file>
+        <file>package-lock.json</file>
+      </files-modified>
+    </step>
+
+    <step order="5" estimated-time="10 min">
+      <action>Configure Vitest</action>
+      <description>Create vitest.config.ts with jsdom environment and path aliases</description>
+      <files-created>
+        <file>vitest.config.ts</file>
+      </files-created>
+      <reference-config>
+        <![CDATA[
+import { defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
+import path from 'path'
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./tests/setup.ts'],
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+})
+        ]]>
+      </reference-config>
+    </step>
+
+    <step order="6" estimated-time="5 min">
+      <action>Verify TypeScript strict mode</action>
+      <description>Check tsconfig.json has "strict": true</description>
+      <verification>grep -q '"strict": true' tsconfig.json</verification>
+    </step>
+
+    <step order="7" estimated-time="5 min">
+      <action>Run build verification</action>
+      <command>npm run build</command>
+      <expected-result>Build completes without errors</expected-result>
+    </step>
+
+    <step order="8" estimated-time="5 min">
+      <action>Run dev server verification</action>
+      <command>npm run dev</command>
+      <expected-result>Development server starts on localhost:3000</expected-result>
+    </step>
+
+    <step order="9" estimated-time="5 min">
+      <action>Run lint verification</action>
+      <command>npm run lint</command>
+      <expected-result>No configuration errors</expected-result>
+    </step>
+
+    <step order="10" estimated-time="5 min">
+      <action>Document any deviations</action>
+      <description>Update story file with implementation notes and any deviations from plan</description>
+    </step>
+  </implementation-plan>
+
+  <dependencies>
+    <production-dependencies>
+      <dependency name="@sanity/client" version="^6.29.1" purpose="CMS data fetching"/>
+      <dependency name="@visx/visx" version="^3.12.0" purpose="Visualization library (for later epics)"/>
+      <dependency name="motion" version="^12.9.2" purpose="Animation library (for later epics)"/>
+      <dependency name="nuqs" version="^2.x" purpose="URL state management"/>
+      <dependency name="date-fns" version="^4.1.0" purpose="Date formatting utilities"/>
+    </production-dependencies>
+
+    <dev-dependencies>
+      <dependency name="vitest" version="^3.2.4" purpose="Unit testing framework"/>
+      <dependency name="@testing-library/react" version="^16.0.0" purpose="Component testing"/>
+      <dependency name="@testing-library/jest-dom" version="latest" purpose="DOM matchers"/>
+      <dependency name="playwright" version="^1.57.0" purpose="E2E testing"/>
+      <dependency name="jsdom" version="latest" purpose="DOM environment for tests"/>
+    </dev-dependencies>
+
+    <external-prerequisites>
+      <prerequisite>Node.js 20+ LTS installed</prerequisite>
+      <prerequisite>npm available</prerequisite>
+    </external-prerequisites>
+  </dependencies>
+
+  <testing-requirements>
+    <story-level-tests>
+      <test type="build">npm run build succeeds</test>
+      <test type="dev">npm run dev starts</test>
+      <test type="lint">npm run lint passes</test>
+    </story-level-tests>
+
+    <verification-checklist>
+      <check>src/app/ directory structure exists with layout.tsx and page.tsx</check>
+      <check>tsconfig.json has "strict": true</check>
+      <check>components.json exists for shadcn/ui</check>
+      <check>All core dependencies listed in package.json dependencies</check>
+      <check>All dev dependencies listed in package.json devDependencies</check>
+      <check>vitest.config.ts configured for test environment</check>
+    </verification-checklist>
+
+    <testing-infrastructure-note>
+      This story sets up testing infrastructure but does not require writing tests.
+      Tests will be added in subsequent stories as features are implemented.
+      The minimum viable setup for this story is:
+      - vitest.config.ts exists and is properly configured
+      - Vitest can be run (even if no tests exist yet)
+    </testing-infrastructure-note>
+  </testing-requirements>
+
+  <warnings-and-notes>
+    <warning type="version">
+      Verify Next.js 16.0.5 is the version installed. If create-next-app installs
+      a different major version, document the deviation.
+    </warning>
+    <warning type="shadcn-init">
+      shadcn/ui init prompts for configuration. Accept defaults unless there's a
+      specific reason to change. Document any non-default choices.
+    </warning>
+    <note type="greenfield">
+      This is a greenfield project. The implementation creates all files from scratch.
+      There are no existing code patterns to follow - this story establishes them.
+    </note>
+    <note type="directory">
+      Run create-next-app with '.' to use the current directory rather than
+      creating a nested 'aiobituaries' directory.
+    </note>
+  </warnings-and-notes>
+
+  <source-references>
+    <reference type="story" path="docs/sprint-artifacts/stories/1-1-project-initialization.md"/>
+    <reference type="tech-spec" path="docs/sprint-artifacts/epic-tech-specs/epic-1-tech-spec.md"/>
+    <reference type="architecture" path="docs/architecture.md"/>
+  </source-references>
+</story-context>
