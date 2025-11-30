@@ -15,6 +15,7 @@ import {
   getObituaries,
   getObituaryBySlug,
   getObituaryCount,
+  getAllObituarySlugs,
 } from '@/lib/sanity/queries'
 
 // Test fixtures
@@ -118,7 +119,8 @@ describe('Sanity queries', () => {
 
       expect(client.fetch).toHaveBeenCalledWith(
         expect.any(String),
-        { slug: 'test-slug' }
+        { slug: 'test-slug' },
+        { next: { tags: ['obituaries'] } }
       )
     })
 
@@ -130,6 +132,50 @@ describe('Sanity queries', () => {
       const fetchCall = vi.mocked(client.fetch).mock.calls[0][0] as string
       expect(fetchCall).toContain('slug.current == $slug')
       expect(fetchCall).toContain('[0]')
+    })
+  })
+
+  describe('getAllObituarySlugs', () => {
+    it('returns array of slug strings', async () => {
+      const mockSlugs = ['ai-will-never-work', 'ai-bubble', 'agi-impossible']
+      vi.mocked(client.fetch).mockResolvedValue(mockSlugs)
+
+      const result = await getAllObituarySlugs()
+
+      expect(result).toEqual(mockSlugs)
+      expect(result).toHaveLength(3)
+      expect(typeof result[0]).toBe('string')
+    })
+
+    it('returns empty array when no obituaries exist', async () => {
+      vi.mocked(client.fetch).mockResolvedValue([])
+
+      const result = await getAllObituarySlugs()
+
+      expect(result).toEqual([])
+      expect(result).toHaveLength(0)
+    })
+
+    it('calls fetch with ISR caching tag', async () => {
+      vi.mocked(client.fetch).mockResolvedValue([])
+
+      await getAllObituarySlugs()
+
+      expect(client.fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        {},
+        { next: { tags: ['obituaries'] } }
+      )
+    })
+
+    it('calls fetch with correct GROQ query for slugs', async () => {
+      vi.mocked(client.fetch).mockResolvedValue([])
+
+      await getAllObituarySlugs()
+
+      const fetchCall = vi.mocked(client.fetch).mock.calls[0][0] as string
+      expect(fetchCall).toContain('*[_type == "obituary"]')
+      expect(fetchCall).toContain('slug.current')
     })
   })
 

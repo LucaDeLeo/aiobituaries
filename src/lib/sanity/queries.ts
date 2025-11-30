@@ -45,11 +45,26 @@ export async function getObituaries(): Promise<ObituarySummary[]> {
 /**
  * Fetch a single obituary by slug.
  * Returns null if not found.
+ * Uses ISR with 'obituaries' tag for cache revalidation.
  */
 export async function getObituaryBySlug(slug: string): Promise<Obituary | null> {
   return client.fetch(
     `*[_type == "obituary" && slug.current == $slug][0] ${obituaryProjection}`,
-    { slug }
+    { slug },
+    { next: { tags: ['obituaries'] } }
+  )
+}
+
+/**
+ * Fetch all obituary slugs for static generation.
+ * Used by generateStaticParams() in dynamic route pages.
+ * Uses ISR with 'obituaries' tag for cache revalidation.
+ */
+export async function getAllObituarySlugs(): Promise<string[]> {
+  return client.fetch<string[]>(
+    `*[_type == "obituary"].slug.current`,
+    {},
+    { next: { tags: ['obituaries'] } }
   )
 }
 

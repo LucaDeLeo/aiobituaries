@@ -1,0 +1,909 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context XML
+  Generated: 2025-11-30
+  Story: 2-3-individual-obituary-pages
+  Purpose: Complete implementation context for Individual Obituary Pages
+-->
+<story-context>
+  <metadata>
+    <story-key>2-3-individual-obituary-pages</story-key>
+    <title>Individual Obituary Pages</title>
+    <epic>Epic 2 - Core Content Display</epic>
+    <status>drafted</status>
+    <priority>High</priority>
+    <generated>2025-11-30</generated>
+  </metadata>
+
+  <story-reference>
+    <path>docs/sprint-artifacts/stories/2-3-individual-obituary-pages.md</path>
+    <user-story>
+      As a visitor,
+      I want each obituary to have its own dedicated page,
+      So that I can view full details and share specific obituaries.
+    </user-story>
+  </story-reference>
+
+  <acceptance-criteria>
+    <criterion id="AC-2.3.1">Page exists at `/obituary/[slug]` - URL pattern works for valid slugs</criterion>
+    <criterion id="AC-2.3.2">Full claim text displayed - No truncation, large serif font</criterion>
+    <criterion id="AC-2.3.3">Source name with external link - Link to original article opens in new tab</criterion>
+    <criterion id="AC-2.3.4">Full date displayed - Format: "March 14, 2023"</criterion>
+    <criterion id="AC-2.3.5">Category tags as badges - Colored badges for each category</criterion>
+    <criterion id="AC-2.3.6">Back link to homepage - Link to navigate back</criterion>
+    <criterion id="AC-2.3.7">Claim displayed as hero quote - Centered, prominent styling</criterion>
+    <criterion id="AC-2.3.8">External link has security attrs - `rel="noopener noreferrer"` present</criterion>
+    <criterion id="AC-2.3.9">404 for invalid slugs - Non-existent slug shows not-found page</criterion>
+    <criterion id="AC-2.3.10">Pages statically generated - `generateStaticParams` returns all slugs</criterion>
+  </acceptance-criteria>
+
+  <documentation-artifacts>
+    <artifact type="tech-spec" relevance="primary">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-2-tech-spec.md</path>
+      <description>Complete technical specification for Epic 2 including data models, component architecture, and reference implementations</description>
+      <key-sections>
+        <section>Section 3: Data Models - Full Obituary type definition with context</section>
+        <section>Section 4: Sanity Query Functions - getObituaryBySlug() and getAllObituarySlugs() queries</section>
+        <section>Story 2.3: Individual Obituary Pages - Full acceptance criteria and technical approach</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="architecture" relevance="primary">
+      <path>docs/architecture.md</path>
+      <description>System architecture defining project structure, component patterns, and coding standards</description>
+      <key-sections>
+        <section>Project Structure - Dynamic route at src/app/obituary/[slug]/</section>
+        <section>Implementation Patterns - Server vs Client components, naming conventions</section>
+        <section>Data Architecture - Obituary and ContextMetadata TypeScript types</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="story" relevance="primary">
+      <path>docs/sprint-artifacts/stories/2-3-individual-obituary-pages.md</path>
+      <description>Full story definition with tasks, test scenarios, and definition of done</description>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code>
+    <file purpose="reference-pattern" priority="high">
+      <path>src/components/obituary/obituary-card.tsx</path>
+      <description>Reference implementation for ObituaryCard - shows category color handling, date formatting, and Deep Archive styling patterns. Use CATEGORY_COLORS/LABELS from constants.</description>
+      <code-excerpt><![CDATA[
+import Link from 'next/link'
+import { format } from 'date-fns'
+import { cn } from '@/lib/utils'
+import { CATEGORY_COLORS } from '@/lib/constants/categories'
+import type { ObituarySummary } from '@/types/obituary'
+
+interface ObituaryCardProps {
+  obituary: ObituarySummary
+}
+
+/**
+ * Truncates claim text for card display.
+ * Uses character-based truncation at ~150 chars with word boundary respect.
+ */
+function truncateClaim(claim: string, maxLength = 150): string {
+  if (claim.length <= maxLength) return claim
+  // Find last space before maxLength to avoid cutting words
+  const truncated = claim.slice(0, maxLength)
+  const lastSpace = truncated.lastIndexOf(' ')
+  return (lastSpace > 0 ? truncated.slice(0, lastSpace) : truncated) + '...'
+}
+
+/**
+ * Obituary card component for list/grid views.
+ * Server Component that displays a summary of an obituary with
+ * truncated claim, source, date, and category indicator.
+ * Links to the individual obituary detail page.
+ */
+export function ObituaryCard({ obituary }: ObituaryCardProps) {
+  // Defensive: handle empty categories array
+  const primaryCategory = obituary.categories?.[0]
+  const categoryColorClass = primaryCategory
+    ? CATEGORY_COLORS[primaryCategory]
+    : 'bg-[--text-muted]' // fallback for missing category
+
+  return (
+    <Link
+      href={`/obituary/${obituary.slug}`}
+      className={cn(
+        'block p-6 rounded-xl',
+        'bg-[--bg-card] border border-[--border]',
+        'hover:-translate-y-0.5 hover:shadow-lg',
+        'transition-all duration-200',
+        'focus-visible:outline-none focus-visible:ring-2',
+        'focus-visible:ring-[--ring] focus-visible:ring-offset-2',
+        'focus-visible:ring-offset-[--bg-primary]'
+      )}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <span
+          className={cn('w-2 h-2 rounded-full', categoryColorClass)}
+          aria-hidden="true"
+        />
+        <span className="text-sm text-[--text-muted]">
+          {format(new Date(obituary.date), 'MMM d, yyyy')}
+        </span>
+      </div>
+      <p className="font-serif italic text-[--text-primary] mb-3 leading-relaxed">
+        &ldquo;{truncateClaim(obituary.claim)}&rdquo;
+      </p>
+      <p className="text-sm text-[--text-secondary]">
+        {obituary.source}
+      </p>
+    </Link>
+  )
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="modify" priority="high">
+      <path>src/lib/sanity/queries.ts</path>
+      <description>Sanity query functions - need to add getObituaryBySlug() and getAllObituarySlugs() functions</description>
+      <code-excerpt><![CDATA[
+import { client } from './client'
+import type { Obituary, ObituarySummary } from '@/types/obituary'
+
+/**
+ * GROQ projection for full obituary fields.
+ * Extracts slug.current as "slug" for cleaner API.
+ */
+const obituaryProjection = `{
+  _id,
+  "slug": slug.current,
+  claim,
+  source,
+  sourceUrl,
+  date,
+  categories,
+  context
+}`
+
+/**
+ * GROQ projection for summary obituary fields (list/card views).
+ * Excludes context and sourceUrl for smaller payload.
+ */
+const summaryProjection = `{
+  _id,
+  "slug": slug.current,
+  claim,
+  source,
+  date,
+  categories
+}`
+
+/**
+ * Fetch all obituaries ordered by date descending.
+ * Returns summary data for list/card views.
+ * Uses ISR with 'obituaries' tag for cache revalidation.
+ */
+export async function getObituaries(): Promise<ObituarySummary[]> {
+  return client.fetch(
+    `*[_type == "obituary"] | order(date desc) ${summaryProjection}`,
+    undefined,
+    { next: { tags: ['obituaries'] } }
+  )
+}
+
+/**
+ * Fetch a single obituary by slug.
+ * Returns null if not found.
+ */
+export async function getObituaryBySlug(slug: string): Promise<Obituary | null> {
+  return client.fetch(
+    `*[_type == "obituary" && slug.current == $slug][0] ${obituaryProjection}`,
+    { slug }
+  )
+}
+
+/**
+ * Get total count of obituaries.
+ * Useful for homepage statistics.
+ * Uses ISR with 'obituary' tag for cache revalidation.
+ */
+export async function getObituaryCount(): Promise<number> {
+  return client.fetch(`count(*[_type == "obituary"])`, undefined, {
+    next: { tags: ['obituary'] },
+  })
+}
+]]></code-excerpt>
+      <note>getObituaryBySlug() exists but needs ISR caching tag. getAllObituarySlugs() does NOT exist and must be added for generateStaticParams().</note>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/types/obituary.ts</path>
+      <description>Core Obituary and Category type definitions - full Obituary type includes context metadata</description>
+      <code-excerpt><![CDATA[
+import type { ContextMetadata } from './context'
+
+/**
+ * Categorization of AI skepticism claims.
+ * Each obituary can have multiple categories.
+ * Categories determine Y-axis behavior in the contextual scatter plot visualization.
+ */
+export type Category = 'market' | 'capability' | 'agi' | 'dismissive'
+
+/**
+ * Core data model representing an AI skepticism claim documented as an "obituary".
+ * Each obituary captures a claim, its source, date, categorization, and contextual
+ * data (stock prices, benchmarks) that existed when the claim was made.
+ */
+export interface Obituary {
+  /** Sanity document ID */
+  _id: string
+  /** URL-safe identifier derived from claim */
+  slug: string
+  /** The actual skepticism claim text */
+  claim: string
+  /** Publication or person who made the claim */
+  source: string
+  /** URL to original source */
+  sourceUrl: string
+  /** ISO 8601 date when claim was made */
+  date: string
+  /** Array of claim categories */
+  categories: Category[]
+  /** Contextual data at time of claim */
+  context: ContextMetadata
+}
+
+/**
+ * Lightweight obituary type for list/card views.
+ * Excludes context metadata and sourceUrl for smaller payload and faster rendering.
+ */
+export interface ObituarySummary {
+  /** Sanity document ID */
+  _id: string
+  /** URL-safe identifier derived from claim */
+  slug: string
+  /** The actual skepticism claim text */
+  claim: string
+  /** Publication or person who made the claim */
+  source: string
+  /** ISO 8601 date when claim was made */
+  date: string
+  /** Array of claim categories */
+  categories: Category[]
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/types/context.ts</path>
+      <description>ContextMetadata type definition - all fields optional for partial data handling</description>
+      <code-excerpt><![CDATA[
+/**
+ * Contextual market and capability data at the time an AI skepticism claim was made.
+ * All fields optional since not all context types apply to all claims.
+ */
+export interface ContextMetadata {
+  /** NVIDIA stock price at claim date */
+  nvdaPrice?: number
+  /** Microsoft stock price at claim date */
+  msftPrice?: number
+  /** Google stock price at claim date */
+  googPrice?: number
+  /** Name of AI benchmark (e.g., MMLU) */
+  benchmarkName?: string
+  /** Best AI score on benchmark at time */
+  benchmarkScore?: number
+  /** Leading AI model at time of claim */
+  currentModel?: string
+  /** Notable AI milestone around claim date */
+  milestone?: string
+  /** Additional context or commentary */
+  note?: string
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/lib/constants/categories.ts</path>
+      <description>Category color and label constants - import from here for ObituaryDetail component</description>
+      <code-excerpt><![CDATA[
+import type { Category } from '@/types/obituary'
+
+/**
+ * Category color mappings using CSS variables for the Deep Archive theme.
+ * Colors are defined in globals.css under :root.
+ */
+export const CATEGORY_COLORS: Record<Category, string> = {
+  capability: 'bg-[--category-capability]',
+  market: 'bg-[--category-market]',
+  agi: 'bg-[--category-agi]',
+  dismissive: 'bg-[--category-dismissive]',
+}
+
+/**
+ * Human-readable labels for each category.
+ * Used in UI elements like tooltips, filters, and accessibility.
+ */
+export const CATEGORY_LABELS: Record<Category, string> = {
+  capability: 'Capability Doubt',
+  market: 'Market/Bubble',
+  agi: 'AGI Skepticism',
+  dismissive: 'Dismissive Framing',
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>src/lib/sanity/client.ts</path>
+      <description>Sanity client configuration</description>
+      <code-excerpt><![CDATA[
+import { createClient } from 'next-sanity'
+
+/**
+ * Sanity CMS client configured for read operations.
+ * Uses CDN for faster reads in production.
+ */
+export const client = createClient({
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
+  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
+  apiVersion: '2024-01-01',
+  useCdn: true,
+})
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>src/app/layout.tsx</path>
+      <description>Root layout with Header/Footer and font configuration - ObituaryDetail pages inherit this layout</description>
+      <code-excerpt><![CDATA[
+import type { Metadata } from "next";
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import "./globals.css";
+import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
+  subsets: ["latin"],
+  weight: "400",
+});
+
+export const metadata: Metadata = {
+  title: "AI Obituaries",
+  description: "A memorial to the ever-dying predictions of AI doom",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased`}
+      >
+        <div className="flex flex-col min-h-screen">
+          <Header />
+          <main className="flex-1">
+            {children}
+          </main>
+          <Footer />
+        </div>
+      </body>
+    </html>
+  );
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>src/app/page.tsx</path>
+      <description>Homepage with ObituaryList - cards link to /obituary/[slug] pages created in this story</description>
+      <code-excerpt><![CDATA[
+import { CountDisplay } from "@/components/obituary/count-display";
+import { ObituaryList } from "@/components/obituary/obituary-list";
+
+export default function Home() {
+  return (
+    <main className="min-h-screen">
+      {/* Hero Section with Count */}
+      <section className="flex flex-col items-center justify-center py-24 px-4">
+        <CountDisplay />
+      </section>
+
+      {/* Obituary List Section */}
+      <section className="px-4 pb-24 max-w-7xl mx-auto">
+        <ObituaryList />
+      </section>
+    </main>
+  );
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="utility" priority="high">
+      <path>src/lib/utils.ts</path>
+      <description>cn() utility for className merging</description>
+      <code-excerpt><![CDATA[
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>src/components/ui/button.tsx</path>
+      <description>shadcn Button component - use variant="outline" pattern for back link if button style desired</description>
+    </file>
+  </existing-code>
+
+  <design-system>
+    <css-variables source="src/app/globals.css" verified="2025-11-30">
+      <variable name="--bg-primary" value="#0C0C0F" usage="Page background, focus ring offset" line="8" />
+      <variable name="--bg-card" value="#18181F" usage="Card background color" line="10" />
+      <variable name="--border" value="#2A2A35" usage="Card/section border color" line="14" />
+      <variable name="--text-primary" value="#E8E6E3" usage="Primary text, claim text" line="17" />
+      <variable name="--text-secondary" value="#A8A5A0" usage="Secondary text (source)" line="18" />
+      <variable name="--text-muted" value="#6B6860" usage="Muted text (date)" line="19" />
+      <variable name="--accent-primary" value="#C9A962" usage="Gold accent, external link hover" line="22" />
+      <variable name="--category-capability" value="#C9A962" usage="Capability category badge" line="25" />
+      <variable name="--category-market" value="#7B9E89" usage="Market category badge" line="26" />
+      <variable name="--category-agi" value="#9E7B7B" usage="AGI category badge" line="27" />
+      <variable name="--category-dismissive" value="#7B7B9E" usage="Dismissive category badge" line="28" />
+    </css-variables>
+
+    <fonts>
+      <font name="Geist Sans" variable="--font-sans" usage="Body text, source attribution" />
+      <font name="Geist Mono" variable="--font-mono" usage="Monospace text" />
+      <font name="Instrument Serif" variable="--font-serif" usage="Claim quote text - italic, centered blockquote" />
+    </fonts>
+
+    <tailwind-patterns>
+      <pattern name="hero-quote">font-serif text-2xl md:text-3xl lg:text-4xl text-[--text-primary] italic text-center leading-relaxed</pattern>
+      <pattern name="back-link">inline-flex items-center gap-2 text-[--text-secondary] hover:text-[--text-primary] transition-colors</pattern>
+      <pattern name="external-link">inline-flex items-center gap-1 hover:text-[--accent-primary] transition-colors underline underline-offset-4</pattern>
+      <pattern name="category-badge">px-3 py-1 rounded-full text-sm font-medium</pattern>
+      <pattern name="page-container">max-w-3xl mx-auto px-4 py-12</pattern>
+      <pattern name="404-centered">min-h-[60vh] flex flex-col items-center justify-center text-center px-4</pattern>
+    </tailwind-patterns>
+
+    <responsive-breakpoints>
+      <breakpoint name="md" value="768px" usage="Quote text scaling: md:text-3xl" />
+      <breakpoint name="lg" value="1024px" usage="Quote text scaling: lg:text-4xl" />
+    </responsive-breakpoints>
+  </design-system>
+
+  <category-badge-colors>
+    <category name="capability" color="#C9A962" bg-class="bg-[--category-capability]/20" text-class="text-[--category-capability]" label="Capability Doubt" />
+    <category name="market" color="#7B9E89" bg-class="bg-[--category-market]/20" text-class="text-[--category-market]" label="Market/Bubble" />
+    <category name="agi" color="#9E7B7B" bg-class="bg-[--category-agi]/20" text-class="text-[--category-agi]" label="AGI Skepticism" />
+    <category name="dismissive" color="#7B7B9E" bg-class="bg-[--category-dismissive]/20" text-class="text-[--category-dismissive]" label="Dismissive Framing" />
+    <note>Badge styling uses /20 opacity for background with full opacity text color</note>
+  </category-badge-colors>
+
+  <interface-contracts>
+    <function name="getObituaryBySlug" status="exists-needs-update" file="src/lib/sanity/queries.ts">
+      <description>Fetch single obituary by slug. Exists but needs ISR caching tag added.</description>
+      <signature><![CDATA[
+export async function getObituaryBySlug(slug: string): Promise<Obituary | null>
+]]></signature>
+      <update-needed>Add { next: { tags: ['obituaries'] } } for ISR caching</update-needed>
+    </function>
+
+    <function name="getAllObituarySlugs" status="to-create" file="src/lib/sanity/queries.ts">
+      <description>Fetch all obituary slugs for static generation. Used by generateStaticParams().</description>
+      <signature><![CDATA[
+export async function getAllObituarySlugs(): Promise<string[]>
+]]></signature>
+      <implementation><![CDATA[
+/**
+ * Fetch all obituary slugs for static generation.
+ * Used by generateStaticParams().
+ */
+export async function getAllObituarySlugs(): Promise<string[]> {
+  const query = `*[_type == "obituary"].slug.current`
+
+  return client.fetch<string[]>(query, {}, {
+    next: { tags: ['obituaries'] }
+  })
+}
+]]></implementation>
+    </function>
+
+    <component name="ObituaryDetail" status="to-create">
+      <path>src/components/obituary/obituary-detail.tsx</path>
+      <props><![CDATA[
+interface ObituaryDetailProps {
+  obituary: Obituary
+}
+]]></props>
+      <description>Full obituary detail view component. Server Component. Displays full claim as centered blockquote, source with external link, formatted date, category badges, and back navigation.</description>
+    </component>
+
+    <page name="[slug]/page.tsx" status="to-create">
+      <path>src/app/obituary/[slug]/page.tsx</path>
+      <description>Dynamic route page for individual obituary. Server Component with generateStaticParams and generateMetadata.</description>
+      <props><![CDATA[
+interface PageProps {
+  params: Promise<{ slug: string }>
+}
+]]></props>
+      <note>Next.js 15+ uses Promise-based params - must await params before use</note>
+    </page>
+
+    <page name="[slug]/not-found.tsx" status="to-create">
+      <path>src/app/obituary/[slug]/not-found.tsx</path>
+      <description>404 page for invalid obituary slugs. Displays friendly error message and link to homepage.</description>
+    </page>
+  </interface-contracts>
+
+  <dynamic-routing-pattern>
+    <description>Next.js App Router dynamic routing with static generation</description>
+    <directory-structure><![CDATA[
+src/app/obituary/[slug]/
+  ├── page.tsx       # Dynamic route page with generateStaticParams
+  └── not-found.tsx  # 404 page triggered by notFound()
+]]></directory-structure>
+    <code-pattern><![CDATA[
+// src/app/obituary/[slug]/page.tsx
+import { notFound } from 'next/navigation'
+import { getObituaryBySlug, getAllObituarySlugs } from '@/lib/sanity/queries'
+import { ObituaryDetail } from '@/components/obituary/obituary-detail'
+
+interface PageProps {
+  params: Promise<{ slug: string }>
+}
+
+// Generate static pages for all obituaries at build time
+export async function generateStaticParams() {
+  const slugs = await getAllObituarySlugs()
+  return slugs.map((slug) => ({ slug }))
+}
+
+export default async function ObituaryPage({ params }: PageProps) {
+  const { slug } = await params  // IMPORTANT: await params in Next.js 15+
+  const obituary = await getObituaryBySlug(slug)
+
+  if (!obituary) {
+    notFound()  // Triggers not-found.tsx
+  }
+
+  return (
+    <main className="max-w-3xl mx-auto px-4 py-12">
+      <ObituaryDetail obituary={obituary} />
+    </main>
+  )
+}
+]]></code-pattern>
+  </dynamic-routing-pattern>
+
+  <not-found-handling-pattern>
+    <description>Next.js App Router 404 handling for dynamic routes</description>
+    <trigger>Call notFound() from next/navigation when data not found</trigger>
+    <file>src/app/obituary/[slug]/not-found.tsx</file>
+    <code-pattern><![CDATA[
+// src/app/obituary/[slug]/not-found.tsx
+import Link from 'next/link'
+
+export default function NotFound() {
+  return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
+      <h1 className="text-4xl font-serif text-[--text-primary] mb-4">
+        Obituary Not Found
+      </h1>
+      <p className="text-[--text-secondary] mb-8">
+        This obituary doesn&apos;t exist or may have been removed.
+      </p>
+      <Link
+        href="/"
+        className="px-6 py-3 bg-[--accent-primary] text-[--bg-primary]
+                   rounded-lg font-medium hover:opacity-90 transition-opacity"
+      >
+        Return to Homepage
+      </Link>
+    </div>
+  )
+}
+]]></code-pattern>
+  </not-found-handling-pattern>
+
+  <dependencies>
+    <runtime>
+      <dependency name="next" version="16.0.5" usage="App Router, Link, notFound, generateStaticParams" />
+      <dependency name="react" version="19.2.0" usage="Server Components" />
+      <dependency name="next-sanity" version="11.6.10" usage="Sanity client" />
+      <dependency name="date-fns" version="4.x" usage="Date formatting with format()" status="installed" />
+      <dependency name="lucide-react" version="0.555.0" status="installed" usage="ExternalLink, ArrowLeft icons" />
+    </runtime>
+    <dev>
+      <dependency name="vitest" version="4.0.14" usage="Unit testing" />
+      <dependency name="@testing-library/react" version="16.3.0" usage="Component testing" />
+    </dev>
+    <verification-complete>
+      <note>lucide-react@0.555.0 confirmed installed - provides ArrowLeft, ExternalLink icons</note>
+    </verification-complete>
+  </dependencies>
+
+  <testing-context>
+    <test-file-convention>
+      <pattern>tests/unit/components/{component-path}/{component-name}.test.tsx</pattern>
+      <pattern>tests/unit/lib/{module-path}/{function-name}.test.ts</pattern>
+    </test-file-convention>
+
+    <test-files-to-create>
+      <file path="tests/unit/components/obituary/obituary-detail.test.tsx">
+        <scenarios>
+          <scenario>Detail renders full claim text without truncation</scenario>
+          <scenario>Detail wraps claim in quotation marks</scenario>
+          <scenario>Detail renders source with external link</scenario>
+          <scenario>External link has target="_blank"</scenario>
+          <scenario>External link has rel="noopener noreferrer"</scenario>
+          <scenario>Detail renders ExternalLink icon</scenario>
+          <scenario>Detail formats date as "MMMM d, yyyy" (March 14, 2023)</scenario>
+          <scenario>Detail renders category badges with labels</scenario>
+          <scenario>Detail renders badge with correct color class</scenario>
+          <scenario>Detail renders back link with href="/"</scenario>
+          <scenario>Back link contains "Back to all obituaries" text</scenario>
+        </scenarios>
+      </file>
+      <file path="tests/unit/lib/sanity/queries-detail.test.ts">
+        <scenarios>
+          <scenario>getObituaryBySlug returns obituary for valid slug</scenario>
+          <scenario>getObituaryBySlug returns null for invalid slug</scenario>
+          <scenario>getAllObituarySlugs returns array of strings</scenario>
+        </scenarios>
+      </file>
+      <file path="tests/unit/app/obituary/not-found.test.tsx">
+        <scenarios>
+          <scenario>Not Found page renders "Obituary Not Found" heading</scenario>
+          <scenario>Not Found page has return link with href="/"</scenario>
+        </scenarios>
+      </file>
+    </test-files-to-create>
+  </testing-context>
+
+  <implementation-guidance>
+    <tasks>
+      <task id="1" time="15min">
+        <title>Add Sanity Query Functions</title>
+        <file>src/lib/sanity/queries.ts</file>
+        <details>
+          1. Update getObituaryBySlug() to add ISR caching: { next: { tags: ['obituaries'] } }
+          2. Add getAllObituarySlugs() function for generateStaticParams
+          3. Verify TypeScript types match Obituary interface
+        </details>
+      </task>
+
+      <task id="2" time="30min">
+        <title>Create ObituaryDetail Component</title>
+        <file>src/components/obituary/obituary-detail.tsx</file>
+        <details>
+          - Import Link from next/link
+          - Import format from date-fns
+          - Import lucide-react icons (ArrowLeft, ExternalLink)
+          - Import CATEGORY_LABELS, CATEGORY_COLORS from constants
+          - Accept Obituary as prop (not ObituarySummary)
+          - Implement back link with arrow icon
+          - Display full claim as centered blockquote with Instrument Serif, italic
+          - Display source with external link (target="_blank", rel="noopener noreferrer")
+          - Format date as "MMMM d, yyyy" (e.g., "March 14, 2023")
+          - Display category badges with colors and labels
+          - Add proper accessibility attributes
+        </details>
+      </task>
+
+      <task id="3" time="20min">
+        <title>Create Dynamic Route Page</title>
+        <file>src/app/obituary/[slug]/page.tsx</file>
+        <details>
+          - Create directory structure: src/app/obituary/[slug]/
+          - Import notFound from next/navigation
+          - Implement generateStaticParams to fetch all slugs
+          - Fetch obituary data with getObituaryBySlug
+          - IMPORTANT: await params before destructuring (Next.js 15+ pattern)
+          - Call notFound() if obituary is null
+          - Render ObituaryDetail component
+          - Add proper layout wrapper (max-w-3xl mx-auto px-4 py-12)
+        </details>
+      </task>
+
+      <task id="4" time="10min">
+        <title>Create 404 Not Found Page</title>
+        <file>src/app/obituary/[slug]/not-found.tsx</file>
+        <details>
+          - Display friendly error message "Obituary Not Found"
+          - Include descriptive paragraph
+          - Add primary button link to return to homepage
+          - Style consistently with Deep Archive theme
+        </details>
+      </task>
+
+      <task id="5" time="30min">
+        <title>Write Unit Tests</title>
+        <files>
+          <file>tests/unit/components/obituary/obituary-detail.test.tsx</file>
+          <file>tests/unit/lib/sanity/queries-detail.test.ts</file>
+        </files>
+        <details>
+          - Test claim text renders without truncation
+          - Test source link has correct attributes (target, rel)
+          - Test date formatting ("MMMM d, yyyy")
+          - Test category badges render with correct labels/colors
+          - Test back link points to homepage
+          - Test getObituaryBySlug returns obituary or null
+          - Test getAllObituarySlugs returns array of strings
+        </details>
+      </task>
+
+      <task id="6" time="15min">
+        <title>Manual Testing</title>
+        <checklist>
+          <item>Navigate to valid obituary URL (e.g., /obituary/test-slug)</item>
+          <item>Verify full claim displays without truncation</item>
+          <item>Verify source link opens in new tab</item>
+          <item>Verify date shows full format (e.g., "March 14, 2023")</item>
+          <item>Verify category badges show with correct colors</item>
+          <item>Test back link navigates to homepage</item>
+          <item>Navigate to invalid slug (e.g., /obituary/does-not-exist)</item>
+          <item>Verify 404 page displays</item>
+          <item>Test keyboard navigation (Tab through links)</item>
+          <item>Verify pages are statically generated (check build output)</item>
+        </checklist>
+      </task>
+    </tasks>
+
+    <reference-implementation>
+      <description>From story markdown - complete ObituaryDetail component reference</description>
+      <code><![CDATA[
+// src/components/obituary/obituary-detail.tsx
+import Link from 'next/link'
+import { format } from 'date-fns'
+import { ExternalLink, ArrowLeft } from 'lucide-react'
+import type { Obituary, Category } from '@/types/obituary'
+
+const CATEGORY_LABELS: Record<Category, string> = {
+  capability: 'Capability Doubt',
+  market: 'Market/Bubble',
+  agi: 'AGI Skepticism',
+  dismissive: 'Dismissive Framing',
+}
+
+const CATEGORY_COLORS: Record<Category, string> = {
+  capability: 'bg-[--category-capability]/20 text-[--category-capability]',
+  market: 'bg-[--category-market]/20 text-[--category-market]',
+  agi: 'bg-[--category-agi]/20 text-[--category-agi]',
+  dismissive: 'bg-[--category-dismissive]/20 text-[--category-dismissive]',
+}
+
+interface ObituaryDetailProps {
+  obituary: Obituary
+}
+
+export function ObituaryDetail({ obituary }: ObituaryDetailProps) {
+  return (
+    <article>
+      <Link
+        href="/"
+        className="inline-flex items-center gap-2 text-[--text-secondary]
+                   hover:text-[--text-primary] mb-8 transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to all obituaries
+      </Link>
+
+      <blockquote className="font-serif text-2xl md:text-3xl lg:text-4xl
+                             text-[--text-primary] italic text-center
+                             leading-relaxed mb-8">
+        &ldquo;{obituary.claim}&rdquo;
+      </blockquote>
+
+      <div className="flex flex-col items-center gap-4 mb-8">
+        <p className="text-[--text-secondary]">
+          <a
+            href={obituary.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 hover:text-[--accent-primary]
+                       transition-colors underline underline-offset-4"
+          >
+            {obituary.source}
+            <ExternalLink className="w-4 h-4" />
+          </a>
+        </p>
+        <time
+          dateTime={obituary.date}
+          className="text-[--text-muted]"
+        >
+          {format(new Date(obituary.date), 'MMMM d, yyyy')}
+        </time>
+      </div>
+
+      <div className="flex flex-wrap justify-center gap-2 mb-8">
+        {obituary.categories?.map((category) => (
+          <span
+            key={category}
+            className={`px-3 py-1 rounded-full text-sm font-medium ${CATEGORY_COLORS[category]}`}
+          >
+            {CATEGORY_LABELS[category]}
+          </span>
+        ))}
+      </div>
+    </article>
+  )
+}
+]]></code>
+      <note>
+        IMPORTANT: The reference defines CATEGORY_LABELS and CATEGORY_COLORS inline.
+        For consistency with ObituaryCard, consider importing from src/lib/constants/categories.ts instead.
+        However, note that the badge colors use different pattern (bg-[--category-*]/20 with text-[--category-*])
+        compared to ObituaryCard's dot (just bg-[--category-*]). Define badge-specific colors as needed.
+      </note>
+    </reference-implementation>
+
+    <learnings-from-previous>
+      <learning story="2-2">Defensive Category Handling: Always check for undefined/empty categories array before accessing [0] - same pattern needed for detail page badges</learning>
+      <learning story="2-2">Instrument Serif Font: Already configured in layout.tsx as font-serif class - reuse for claim blockquote</learning>
+      <learning story="2-2">CATEGORY_COLORS/LABELS: Constants exist in src/lib/constants/categories.ts - consider importing for consistency</learning>
+      <learning story="2-2">ISR Caching Pattern: Use { next: { tags: ['obituaries'] } } for query caching consistent with other queries</learning>
+      <learning story="2-1">React 19 Testing: Async Server Components require wrapping render() in act() for proper test execution</learning>
+    </learnings-from-previous>
+  </implementation-guidance>
+
+  <files-summary>
+    <to-create>
+      <file>src/app/obituary/[slug]/page.tsx</file>
+      <file>src/app/obituary/[slug]/not-found.tsx</file>
+      <file>src/components/obituary/obituary-detail.tsx</file>
+      <file>tests/unit/components/obituary/obituary-detail.test.tsx</file>
+      <file>tests/unit/lib/sanity/queries-detail.test.ts</file>
+    </to-create>
+    <to-modify>
+      <file>src/lib/sanity/queries.ts</file>
+    </to-modify>
+  </files-summary>
+
+  <warnings>
+    <warning type="dependency" priority="resolved">
+      lucide-react@0.555.0 is installed. ArrowLeft and ExternalLink icons are available.
+    </warning>
+    <warning type="function" priority="high">
+      getAllObituarySlugs() does NOT exist in queries.ts. Must be created for generateStaticParams().
+    </warning>
+    <warning type="caching" priority="high">
+      getObituaryBySlug() exists but lacks ISR caching tags. Add: { next: { tags: ['obituaries'] } }
+    </warning>
+    <warning type="params" priority="high">
+      Next.js 15+ uses Promise-based params. Must await params before destructuring:
+      const { slug } = await params
+    </warning>
+    <warning type="badge-colors" priority="medium">
+      Badge colors use different pattern than dot colors:
+      - Dot: bg-[--category-*] (solid)
+      - Badge: bg-[--category-*]/20 text-[--category-*] (transparent bg + solid text)
+      Define badge-specific color classes in ObituaryDetail or extend constants.
+    </warning>
+    <warning type="html-entities" priority="medium">
+      Use &amp;ldquo; and &amp;rdquo; or escaped apostrophes (&amp;apos;) in JSX for proper HTML entity rendering.
+    </warning>
+  </warnings>
+
+  <verification-checklist>
+    <item status="verified">Category CSS variables exist in globals.css (lines 25-28)</item>
+    <item status="verified">Instrument Serif font configured in layout.tsx</item>
+    <item status="verified">CATEGORY_COLORS and CATEGORY_LABELS exist in constants file</item>
+    <item status="verified">Obituary type includes sourceUrl and context fields</item>
+    <item status="verified">ObituarySummary type exists for card views</item>
+    <item status="verified">getObituaryBySlug() exists but needs ISR tags</item>
+    <item status="verified">date-fns is installed for date formatting</item>
+    <item status="verified">lucide-react@0.555.0 installed</item>
+  </verification-checklist>
+</story-context>
