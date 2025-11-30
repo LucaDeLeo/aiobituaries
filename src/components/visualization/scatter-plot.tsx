@@ -79,7 +79,7 @@ export function ScatterPlotInner({
   const isPanningRef = useRef(false)
   const startXRef = useRef(0)
   const velocityRef = useRef(0)
-  const lastMoveTimeRef = useRef(Date.now())
+  const lastMoveTimeRef = useRef(0)
 
   // State for cursor (triggers re-render for cursor change)
   const [isDragging, setIsDragging] = useState(false)

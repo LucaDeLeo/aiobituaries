@@ -1,0 +1,808 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context XML
+  Generated: 2025-11-30
+  Story: 3-3-horizontal-scroll-pan
+  Purpose: Complete implementation context for Horizontal Scroll/Pan functionality
+-->
+<story-context>
+  <metadata>
+    <story-key>3-3-horizontal-scroll-pan</story-key>
+    <title>Horizontal Scroll/Pan</title>
+    <epic>Epic 3 - Timeline Visualization</epic>
+    <status>drafted</status>
+    <priority>High</priority>
+    <generated>2025-11-30</generated>
+    <sequence>3 of 8 in Epic 3</sequence>
+  </metadata>
+
+  <story-reference>
+    <path>docs/sprint-artifacts/stories/3-3-horizontal-scroll-pan.md</path>
+    <user-story>
+      As a visitor,
+      I want to scroll the timeline horizontally,
+      So that I can navigate through different time periods.
+    </user-story>
+  </story-reference>
+
+  <acceptance-criteria>
+    <criterion id="AC-3.3.1">Horizontal scroll with input devices - Given timeline is wider than viewport (zoomed in or many data points), when user scrolls horizontally (mouse wheel, trackpad, touch drag), then timeline pans smoothly with momentum</criterion>
+    <criterion id="AC-3.3.2">Cursor states during pan - Given pan interaction is available, when user hovers over timeline then cursor shows "grab", when user drags then cursor shows "grabbing"</criterion>
+    <criterion id="AC-3.3.3">Edge gradient indicators - Given timeline is panned, when more content exists beyond visible area, then gradient fade appears at left/right edges indicating scrollable content</criterion>
+    <criterion id="AC-3.3.4">Pan boundary constraints - Given timeline is panned to edge, when user tries to pan further, then pan is bounded to data extent (cannot scroll past first/last obituary with padding)</criterion>
+    <criterion id="AC-3.3.5">Momentum scrolling - Given pan gesture completes, when user releases, then momentum continues briefly and decelerates smoothly (spring physics)</criterion>
+    <criterion id="AC-3.3.6">Mouse drag panning - Given user clicks and drags on timeline, when drag gesture is performed, then timeline pans by the drag delta</criterion>
+    <criterion id="AC-3.3.7">Touch swipe panning - Given user touches and swipes on timeline (mobile/tablet), when swipe gesture is performed, then timeline pans by the swipe delta</criterion>
+    <criterion id="AC-3.3.8">Shift+scroll horizontal pan - Given user holds Shift and scrolls vertically, when scroll event fires, then timeline pans horizontally</criterion>
+  </acceptance-criteria>
+
+  <documentation-artifacts>
+    <artifact type="tech-spec" relevance="primary">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-3-tech-spec.md</path>
+      <description>Complete technical specification for Epic 3 Timeline Visualization including pan/scroll interaction specs</description>
+      <key-sections>
+        <section line="806-925">Section 6: Animation Presets - SPRINGS.pan = { stiffness: 100, damping: 20 } for momentum physics</section>
+        <section line="930-1065">Section 7.1: useZoom Hook - Contains pan state management, handlePanStart, handlePanMove, handlePanEnd implementations</section>
+        <section line="1067-1123">Section 7.2: useTimelinePosition Hook - Session storage position persistence</section>
+        <section line="268-276">Section 3.1: ViewState Interface - translateX field for pan offset tracking</section>
+        <section line="1186-1210">Story 3.3 Acceptance Criteria in tech-spec</section>
+        <section line="519-555">Section 4.1: ScatterPlot Component - SVG container structure</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="architecture" relevance="primary">
+      <path>docs/architecture.md</path>
+      <description>System architecture defining Contextual Scatter Plot pattern and interaction states</description>
+      <key-sections>
+        <section>Interaction States table - Panned state: ViewBox translates</section>
+        <section>Animation Presets - pan transition settings</section>
+        <section>Performance Considerations - debounced zoom/pan updates, requestAnimationFrame</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="story" relevance="primary">
+      <path>docs/sprint-artifacts/stories/3-3-horizontal-scroll-pan.md</path>
+      <description>Full story definition with 9 tasks, test scenarios, reference implementation, and definition of done</description>
+      <reference-implementation-included>true</reference-implementation-included>
+      <task-count>9</task-count>
+    </artifact>
+
+    <artifact type="previous-context" relevance="high">
+      <path>docs/sprint-artifacts/story-contexts/3-1-scatter-plot-foundation-context.xml</path>
+      <description>Story 3-1 context - ScatterPlot container structure, MARGIN constants, xScale/yScale</description>
+    </artifact>
+
+    <artifact type="previous-context" relevance="high">
+      <path>docs/sprint-artifacts/story-contexts/3-2-timeline-data-points-context.xml</path>
+      <description>Story 3-2 context - ScatterPoint rendering, motion integration patterns, spring physics usage</description>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code>
+    <file purpose="modify" priority="critical">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>ScatterPlot component - main modification target for pan functionality</description>
+      <current-state>
+        Implements basic scatter plot with:
+        - ParentSize responsive container
+        - xScale (scaleTime) for date positioning
+        - yScale (scaleLinear 0-1) for jitter positioning
+        - GridColumns for year intervals
+        - AxisBottom for X-axis
+        - motion.g wrapper for staggered point animation
+        - Group with MARGIN offsets
+        - data-testid="scatter-plot" on SVG
+      </current-state>
+      <integration-points>
+        - Add ViewState useState for translateX tracking
+        - Add pan event handlers to SVG element
+        - Apply translateX transform to content Group
+        - Add EdgeGradients overlay component
+        - Add cursor styling wrapper div
+        - Add refs for isPanning, lastPanPos, velocity, lastTime
+      </integration-points>
+      <code-excerpt><![CDATA[
+'use client'
+
+import { useMemo } from 'react'
+import { motion } from 'motion/react'
+import { ParentSize } from '@visx/responsive'
+import { scaleTime, scaleLinear } from '@visx/scale'
+import { AxisBottom } from '@visx/axis'
+import { GridColumns } from '@visx/grid'
+import { Group } from '@visx/group'
+import type { ObituarySummary } from '@/types/obituary'
+import { ScatterPoint } from './scatter-point'
+import { hashToJitter, getCategoryColor } from '@/lib/utils/scatter-helpers'
+
+export interface ScatterPlotProps {
+  data: ObituarySummary[]
+  height?: number
+}
+
+const MARGIN = { top: 20, right: 20, bottom: 40, left: 20 }
+
+// Exported for testing purposes
+export function ScatterPlotInner({
+  data,
+  width,
+  height,
+}: {
+  data: ObituarySummary[]
+  width: number
+  height: number
+}) {
+  // Compute inner dimensions
+  const innerWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
+  const innerHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
+
+  // Compute scales with useMemo
+  const xScale = useMemo(() => {
+    if (data.length === 0) {
+      return scaleTime({
+        domain: [new Date('2020-01-01'), new Date()],
+        range: [0, innerWidth],
+      })
+    }
+    const dates = data.map((d) => new Date(d.date))
+    const minDate = new Date(Math.min(...dates.map((d) => d.getTime())))
+    const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())))
+    // Add padding to domain
+    const padding = (maxDate.getTime() - minDate.getTime()) * 0.05
+    return scaleTime({
+      domain: [
+        new Date(minDate.getTime() - padding),
+        new Date(maxDate.getTime() + padding),
+      ],
+      range: [0, innerWidth],
+    })
+  }, [data, innerWidth])
+
+  const yScale = useMemo(() => {
+    return scaleLinear({
+      domain: [0, 1],
+      range: [innerHeight, 0],
+    })
+  }, [innerHeight])
+
+  // ... (empty state handling) ...
+
+  return (
+    <svg
+      width={width}
+      height={height}
+      data-testid="scatter-plot"
+      role="img"
+      aria-label={`Interactive timeline of ${data.length} AI obituaries`}
+    >
+      {/* Background */}
+      <rect width={width} height={height} fill="var(--bg-secondary)" />
+
+      <Group left={MARGIN.left} top={MARGIN.top}>
+        {/* Grid lines at year intervals */}
+        <GridColumns ... />
+        {/* X-axis (time) */}
+        <AxisBottom ... />
+        {/* Data Points with staggered animation */}
+        <motion.g ...>
+          {data.map((obituary) => (
+            <ScatterPoint key={obituary._id} ... />
+          ))}
+        </motion.g>
+      </Group>
+    </svg>
+  )
+}
+
+export function ScatterPlot({ data, height }: ScatterPlotProps) {
+  return (
+    <div className="w-full min-h-[300px] md:min-h-[400px]" ...>
+      <ParentSize>
+        {({ width, height: parentHeight }) => (
+          <ScatterPlotInner data={data} width={width} height={...} />
+        )}
+      </ParentSize>
+    </div>
+  )
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/components/visualization/scatter-point.tsx</path>
+      <description>ScatterPoint component - no modification needed but provides context for how points render</description>
+      <code-excerpt><![CDATA[
+'use client'
+
+import { motion } from 'motion/react'
+import type { ObituarySummary } from '@/types/obituary'
+
+export interface ScatterPointProps {
+  obituary: ObituarySummary
+  x: number
+  y: number
+  color: string
+  isFiltered?: boolean
+  isHovered?: boolean
+  isClustered?: boolean
+  onMouseEnter?: () => void
+  onMouseLeave?: () => void
+  onClick?: () => void
+}
+
+const POINT_RADIUS = 7 // 14px diameter
+
+export function ScatterPoint({
+  obituary,
+  x,
+  y,
+  color,
+  isFiltered = true,
+  isHovered = false,
+  isClustered = false,
+  onMouseEnter,
+  onMouseLeave,
+  onClick,
+}: ScatterPointProps) {
+  if (isClustered) return null
+
+  const opacity = isFiltered ? (isHovered ? 1 : 0.8) : 0.2
+  const glowIntensity = isHovered ? 6 : 4
+
+  return (
+    <motion.circle
+      data-testid="scatter-point"
+      cx={x}
+      cy={y}
+      r={POINT_RADIUS}
+      fill={color}
+      style={{
+        filter: `drop-shadow(0 0 ${glowIntensity}px ${color})`,
+        cursor: isFiltered ? 'pointer' : 'default',
+        pointerEvents: isFiltered ? 'auto' : 'none',
+      }}
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{
+        opacity,
+        scale: isHovered ? 1.3 : 1,
+      }}
+      transition={{
+        opacity: { duration: 0.15 },
+        scale: { type: 'spring', stiffness: 300, damping: 20 },
+      }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onClick={onClick}
+      role="img"
+      aria-label={`${obituary.source}: ${obituary.claim.slice(0, 50)}...`}
+    />
+  )
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>src/types/visualization.ts</path>
+      <description>Type definitions including ViewState with translateX field</description>
+      <code-excerpt><![CDATA[
+import type { ObituarySummary, Category } from './obituary'
+
+export type YAxisMode = 'spread' | 'market' | 'capability' | 'agi'
+
+/**
+ * Zoom and pan state for visualization.
+ */
+export interface ViewState {
+  /** Zoom scale factor (0.5 to 5) */
+  scale: number
+  /** Pan offset X (pixels) */
+  translateX: number
+  /** Pan offset Y (pixels) */
+  translateY: number
+}
+
+export interface ScatterPlotProps {
+  data: ObituarySummary[]
+  mode?: YAxisMode
+  activeCategories?: Category[]
+  onSelect?: (obituary: ObituarySummary) => void
+  height?: number
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>src/lib/utils/scatter-helpers.ts</path>
+      <description>Scatter plot utilities - hashToJitter, getCategoryColor, CATEGORY_HEX_COLORS</description>
+      <code-excerpt><![CDATA[
+import type { Category } from '@/types/obituary'
+
+export const CATEGORY_HEX_COLORS: Record<Category, string> = {
+  capability: '#C9A962',
+  market: '#7B9E89',
+  agi: '#9E7B7B',
+  dismissive: '#7B7B9E',
+}
+
+export function hashToJitter(id: string): number {
+  let hash = 0
+  for (let i = 0; i < id.length; i++) {
+    hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0
+  }
+  return (Math.abs(hash) % 100) / 100
+}
+
+export function getCategoryColor(categories: Category[]): string {
+  const primary = categories[0] || 'capability'
+  return CATEGORY_HEX_COLORS[primary]
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="test-reference" priority="medium">
+      <path>tests/unit/components/visualization/scatter-plot.test.tsx</path>
+      <description>Existing test pattern for scatter-plot - tests module exports due to React 19 + Vitest limitations</description>
+      <test-pattern>Module exports testing rather than direct rendering</test-pattern>
+    </file>
+
+    <file purpose="test-reference" priority="medium">
+      <path>tests/unit/lib/utils/scatter-helpers.test.ts</path>
+      <description>Existing unit test pattern for helper functions</description>
+      <test-pattern>Standard Vitest describe/it pattern with expect assertions</test-pattern>
+    </file>
+  </existing-code>
+
+  <development-constraints>
+    <constraint type="architecture" source="tech-spec">
+      <description>Use existing ViewState interface from visualization.ts - includes translateX field for pan offset</description>
+    </constraint>
+
+    <constraint type="animation" source="tech-spec">
+      <description>Use Motion spring physics for pan momentum: SPRINGS.pan = { stiffness: 100, damping: 20 }</description>
+      <implementation-note>Different from hover spring (stiffness: 300, damping: 20) - pan is slower/smoother</implementation-note>
+    </constraint>
+
+    <constraint type="performance" source="architecture">
+      <description>Debounce zoom/pan updates at 16ms intervals for 60fps performance</description>
+      <large-dataset-note>
+        For datasets with 100+ points, batch DOM updates using requestAnimationFrame.
+        Avoid direct state updates in mousemove/touchmove - use motion values which
+        update outside React's render cycle. The translateX motion value pattern
+        already handles this, but if adding visual feedback (e.g., updating gradient
+        opacity during pan), wrap those updates in rAF to prevent layout thrashing.
+      </large-dataset-note>
+    </constraint>
+
+    <constraint type="touch" source="story">
+      <description>Single-touch only for pan - multi-touch reserved for zoom in Story 3-4</description>
+      <implementation-note>Check e.touches.length === 1 in touch handlers</implementation-note>
+      <browser-compatibility>
+        touch-action: none is critical for preventing browser default gestures.
+        Safari/iOS requires this on the SVG element AND may need -webkit-overflow-scrolling: touch
+        on parent containers to be disabled. Test on iOS Safari specifically as it has stricter
+        gesture handling. Consider adding will-change: transform for smoother iOS performance.
+      </browser-compatibility>
+    </constraint>
+
+    <constraint type="boundaries" source="story">
+      <description>Pan bounded to data extent with 50px padding at edges</description>
+      <calculation>minTranslateX = -(dataWidth - containerWidth + padding), maxTranslateX = padding</calculation>
+    </constraint>
+
+    <constraint type="css" source="story">
+      <description>Edge gradients: 60px wide, linear-gradient from bg-secondary to transparent</description>
+      <implementation-note>Use CSS variable --bg-secondary for gradient start color</implementation-note>
+      <fallback-note>
+        CSS variable --bg-secondary should have a fallback for SSR/initial render:
+        background: linear-gradient(to right, var(--bg-secondary, #1a1a1a), transparent)
+        The fallback value #1a1a1a matches the dark theme default. This prevents
+        flash-of-wrong-color during hydration.
+      </fallback-note>
+    </constraint>
+
+    <constraint type="cursor" source="story">
+      <description>Cursor states: "grab" on hover, "grabbing" during drag</description>
+      <implementation-note>Apply cursor to wrapper div, not SVG element</implementation-note>
+    </constraint>
+
+    <constraint type="testing" source="existing-tests">
+      <description>Follow existing test pattern - module export testing due to React 19 + Vitest hook resolution issues</description>
+    </constraint>
+  </development-constraints>
+
+  <dependencies>
+    <dependency type="internal-story" required="true">
+      <name>Story 3-1 (Scatter Plot Foundation)</name>
+      <status>completed</status>
+      <provides>ScatterPlot container, ViewState, xScale, yScale, MARGIN constants</provides>
+    </dependency>
+
+    <dependency type="internal-story" required="true">
+      <name>Story 3-2 (Timeline Data Points)</name>
+      <status>completed</status>
+      <provides>ScatterPoint rendering, motion integration, data positioning</provides>
+    </dependency>
+
+    <dependency type="package" required="true">
+      <name>motion</name>
+      <version>^12.23.24</version>
+      <imports>useMotionValue, useSpring, animate from 'motion/react'</imports>
+      <purpose>Motion values for smooth animation, spring physics for momentum</purpose>
+    </dependency>
+
+    <dependency type="package" required="true">
+      <name>@visx/scale</name>
+      <version>^3.12.0</version>
+      <status>already-installed</status>
+      <purpose>xScale for pan bounds calculation</purpose>
+    </dependency>
+
+    <dependency type="package" required="false">
+      <name>React</name>
+      <version>19.2.0</version>
+      <imports>useRef, useState, useCallback, useEffect, useMemo</imports>
+      <purpose>Core hooks for pan state management</purpose>
+    </dependency>
+  </dependencies>
+
+  <testing-context>
+    <test-framework>Vitest 4.0.14</test-framework>
+    <test-library>@testing-library/react 16.3.0</test-library>
+    <dom-environment>jsdom 27.2.0</dom-environment>
+
+    <test-patterns>
+      <pattern name="module-exports">
+        Due to React 19 + Vitest hook resolution issues, test module exports and type definitions
+        rather than direct component rendering. See existing scatter-plot.test.tsx for pattern.
+      </pattern>
+      <pattern name="unit-tests">
+        Pure function testing with describe/it/expect. See scatter-helpers.test.ts for example.
+      </pattern>
+    </test-patterns>
+
+    <test-file-to-create>
+      <path>tests/unit/components/visualization/scatter-plot-pan.test.tsx</path>
+      <test-scenarios>
+        <scenario>Pan handlers are defined and callable</scenario>
+        <scenario>TranslateX clamp function bounds values correctly</scenario>
+        <scenario>Motion imports (useMotionValue, useSpring, animate) are available</scenario>
+        <scenario>Edge gradient visibility logic works correctly</scenario>
+      </test-scenarios>
+    </test-file-to-create>
+
+    <manual-test-checklist>
+      <item>Mouse drag: Click, drag left/right, verify smooth pan</item>
+      <item>Trackpad: Two-finger horizontal scroll pans timeline</item>
+      <item>Shift+scroll: Hold Shift, scroll wheel, verify horizontal pan</item>
+      <item>Touch (mobile): Single finger swipe pans timeline</item>
+      <item>Cursor: Hover shows "grab", dragging shows "grabbing"</item>
+      <item>Left gradient: Pan right, verify left edge has fade gradient</item>
+      <item>Right gradient: Pan left, verify right edge has fade gradient</item>
+      <item>Bounds: Cannot pan past leftmost obituary minus padding</item>
+      <item>Bounds: Cannot pan past rightmost obituary plus padding</item>
+      <item>Momentum: Release after fast pan, verify continues briefly</item>
+      <item>Deceleration: Momentum slows down and stops (spring physics)</item>
+      <item>No jank: Pan at 60fps without stuttering</item>
+    </manual-test-checklist>
+  </testing-context>
+
+  <files-to-modify>
+    <file action="modify" priority="critical">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <changes>
+        <change>Add useState for ViewState (with translateX tracking)</change>
+        <change>Add useRef for isPanning, lastPanPos, velocity, lastTime</change>
+        <change>Add useMemo for panBounds calculation</change>
+        <change>Add clampTranslateX helper function</change>
+        <change>Add Motion imports: useMotionValue, useSpring, animate</change>
+        <change>Create translateX motion value and springX spring value</change>
+        <change>Implement handlePanStart, handlePanMove, handlePanEnd</change>
+        <change>Implement handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave</change>
+        <change>Implement handleTouchStart, handleTouchMove, handleTouchEnd</change>
+        <change>Implement handleWheel for Shift+scroll and horizontal trackpad</change>
+        <change>Create EdgeGradients component or inline JSX</change>
+        <change>Wrap SVG in div with cursor styling</change>
+        <change>Add all event handlers to SVG element</change>
+        <change>Add touchAction: 'none' style to prevent browser gestures</change>
+        <change>Apply translateX to content Group transform</change>
+      </changes>
+    </file>
+  </files-to-modify>
+
+  <files-to-create>
+    <file action="create" priority="high">
+      <path>tests/unit/components/visualization/scatter-plot-pan.test.tsx</path>
+      <purpose>Integration tests for pan functionality</purpose>
+      <test-scenarios>
+        <scenario>Motion imports are available</scenario>
+        <scenario>Clamp function bounds translateX correctly</scenario>
+        <scenario>Edge gradient visibility logic</scenario>
+      </test-scenarios>
+    </file>
+  </files-to-create>
+
+  <technical-approach>
+    <overview>
+      This story implements FR8 (horizontal timeline navigation) through multi-input pan support
+      with momentum physics. The approach uses Motion's useMotionValue and useSpring for smooth
+      60fps animation outside React's render cycle, with bounded panning and visual edge indicators.
+    </overview>
+  </technical-approach>
+
+  <reference-implementation>
+    <description>
+      The story file contains a comprehensive reference implementation. Key code patterns:
+    </description>
+
+    <code-pattern name="pan-state-management">
+      <code><![CDATA[
+// Pan state refs
+const containerRef = useRef<SVGSVGElement>(null)
+const isPanning = useRef(false)
+const lastPanPos = useRef({ x: 0, y: 0 })
+const velocity = useRef({ x: 0, y: 0 })
+const lastTime = useRef(Date.now())
+
+// ViewState for tracking translateX
+const [viewState, setViewState] = useState<ViewState>({
+  scale: 1,
+  translateX: 0,
+  translateY: 0,
+})
+
+// Motion values for smooth animation
+const translateX = useMotionValue(viewState.translateX)
+const springX = useSpring(translateX, { stiffness: 100, damping: 20 })
+]]></code>
+    </code-pattern>
+
+    <code-pattern name="pan-bounds-calculation">
+      <code><![CDATA[
+const panBounds = useMemo(() => {
+  if (!data.length) return { min: 0, max: 0 }
+  const dates = data.map(d => new Date(d.date).getTime())
+  const minDate = Math.min(...dates)
+  const maxDate = Math.max(...dates)
+  const dataWidth = xScale(new Date(maxDate)) - xScale(new Date(minDate))
+  const containerWidth = width - MARGIN.left - MARGIN.right
+  const padding = 50
+
+  if (dataWidth <= containerWidth) {
+    return { min: 0, max: 0 }
+  }
+
+  return {
+    min: -(dataWidth - containerWidth + padding),
+    max: padding,
+  }
+}, [data, xScale, width])
+
+const clampTranslateX = useCallback((value: number) => {
+  return Math.max(panBounds.min, Math.min(panBounds.max, value))
+}, [panBounds])
+]]></code>
+    </code-pattern>
+
+    <code-pattern name="pan-handlers">
+      <code><![CDATA[
+const handlePanStart = useCallback((clientX: number) => {
+  isPanning.current = true
+  lastPanPos.current = { x: clientX, y: 0 }
+  velocity.current = { x: 0, y: 0 }
+  lastTime.current = Date.now()
+}, [])
+
+const handlePanMove = useCallback((clientX: number) => {
+  if (!isPanning.current) return
+
+  const now = Date.now()
+  const dt = now - lastTime.current
+  const dx = clientX - lastPanPos.current.x
+
+  if (dt > 0) {
+    velocity.current.x = dx / dt * 16 // normalize to ~60fps
+  }
+
+  lastPanPos.current = { x: clientX, y: 0 }
+  lastTime.current = now
+
+  const newTranslateX = clampTranslateX(translateX.get() + dx)
+  translateX.set(newTranslateX)
+  setViewState(prev => ({ ...prev, translateX: newTranslateX }))
+}, [clampTranslateX, translateX])
+
+const handlePanEnd = useCallback(() => {
+  if (!isPanning.current) return
+  isPanning.current = false
+
+  // Momentum multiplier (velocity * 10) projects the final position based on current velocity.
+  // The factor of 10 provides ~166ms of momentum projection (10 * 16ms frame time).
+  // This creates a natural "flick" feel - faster gestures travel further.
+  // Combined with spring physics, this gives iOS-like inertial scrolling behavior.
+  const momentumX = velocity.current.x * 10
+  const targetX = clampTranslateX(translateX.get() + momentumX)
+
+  animate(translateX, targetX, {
+    type: 'spring',
+    stiffness: 100,
+    damping: 20,
+    onComplete: () => {
+      setViewState(prev => ({ ...prev, translateX: targetX }))
+    }
+  })
+}, [clampTranslateX, translateX])
+]]></code>
+    </code-pattern>
+
+    <code-pattern name="wheel-handler">
+      <code><![CDATA[
+const handleWheel = useCallback((e: React.WheelEvent) => {
+  const deltaX = e.shiftKey ? e.deltaY : e.deltaX
+  if (Math.abs(deltaX) > 0) {
+    e.preventDefault()
+    const newTranslateX = clampTranslateX(translateX.get() - deltaX)
+    translateX.set(newTranslateX)
+    setViewState(prev => ({ ...prev, translateX: newTranslateX }))
+  }
+}, [clampTranslateX, translateX])
+]]></code>
+    </code-pattern>
+
+    <code-pattern name="edge-gradients">
+      <code><![CDATA[
+function EdgeGradients({
+  showLeft,
+  showRight,
+  height
+}: {
+  showLeft: boolean
+  showRight: boolean
+  height: number
+}) {
+  return (
+    <>
+      {showLeft && (
+        <div
+          className="pointer-events-none absolute left-0 top-0 z-10"
+          style={{
+            width: 60,
+            height,
+            background: 'linear-gradient(to right, var(--bg-secondary), transparent)',
+          }}
+        />
+      )}
+      {showRight && (
+        <div
+          className="pointer-events-none absolute right-0 top-0 z-10"
+          style={{
+            width: 60,
+            height,
+            background: 'linear-gradient(to left, var(--bg-secondary), transparent)',
+          }}
+        />
+      )}
+    </>
+  )
+}
+
+// Visibility calculation
+const showLeftGradient = viewState.translateX < panBounds.max
+const showRightGradient = viewState.translateX > panBounds.min
+]]></code>
+    </code-pattern>
+
+    <code-pattern name="svg-container-with-handlers">
+      <code><![CDATA[
+<div className="relative" style={{ cursor: isPanning.current ? 'grabbing' : 'grab' }}>
+  <EdgeGradients
+    showLeft={showLeftGradient}
+    showRight={showRightGradient}
+    height={height}
+  />
+  <svg
+    ref={containerRef}
+    width={width}
+    height={height}
+    data-testid="scatter-plot"
+    role="img"
+    aria-label={`Interactive timeline of ${data.length} AI obituaries`}
+    onMouseDown={handleMouseDown}
+    onMouseMove={handleMouseMove}
+    onMouseUp={handleMouseUp}
+    onMouseLeave={handleMouseLeave}
+    onTouchStart={handleTouchStart}
+    onTouchMove={handleTouchMove}
+    onTouchEnd={handleTouchEnd}
+    onWheel={handleWheel}
+    style={{ touchAction: 'none' }}
+  >
+    {/* Apply translateX to content group */}
+    <g transform={`translate(${MARGIN.left + springX.get()}, ${MARGIN.top})`}>
+      {/* Grid, axis, and points render here */}
+    </g>
+  </svg>
+</div>
+]]></code>
+    </code-pattern>
+  </reference-implementation>
+
+  <implementation-notes>
+    <note priority="high">
+      The story file contains detailed reference implementation code for all handlers.
+      Follow the patterns exactly for consistency with the architecture.
+    </note>
+    <note priority="high">
+      Story 3-2 established motion/react usage with spring physics (stiffness: 300, damping: 20 for hover).
+      Pan uses different spring settings (stiffness: 100, damping: 20) for smoother, slower momentum.
+    </note>
+    <note priority="medium">
+      Single-touch only for pan (check touches.length === 1). Multi-touch is reserved for Story 3-4 zoom.
+    </note>
+    <note priority="medium">
+      Edge gradients use CSS variable --bg-secondary for theme consistency.
+    </note>
+    <note priority="low">
+      The cursor state management may need a useState if ref doesn't trigger re-render for cursor change.
+      Consider using a state variable for isPanning that updates cursor via style prop.
+    </note>
+    <note priority="low" type="future-enhancement">
+      Keyboard pan support (left/right arrow keys to pan timeline) is planned for Epic 6 (Accessibility).
+      This story focuses on pointer/touch input only. Do not implement keyboard handlers here.
+    </note>
+  </implementation-notes>
+
+  <learnings-from-previous-stories>
+    <learning source="Story 3-1">
+      ViewState Interface already includes translateX for pan position
+    </learning>
+    <learning source="Story 3-1">
+      MARGIN constants defined - account for in transform: MARGIN.left/right
+    </learning>
+    <learning source="Story 3-1">
+      'use client' already present - can use hooks freely
+    </learning>
+    <learning source="Story 3-1">
+      ParentSize provides width for bounds calculation
+    </learning>
+    <learning source="Story 3-1">
+      xScale already memoized - safe to use in panBounds useMemo
+    </learning>
+    <learning source="Story 3-2">
+      motion/react already imported and used
+    </learning>
+    <learning source="Story 3-2">
+      Spring physics pattern: stiffness: 300, damping: 20 used for hover
+    </learning>
+    <learning source="Story 3-2">
+      data-testid="scatter-plot" already on SVG
+    </learning>
+    <learning source="Story 3-2">
+      motion.g wrapper exists for point container (stagger animation)
+    </learning>
+  </learnings-from-previous-stories>
+
+  <definition-of-done>
+    <item>Horizontal mouse drag panning works smoothly</item>
+    <item>Touch swipe panning works on mobile/tablet</item>
+    <item>Shift+scroll and horizontal trackpad scroll pan the timeline</item>
+    <item>Cursor shows "grab" on hover, "grabbing" during drag</item>
+    <item>Left edge gradient visible when content exists to the left</item>
+    <item>Right edge gradient visible when content exists to the right</item>
+    <item>Pan is bounded to data extent with padding</item>
+    <item>Momentum continues briefly after release and decelerates</item>
+    <item>No jank or stuttering during pan interactions</item>
+    <item>Integration tests pass for pan functionality</item>
+    <item>Manual testing confirms all acceptance criteria</item>
+    <item>No TypeScript errors</item>
+    <item>Lint passes (pnpm lint)</item>
+  </definition-of-done>
+
+  <fr-coverage>
+    <fr id="FR8" satisfied="true">
+      Users can scroll/pan the timeline horizontally to navigate through time
+    </fr>
+    <implementation-note>
+      Mouse drag, touch swipe, and wheel/trackpad panning implemented with momentum and visual feedback
+    </implementation-note>
+  </fr-coverage>
+</story-context>
