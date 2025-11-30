@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <metadata>
+    <story-key>1-3-sanity-cms-integration</story-key>
+    <generated-at>2025-11-29</generated-at>
+    <story-file>docs/sprint-artifacts/stories/1-3-sanity-cms-integration.md</story-file>
+    <tech-spec>docs/sprint-artifacts/epic-tech-specs/epic-1-tech-spec.md</tech-spec>
+    <architecture>docs/architecture.md</architecture>
+  </metadata>
+
+  <story-summary>
+    <title>Sanity CMS Integration</title>
+    <epic>Epic 1 - Foundation</epic>
+    <priority>P0 - Critical Path (Data Layer Foundation)</priority>
+    <estimated-time>100 minutes</estimated-time>
+    <description>
+      Configure Sanity CMS client with TypeScript types to enable type-safe
+      obituary data fetching. This story establishes the data layer foundation
+      that all subsequent features will build upon.
+    </description>
+    <user-story>
+      As a developer, I want Sanity CMS client configured with TypeScript types,
+      so that I can fetch obituary data with type safety.
+    </user-story>
+    <fr-coverage>FR5 - System loads obituary data from external JSON/API source (not hardcoded)</fr-coverage>
+  </story-summary>
+
+  <acceptance-criteria>
+    <criterion id="AC-1.3.1">
+      <description>Sanity client configured</description>
+      <testable-condition>createClient call with projectId, dataset, apiVersion</testable-condition>
+      <implementation-notes>
+        Use @sanity/client from next-sanity package (already installed).
+        Create src/lib/sanity/client.ts with createClient configuration.
+        Environment variables: NEXT_PUBLIC_SANITY_PROJECT_ID, NEXT_PUBLIC_SANITY_DATASET
+      </implementation-notes>
+    </criterion>
+
+    <criterion id="AC-1.3.2">
+      <description>Environment variables documented</description>
+      <testable-condition>.env.local.example lists all required vars</testable-condition>
+      <implementation-notes>
+        Create .env.local.example with:
+        - NEXT_PUBLIC_SANITY_PROJECT_ID
+        - NEXT_PUBLIC_SANITY_DATASET
+        Include comments explaining each variable purpose.
+      </implementation-notes>
+    </criterion>
+
+    <criterion id="AC-1.3.3">
+      <description>getObituaries() query exported</description>
+      <testable-condition>Function returns array of Obituary type</testable-condition>
+      <implementation-notes>
+        GROQ query: *[_type == "obituary"] | order(date desc) with projection.
+        Use typed client.fetch with Obituary[] return type.
+      </implementation-notes>
+    </criterion>
+
+    <criterion id="AC-1.3.4">
+      <description>getObituaryBySlug() query exported</description>
+      <testable-condition>Function accepts slug, returns single Obituary or null</testable-condition>
+      <implementation-notes>
+        GROQ query: *[_type == "obituary" &amp;&amp; slug.current == $slug][0]
+        Pass slug as parameter to prevent injection.
+      </implementation-notes>
+    </criterion>
+
+    <criterion id="AC-1.3.5">
+      <description>getObituaryCount() query exported</description>
+      <testable-condition>Function returns number</testable-condition>
+      <implementation-notes>
+        GROQ query: count(*[_type == "obituary"])
+        Simple aggregation query for homepage counter.
+      </implementation-notes>
+    </criterion>
+
+    <criterion id="AC-1.3.6">
+      <description>Obituary interface defined</description>
+      <testable-condition>TypeScript interface matches Sanity schema</testable-condition>
+      <implementation-notes>
+        Fields: _id, slug, claim, source, sourceUrl, date, categories, context.
+        Date as ISO 8601 string (not Date object).
+      </implementation-notes>
+    </criterion>
+
+    <criterion id="AC-1.3.7">
+      <description>Category type defined</description>
+      <testable-condition>Type literal union of 4 categories</testable-condition>
+      <implementation-notes>
+        type Category = 'market' | 'capability' | 'agi' | 'dismissive'
+      </implementation-notes>
+    </criterion>
+
+    <criterion id="AC-1.3.8">
+      <description>ContextMetadata interface defined</description>
+      <testable-condition>All optional fields typed correctly</testable-condition>
+      <implementation-notes>
+        All fields optional with ? modifier.
+        Stock prices as number, benchmark as number, milestone as string.
+      </implementation-notes>
+    </criterion>
+
+    <criterion id="AC-1.3.9">
+      <description>Client uses CDN for reads</description>
+      <testable-condition>useCdn: true in client config</testable-condition>
+      <implementation-notes>
+        CDN caching for production read performance.
+        Consider useCdn: false for preview/draft content later.
+      </implementation-notes>
+    </criterion>
+
+    <criterion id="AC-1.3.10">
+      <description>API version pinned</description>
+      <testable-condition>apiVersion: '2024-01-01' or later</testable-condition>
+      <implementation-notes>
+        Pin to stable version for predictable behavior.
+        Do not use 'vX' or dynamic dates.
+      </implementation-notes>
+    </criterion>
+  </acceptance-criteria>
+
+  <technical-context>
+    <sanity-client-config>
+      <description>
+        Create Sanity client using @sanity/client from the next-sanity package.
+        The project already has next-sanity@11.6.10 and @sanity/image-url@2.0.1 installed.
+      </description>
+      <code-reference>
+<![CDATA[
+// src/lib/sanity/client.ts
+import { createClient } from '@sanity/client'
+
+export const client = createClient({
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
+  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
+  apiVersion: '2024-01-01',
+  useCdn: true,
+})
+]]>
+      </code-reference>
+    </sanity-client-config>
+
+    <groq-queries>
+      <query name="getObituaries">
+        <description>Fetch all obituaries ordered by date descending</description>
+        <groq>
+<![CDATA[
+*[_type == "obituary"] | order(date desc) {
+  _id,
+  "slug": slug.current,
+  claim,
+  source,
+  sourceUrl,
+  date,
+  categories,
+  context
+}
+]]>
+        </groq>
+      </query>
+
+      <query name="getObituaryBySlug">
+        <description>Fetch single obituary by slug</description>
+        <groq>
+<![CDATA[
+*[_type == "obituary" && slug.current == $slug][0] {
+  _id,
+  "slug": slug.current,
+  claim,
+  source,
+  sourceUrl,
+  date,
+  categories,
+  context
+}
+]]>
+        </groq>
+        <parameters>{ slug: string }</parameters>
+      </query>
+
+      <query name="getObituaryCount">
+        <description>Count total obituaries</description>
+        <groq>count(*[_type == "obituary"])</groq>
+      </query>
+    </groq-queries>
+
+    <type-definitions>
+      <type name="Obituary">
+<![CDATA[
+export interface Obituary {
+  _id: string
+  slug: string
+  claim: string
+  source: string
+  sourceUrl: string
+  date: string  // ISO 8601 format
+  categories: Category[]
+  context: ContextMetadata
+}
+]]>
+      </type>
+
+      <type name="Category">
+<![CDATA[
+export type Category = 'market' | 'capability' | 'agi' | 'dismissive'
+]]>
+      </type>
+
+      <type name="ContextMetadata">
+<![CDATA[
+export interface ContextMetadata {
+  nvdaPrice?: number
+  msftPrice?: number
+  googPrice?: number
+  benchmarkName?: string
+  benchmarkScore?: number
+  currentModel?: string
+  milestone?: string
+  note?: string
+}
+]]>
+      </type>
+
+      <type-import-patterns>
+        <description>Explicit import patterns for both type files:</description>
+        <import name="Obituary and Category">
+          <pattern>import { Obituary, Category } from '@/types/obituary'</pattern>
+          <location>src/types/obituary.ts</location>
+        </import>
+        <import name="ContextMetadata">
+          <pattern>import { ContextMetadata } from '@/types/context'</pattern>
+          <location>src/types/context.ts</location>
+        </import>
+        <note>Both imports use the @/* path alias which maps to ./src/* per tsconfig.json configuration</note>
+      </type-import-patterns>
+    </type-definitions>
+  </technical-context>
+
+  <data-models>
+    <model name="Obituary">
+      <description>
+        Core data model representing an AI skepticism claim documented as an "obituary".
+        Each obituary captures a claim, its source, date, categorization, and contextual
+        data (stock prices, benchmarks) that existed when the claim was made.
+      </description>
+      <fields>
+        <field name="_id" type="string" required="true">Sanity document ID</field>
+        <field name="slug" type="string" required="true">URL-safe identifier derived from claim</field>
+        <field name="claim" type="string" required="true">The actual skepticism claim text</field>
+        <field name="source" type="string" required="true">Publication or person who made the claim</field>
+        <field name="sourceUrl" type="string" required="true">URL to original source</field>
+        <field name="date" type="string" required="true">ISO 8601 date when claim was made</field>
+        <field name="categories" type="Category[]" required="true">Array of claim categories</field>
+        <field name="context" type="ContextMetadata" required="true">Contextual data at time of claim</field>
+      </fields>
+    </model>
+
+    <model name="Category">
+      <description>
+        Categorization of AI skepticism claims. Each obituary can have multiple categories.
+        Categories determine Y-axis behavior in the contextual scatter plot visualization.
+      </description>
+      <values>
+        <value name="market">Market/bubble claims - Y-axis shows stock prices</value>
+        <value name="capability">Capability doubt - Y-axis shows benchmark scores</value>
+        <value name="agi">AGI skepticism - Y-axis shows milestones</value>
+        <value name="dismissive">Dismissive framing - no specific Y-axis context</value>
+      </values>
+    </model>
+
+    <model name="ContextMetadata">
+      <description>
+        Contextual market and capability data at the time an AI skepticism claim was made.
+        All fields optional since not all context types apply to all claims.
+      </description>
+      <fields>
+        <field name="nvdaPrice" type="number" required="false">NVIDIA stock price at claim date</field>
+        <field name="msftPrice" type="number" required="false">Microsoft stock price at claim date</field>
+        <field name="googPrice" type="number" required="false">Google stock price at claim date</field>
+        <field name="benchmarkName" type="string" required="false">Name of AI benchmark (e.g., MMLU)</field>
+        <field name="benchmarkScore" type="number" required="false">Best AI score on benchmark at time</field>
+        <field name="currentModel" type="string" required="false">Leading AI model at time of claim</field>
+        <field name="milestone" type="string" required="false">Notable AI milestone around claim date</field>
+        <field name="note" type="string" required="false">Additional context or commentary</field>
+      </fields>
+    </model>
+  </data-models>
+
+  <existing-code>
+    <file path="package.json">
+      <description>Project dependencies manifest</description>
+      <relevant-dependencies>
+        <dependency name="next-sanity" version="^11.6.10">Provides createClient from @sanity/client</dependency>
+        <dependency name="@sanity/image-url" version="^2.0.1">Image URL builder (not needed for this story)</dependency>
+        <dependency name="nuqs" version="^2.8.1">URL state management (not needed for this story)</dependency>
+      </relevant-dependencies>
+      <note>next-sanity includes @sanity/client - use createClient from '@sanity/client' or 'next-sanity'</note>
+    </file>
+
+    <file path="src/lib/utils.ts">
+      <description>Utility functions - cn() classname merger</description>
+      <content>
+<![CDATA[
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+]]>
+      </content>
+      <note>Pattern to follow: simple, single-purpose utility exports</note>
+    </file>
+
+    <file path="tsconfig.json">
+      <description>TypeScript configuration</description>
+      <relevant-config>
+        <item name="strict">true - strict mode enabled</item>
+        <item name="paths">@/* maps to ./src/* - use @/types/obituary imports</item>
+      </relevant-config>
+    </file>
+
+    <file path="src/app/layout.tsx">
+      <description>Root layout with font configuration</description>
+      <note>Fonts already configured: Geist, Geist_Mono, Instrument_Serif</note>
+    </file>
+  </existing-code>
+
+  <implementation-plan>
+    <step number="1" estimated-time="5 min">
+      <title>Create directory structure</title>
+      <description>Create src/lib/sanity/ and src/types/ directories</description>
+      <files>
+        <create>src/lib/sanity/</create>
+        <create>src/types/</create>
+      </files>
+    </step>
+
+    <step number="2" estimated-time="10 min">
+      <title>Create Sanity client configuration</title>
+      <description>Create client.ts with createClient setup using environment variables</description>
+      <files>
+        <create>src/lib/sanity/client.ts</create>
+      </files>
+      <verification>TypeScript compiles without errors</verification>
+    </step>
+
+    <step number="3" estimated-time="10 min">
+      <title>Create Obituary type definitions</title>
+      <description>Define Obituary interface and Category type union</description>
+      <files>
+        <create>src/types/obituary.ts</create>
+      </files>
+      <verification>TypeScript compiles without errors</verification>
+    </step>
+
+    <step number="4" estimated-time="10 min">
+      <title>Create ContextMetadata type definitions</title>
+      <description>Define ContextMetadata interface with all optional fields</description>
+      <files>
+        <create>src/types/context.ts</create>
+      </files>
+      <verification>TypeScript compiles without errors</verification>
+    </step>
+
+    <step number="5" estimated-time="15 min">
+      <title>Create getObituaries() query function</title>
+      <description>Implement typed GROQ query for all obituaries</description>
+      <files>
+        <create>src/lib/sanity/queries.ts</create>
+      </files>
+      <verification>Function exports correctly, types match</verification>
+    </step>
+
+    <step number="6" estimated-time="10 min">
+      <title>Add getObituaryBySlug() function</title>
+      <description>Implement parameterized query for single obituary lookup</description>
+      <files>
+        <modify>src/lib/sanity/queries.ts</modify>
+      </files>
+      <verification>Function accepts slug parameter, returns Obituary | null</verification>
+    </step>
+
+    <step number="7" estimated-time="5 min">
+      <title>Add getObituaryCount() function</title>
+      <description>Implement count aggregation query</description>
+      <files>
+        <modify>src/lib/sanity/queries.ts</modify>
+      </files>
+      <verification>Function returns number type</verification>
+    </step>
+
+    <step number="8" estimated-time="10 min">
+      <title>Create environment variable documentation</title>
+      <description>Create .env.local.example with all required Sanity variables</description>
+      <files>
+        <create>.env.local.example</create>
+      </files>
+      <verification>File contains all required vars with comments</verification>
+    </step>
+
+    <step number="9" estimated-time="10 min">
+      <title>Verify TypeScript compilation</title>
+      <description>Run pnpm run build to verify all types compile correctly</description>
+      <command>pnpm run build</command>
+      <verification>Build succeeds without type errors</verification>
+    </step>
+
+    <step number="10" estimated-time="5 min">
+      <title>Run linter</title>
+      <description>Verify code passes ESLint checks</description>
+      <command>pnpm run lint</command>
+      <verification>No linting errors</verification>
+    </step>
+  </implementation-plan>
+
+  <environment-variables>
+    <variable name="NEXT_PUBLIC_SANITY_PROJECT_ID" required="true">
+      <description>Sanity project ID from sanity.io dashboard</description>
+      <example>abc123xyz</example>
+      <note>NEXT_PUBLIC_ prefix makes it available in client-side code</note>
+    </variable>
+
+    <variable name="NEXT_PUBLIC_SANITY_DATASET" required="false">
+      <description>Sanity dataset name (defaults to 'production')</description>
+      <example>production</example>
+      <default>production</default>
+      <override-note>Override only if using non-production dataset for testing. For example, set to 'staging' or 'preview' when developing against a test environment. Should remain 'production' in deployed environments.</override-note>
+    </variable>
+  </environment-variables>
+
+  <dependencies>
+    <existing>
+      <package name="next-sanity" version="^11.6.10">
+        <description>Already installed - provides Sanity client and utilities for Next.js</description>
+        <exports>createClient, groq (template literal tag)</exports>
+      </package>
+      <package name="@sanity/image-url" version="^2.0.1">
+        <description>Already installed - not needed for this story but available for later</description>
+      </package>
+    </existing>
+
+    <to-install>
+      <note>No new packages required - all dependencies already in package.json</note>
+    </to-install>
+  </dependencies>
+
+  <testing-requirements>
+    <unit-tests>
+      <test-file>tests/unit/lib/sanity/queries.test.ts</test-file>
+      <scenarios>
+        <scenario>getObituaries returns typed array</scenario>
+        <scenario>getObituaryBySlug returns null for missing slug</scenario>
+        <scenario>getObituaryBySlug returns Obituary for valid slug</scenario>
+        <scenario>getObituaryCount returns number</scenario>
+        <scenario>Empty results handled gracefully (returns [] not error)</scenario>
+      </scenarios>
+      <coverage-target>80%</coverage-target>
+      <note>
+        Testing Sanity queries requires mocking the client.
+        Consider using vitest mocks for client.fetch calls.
+      </note>
+      <vitest-mock-pattern>
+<![CDATA[
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { getObituaries, getObituaryBySlug } from '@/lib/sanity/queries'
+import * as clientModule from '@/lib/sanity/client'
+
+describe('Sanity queries', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('getObituaries returns typed array', async () => {
+    const mockData = [
+      {
+        _id: '1',
+        slug: 'test-claim',
+        claim: 'Test claim',
+        source: 'Test Source',
+        sourceUrl: 'https://example.com',
+        date: '2024-01-01',
+        categories: ['market'],
+        context: { nvdaPrice: 100 }
+      }
+    ]
+
+    vi.spyOn(clientModule.client, 'fetch').mockResolvedValue(mockData)
+
+    const result = await getObituaries()
+    expect(result).toEqual(mockData)
+    expect(result).toHaveLength(1)
+  })
+})
+]]>
+      </vitest-mock-pattern>
+    </unit-tests>
+
+    <type-tests>
+      <description>TypeScript compilation serves as primary type validation</description>
+      <scenarios>
+        <scenario>Obituary interface matches expected fields</scenario>
+        <scenario>Category type is string literal union</scenario>
+        <scenario>ContextMetadata fields are all optional</scenario>
+      </scenarios>
+    </type-tests>
+
+    <manual-verification>
+      <item>pnpm run build succeeds</item>
+      <item>pnpm run lint passes</item>
+      <item>TypeScript strict mode catches type errors</item>
+    </manual-verification>
+  </testing-requirements>
+
+  <files-to-create>
+    <file path="src/lib/sanity/client.ts" action="create">Sanity client configuration</file>
+    <file path="src/lib/sanity/queries.ts" action="create">GROQ query functions</file>
+    <file path="src/types/obituary.ts" action="create">Obituary and Category type definitions</file>
+    <file path="src/types/context.ts" action="create">ContextMetadata interface</file>
+    <file path=".env.local.example" action="create">Environment variable template</file>
+  </files-to-create>
+
+  <learnings-from-previous-stories>
+    <learning from="1-1">Project uses pnpm for all package operations</learning>
+    <learning from="1-2">Tailwind CSS v4 is CSS-first - no tailwind.config.ts needed</learning>
+    <learning from="1-2">Always run pnpm run build and pnpm run lint before marking complete</learning>
+    <learning from="1-2">Use @/* path alias for imports (maps to ./src/*)</learning>
+  </learnings-from-previous-stories>
+
+  <warnings>
+    <warning type="no-live-testing">
+      Sanity project must be created separately for live data testing.
+      Queries can be written and type-checked without live Sanity connection.
+    </warning>
+    <warning type="env-vars-required">
+      .env.local must be created with actual Sanity credentials before runtime testing.
+      Never commit .env.local to git.
+    </warning>
+  </warnings>
+
+  <coding-standards>
+    <standard name="file-naming">kebab-case for files: client.ts, queries.ts</standard>
+    <standard name="type-naming">PascalCase for types: Obituary, Category, ContextMetadata</standard>
+    <standard name="function-naming">camelCase for functions: getObituaries, getObituaryBySlug</standard>
+    <standard name="import-order">
+      1. React/Next.js
+      2. Third-party libraries
+      3. Internal libs (@/lib/*)
+      4. Internal components (@/components/*)
+      5. Internal types (@/types/*)
+    </standard>
+    <standard name="server-components">
+      Default to Server Components. Only use 'use client' when interactivity required.
+      Query functions should work in both server and client contexts.
+    </standard>
+  </coding-standards>
+</story-context>
