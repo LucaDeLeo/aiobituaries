@@ -1,0 +1,923 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context XML
+  Generated: 2025-11-30
+  Story: 2-4-contextual-snapshot-display
+  Purpose: Complete implementation context for Contextual Snapshot Display
+-->
+<story-context>
+  <metadata>
+    <story-key>2-4-contextual-snapshot-display</story-key>
+    <title>Contextual Snapshot Display</title>
+    <epic>Epic 2 - Core Content Display</epic>
+    <status>drafted</status>
+    <priority>High</priority>
+    <generated>2025-11-30</generated>
+  </metadata>
+
+  <story-reference>
+    <path>docs/sprint-artifacts/stories/2-4-contextual-snapshot-display.md</path>
+    <user-story>
+      As a visitor,
+      I want to see what AI could do when each claim was made,
+      So that I can judge the prediction against reality at the time.
+    </user-story>
+  </story-reference>
+
+  <acceptance-criteria>
+    <criterion id="AC-2.4.1">Context section displays on detail page - "Context at Time" section visible below main obituary content</criterion>
+    <criterion id="AC-2.4.2">Stock prices display if available - NVDA/MSFT/GOOG prices formatted as currency (e.g., "$145.23")</criterion>
+    <criterion id="AC-2.4.3">AI model info displays if available - "Latest AI Model" card shows model name (e.g., "GPT-4")</criterion>
+    <criterion id="AC-2.4.4">Benchmark displays if available - Benchmark name and score shown (score as percentage with gold styling)</criterion>
+    <criterion id="AC-2.4.5">Milestone displays if available - "AI Milestone" card shows milestone description</criterion>
+    <criterion id="AC-2.4.6">Additional note displays if available - Note text in muted/italic styling below cards</criterion>
+    <criterion id="AC-2.4.7">Graceful partial data handling - Only available fields shown; missing fields are omitted (no "N/A" or placeholder)</criterion>
+    <criterion id="AC-2.4.8">Graceful empty data handling - "Context data unavailable" message shown in muted text when no context exists</criterion>
+    <criterion id="AC-2.4.9">Currency formatting correct - Prices use `Intl.NumberFormat` with USD currency format</criterion>
+    <criterion id="AC-2.4.10">Section styled consistently - Uses Deep Archive card styling (bg-card, border, 12px radius)</criterion>
+  </acceptance-criteria>
+
+  <documentation-artifacts>
+    <artifact type="tech-spec" relevance="primary">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-2-tech-spec.md</path>
+      <description>Complete technical specification for Epic 2 including data models, component architecture, and reference implementations</description>
+      <key-sections>
+        <section>Section 3: Data Models - ContextMetadata type definition with all optional fields</section>
+        <section>Section 4: Sanity Query Functions - getObituaryBySlug() includes context data</section>
+        <section>Story 2.4: Contextual Snapshot Display - Full acceptance criteria and technical approach</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="architecture" relevance="primary">
+      <path>docs/architecture.md</path>
+      <description>System architecture defining project structure, component patterns, and coding standards</description>
+      <key-sections>
+        <section>Project Structure - Component at src/components/obituary/obituary-context.tsx</section>
+        <section>Data Architecture - ContextMetadata TypeScript type with optional fields</section>
+        <section>Format Patterns - Currency formatting with Intl.NumberFormat</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="story" relevance="primary">
+      <path>docs/sprint-artifacts/stories/2-4-contextual-snapshot-display.md</path>
+      <description>Full story definition with tasks, test scenarios, and definition of done</description>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code>
+    <file purpose="modify" priority="high">
+      <path>src/components/obituary/obituary-detail.tsx</path>
+      <description>Existing ObituaryDetail component - ObituaryContext will be added after this component in the page</description>
+      <code-excerpt><![CDATA[
+import Link from 'next/link'
+import { format } from 'date-fns'
+import { ExternalLink, ArrowLeft } from 'lucide-react'
+import { CATEGORY_LABELS } from '@/lib/constants/categories'
+import type { Obituary, Category } from '@/types/obituary'
+
+/**
+ * Badge color mappings with semi-transparent background and solid text.
+ * Uses /20 opacity modifier for background with full opacity text.
+ */
+const BADGE_COLORS: Record<Category, string> = {
+  capability: 'bg-[--category-capability]/20 text-[--category-capability]',
+  market: 'bg-[--category-market]/20 text-[--category-market]',
+  agi: 'bg-[--category-agi]/20 text-[--category-agi]',
+  dismissive: 'bg-[--category-dismissive]/20 text-[--category-dismissive]',
+}
+
+interface ObituaryDetailProps {
+  obituary: Obituary
+}
+
+/**
+ * Full obituary detail view component.
+ * Server Component that displays the complete obituary including:
+ * - Full claim text as centered hero quote
+ * - Source with external link
+ * - Formatted date
+ * - Category badges
+ * - Back navigation to homepage
+ */
+export function ObituaryDetail({ obituary }: ObituaryDetailProps) {
+  return (
+    <article>
+      <Link
+        href="/"
+        className="inline-flex items-center gap-2 text-[--text-secondary]
+                   hover:text-[--text-primary] mb-8 transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+        Back to all obituaries
+      </Link>
+
+      <blockquote className="font-serif text-2xl md:text-3xl lg:text-4xl
+                             text-[--text-primary] italic text-center
+                             leading-relaxed mb-8">
+        &ldquo;{obituary.claim}&rdquo;
+      </blockquote>
+
+      <div className="flex flex-col items-center gap-4 mb-8">
+        <p className="text-[--text-secondary]">
+          <a
+            href={obituary.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 hover:text-[--accent-primary]
+                       transition-colors underline underline-offset-4"
+          >
+            {obituary.source}
+            <ExternalLink className="w-4 h-4" aria-hidden="true" />
+          </a>
+        </p>
+        <time
+          dateTime={obituary.date}
+          className="text-[--text-muted]"
+        >
+          {format(new Date(obituary.date), 'MMMM d, yyyy')}
+        </time>
+      </div>
+
+      <div className="flex flex-wrap justify-center gap-2 mb-8">
+        {obituary.categories?.map((category) => (
+          <span
+            key={category}
+            className={`px-3 py-1 rounded-full text-sm font-medium ${BADGE_COLORS[category]}`}
+          >
+            {CATEGORY_LABELS[category]}
+          </span>
+        ))}
+      </div>
+    </article>
+  )
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="modify" priority="high">
+      <path>src/app/obituary/[slug]/page.tsx</path>
+      <description>Obituary page - needs to import and render ObituaryContext below ObituaryDetail. Context data already fetched via getObituaryBySlug().</description>
+      <code-excerpt><![CDATA[
+import { notFound } from 'next/navigation'
+import { getObituaryBySlug, getAllObituarySlugs } from '@/lib/sanity/queries'
+import { ObituaryDetail } from '@/components/obituary/obituary-detail'
+
+interface PageProps {
+  params: Promise<{ slug: string }>
+}
+
+/**
+ * Generate static pages for all obituaries at build time.
+ * Fetches all slugs from Sanity and returns params for each.
+ */
+export async function generateStaticParams() {
+  const slugs = await getAllObituarySlugs()
+  return slugs.map((slug) => ({ slug }))
+}
+
+/**
+ * Individual obituary detail page.
+ * Displays full obituary content including claim, source, date, and categories.
+ * Shows 404 page if slug does not exist.
+ */
+export default async function ObituaryPage({ params }: PageProps) {
+  const { slug } = await params
+  const obituary = await getObituaryBySlug(slug)
+
+  if (!obituary) {
+    notFound()
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 py-12">
+      <ObituaryDetail obituary={obituary} />
+    </div>
+  )
+}
+]]></code-excerpt>
+      <note>Add ObituaryContext component after ObituaryDetail. The obituary.context data is already available from getObituaryBySlug().</note>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/types/obituary.ts</path>
+      <description>Core Obituary type definition - includes context field of type ContextMetadata</description>
+      <code-excerpt><![CDATA[
+import type { ContextMetadata } from './context'
+
+/**
+ * Categorization of AI skepticism claims.
+ * Each obituary can have multiple categories.
+ * Categories determine Y-axis behavior in the contextual scatter plot visualization.
+ */
+export type Category = 'market' | 'capability' | 'agi' | 'dismissive'
+
+/**
+ * Core data model representing an AI skepticism claim documented as an "obituary".
+ * Each obituary captures a claim, its source, date, categorization, and contextual
+ * data (stock prices, benchmarks) that existed when the claim was made.
+ */
+export interface Obituary {
+  /** Sanity document ID */
+  _id: string
+  /** URL-safe identifier derived from claim */
+  slug: string
+  /** The actual skepticism claim text */
+  claim: string
+  /** Publication or person who made the claim */
+  source: string
+  /** URL to original source */
+  sourceUrl: string
+  /** ISO 8601 date when claim was made */
+  date: string
+  /** Array of claim categories */
+  categories: Category[]
+  /** Contextual data at time of claim */
+  context: ContextMetadata
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/types/context.ts</path>
+      <description>ContextMetadata type definition - all fields optional for partial data handling</description>
+      <code-excerpt><![CDATA[
+/**
+ * Contextual market and capability data at the time an AI skepticism claim was made.
+ * All fields optional since not all context types apply to all claims.
+ */
+export interface ContextMetadata {
+  /** NVIDIA stock price at claim date */
+  nvdaPrice?: number
+  /** Microsoft stock price at claim date */
+  msftPrice?: number
+  /** Google stock price at claim date */
+  googPrice?: number
+  /** Name of AI benchmark (e.g., MMLU) */
+  benchmarkName?: string
+  /** Best AI score on benchmark at time */
+  benchmarkScore?: number
+  /** Leading AI model at time of claim */
+  currentModel?: string
+  /** Notable AI milestone around claim date */
+  milestone?: string
+  /** Additional context or commentary */
+  note?: string
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/app/globals.css</path>
+      <description>CSS variables and Deep Archive theme - includes card styling patterns</description>
+      <code-excerpt><![CDATA[
+:root {
+  /* Deep Archive Theme - Background colors */
+  --bg-primary: #0C0C0F;
+  --bg-secondary: #14141A;
+  --bg-card: #18181F;
+  --bg-tertiary: #1C1C24;
+
+  /* Border */
+  --border: #2A2A35;
+
+  /* Text colors */
+  --text-primary: #E8E6E3;
+  --text-secondary: #A8A5A0;
+  --text-muted: #6B6860;
+
+  /* Accent */
+  --accent-primary: #C9A962;
+
+  /* Category colors (for timeline visualization) */
+  --category-capability: #C9A962;
+  --category-market: #7B9E89;
+  --category-agi: #9E7B7B;
+  --category-dismissive: #7B7B9E;
+
+  /* shadcn/ui required variables (mapped to Deep Archive) */
+  --radius: 0.5rem;
+  --card: var(--bg-card);
+  --card-foreground: var(--text-primary);
+  /* ... */
+}
+
+@theme inline {
+  /* Font families */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-instrument-serif);
+}
+]]></code-excerpt>
+      <note>--accent-primary (#C9A962) is gold color for benchmark score. font-mono class available for Geist Mono font.</note>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>src/lib/constants/categories.ts</path>
+      <description>Category constants - reference for consistent styling patterns</description>
+      <code-excerpt><![CDATA[
+import type { Category } from '@/types/obituary'
+
+/**
+ * Category color mappings using CSS variables for the Deep Archive theme.
+ * Colors are defined in globals.css under :root.
+ */
+export const CATEGORY_COLORS: Record<Category, string> = {
+  capability: 'bg-[--category-capability]',
+  market: 'bg-[--category-market]',
+  agi: 'bg-[--category-agi]',
+  dismissive: 'bg-[--category-dismissive]',
+}
+
+/**
+ * Human-readable labels for each category.
+ * Used in UI elements like tooltips, filters, and accessibility.
+ */
+export const CATEGORY_LABELS: Record<Category, string> = {
+  capability: 'Capability Doubt',
+  market: 'Market/Bubble',
+  agi: 'AGI Skepticism',
+  dismissive: 'Dismissive Framing',
+}
+]]></code-excerpt>
+    </file>
+  </existing-code>
+
+  <shadcn-card-component>
+    <status>NOT_INSTALLED</status>
+    <description>shadcn Card component is required but not currently installed. Must be added via CLI.</description>
+    <installation-command>npx shadcn@latest add card</installation-command>
+    <expected-exports>Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter</expected-exports>
+    <expected-path>src/components/ui/card.tsx</expected-path>
+    <usage-pattern><![CDATA[
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+
+<Card className="bg-[--bg-card] border-[--border]">
+  <CardHeader className="pb-2">
+    <CardTitle className="text-sm text-[--text-secondary]">
+      Title
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    <p className="text-[--text-primary]">Content</p>
+  </CardContent>
+</Card>
+]]></usage-pattern>
+  </shadcn-card-component>
+
+  <design-system>
+    <css-variables source="src/app/globals.css" verified="2025-11-30">
+      <variable name="--bg-card" value="#18181F" usage="Card background color" line="10" />
+      <variable name="--border" value="#2A2A35" usage="Card/section border color" line="14" />
+      <variable name="--text-primary" value="#E8E6E3" usage="Primary text (prices, model names)" line="17" />
+      <variable name="--text-secondary" value="#A8A5A0" usage="Card titles" line="18" />
+      <variable name="--text-muted" value="#6B6860" usage="Empty state message, note text" line="19" />
+      <variable name="--accent-primary" value="#C9A962" usage="Benchmark score (gold color)" line="22" />
+    </css-variables>
+
+    <fonts>
+      <font name="Geist Sans" variable="--font-sans" usage="Body text, card content" />
+      <font name="Geist Mono" variable="--font-mono" class="font-mono" usage="Benchmark score percentage display" />
+      <font name="Instrument Serif" variable="--font-serif" usage="Quote text (not used in ObituaryContext)" />
+    </fonts>
+
+    <tailwind-patterns>
+      <pattern name="context-section">mt-12 pt-8 border-t border-[--border]</pattern>
+      <pattern name="section-heading">text-lg font-semibold text-[--text-primary] mb-4</pattern>
+      <pattern name="card-grid">grid gap-4 md:grid-cols-2</pattern>
+      <pattern name="card-base">bg-[--bg-card] border-[--border]</pattern>
+      <pattern name="card-title">text-sm text-[--text-secondary]</pattern>
+      <pattern name="card-content">text-[--text-primary]</pattern>
+      <pattern name="benchmark-score">text-[--accent-primary] font-mono</pattern>
+      <pattern name="note-text">mt-4 text-sm text-[--text-muted] italic</pattern>
+      <pattern name="empty-state">text-[--text-muted]</pattern>
+    </tailwind-patterns>
+
+    <responsive-breakpoints>
+      <breakpoint name="md" value="768px" usage="Card grid: md:grid-cols-2 (2 columns on tablet+)" />
+    </responsive-breakpoints>
+  </design-system>
+
+  <currency-formatting>
+    <description>Use Intl.NumberFormat for USD currency formatting (AC-2.4.9)</description>
+    <implementation><![CDATA[
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(value)
+}
+// Example: formatCurrency(145.50) => "$145.50"
+]]></implementation>
+  </currency-formatting>
+
+  <interface-contracts>
+    <component name="ObituaryContext" status="to-create">
+      <path>src/components/obituary/obituary-context.tsx</path>
+      <props><![CDATA[
+interface ObituaryContextProps {
+  context: ContextMetadata
+}
+]]></props>
+      <description>
+        Context metadata display component. Server Component.
+        Displays stock prices, AI model, benchmark, milestone, and notes.
+        Handles partial data gracefully by conditionally rendering only available fields.
+        Shows empty state message when no context data exists.
+      </description>
+    </component>
+
+    <page name="[slug]/page.tsx" status="to-modify">
+      <path>src/app/obituary/[slug]/page.tsx</path>
+      <description>Add ObituaryContext component after ObituaryDetail. Context data already included in obituary object.</description>
+      <modification><![CDATA[
+// Add import
+import { ObituaryContext } from '@/components/obituary/obituary-context'
+
+// In render, add after ObituaryDetail:
+<ObituaryDetail obituary={obituary} />
+<ObituaryContext context={obituary.context} />
+]]></modification>
+    </page>
+  </interface-contracts>
+
+  <conditional-rendering-logic>
+    <description>Logic for determining what to render based on available context data</description>
+    <has-any-data-check><![CDATA[
+const hasAnyData =
+  context.nvdaPrice !== undefined ||
+  context.msftPrice !== undefined ||
+  context.googPrice !== undefined ||
+  context.benchmarkName !== undefined ||
+  context.currentModel !== undefined ||
+  context.milestone !== undefined ||
+  context.note !== undefined
+
+// If hasAnyData is false, show empty state
+]]></has-any-data-check>
+    <has-stock-prices-check><![CDATA[
+const hasStockPrices =
+  context.nvdaPrice !== undefined ||
+  context.msftPrice !== undefined ||
+  context.googPrice !== undefined
+
+// Only render Stock Prices card if hasStockPrices is true
+]]></has-stock-prices-check>
+    <individual-field-checks>
+      <field name="nvdaPrice" check="context.nvdaPrice !== undefined" />
+      <field name="msftPrice" check="context.msftPrice !== undefined" />
+      <field name="googPrice" check="context.googPrice !== undefined" />
+      <field name="currentModel" check="context.currentModel" note="Truthy check works for strings" />
+      <field name="benchmarkName" check="context.benchmarkName" note="Render benchmark card if name exists" />
+      <field name="benchmarkScore" check="context.benchmarkScore !== undefined" note="Only show score if exists, even when name exists" />
+      <field name="milestone" check="context.milestone" note="Truthy check works for strings" />
+      <field name="note" check="context.note" note="Render outside card grid, below cards" />
+    </individual-field-checks>
+  </conditional-rendering-logic>
+
+  <dependencies>
+    <runtime>
+      <dependency name="next" version="16.0.5" usage="Server Components" />
+      <dependency name="react" version="19.2.0" usage="Server Components" />
+      <dependency name="shadcn/ui card" status="NOT_INSTALLED" usage="Card, CardHeader, CardTitle, CardContent components">
+        <installation>npx shadcn@latest add card</installation>
+      </dependency>
+    </runtime>
+    <dev>
+      <dependency name="vitest" version="4.0.14" usage="Unit testing" />
+      <dependency name="@testing-library/react" version="16.3.0" usage="Component testing" />
+    </dev>
+  </dependencies>
+
+  <testing-context>
+    <test-file-convention>
+      <pattern>tests/unit/components/{component-path}/{component-name}.test.tsx</pattern>
+    </test-file-convention>
+
+    <test-files-to-create>
+      <file path="tests/unit/components/obituary/obituary-context.test.tsx">
+        <description>Unit tests for ObituaryContext component</description>
+        <scenarios>
+          <scenario id="1" ac="AC-2.4.1, AC-2.4.8">
+            <title>Empty Context Shows Message</title>
+            <input>context with all undefined fields</input>
+            <expected>"Context data unavailable" text rendered</expected>
+          </scenario>
+          <scenario id="2" ac="AC-2.4.1">
+            <title>Renders "Context at Time" heading</title>
+            <input>context with at least one field</input>
+            <expected>Heading "Context at Time" visible</expected>
+          </scenario>
+          <scenario id="3" ac="AC-2.4.2, AC-2.4.9">
+            <title>Stock Prices Format Correctly</title>
+            <input>context with nvdaPrice: 145.50</input>
+            <expected>"$145.50" displayed</expected>
+          </scenario>
+          <scenario id="4" ac="AC-2.4.2">
+            <title>All Stock Prices Display</title>
+            <input>context with nvdaPrice, msftPrice, googPrice</input>
+            <expected>All three ticker symbols with prices shown</expected>
+          </scenario>
+          <scenario id="5" ac="AC-2.4.2, AC-2.4.7">
+            <title>Partial Stock Prices Display</title>
+            <input>context with only nvdaPrice (msftPrice, googPrice undefined)</input>
+            <expected>Only NVDA price shown</expected>
+          </scenario>
+          <scenario id="6" ac="AC-2.4.3">
+            <title>AI Model Card Renders</title>
+            <input>context with currentModel: "GPT-4"</input>
+            <expected>"GPT-4" in Latest AI Model card</expected>
+          </scenario>
+          <scenario id="7" ac="AC-2.4.4">
+            <title>Benchmark With Score Renders</title>
+            <input>context with benchmarkName: "MMLU", benchmarkScore: 86.5</input>
+            <expected>"MMLU" text and "86.5%" with gold/mono styling</expected>
+          </scenario>
+          <scenario id="8" ac="AC-2.4.4, AC-2.4.7">
+            <title>Benchmark Without Score Renders</title>
+            <input>context with benchmarkName: "MMLU", benchmarkScore undefined</input>
+            <expected>"MMLU" text without percentage</expected>
+          </scenario>
+          <scenario id="9" ac="AC-2.4.5">
+            <title>Milestone Card Renders</title>
+            <input>context with milestone: "ChatGPT launched"</input>
+            <expected>Milestone text in AI Milestone card</expected>
+          </scenario>
+          <scenario id="10" ac="AC-2.4.6">
+            <title>Note Renders in Muted Style</title>
+            <input>context with note: "First AI winter reference"</input>
+            <expected>Note text with muted/italic classes</expected>
+          </scenario>
+          <scenario id="11" ac="AC-2.4.10">
+            <title>Section Has Border Top</title>
+            <input>context with any data</input>
+            <expected>border-t class on section element</expected>
+          </scenario>
+          <scenario id="12" ac="AC-2.4.10">
+            <title>Cards Use Deep Archive Colors</title>
+            <input>context with stock prices</input>
+            <expected>Card has bg-[--bg-card] class</expected>
+          </scenario>
+          <scenario id="13" ac="AC-2.4.7">
+            <title>Partial Context Only Shows Available</title>
+            <input>context with only milestone and note</input>
+            <expected>Only Milestone card and note shown, no Stock/Model/Benchmark cards</expected>
+          </scenario>
+        </scenarios>
+      </file>
+    </test-files-to-create>
+
+    <test-patterns-reference source="tests/unit/components/obituary/obituary-detail.test.tsx">
+      <pattern name="mock-next-link"><![CDATA[
+vi.mock('next/link', () => {
+  return {
+    default: function MockLink({ children, href, ...props }: { children: React.ReactNode; href: string; [key: string]: unknown }) {
+      return React.createElement('a', { href, ...props }, children)
+    },
+  }
+})
+]]></pattern>
+      <pattern name="async-render"><![CDATA[
+await act(async () => {
+  render(<ComponentName prop={value} />)
+})
+]]></pattern>
+      <pattern name="cleanup"><![CDATA[
+afterEach(async () => {
+  await act(async () => {
+    cleanup()
+  })
+})
+]]></pattern>
+    </test-patterns-reference>
+
+    <mock-context-data><![CDATA[
+// Full context for comprehensive testing
+const mockFullContext: ContextMetadata = {
+  nvdaPrice: 450.50,
+  msftPrice: 350.25,
+  googPrice: 145.75,
+  currentModel: 'GPT-4',
+  benchmarkName: 'MMLU',
+  benchmarkScore: 86.5,
+  milestone: 'ChatGPT reached 100M users',
+  note: 'This marked the beginning of the AI boom.',
+}
+
+// Empty context for empty state testing
+const mockEmptyContext: ContextMetadata = {}
+
+// Partial context for partial data testing
+const mockPartialContext: ContextMetadata = {
+  nvdaPrice: 450.50,
+  currentModel: 'GPT-4',
+}
+
+// Benchmark without score
+const mockBenchmarkOnlyContext: ContextMetadata = {
+  benchmarkName: 'MMLU',
+}
+]]></mock-context-data>
+  </testing-context>
+
+  <implementation-guidance>
+    <tasks>
+      <task id="1" time="5min">
+        <title>Install shadcn Card Component</title>
+        <command>npx shadcn@latest add card</command>
+        <verification>
+          <item>src/components/ui/card.tsx exists</item>
+          <item>Card, CardHeader, CardTitle, CardContent exports available</item>
+        </verification>
+      </task>
+
+      <task id="2" time="30min">
+        <title>Create ObituaryContext Component</title>
+        <file>src/components/obituary/obituary-context.tsx</file>
+        <details>
+          - Import Card components from @/components/ui/card
+          - Import ContextMetadata type from @/types/context
+          - Implement formatCurrency helper using Intl.NumberFormat
+          - Implement hasAnyData check for empty state
+          - Implement hasStockPrices check for stock prices card
+          - Create Stock Prices card with conditional individual prices
+          - Create Latest AI Model card
+          - Create Benchmark card with score in gold/mono styling
+          - Create AI Milestone card
+          - Add note section outside card grid
+          - Handle empty state with "Context data unavailable" message
+          - Apply Deep Archive styling consistently
+        </details>
+      </task>
+
+      <task id="3" time="10min">
+        <title>Integrate with Detail Page</title>
+        <file>src/app/obituary/[slug]/page.tsx</file>
+        <details>
+          - Import ObituaryContext from @/components/obituary/obituary-context
+          - Add ObituaryContext after ObituaryDetail in render
+          - Pass obituary.context as prop
+          - Verify context data is already included in getObituaryBySlug query
+        </details>
+      </task>
+
+      <task id="4" time="30min">
+        <title>Write Unit Tests</title>
+        <file>tests/unit/components/obituary/obituary-context.test.tsx</file>
+        <details>
+          - Test: Renders "Context at Time" heading
+          - Test: Shows empty state when no context data
+          - Test: Displays stock prices when available
+          - Test: Formats currency correctly (USD format)
+          - Test: Displays AI model when available
+          - Test: Displays benchmark with score in percentage
+          - Test: Displays milestone when available
+          - Test: Displays note in muted styling
+          - Test: Shows only available fields (partial data)
+          - Test: Uses correct CSS classes for Deep Archive styling
+          - Test: Benchmark score has gold color and mono font
+          - Test: Section has border-top separator
+        </details>
+      </task>
+
+      <task id="5" time="15min">
+        <title>Manual Testing</title>
+        <checklist>
+          <item>Navigate to obituary with full context data</item>
+          <item>Verify all cards display with correct content</item>
+          <item>Verify stock prices formatted as "$XXX.XX"</item>
+          <item>Verify benchmark score shows with "%" and gold color</item>
+          <item>Navigate to obituary with partial context (e.g., only stock prices)</item>
+          <item>Verify only stock prices card shows</item>
+          <item>Navigate to obituary with no context data</item>
+          <item>Verify "Context data unavailable" message shows</item>
+          <item>Verify section has border-top separator</item>
+          <item>Verify cards use correct background color (--bg-card)</item>
+          <item>Verify responsive grid layout on mobile/desktop</item>
+        </checklist>
+      </task>
+    </tasks>
+
+    <reference-implementation>
+      <description>From story markdown - complete ObituaryContext component reference</description>
+      <code><![CDATA[
+// src/components/obituary/obituary-context.tsx
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import type { ContextMetadata } from '@/types/context'
+
+interface ObituaryContextProps {
+  context: ContextMetadata
+}
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(value)
+}
+
+export function ObituaryContext({ context }: ObituaryContextProps) {
+  const hasAnyData =
+    context.nvdaPrice !== undefined ||
+    context.msftPrice !== undefined ||
+    context.googPrice !== undefined ||
+    context.benchmarkName !== undefined ||
+    context.currentModel !== undefined ||
+    context.milestone !== undefined ||
+    context.note !== undefined
+
+  if (!hasAnyData) {
+    return (
+      <section className="mt-12 pt-8 border-t border-[--border]">
+        <h2 className="text-lg font-semibold text-[--text-primary] mb-4">
+          Context at Time
+        </h2>
+        <p className="text-[--text-muted]">Context data unavailable</p>
+      </section>
+    )
+  }
+
+  const hasStockPrices =
+    context.nvdaPrice !== undefined ||
+    context.msftPrice !== undefined ||
+    context.googPrice !== undefined
+
+  return (
+    <section className="mt-12 pt-8 border-t border-[--border]">
+      <h2 className="text-lg font-semibold text-[--text-primary] mb-4">
+        Context at Time
+      </h2>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Stock Prices */}
+        {hasStockPrices && (
+          <Card className="bg-[--bg-card] border-[--border]">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-[--text-secondary]">
+                Stock Prices
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              {context.nvdaPrice !== undefined && (
+                <p className="text-[--text-primary]">
+                  NVDA: {formatCurrency(context.nvdaPrice)}
+                </p>
+              )}
+              {context.msftPrice !== undefined && (
+                <p className="text-[--text-primary]">
+                  MSFT: {formatCurrency(context.msftPrice)}
+                </p>
+              )}
+              {context.googPrice !== undefined && (
+                <p className="text-[--text-primary]">
+                  GOOG: {formatCurrency(context.googPrice)}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* AI Model */}
+        {context.currentModel && (
+          <Card className="bg-[--bg-card] border-[--border]">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-[--text-secondary]">
+                Latest AI Model
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-[--text-primary]">{context.currentModel}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Benchmark */}
+        {context.benchmarkName && (
+          <Card className="bg-[--bg-card] border-[--border]">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-[--text-secondary]">
+                Benchmark
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-[--text-primary]">
+                {context.benchmarkName}
+                {context.benchmarkScore !== undefined && (
+                  <span className="ml-2 text-[--accent-primary] font-mono">
+                    {context.benchmarkScore}%
+                  </span>
+                )}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Milestone */}
+        {context.milestone && (
+          <Card className="bg-[--bg-card] border-[--border]">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-[--text-secondary]">
+                AI Milestone
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-[--text-primary]">{context.milestone}</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Additional Note */}
+      {context.note && (
+        <p className="mt-4 text-sm text-[--text-muted] italic">
+          {context.note}
+        </p>
+      )}
+    </section>
+  )
+}
+]]></code>
+    </reference-implementation>
+
+    <page-integration-code><![CDATA[
+// src/app/obituary/[slug]/page.tsx (modification)
+import { notFound } from 'next/navigation'
+import { getObituaryBySlug, getAllObituarySlugs } from '@/lib/sanity/queries'
+import { ObituaryDetail } from '@/components/obituary/obituary-detail'
+import { ObituaryContext } from '@/components/obituary/obituary-context'
+
+interface PageProps {
+  params: Promise<{ slug: string }>
+}
+
+export async function generateStaticParams() {
+  const slugs = await getAllObituarySlugs()
+  return slugs.map((slug) => ({ slug }))
+}
+
+export default async function ObituaryPage({ params }: PageProps) {
+  const { slug } = await params
+  const obituary = await getObituaryBySlug(slug)
+
+  if (!obituary) {
+    notFound()
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 py-12">
+      <ObituaryDetail obituary={obituary} />
+      <ObituaryContext context={obituary.context} />
+    </div>
+  )
+}
+]]></page-integration-code>
+
+    <learnings-from-previous>
+      <learning story="2-3">Category Constants Pattern - Constants exist in src/lib/constants/categories.ts - follow similar pattern if needed for context labels</learning>
+      <learning story="2-3">ISR Caching Pattern - Context data already included in getObituaryBySlug query with next: { tags: ['obituaries'] }</learning>
+      <learning story="2-3">Deep Archive Card Styling - Use bg-[--bg-card] border-[--border] classes for consistent card appearance</learning>
+      <learning story="2-3">Component Location - Follow pattern of placing obituary-related components in src/components/obituary/</learning>
+      <learning story="2-3">Conditional Rendering - Story 2-3 showed good pattern for defensive checks before rendering - apply same to context fields</learning>
+      <learning story="2-3">Font Classes - font-mono available for Geist Mono (use for benchmark scores), font-serif for Instrument Serif</learning>
+      <learning story="2-1">React 19 Testing - Async Server Components require wrapping render() in act() for proper test execution</learning>
+    </learnings-from-previous>
+  </implementation-guidance>
+
+  <files-summary>
+    <to-create>
+      <file>src/components/obituary/obituary-context.tsx</file>
+      <file>src/components/ui/card.tsx (via shadcn CLI)</file>
+      <file>tests/unit/components/obituary/obituary-context.test.tsx</file>
+    </to-create>
+    <to-modify>
+      <file>src/app/obituary/[slug]/page.tsx</file>
+    </to-modify>
+  </files-summary>
+
+  <warnings>
+    <warning type="dependency" priority="high">
+      shadcn Card component is NOT installed. Must run: npx shadcn@latest add card
+    </warning>
+    <warning type="import" priority="medium">
+      Import ContextMetadata from '@/types/context' (not from '@/types/obituary')
+    </warning>
+    <warning type="conditional-check" priority="medium">
+      Use !== undefined for number fields (nvdaPrice, msftPrice, googPrice, benchmarkScore) since 0 is a valid value.
+      Use truthy checks for string fields (currentModel, benchmarkName, milestone, note).
+    </warning>
+    <warning type="context-data" priority="info">
+      Context data is already fetched via getObituaryBySlug() - no additional query needed.
+      Just pass obituary.context as prop to ObituaryContext.
+    </warning>
+  </warnings>
+
+  <verification-checklist>
+    <item status="verified">ContextMetadata type has all required optional fields (nvdaPrice, msftPrice, googPrice, benchmarkName, benchmarkScore, currentModel, milestone, note)</item>
+    <item status="verified">Obituary type includes context field of type ContextMetadata</item>
+    <item status="verified">CSS variables for --bg-card, --border, --text-primary, --text-secondary, --text-muted, --accent-primary exist</item>
+    <item status="verified">font-mono class available for Geist Mono font</item>
+    <item status="verified">getObituaryBySlug() already fetches context data</item>
+    <item status="verified">ObituaryDetail component exists and renders correctly</item>
+    <item status="verified">Obituary page structure ready for ObituaryContext integration</item>
+    <item status="not-installed">shadcn Card component - must be installed via CLI</item>
+  </verification-checklist>
+</story-context>
