@@ -1,5 +1,27 @@
 import { client } from './client'
 import type { Obituary, ObituarySummary } from '@/types/obituary'
+import { mockObituaries } from '@/data/mock-obituaries'
+
+const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
+const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET
+
+const shouldUseMock =
+  process.env.NODE_ENV !== 'test' &&
+  (!projectId ||
+    projectId === 'placeholder' ||
+    projectId === 'your_project_id' ||
+    !dataset ||
+    dataset === 'placeholder')
+
+const FALLBACK_SOURCE_URL = 'https://example.com'
+
+function summaryToObituary(summary: ObituarySummary): Obituary {
+  return {
+    ...summary,
+    sourceUrl: FALLBACK_SOURCE_URL,
+    context: {},
+  }
+}
 
 /**
  * GROQ projection for full obituary fields.
@@ -35,11 +57,20 @@ const summaryProjection = `{
  * Uses ISR with 'obituaries' tag for cache revalidation.
  */
 export async function getObituaries(): Promise<ObituarySummary[]> {
-  return client.fetch(
-    `*[_type == "obituary"] | order(date desc) ${summaryProjection}`,
-    undefined,
-    { next: { tags: ['obituaries'] } }
-  )
+  if (shouldUseMock) {
+    return mockObituaries
+  }
+
+  try {
+    return await client.fetch(
+      `*[_type == "obituary"] | order(date desc) ${summaryProjection}`,
+      undefined,
+      { next: { tags: ['obituaries'] } }
+    )
+  } catch {
+    // Fallback to mock data if CMS is unavailable
+    return mockObituaries
+  }
 }
 
 /**
@@ -48,11 +79,21 @@ export async function getObituaries(): Promise<ObituarySummary[]> {
  * Uses ISR with 'obituaries' tag for cache revalidation.
  */
 export async function getObituaryBySlug(slug: string): Promise<Obituary | null> {
-  return client.fetch(
-    `*[_type == "obituary" && slug.current == $slug][0] ${obituaryProjection}`,
-    { slug },
-    { next: { tags: ['obituaries'] } }
-  )
+  if (shouldUseMock) {
+    const fallback = mockObituaries.find((entry) => entry.slug === slug)
+    return fallback ? summaryToObituary(fallback) : null
+  }
+
+  try {
+    return await client.fetch(
+      `*[_type == "obituary" && slug.current == $slug][0] ${obituaryProjection}`,
+      { slug },
+      { next: { tags: ['obituaries'] } }
+    )
+  } catch {
+    const fallback = mockObituaries.find((entry) => entry.slug === slug)
+    return fallback ? summaryToObituary(fallback) : null
+  }
 }
 
 /**
@@ -61,11 +102,19 @@ export async function getObituaryBySlug(slug: string): Promise<Obituary | null> 
  * Uses ISR with 'obituaries' tag for cache revalidation.
  */
 export async function getAllObituarySlugs(): Promise<string[]> {
-  return client.fetch<string[]>(
-    `*[_type == "obituary"].slug.current`,
-    {},
-    { next: { tags: ['obituaries'] } }
-  )
+  if (shouldUseMock) {
+    return mockObituaries.map((o) => o.slug)
+  }
+
+  try {
+    return await client.fetch<string[]>(
+      `*[_type == "obituary"].slug.current`,
+      {},
+      { next: { tags: ['obituaries'] } }
+    )
+  } catch {
+    return mockObituaries.map((o) => o.slug)
+  }
 }
 
 /**
@@ -74,7 +123,15 @@ export async function getAllObituarySlugs(): Promise<string[]> {
  * Uses ISR with 'obituary' tag for cache revalidation.
  */
 export async function getObituaryCount(): Promise<number> {
-  return client.fetch(`count(*[_type == "obituary"])`, undefined, {
-    next: { tags: ['obituary'] },
-  })
+  if (shouldUseMock) {
+    return mockObituaries.length
+  }
+
+  try {
+    return await client.fetch(`count(*[_type == "obituary"])`, undefined, {
+      next: { tags: ['obituary'] },
+    })
+  } catch {
+    return mockObituaries.length
+  }
 }

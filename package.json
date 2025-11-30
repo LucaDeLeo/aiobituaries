@@ -10,7 +10,8 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "seed": "node scripts/seed-obituaries.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
