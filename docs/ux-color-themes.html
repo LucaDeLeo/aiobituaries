@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Obituaries - Color Theme Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-serif: 'Instrument Serif', Georgia, serif;
+      --font-mono: 'Geist Mono', monospace;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: #0a0a0a;
+      color: #fafafa;
+      line-height: 1.6;
+    }
+
+    /* Header */
+    .header {
+      padding: 2rem;
+      text-align: center;
+      border-bottom: 1px solid #222;
+      background: linear-gradient(180deg, #111 0%, #0a0a0a 100%);
+    }
+
+    .header h1 {
+      font-family: var(--font-serif);
+      font-size: 2.5rem;
+      font-weight: 400;
+      margin-bottom: 0.5rem;
+    }
+
+    .header p {
+      color: #888;
+      font-size: 1rem;
+    }
+
+    /* Theme Navigation */
+    .theme-nav {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      padding: 1.5rem;
+      background: #111;
+      border-bottom: 1px solid #222;
+      flex-wrap: wrap;
+    }
+
+    .theme-btn {
+      padding: 0.75rem 1.5rem;
+      border: 1px solid #333;
+      background: transparent;
+      color: #888;
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .theme-btn:hover {
+      border-color: #555;
+      color: #fff;
+    }
+
+    .theme-btn.active {
+      background: #fff;
+      color: #000;
+      border-color: #fff;
+    }
+
+    /* Theme Container */
+    .theme-container {
+      display: none;
+      padding: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .theme-container.active {
+      display: block;
+    }
+
+    /* Theme Header */
+    .theme-header {
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid #222;
+    }
+
+    .theme-header h2 {
+      font-family: var(--font-serif);
+      font-size: 2rem;
+      font-weight: 400;
+      margin-bottom: 0.5rem;
+    }
+
+    .theme-header .personality {
+      font-size: 1.125rem;
+      color: #888;
+      margin-bottom: 1rem;
+    }
+
+    .theme-header .description {
+      max-width: 600px;
+      color: #666;
+      line-height: 1.7;
+    }
+
+    /* Color Palette Section */
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #555;
+      margin-bottom: 1rem;
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+
+    .color-swatch {
+      aspect-ratio: 1;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 0.75rem;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .color-swatch .name {
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    .color-swatch .hex {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      opacity: 0.7;
+    }
+
+    /* Category Colors */
+    .category-colors {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .category-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+    }
+
+    .category-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    /* Component Preview */
+    .preview-section {
+      margin-bottom: 3rem;
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .preview-card {
+      border-radius: 16px;
+      padding: 2rem;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .preview-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Buttons */
+    .button-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .btn {
+      padding: 0.625rem 1.25rem;
+      border-radius: 8px;
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
+      border: 1px solid;
+      background: transparent;
+      transition: all 0.15s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+    }
+
+    /* Obituary Card Preview */
+    .obituary-card {
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid;
+    }
+
+    .obituary-quote {
+      font-family: var(--font-serif);
+      font-size: 1.125rem;
+      font-style: italic;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .obituary-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8125rem;
+    }
+
+    .obituary-source {
+      font-weight: 500;
+    }
+
+    .obituary-date {
+      opacity: 0.6;
+    }
+
+    .obituary-tags {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .tag {
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    /* Count Display */
+    .count-display {
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .count-number {
+      font-family: var(--font-mono);
+      font-size: 4rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .count-label {
+      font-size: 1rem;
+      opacity: 0.6;
+    }
+
+    /* Timeline Preview */
+    .timeline-preview {
+      padding: 2rem 1rem;
+      border-radius: 12px;
+      position: relative;
+    }
+
+    .timeline-axis {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      font-size: 0.75rem;
+      opacity: 0.5;
+      font-family: var(--font-mono);
+    }
+
+    .timeline-dots {
+      display: flex;
+      align-items: center;
+      height: 60px;
+      position: relative;
+    }
+
+    .timeline-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      position: absolute;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    .timeline-dot:hover {
+      transform: scale(1.3);
+    }
+
+    /* Alert/Toast */
+    .alert {
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .alert-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    /* Mode Toggle */
+    .mode-toggle {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .mode-btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid #333;
+      background: transparent;
+      color: #666;
+      font-family: var(--font-sans);
+      font-size: 0.8125rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mode-btn.active {
+      background: #222;
+      color: #fff;
+      border-color: #444;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 1.75rem;
+      }
+      .theme-nav {
+        gap: 0.5rem;
+      }
+      .theme-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+      }
+      .preview-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ============================================
+       THEME 1: DEEP ARCHIVE (Dark Academia)
+       ============================================ */
+    .theme-deep-archive {
+      --bg-primary: #0c0c0f;
+      --bg-secondary: #14141a;
+      --bg-tertiary: #1c1c24;
+      --bg-card: #18181f;
+      --border: #2a2a35;
+      --text-primary: #e8e6e3;
+      --text-secondary: #a8a5a0;
+      --text-muted: #6b6860;
+      --accent-primary: #c9a962;
+      --accent-secondary: #8b7355;
+      --category-1: #c9a962;
+      --category-2: #7b9e89;
+      --category-3: #9e7b7b;
+      --category-4: #7b7b9e;
+      --success: #7b9e89;
+      --warning: #c9a962;
+      --error: #9e5555;
+      --info: #7b8b9e;
+    }
+
+    /* ============================================
+       THEME 2: EPOCH AUTHORITY (Research Institute)
+       ============================================ */
+    .theme-epoch-authority {
+      --bg-primary: #fafafa;
+      --bg-secondary: #f4f4f5;
+      --bg-tertiary: #e4e4e7;
+      --bg-card: #ffffff;
+      --border: #d4d4d8;
+      --text-primary: #18181b;
+      --text-secondary: #52525b;
+      --text-muted: #a1a1aa;
+      --accent-primary: #2563eb;
+      --accent-secondary: #3b82f6;
+      --category-1: #2563eb;
+      --category-2: #059669;
+      --category-3: #d97706;
+      --category-4: #7c3aed;
+      --success: #059669;
+      --warning: #d97706;
+      --error: #dc2626;
+      --info: #0891b2;
+    }
+
+    .theme-epoch-authority .preview-card,
+    .theme-epoch-authority .obituary-card,
+    .theme-epoch-authority .timeline-preview {
+      background: var(--bg-card);
+      border-color: var(--border);
+    }
+
+    .theme-epoch-authority .form-input {
+      background: var(--bg-card);
+      border-color: var(--border);
+      color: var(--text-primary);
+    }
+
+    .theme-epoch-authority .section-title {
+      color: var(--text-muted);
+    }
+
+    /* ============================================
+       THEME 3: DIGITAL NEWSROOM (Editorial)
+       ============================================ */
+    .theme-digital-newsroom {
+      --bg-primary: #111111;
+      --bg-secondary: #1a1a1a;
+      --bg-tertiary: #242424;
+      --bg-card: #1a1a1a;
+      --border: #333333;
+      --text-primary: #ffffff;
+      --text-secondary: #b3b3b3;
+      --text-muted: #666666;
+      --accent-primary: #ff3b3b;
+      --accent-secondary: #ff6b6b;
+      --category-1: #ff3b3b;
+      --category-2: #3b8bff;
+      --category-3: #ffc93b;
+      --category-4: #3bff8b;
+      --success: #3bff8b;
+      --warning: #ffc93b;
+      --error: #ff3b3b;
+      --info: #3b8bff;
+    }
+
+    /* ============================================
+       THEME 4: MIDNIGHT DATA (Modern Dark)
+       ============================================ */
+    .theme-midnight-data {
+      --bg-primary: #030712;
+      --bg-secondary: #0f172a;
+      --bg-tertiary: #1e293b;
+      --bg-card: #0f172a;
+      --border: #1e293b;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #475569;
+      --accent-primary: #38bdf8;
+      --accent-secondary: #0ea5e9;
+      --category-1: #38bdf8;
+      --category-2: #a78bfa;
+      --category-3: #fb923c;
+      --category-4: #4ade80;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --error: #f87171;
+      --info: #38bdf8;
+    }
+
+    /* Theme-specific styles */
+    [class*="theme-"] .preview-card {
+      background: var(--bg-card);
+      border-color: var(--border);
+      color: var(--text-primary);
+    }
+
+    [class*="theme-"] .preview-card h3 {
+      color: var(--text-primary);
+    }
+
+    [class*="theme-"] .obituary-card {
+      background: var(--bg-secondary);
+      border-color: var(--border);
+    }
+
+    [class*="theme-"] .obituary-quote {
+      color: var(--text-primary);
+    }
+
+    [class*="theme-"] .obituary-source {
+      color: var(--accent-primary);
+    }
+
+    [class*="theme-"] .obituary-date {
+      color: var(--text-muted);
+    }
+
+    [class*="theme-"] .tag {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+    }
+
+    [class*="theme-"] .count-number {
+      color: var(--accent-primary);
+    }
+
+    [class*="theme-"] .count-label {
+      color: var(--text-secondary);
+    }
+
+    [class*="theme-"] .timeline-preview {
+      background: var(--bg-secondary);
+    }
+
+    [class*="theme-"] .timeline-axis {
+      color: var(--text-muted);
+    }
+
+    [class*="theme-"] .form-label {
+      color: var(--text-secondary);
+    }
+
+    [class*="theme-"] .form-input {
+      background: var(--bg-tertiary);
+      border-color: var(--border);
+      color: var(--text-primary);
+    }
+
+    [class*="theme-"] .form-input:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(var(--accent-primary), 0.1);
+    }
+
+    [class*="theme-"] .btn-primary {
+      background: var(--accent-primary);
+      color: var(--bg-primary);
+    }
+
+    [class*="theme-"] .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    [class*="theme-"] .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+    }
+
+    [class*="theme-"] .btn-ghost:hover {
+      background: var(--bg-tertiary);
+    }
+
+    [class*="theme-"] .alert-success {
+      background: color-mix(in srgb, var(--success) 15%, var(--bg-secondary));
+      color: var(--success);
+      border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+    }
+
+    [class*="theme-"] .alert-error {
+      background: color-mix(in srgb, var(--error) 15%, var(--bg-secondary));
+      color: var(--error);
+      border: 1px solid color-mix(in srgb, var(--error) 30%, transparent);
+    }
+
+    [class*="theme-"] .alert-warning {
+      background: color-mix(in srgb, var(--warning) 15%, var(--bg-secondary));
+      color: var(--warning);
+      border: 1px solid color-mix(in srgb, var(--warning) 30%, transparent);
+    }
+
+    /* Best For Tags */
+    .best-for {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .best-for-tag {
+      padding: 0.375rem 0.75rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: #888;
+    }
+
+    .theme-epoch-authority .best-for-tag {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.1);
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>AI Obituaries</h1>
+    <p>Color Theme Explorer — Choose your visual direction</p>
+  </div>
+
+  <nav class="theme-nav">
+    <button class="theme-btn active" data-theme="deep-archive">1. Deep Archive</button>
+    <button class="theme-btn" data-theme="epoch-authority">2. Epoch Authority</button>
+    <button class="theme-btn" data-theme="digital-newsroom">3. Digital Newsroom</button>
+    <button class="theme-btn" data-theme="midnight-data">4. Midnight Data</button>
+  </nav>
+
+  <!-- THEME 1: DEEP ARCHIVE -->
+  <div class="theme-container theme-deep-archive active" id="deep-archive">
+    <div class="theme-header">
+      <h2>1. Deep Archive</h2>
+      <p class="personality">Scholarly • Timeless • Authoritative</p>
+      <p class="description">Dark academia meets data journalism. Warm, muted tones evoke a curated archive of historical record. The gold accent suggests importance without flashiness—like a well-preserved document.</p>
+      <div class="best-for">
+        <span class="best-for-tag">Credibility-first</span>
+        <span class="best-for-tag">Sophisticated audience</span>
+        <span class="best-for-tag">Long-form reading</span>
+      </div>
+    </div>
+
+    <p class="section-title">Color Palette</p>
+    <div class="color-grid">
+      <div class="color-swatch" style="background: #0c0c0f; color: #e8e6e3;">
+        <span class="name">Background</span>
+        <span class="hex">#0C0C0F</span>
+      </div>
+      <div class="color-swatch" style="background: #18181f; color: #e8e6e3;">
+        <span class="name">Card</span>
+        <span class="hex">#18181F</span>
+      </div>
+      <div class="color-swatch" style="background: #c9a962; color: #0c0c0f;">
+        <span class="name">Primary Accent</span>
+        <span class="hex">#C9A962</span>
+      </div>
+      <div class="color-swatch" style="background: #e8e6e3; color: #0c0c0f;">
+        <span class="name">Text Primary</span>
+        <span class="hex">#E8E6E3</span>
+      </div>
+      <div class="color-swatch" style="background: #a8a5a0; color: #0c0c0f;">
+        <span class="name">Text Secondary</span>
+        <span class="hex">#A8A5A0</span>
+      </div>
+      <div class="color-swatch" style="background: #2a2a35; color: #e8e6e3;">
+        <span class="name">Border</span>
+        <span class="hex">#2A2A35</span>
+      </div>
+    </div>
+
+    <p class="section-title">Category Colors (Timeline Dots)</p>
+    <div class="category-colors">
+      <div class="category-pill" style="background: rgba(201,169,98,0.15); color: #c9a962; border: 1px solid rgba(201,169,98,0.3);">
+        <span class="category-dot" style="background: #c9a962;"></span>
+        Capability Doubt
+      </div>
+      <div class="category-pill" style="background: rgba(123,158,137,0.15); color: #7b9e89; border: 1px solid rgba(123,158,137,0.3);">
+        <span class="category-dot" style="background: #7b9e89;"></span>
+        Market/Bubble
+      </div>
+      <div class="category-pill" style="background: rgba(158,123,123,0.15); color: #9e7b7b; border: 1px solid rgba(158,123,123,0.3);">
+        <span class="category-dot" style="background: #9e7b7b;"></span>
+        AGI Skepticism
+      </div>
+      <div class="category-pill" style="background: rgba(123,123,158,0.15); color: #7b7b9e; border: 1px solid rgba(123,123,158,0.3);">
+        <span class="category-dot" style="background: #7b7b9e;"></span>
+        Dismissive Framing
+      </div>
+    </div>
+
+    <p class="section-title">Live Components</p>
+    <div class="preview-grid">
+      <div class="preview-card">
+        <h3>Buttons</h3>
+        <div class="button-row">
+          <button class="btn btn-primary" style="background: #c9a962; color: #0c0c0f;">Primary</button>
+          <button class="btn btn-secondary" style="background: #1c1c24; color: #e8e6e3; border: 1px solid #2a2a35;">Secondary</button>
+          <button class="btn btn-ghost" style="color: #a8a5a0;">Ghost</button>
+        </div>
+      </div>
+
+      <div class="preview-card">
+        <h3>Count Display</h3>
+        <div class="count-display">
+          <div class="count-number" style="color: #c9a962;">247</div>
+          <div class="count-label" style="color: #a8a5a0;">obituaries and counting</div>
+        </div>
+      </div>
+
+      <div class="preview-card">
+        <h3>Obituary Card</h3>
+        <div class="obituary-card" style="background: #14141a; border-color: #2a2a35;">
+          <p class="obituary-quote" style="color: #e8e6e3;">"ChatGPT is just autocomplete on steroids. It will never achieve real intelligence."</p>
+          <div class="obituary-meta">
+            <span class="obituary-source" style="color: #c9a962;">Gary Marcus</span>
+            <span class="obituary-date" style="color: #6b6860;">Mar 14, 2023</span>
+          </div>
+          <div class="obituary-tags">
+            <span class="tag" style="background: rgba(201,169,98,0.15); color: #c9a962;">Capability Doubt</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-card">
+        <h3>Timeline Preview</h3>
+        <div class="timeline-preview" style="background: #14141a;">
+          <div class="timeline-axis">
+            <span>2022</span>
+            <span>2023</span>
+            <span>2024</span>
+            <span>2025</span>
+          </div>
+          <div class="timeline-dots">
+            <div class="timeline-dot" style="left: 5%; background: #c9a962;"></div>
+            <div class="timeline-dot" style="left: 12%; background: #7b9e89;"></div>
+            <div class="timeline-dot" style="left: 28%; background: #c9a962;"></div>
+            <div class="timeline-dot" style="left: 30%; background: #c9a962;"></div>
+            <div class="timeline-dot" style="left: 32%; background: #9e7b7b;"></div>
+            <div class="timeline-dot" style="left: 35%; background: #7b7b9e;"></div>
+            <div class="timeline-dot" style="left: 50%; background: #c9a962;"></div>
+            <div class="timeline-dot" style="left: 52%; background: #7b9e89;"></div>
+            <div class="timeline-dot" style="left: 65%; background: #9e7b7b;"></div>
+            <div class="timeline-dot" style="left: 78%; background: #c9a962;"></div>
+            <div class="timeline-dot" style="left: 80%; background: #7b9e89;"></div>
+            <div class="timeline-dot" style="left: 90%; background: #7b7b9e;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-card">
+        <h3>Alerts</h3>
+        <div class="alert" style="background: rgba(123,158,137,0.15); color: #7b9e89; border: 1px solid rgba(123,158,137,0.3);">
+          <span class="alert-icon" style="background: #7b9e89; color: #0c0c0f;">✓</span>
+          Link copied to clipboard
+        </div>
+        <div class="alert" style="background: rgba(158,85,85,0.15); color: #9e5555; border: 1px solid rgba(158,85,85,0.3);">
+          <span class="alert-icon" style="background: #9e5555; color: #fff;">!</span>
+          Source link unavailable
+        </div>
+      </div>
+
+      <div class="preview-card">
+        <h3>Form Input</h3>
+        <div class="form-group">
+          <label class="form-label" style="color: #a8a5a0;">Filter by source</label>
+          <input class="form-input" style="background: #1c1c24; border-color: #2a2a35; color: #e8e6e3;" type="text" placeholder="Search sources...">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THEME 2: EPOCH AUTHORITY -->
+  <div class="theme-container theme-epoch-authority" id="epoch-authority">
+    <div class="theme-header">
+      <h2>2. Epoch Authority</h2>
+      <p class="personality">Clean • Professional • Research-Grade</p>
+      <p class="description">Directly inspired by Epoch AI. Light, clean backgrounds with high contrast for data readability. Blue accent conveys trust and reliability. Feels like a credible research resource.</p>
+      <div class="best-for">
+        <span class="best-for-tag">Academic credibility</span>
+        <span class="best-for-tag">Daytime reading</span>
+        <span class="best-for-tag">Professional audiences</span>
+      </div>
+    </div>
+
+    <p class="section-title">Color Palette</p>
+    <div class="color-grid">
+      <div class="color-swatch" style="background: #fafafa; color: #18181b; border-color: #d4d4d8;">
+        <span class="name">Background</span>
+        <span class="hex">#FAFAFA</span>
+      </div>
+      <div class="color-swatch" style="background: #ffffff; color: #18181b; border: 1px solid #d4d4d8;">
+        <span class="name">Card</span>
+        <span class="hex">#FFFFFF</span>
+      </div>
+      <div class="color-swatch" style="background: #2563eb; color: #ffffff;">
+        <span class="name">Primary Accent</span>
+        <span class="hex">#2563EB</span>
+      </div>
+      <div class="color-swatch" style="background: #18181b; color: #ffffff;">
+        <span class="name">Text Primary</span>
+        <span class="hex">#18181B</span>
+      </div>
+      <div class="color-swatch" style="background: #52525b; color: #ffffff;">
+        <span class="name">Text Secondary</span>
+        <span class="hex">#52525B</span>
+      </div>
+      <div class="color-swatch" style="background: #d4d4d8; color: #18181b;">
+        <span class="name">Border</span>
+        <span class="hex">#D4D4D8</span>
+      </div>
+    </div>
+
+    <p class="section-title">Category Colors (Timeline Dots)</p>
+    <div class="category-colors">
+      <div class="category-pill" style="background: rgba(37,99,235,0.1); color: #2563eb; border: 1px solid rgba(37,99,235,0.2);">
+        <span class="category-dot" style="background: #2563eb;"></span>
+        Capability Doubt
+      </div>
+      <div class="category-pill" style="background: rgba(5,150,105,0.1); color: #059669; border: 1px solid rgba(5,150,105,0.2);">
+        <span class="category-dot" style="background: #059669;"></span>
+        Market/Bubble
+      </div>
+      <div class="category-pill" style="background: rgba(217,119,6,0.1); color: #d97706; border: 1px solid rgba(217,119,6,0.2);">
+        <span class="category-dot" style="background: #d97706;"></span>
+        AGI Skepticism
+      </div>
+      <div class="category-pill" style="background: rgba(124,58,237,0.1); color: #7c3aed; border: 1px solid rgba(124,58,237,0.2);">
+        <span class="category-dot" style="background: #7c3aed;"></span>
+        Dismissive Framing
+      </div>
+    </div>
+
+    <p class="section-title">Live Components</p>
+    <div class="preview-grid">
+      <div class="preview-card" style="background: #fff; border: 1px solid #d4d4d8;">
+        <h3 style="color: #18181b;">Buttons</h3>
+        <div class="button-row">
+          <button class="btn btn-primary" style="background: #2563eb; color: #fff;">Primary</button>
+          <button class="btn btn-secondary" style="background: #f4f4f5; color: #18181b; border: 1px solid #d4d4d8;">Secondary</button>
+          <button class="btn btn-ghost" style="color: #52525b;">Ghost</button>
+        </div>
+      </div>
+
+      <div class="preview-card" style="background: #fff; border: 1px solid #d4d4d8;">
+        <h3 style="color: #18181b;">Count Display</h3>
+        <div class="count-display">
+          <div class="count-number" style="color: #2563eb;">247</div>
+          <div class="count-label" style="color: #52525b;">obituaries and counting</div>
+        </div>
+      </div>
+
+      <div class="preview-card" style="background: #fff; border: 1px solid #d4d4d8;">
+        <h3 style="color: #18181b;">Obituary Card</h3>
+        <div class="obituary-card" style="background: #fafafa; border-color: #e4e4e7;">
+          <p class="obituary-quote" style="color: #18181b;">"ChatGPT is just autocomplete on steroids. It will never achieve real intelligence."</p>
+          <div class="obituary-meta">
+            <span class="obituary-source" style="color: #2563eb;">Gary Marcus</span>
+            <span class="obituary-date" style="color: #a1a1aa;">Mar 14, 2023</span>
+          </div>
+          <div class="obituary-tags">
+            <span class="tag" style="background: rgba(37,99,235,0.1); color: #2563eb;">Capability Doubt</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-card" style="background: #fff; border: 1px solid #d4d4d8;">
+        <h3 style="color: #18181b;">Timeline Preview</h3>
+        <div class="timeline-preview" style="background: #fafafa;">
+          <div class="timeline-axis" style="color: #a1a1aa;">
+            <span>2022</span>
+            <span>2023</span>
+            <span>2024</span>
+            <span>2025</span>
+          </div>
+          <div class="timeline-dots">
+            <div class="timeline-dot" style="left: 5%; background: #2563eb;"></div>
+            <div class="timeline-dot" style="left: 12%; background: #059669;"></div>
+            <div class="timeline-dot" style="left: 28%; background: #2563eb;"></div>
+            <div class="timeline-dot" style="left: 30%; background: #2563eb;"></div>
+            <div class="timeline-dot" style="left: 32%; background: #d97706;"></div>
+            <div class="timeline-dot" style="left: 35%; background: #7c3aed;"></div>
+            <div class="timeline-dot" style="left: 50%; background: #2563eb;"></div>
+            <div class="timeline-dot" style="left: 52%; background: #059669;"></div>
+            <div class="timeline-dot" style="left: 65%; background: #d97706;"></div>
+            <div class="timeline-dot" style="left: 78%; background: #2563eb;"></div>
+            <div class="timeline-dot" style="left: 80%; background: #059669;"></div>
+            <div class="timeline-dot" style="left: 90%; background: #7c3aed;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-card" style="background: #fff; border: 1px solid #d4d4d8;">
+        <h3 style="color: #18181b;">Alerts</h3>
+        <div class="alert" style="background: rgba(5,150,105,0.1); color: #059669; border: 1px solid rgba(5,150,105,0.2);">
+          <span class="alert-icon" style="background: #059669; color: #fff;">✓</span>
+          Link copied to clipboard
+        </div>
+        <div class="alert" style="background: rgba(220,38,38,0.1); color: #dc2626; border: 1px solid rgba(220,38,38,0.2);">
+          <span class="alert-icon" style="background: #dc2626; color: #fff;">!</span>
+          Source link unavailable
+        </div>
+      </div>
+
+      <div class="preview-card" style="background: #fff; border: 1px solid #d4d4d8;">
+        <h3 style="color: #18181b;">Form Input</h3>
+        <div class="form-group">
+          <label class="form-label" style="color: #52525b;">Filter by source</label>
+          <input class="form-input" style="background: #fff; border-color: #d4d4d8; color: #18181b;" type="text" placeholder="Search sources...">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THEME 3: DIGITAL NEWSROOM -->
+  <div class="theme-container theme-digital-newsroom" id="digital-newsroom">
+    <div class="theme-header">
+      <h2>3. Digital Newsroom</h2>
+      <p class="personality">Bold • Editorial • High-Impact</p>
+      <p class="description">Inspired by NYT/Bloomberg data journalism. High contrast dark with bold red accent creates urgency and importance. The newspaper editorial aesthetic lends journalistic credibility.</p>
+      <div class="best-for">
+        <span class="best-for-tag">Bold statements</span>
+        <span class="best-for-tag">Media-savvy audience</span>
+        <span class="best-for-tag">Social sharing</span>
+      </div>
+    </div>
+
+    <p class="section-title">Color Palette</p>
+    <div class="color-grid">
+      <div class="color-swatch" style="background: #111111; color: #ffffff;">
+        <span class="name">Background</span>
+        <span class="hex">#111111</span>
+      </div>
+      <div class="color-swatch" style="background: #1a1a1a; color: #ffffff;">
+        <span class="name">Card</span>
+        <span class="hex">#1A1A1A</span>
+      </div>
+      <div class="color-swatch" style="background: #ff3b3b; color: #ffffff;">
+        <span class="name">Primary Accent</span>
+        <span class="hex">#FF3B3B</span>
+      </div>
+      <div class="color-swatch" style="background: #ffffff; color: #111111;">
+        <span class="name">Text Primary</span>
+        <span class="hex">#FFFFFF</span>
+      </div>
+      <div class="color-swatch" style="background: #b3b3b3; color: #111111;">
+        <span class="name">Text Secondary</span>
+        <span class="hex">#B3B3B3</span>
+      </div>
+      <div class="color-swatch" style="background: #333333; color: #ffffff;">
+        <span class="name">Border</span>
+        <span class="hex">#333333</span>
+      </div>
+    </div>
+
+    <p class="section-title">Category Colors (Timeline Dots)</p>
+    <div class="category-colors">
+      <div class="category-pill" style="background: rgba(255,59,59,0.15); color: #ff3b3b; border: 1px solid rgba(255,59,59,0.3);">
+        <span class="category-dot" style="background: #ff3b3b;"></span>
+        Capability Doubt
+      </div>
+      <div class="category-pill" style="background: rgba(59,139,255,0.15); color: #3b8bff; border: 1px solid rgba(59,139,255,0.3);">
+        <span class="category-dot" style="background: #3b8bff;"></span>
+        Market/Bubble
+      </div>
+      <div class="category-pill" style="background: rgba(255,201,59,0.15); color: #ffc93b; border: 1px solid rgba(255,201,59,0.3);">
+        <span class="category-dot" style="background: #ffc93b;"></span>
+        AGI Skepticism
+      </div>
+      <div class="category-pill" style="background: rgba(59,255,139,0.15); color: #3bff8b; border: 1px solid rgba(59,255,139,0.3);">
+        <span class="category-dot" style="background: #3bff8b;"></span>
+        Dismissive Framing
+      </div>
+    </div>
+
+    <p class="section-title">Live Components</p>
+    <div class="preview-grid">
+      <div class="preview-card" style="background: #1a1a1a; border: 1px solid #333;">
+        <h3 style="color: #fff;">Buttons</h3>
+        <div class="button-row">
+          <button class="btn btn-primary" style="background: #ff3b3b; color: #fff;">Primary</button>
+          <button class="btn btn-secondary" style="background: #242424; color: #fff; border: 1px solid #333;">Secondary</button>
+          <button class="btn btn-ghost" style="color: #b3b3b3;">Ghost</button>
+        </div>
+      </div>
+
+      <div class="preview-card" style="background: #1a1a1a; border: 1px solid #333;">
+        <h3 style="color: #fff;">Count Display</h3>
+        <div class="count-display">
+          <div class="count-number" style="color: #ff3b3b;">247</div>
+          <div class="count-label" style="color: #b3b3b3;">obituaries and counting</div>
+        </div>
+      </div>
+
+      <div class="preview-card" style="background: #1a1a1a; border: 1px solid #333;">
+        <h3 style="color: #fff;">Obituary Card</h3>
+        <div class="obituary-card" style="background: #111; border-color: #333;">
+          <p class="obituary-quote" style="color: #fff;">"ChatGPT is just autocomplete on steroids. It will never achieve real intelligence."</p>
+          <div class="obituary-meta">
+            <span class="obituary-source" style="color: #ff3b3b;">Gary Marcus</span>
+            <span class="obituary-date" style="color: #666;">Mar 14, 2023</span>
+          </div>
+          <div class="obituary-tags">
+            <span class="tag" style="background: rgba(255,59,59,0.15); color: #ff3b3b;">Capability Doubt</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-card" style="background: #1a1a1a; border: 1px solid #333;">
+        <h3 style="color: #fff;">Timeline Preview</h3>
+        <div class="timeline-preview" style="background: #111;">
+          <div class="timeline-axis" style="color: #666;">
+            <span>2022</span>
+            <span>2023</span>
+            <span>2024</span>
+            <span>2025</span>
+          </div>
+          <div class="timeline-dots">
+            <div class="timeline-dot" style="left: 5%; background: #ff3b3b;"></div>
+            <div class="timeline-dot" style="left: 12%; background: #3b8bff;"></div>
+            <div class="timeline-dot" style="left: 28%; background: #ff3b3b;"></div>
+            <div class="timeline-dot" style="left: 30%; background: #ff3b3b;"></div>
+            <div class="timeline-dot" style="left: 32%; background: #ffc93b;"></div>
+            <div class="timeline-dot" style="left: 35%; background: #3bff8b;"></div>
+            <div class="timeline-dot" style="left: 50%; background: #ff3b3b;"></div>
+            <div class="timeline-dot" style="left: 52%; background: #3b8bff;"></div>
+            <div class="timeline-dot" style="left: 65%; background: #ffc93b;"></div>
+            <div class="timeline-dot" style="left: 78%; background: #ff3b3b;"></div>
+            <div class="timeline-dot" style="left: 80%; background: #3b8bff;"></div>
+            <div class="timeline-dot" style="left: 90%; background: #3bff8b;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-card" style="background: #1a1a1a; border: 1px solid #333;">
+        <h3 style="color: #fff;">Alerts</h3>
+        <div class="alert" style="background: rgba(59,255,139,0.15); color: #3bff8b; border: 1px solid rgba(59,255,139,0.3);">
+          <span class="alert-icon" style="background: #3bff8b; color: #111;">✓</span>
+          Link copied to clipboard
+        </div>
+        <div class="alert" style="background: rgba(255,59,59,0.15); color: #ff3b3b; border: 1px solid rgba(255,59,59,0.3);">
+          <span class="alert-icon" style="background: #ff3b3b; color: #fff;">!</span>
+          Source link unavailable
+        </div>
+      </div>
+
+      <div class="preview-card" style="background: #1a1a1a; border: 1px solid #333;">
+        <h3 style="color: #fff;">Form Input</h3>
+        <div class="form-group">
+          <label class="form-label" style="color: #b3b3b3;">Filter by source</label>
+          <input class="form-input" style="background: #242424; border-color: #333; color: #fff;" type="text" placeholder="Search sources...">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THEME 4: MIDNIGHT DATA -->
+  <div class="theme-container theme-midnight-data" id="midnight-data">
+    <div class="theme-header">
+      <h2>4. Midnight Data</h2>
+      <p class="personality">Modern • Tech-Forward • Cool</p>
+      <p class="description">Deep navy-black with cyan accent. The modern tech aesthetic feels like a sophisticated dashboard or analytics tool. Cool tones suggest objectivity and precision.</p>
+      <div class="best-for">
+        <span class="best-for-tag">Tech audience</span>
+        <span class="best-for-tag">Data visualization focus</span>
+        <span class="best-for-tag">Modern aesthetic</span>
+      </div>
+    </div>
+
+    <p class="section-title">Color Palette</p>
+    <div class="color-grid">
+      <div class="color-swatch" style="background: #030712; color: #f1f5f9;">
+        <span class="name">Background</span>
+        <span class="hex">#030712</span>
+      </div>
+      <div class="color-swatch" style="background: #0f172a; color: #f1f5f9;">
+        <span class="name">Card</span>
+        <span class="hex">#0F172A</span>
+      </div>
+      <div class="color-swatch" style="background: #38bdf8; color: #030712;">
+        <span class="name">Primary Accent</span>
+        <span class="hex">#38BDF8</span>
+      </div>
+      <div class="color-swatch" style="background: #f1f5f9; color: #030712;">
+        <span class="name">Text Primary</span>
+        <span class="hex">#F1F5F9</span>
+      </div>
+      <div class="color-swatch" style="background: #94a3b8; color: #030712;">
+        <span class="name">Text Secondary</span>
+        <span class="hex">#94A3B8</span>
+      </div>
+      <div class="color-swatch" style="background: #1e293b; color: #f1f5f9;">
+        <span class="name">Border</span>
+        <span class="hex">#1E293B</span>
+      </div>
+    </div>
+
+    <p class="section-title">Category Colors (Timeline Dots)</p>
+    <div class="category-colors">
+      <div class="category-pill" style="background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3);">
+        <span class="category-dot" style="background: #38bdf8;"></span>
+        Capability Doubt
+      </div>
+      <div class="category-pill" style="background: rgba(167,139,250,0.15); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3);">
+        <span class="category-dot" style="background: #a78bfa;"></span>
+        Market/Bubble
+      </div>
+      <div class="category-pill" style="background: rgba(251,146,60,0.15); color: #fb923c; border: 1px solid rgba(251,146,60,0.3);">
+        <span class="category-dot" style="background: #fb923c;"></span>
+        AGI Skepticism
+      </div>
+      <div class="category-pill" style="background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3);">
+        <span class="category-dot" style="background: #4ade80;"></span>
+        Dismissive Framing
+      </div>
+    </div>
+
+    <p class="section-title">Live Components</p>
+    <div class="preview-grid">
+      <div class="preview-card" style="background: #0f172a; border: 1px solid #1e293b;">
+        <h3 style="color: #f1f5f9;">Buttons</h3>
+        <div class="button-row">
+          <button class="btn btn-primary" style="background: #38bdf8; color: #030712;">Primary</button>
+          <button class="btn btn-secondary" style="background: #1e293b; color: #f1f5f9; border: 1px solid #334155;">Secondary</button>
+          <button class="btn btn-ghost" style="color: #94a3b8;">Ghost</button>
+        </div>
+      </div>
+
+      <div class="preview-card" style="background: #0f172a; border: 1px solid #1e293b;">
+        <h3 style="color: #f1f5f9;">Count Display</h3>
+        <div class="count-display">
+          <div class="count-number" style="color: #38bdf8;">247</div>
+          <div class="count-label" style="color: #94a3b8;">obituaries and counting</div>
+        </div>
+      </div>
+
+      <div class="preview-card" style="background: #0f172a; border: 1px solid #1e293b;">
+        <h3 style="color: #f1f5f9;">Obituary Card</h3>
+        <div class="obituary-card" style="background: #030712; border-color: #1e293b;">
+          <p class="obituary-quote" style="color: #f1f5f9;">"ChatGPT is just autocomplete on steroids. It will never achieve real intelligence."</p>
+          <div class="obituary-meta">
+            <span class="obituary-source" style="color: #38bdf8;">Gary Marcus</span>
+            <span class="obituary-date" style="color: #475569;">Mar 14, 2023</span>
+          </div>
+          <div class="obituary-tags">
+            <span class="tag" style="background: rgba(56,189,248,0.15); color: #38bdf8;">Capability Doubt</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-card" style="background: #0f172a; border: 1px solid #1e293b;">
+        <h3 style="color: #f1f5f9;">Timeline Preview</h3>
+        <div class="timeline-preview" style="background: #030712;">
+          <div class="timeline-axis" style="color: #475569;">
+            <span>2022</span>
+            <span>2023</span>
+            <span>2024</span>
+            <span>2025</span>
+          </div>
+          <div class="timeline-dots">
+            <div class="timeline-dot" style="left: 5%; background: #38bdf8;"></div>
+            <div class="timeline-dot" style="left: 12%; background: #a78bfa;"></div>
+            <div class="timeline-dot" style="left: 28%; background: #38bdf8;"></div>
+            <div class="timeline-dot" style="left: 30%; background: #38bdf8;"></div>
+            <div class="timeline-dot" style="left: 32%; background: #fb923c;"></div>
+            <div class="timeline-dot" style="left: 35%; background: #4ade80;"></div>
+            <div class="timeline-dot" style="left: 50%; background: #38bdf8;"></div>
+            <div class="timeline-dot" style="left: 52%; background: #a78bfa;"></div>
+            <div class="timeline-dot" style="left: 65%; background: #fb923c;"></div>
+            <div class="timeline-dot" style="left: 78%; background: #38bdf8;"></div>
+            <div class="timeline-dot" style="left: 80%; background: #a78bfa;"></div>
+            <div class="timeline-dot" style="left: 90%; background: #4ade80;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-card" style="background: #0f172a; border: 1px solid #1e293b;">
+        <h3 style="color: #f1f5f9;">Alerts</h3>
+        <div class="alert" style="background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3);">
+          <span class="alert-icon" style="background: #4ade80; color: #030712;">✓</span>
+          Link copied to clipboard
+        </div>
+        <div class="alert" style="background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3);">
+          <span class="alert-icon" style="background: #f87171; color: #fff;">!</span>
+          Source link unavailable
+        </div>
+      </div>
+
+      <div class="preview-card" style="background: #0f172a; border: 1px solid #1e293b;">
+        <h3 style="color: #f1f5f9;">Form Input</h3>
+        <div class="form-group">
+          <label class="form-label" style="color: #94a3b8;">Filter by source</label>
+          <input class="form-input" style="background: #1e293b; border-color: #334155; color: #f1f5f9;" type="text" placeholder="Search sources...">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Theme switching
+    const themeBtns = document.querySelectorAll('.theme-btn');
+    const themeContainers = document.querySelectorAll('.theme-container');
+
+    themeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const theme = btn.dataset.theme;
+
+        // Update buttons
+        themeBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Update containers
+        themeContainers.forEach(container => {
+          container.classList.remove('active');
+          if (container.id === theme) {
+            container.classList.add('active');
+          }
+        });
+      });
+    });
+
+    // Add hover effect to timeline dots
+    document.querySelectorAll('.timeline-dot').forEach(dot => {
+      dot.addEventListener('mouseenter', () => {
+        dot.style.boxShadow = `0 0 20px ${getComputedStyle(dot).backgroundColor}`;
+      });
+      dot.addEventListener('mouseleave', () => {
+        dot.style.boxShadow = '0 0 10px rgba(0,0,0,0.3)';
+      });
+    });
+  </script>
+</body>
+</html>

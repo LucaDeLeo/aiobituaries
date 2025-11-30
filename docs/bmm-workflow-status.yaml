@@ -45,8 +45,7 @@ workflow_status:
         command: "/bmad:bmm:workflows:validate-prd"
 
       - id: "create-ux-design"
-        status: "conditional"
-        condition: "if_has_ui"
+        status: "docs/ux-design-specification.md"
         agent: "ux-designer"
         command: "/bmad:bmm:workflows:create-ux-design"
 
