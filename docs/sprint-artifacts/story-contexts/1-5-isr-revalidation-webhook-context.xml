@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <metadata>
+    <story-key>1-5-isr-revalidation-webhook</story-key>
+    <generated-at>2025-11-29</generated-at>
+    <epic>Epic 1 - Foundation</epic>
+    <status>drafted</status>
+  </metadata>
+
+  <story-summary>
+    Create an ISR (Incremental Static Regeneration) webhook endpoint that receives POST requests
+    from Sanity CMS when content changes and triggers on-demand revalidation of all obituary-related
+    pages. This enables content editors to see published changes reflected on the site without
+    manual deployment.
+  </story-summary>
+
+  <acceptance-criteria>
+    <criterion id="AC-1.5.1">
+      <description>Webhook endpoint exists</description>
+      <testable-condition>POST to `/api/revalidate` returns response</testable-condition>
+      <implementation-note>Create src/app/api/revalidate/route.ts with POST handler</implementation-note>
+    </criterion>
+    <criterion id="AC-1.5.2">
+      <description>Secret validation works</description>
+      <testable-condition>Request without valid secret returns 401</testable-condition>
+      <implementation-note>Check x-sanity-webhook-secret header against env var</implementation-note>
+    </criterion>
+    <criterion id="AC-1.5.3">
+      <description>Invalid secret rejected</description>
+      <testable-condition>Mismatched secret returns `{ error: 'Invalid secret' }`</testable-condition>
+      <implementation-note>Return NextResponse.json({ error: 'Invalid secret' }, { status: 401 })</implementation-note>
+    </criterion>
+    <criterion id="AC-1.5.4">
+      <description>Homepage revalidated</description>
+      <testable-condition>`revalidatePath('/')` called on valid request</testable-condition>
+      <implementation-note>Import revalidatePath from next/cache</implementation-note>
+    </criterion>
+    <criterion id="AC-1.5.5">
+      <description>Claims page revalidated</description>
+      <testable-condition>`revalidatePath('/claims')` called</testable-condition>
+      <implementation-note>Call revalidatePath('/claims') after secret validation</implementation-note>
+    </criterion>
+    <criterion id="AC-1.5.6">
+      <description>Obituary pages revalidated</description>
+      <testable-condition>`revalidatePath('/obituary/[slug]', 'page')` called</testable-condition>
+      <implementation-note>Use 'page' type to revalidate all dynamic obituary routes</implementation-note>
+    </criterion>
+    <criterion id="AC-1.5.7">
+      <description>Success response returned</description>
+      <testable-condition>Valid request returns `{ revalidated: true }`</testable-condition>
+      <implementation-note>Return NextResponse.json({ revalidated: true })</implementation-note>
+    </criterion>
+    <criterion id="AC-1.5.8">
+      <description>Secret read from env</description>
+      <testable-condition>Uses `SANITY_WEBHOOK_SECRET` environment variable</testable-condition>
+      <implementation-note>Add to .env.local.example with documentation</implementation-note>
+    </criterion>
+  </acceptance-criteria>
+
+  <technical-context>
+    <next-js-api-routes>
+      <description>
+        Next.js App Router API routes are created as route.ts files under src/app/api/.
+        Export named handler functions (GET, POST, etc.) that receive NextRequest and return NextResponse.
+      </description>
+      <pattern>
+        - Location: src/app/api/revalidate/route.ts
+        - Export: async function POST(request: NextRequest)
+        - Types: NextRequest, NextResponse from 'next/server'
+      </pattern>
+    </next-js-api-routes>
+
+    <revalidate-path>
+      <description>
+        Next.js on-demand revalidation using revalidatePath() from 'next/cache'.
+        Marks cached pages as stale so next request regenerates with fresh data.
+      </description>
+      <usage>
+        - revalidatePath('/') - Revalidate homepage
+        - revalidatePath('/claims') - Revalidate claims listing
+        - revalidatePath('/obituary/[slug]', 'page') - Revalidate all obituary detail pages
+      </usage>
+    </revalidate-path>
+
+    <sanity-webhook>
+      <description>
+        Sanity webhooks fire HTTP requests when content changes.
+        Configure in Sanity dashboard to POST to /api/revalidate with secret header.
+      </description>
+      <header>x-sanity-webhook-secret</header>
+      <trigger-events>Create, Update, Delete</trigger-events>
+      <filter>Document type = obituary</filter>
+    </sanity-webhook>
+
+    <isr-cache-flow>
+      1. Editor publishes change in Sanity Studio
+      2. Sanity fires webhook to /api/revalidate with secret header
+      3. Endpoint validates secret, calls revalidatePath() for affected routes
+      4. Next.js marks cached pages as stale
+      5. Next request triggers regeneration with fresh Sanity data
+      6. Vercel CDN serves new static page
+    </isr-cache-flow>
+  </technical-context>
+
+  <api-specification>
+    <endpoint>
+      <method>POST</method>
+      <path>/api/revalidate</path>
+      <headers>
+        <header name="x-sanity-webhook-secret" required="true">
+          Secret token for authentication. Must match SANITY_WEBHOOK_SECRET env var.
+        </header>
+      </headers>
+      <responses>
+        <response status="200">
+          <body>{ "revalidated": true }</body>
+          <description>Revalidation successful</description>
+        </response>
+        <response status="401">
+          <body>{ "error": "Invalid secret" }</body>
+          <description>Missing or invalid secret header</description>
+        </response>
+      </responses>
+    </endpoint>
+  </api-specification>
+
+  <existing-code>
+    <file path="src/lib/sanity/client.ts">
+      <description>Sanity client configuration using next-sanity createClient</description>
+      <relevance>Shows pattern for env var usage (NEXT_PUBLIC_SANITY_PROJECT_ID)</relevance>
+      <content><![CDATA[
+import { createClient } from 'next-sanity'
+
+export const client = createClient({
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
+  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
+  apiVersion: '2024-01-01',
+  useCdn: true,
+})
+      ]]></content>
+    </file>
+
+    <file path="tests/unit/lib/sanity/queries.test.ts">
+      <description>Existing test patterns for Sanity-related functionality</description>
+      <relevance>Shows testing patterns: vi.mock, vi.mocked, beforeEach, test fixtures</relevance>
+      <pattern>
+        - Mock modules with vi.mock()
+        - Clear mocks in beforeEach
+        - Use describe/it blocks
+        - Use expect assertions
+      </pattern>
+    </file>
+
+    <file path="vitest.config.ts">
+      <description>Vitest configuration</description>
+      <relevance>Test setup: jsdom environment, globals enabled, setup file</relevance>
+    </file>
+
+    <file path=".env.local.example">
+      <description>Environment variables template</description>
+      <relevance>Must add SANITY_WEBHOOK_SECRET documentation</relevance>
+      <current-content><![CDATA[
+# Sanity CMS Configuration
+NEXT_PUBLIC_SANITY_PROJECT_ID=your_project_id_here
+NEXT_PUBLIC_SANITY_DATASET=production
+      ]]></current-content>
+    </file>
+
+    <file path="package.json">
+      <description>Project dependencies</description>
+      <relevance>
+        - next: 16.0.5 (includes revalidatePath, NextRequest, NextResponse)
+        - vitest: ^4.0.14 (testing framework)
+        - @testing-library packages available
+      </relevance>
+    </file>
+  </existing-code>
+
+  <implementation-plan>
+    <step number="1" estimated-time="15 min">
+      <title>Create API Route File</title>
+      <tasks>
+        <task>Create directory src/app/api/revalidate/</task>
+        <task>Create route.ts file with POST handler skeleton</task>
+        <task>Import dependencies: revalidatePath from next/cache, NextRequest/NextResponse from next/server</task>
+      </tasks>
+    </step>
+
+    <step number="2" estimated-time="15 min">
+      <title>Implement Secret Validation</title>
+      <tasks>
+        <task>Extract x-sanity-webhook-secret header from request</task>
+        <task>Compare against process.env.SANITY_WEBHOOK_SECRET</task>
+        <task>Return 401 with { error: 'Invalid secret' } if validation fails</task>
+      </tasks>
+    </step>
+
+    <step number="3" estimated-time="15 min">
+      <title>Implement Path Revalidation</title>
+      <tasks>
+        <task>Call revalidatePath('/') for homepage</task>
+        <task>Call revalidatePath('/claims') for claims listing</task>
+        <task>Call revalidatePath('/obituary/[slug]', 'page') for obituary pages</task>
+      </tasks>
+    </step>
+
+    <step number="4" estimated-time="10 min">
+      <title>Implement Success Response</title>
+      <tasks>
+        <task>Return { revalidated: true } JSON on successful revalidation</task>
+      </tasks>
+    </step>
+
+    <step number="5" estimated-time="10 min">
+      <title>Update Environment Variables Documentation</title>
+      <tasks>
+        <task>Add SANITY_WEBHOOK_SECRET to .env.local.example</task>
+        <task>Add comment explaining variable purpose</task>
+      </tasks>
+    </step>
+
+    <step number="6" estimated-time="30 min">
+      <title>Write Unit Tests</title>
+      <tasks>
+        <task>Create tests/unit/api/revalidate.test.ts</task>
+        <task>Test POST without secret returns 401</task>
+        <task>Test POST with invalid secret returns 401</task>
+        <task>Test POST with valid secret returns { revalidated: true }</task>
+        <task>Mock revalidatePath and verify calls with correct paths</task>
+      </tasks>
+    </step>
+  </implementation-plan>
+
+  <environment-variables>
+    <variable name="SANITY_WEBHOOK_SECRET" required="true">
+      <description>
+        Secret token for authenticating Sanity webhook requests.
+        Should be a long random string (e.g., generated with `openssl rand -hex 32`).
+        Must match the secret configured in Sanity dashboard webhook settings.
+        IMPORTANT: This must NOT use the NEXT_PUBLIC_ prefix as it is a server-side secret
+        and must never be exposed to the client.
+      </description>
+      <usage>process.env.SANITY_WEBHOOK_SECRET</usage>
+      <example>your_webhook_secret_here</example>
+    </variable>
+  </environment-variables>
+
+  <testing-requirements>
+    <test-file>tests/unit/api/revalidate.test.ts</test-file>
+
+    <test-scenario id="1" type="unit">
+      <name>Auth Failure - Missing Secret</name>
+      <description>Send POST with no x-sanity-webhook-secret header</description>
+      <expected>401 status, { error: 'Invalid secret' } body</expected>
+    </test-scenario>
+
+    <test-scenario id="2" type="unit">
+      <name>Auth Failure - Wrong Secret</name>
+      <description>Send POST with incorrect secret value</description>
+      <expected>401 status, { error: 'Invalid secret' } body</expected>
+    </test-scenario>
+
+    <test-scenario id="3" type="unit">
+      <name>Success Case</name>
+      <description>Send POST with correct secret</description>
+      <expected>200 status, { revalidated: true } body</expected>
+      <verify>revalidatePath called 3 times with correct paths</verify>
+      <assertion-example>expect(revalidatePath).toHaveBeenCalledWith('/', 'page')</assertion-example>
+      <assertion-example>expect(revalidatePath).toHaveBeenCalledWith('/claims', 'page')</assertion-example>
+      <assertion-example>expect(revalidatePath).toHaveBeenCalledWith('/obituary/[slug]', 'page')</assertion-example>
+    </test-scenario>
+
+    <mocking-requirements>
+      <mock module="next/cache">
+        <function>revalidatePath</function>
+        <note>Mock to verify calls without actual cache invalidation</note>
+      </mock>
+      <mock>
+        <env-var>SANITY_WEBHOOK_SECRET</env-var>
+        <note>Set in test setup to known value for validation testing</note>
+      </mock>
+    </mocking-requirements>
+
+    <manual-testing>
+      <command description="Test without secret (should fail)">
+        curl -X POST http://localhost:3000/api/revalidate
+      </command>
+      <command description="Test with invalid secret (should fail)">
+        curl -X POST http://localhost:3000/api/revalidate -H "x-sanity-webhook-secret: wrong-secret"
+      </command>
+      <command description="Test with valid secret (should succeed)">
+        curl -X POST http://localhost:3000/api/revalidate -H "x-sanity-webhook-secret: your-actual-secret"
+      </command>
+    </manual-testing>
+  </testing-requirements>
+
+  <files-to-create>
+    <file action="create">
+      <path>src/app/api/revalidate/route.ts</path>
+      <description>ISR webhook endpoint</description>
+    </file>
+    <file action="create">
+      <path>tests/unit/api/revalidate.test.ts</path>
+      <description>Unit tests for webhook endpoint</description>
+    </file>
+  </files-to-create>
+
+  <files-to-modify>
+    <file action="modify">
+      <path>.env.local.example</path>
+      <description>Add SANITY_WEBHOOK_SECRET documentation</description>
+      <change>Append SANITY_WEBHOOK_SECRET variable with comment</change>
+    </file>
+  </files-to-modify>
+
+  <reference-implementation>
+    <file path="src/app/api/revalidate/route.ts"><![CDATA[
+// This is SERVER-SIDE ONLY code. Never expose SANITY_WEBHOOK_SECRET to the client.
+import { revalidatePath } from 'next/cache'
+import { NextRequest, NextResponse } from 'next/server'
+
+export async function POST(request: NextRequest) {
+  // Server-side secret - never expose to client
+  const secret = request.headers.get('x-sanity-webhook-secret')
+
+  if (secret !== process.env.SANITY_WEBHOOK_SECRET) {
+    return NextResponse.json({ error: 'Invalid secret' }, { status: 401 })
+  }
+
+  // Revalidate all pages that display obituaries
+  revalidatePath('/')
+  revalidatePath('/claims')
+  revalidatePath('/obituary/[slug]', 'page')
+
+  return NextResponse.json({ revalidated: true })
+}
+    ]]></file>
+  </reference-implementation>
+
+  <coding-standards>
+    <standard name="File Naming">kebab-case: route.ts</standard>
+    <standard name="Function Naming">camelCase: POST (uppercase for HTTP methods per Next.js convention)</standard>
+    <standard name="Import Order">
+      1. React/Next.js (revalidatePath, NextRequest, NextResponse)
+      2. No third-party imports needed
+    </standard>
+    <standard name="Environment Variables">Never commit actual secrets; document in .env.local.example</standard>
+  </coding-standards>
+
+  <fr-coverage>
+    <requirement id="FR6">
+      <description>System updates displayed data when source data changes (via ISR revalidation)</description>
+      <how-satisfied>Webhook triggers revalidatePath() for all obituary-related pages when Sanity content changes</how-satisfied>
+    </requirement>
+  </fr-coverage>
+
+  <dependencies>
+    <story-dependency id="1-1" status="complete">Project Initialization</story-dependency>
+    <story-dependency id="1-2" status="complete">Design System Setup</story-dependency>
+    <story-dependency id="1-3" status="complete">Sanity CMS Integration</story-dependency>
+    <story-dependency id="1-4" status="complete">Layout Shell and Navigation</story-dependency>
+  </dependencies>
+
+  <warnings>
+    <warning type="manual-step">
+      Sanity webhook configuration requires manual setup in Sanity dashboard after deployment.
+      Document in story completion notes.
+    </warning>
+    <warning type="testing-limitation">
+      ISR revalidation cannot be fully tested locally - cache behavior only visible on Vercel deployment.
+    </warning>
+  </warnings>
+</story-context>
