@@ -36,3 +36,26 @@ export interface ScatterPlotProps {
   /** Height (default: 400) */
   height?: number
 }
+
+/**
+ * Cluster of overlapping points.
+ * Created when points are within clustering threshold at low zoom levels.
+ */
+export interface PointCluster {
+  /** Unique cluster ID (e.g., "cluster-0", "cluster-1") */
+  id: string
+  /** Center X position (pixel coordinate) */
+  x: number
+  /** Center Y position (pixel coordinate) */
+  y: number
+  /** Number of points in cluster (minimum 5 per ClusterConfig.minPoints) */
+  count: number
+  /** Obituary IDs of all points in this cluster */
+  obituaryIds: string[]
+  /** Primary category - most common category among cluster members */
+  primaryCategory: Category
+  /** Earliest date in cluster - for click-to-zoom bounds calculation */
+  minDate: Date
+  /** Latest date in cluster - for click-to-zoom bounds calculation */
+  maxDate: Date
+}

@@ -1,0 +1,1265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context XML
+  Generated: 2025-11-30
+  Story: 3-5-density-visualization
+  Purpose: Complete implementation context for Density Visualization
+-->
+<story-context>
+  <metadata>
+    <story-key>3-5-density-visualization</story-key>
+    <title>Density Visualization</title>
+    <epic>Epic 3 - Timeline Visualization</epic>
+    <status>drafted</status>
+    <priority>High</priority>
+    <generated>2025-11-30</generated>
+    <sequence>5 of 8 in Epic 3</sequence>
+  </metadata>
+
+  <story-reference>
+    <path>docs/sprint-artifacts/stories/3-5-density-visualization.md</path>
+    <user-story>
+      As a visitor,
+      I want to see where obituaries cluster densely,
+      So that I can identify periods of peak AI skepticism.
+    </user-story>
+  </story-reference>
+
+  <acceptance-criteria>
+    <criterion id="AC-3.5.1">Overlapping dots create visual density - Given multiple obituaries in short time period, when dots overlap or are close, then visual density is apparent through brighter additive glow effect</criterion>
+    <criterion id="AC-3.5.2">Heavy clustering at low zoom - Given zoom level less than 0.7x, when viewing the timeline, then heavy clustering occurs with count badges visible for groups of 5+ dots</criterion>
+    <criterion id="AC-3.5.3">Moderate density at normal zoom - Given zoom level 0.7x - 1.5x, when viewing the timeline, then some overlap remains with glow indicating density</criterion>
+    <criterion id="AC-3.5.4">Full separation at high zoom - Given zoom level greater than 1.5x, when viewing the timeline, then dots are fully separated and individually distinguishable</criterion>
+    <criterion id="AC-3.5.5">Large cluster badge display - Given a cluster of 10+ obituaries exists, when viewed zoomed out, then it shows as single glowing dot with badge "+10" (or actual count)</criterion>
+    <criterion id="AC-3.5.6">Cluster click zooms in - Given user clicks a cluster badge, when click is registered, then timeline animates zoom into that time period to reveal individual dots</criterion>
+    <criterion id="AC-3.5.7">Cluster badge uses primary category color - Given a cluster contains mixed categories, when cluster badge renders, then it uses the most common category color in that cluster</criterion>
+    <criterion id="AC-3.5.8">Individual dots hidden when clustered - Given dots are part of a cluster, when cluster badge is shown, then individual dots in that cluster are hidden to avoid visual clutter</criterion>
+  </acceptance-criteria>
+
+  <documentation-artifacts>
+    <artifact type="tech-spec" relevance="primary">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-3-tech-spec.md</path>
+      <description>Complete technical specification for Epic 3 Timeline Visualization including density/clustering specifications</description>
+      <key-sections>
+        <section line="399-511">Section 3.3: Clustering Algorithm - ClusterConfig interface, computeClusters function, isPointClustered helper</section>
+        <section line="250-264">Section 3.1: PointCluster Interface - cluster data structure with id, x, y, count, obituaryIds, primaryCategory</section>
+        <section line="709-728">Section 4.6: ClusterBadge Component - visual indicator specification</section>
+        <section line="1241-1266">Story 3.5 Acceptance Criteria in tech-spec</section>
+        <section line="806-925">Section 6: Animation Presets - SPRINGS.zoom for click-to-zoom animation</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="architecture" relevance="primary">
+      <path>docs/architecture.md</path>
+      <description>System architecture defining Contextual Scatter Plot pattern and interaction states</description>
+      <key-sections>
+        <section>Edge Cases - Overlapping points: Cluster into single point with count badge</section>
+        <section>Interaction States table - Zoomed state: Scale transforms, dots cluster/overlap</section>
+        <section>Animation Presets - zoom transition settings for click-to-zoom</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="story" relevance="primary">
+      <path>docs/sprint-artifacts/stories/3-5-density-visualization.md</path>
+      <description>Full story definition with 9 tasks, test scenarios, reference implementation, and definition of done</description>
+      <reference-implementation-included>true</reference-implementation-included>
+      <task-count>9</task-count>
+    </artifact>
+
+    <artifact type="previous-context" relevance="high">
+      <path>docs/sprint-artifacts/story-contexts/3-1-scatter-plot-foundation-context.xml</path>
+      <description>Story 3-1 context - ScatterPlot container structure, MARGIN constants, xScale/yScale</description>
+    </artifact>
+
+    <artifact type="previous-context" relevance="high">
+      <path>docs/sprint-artifacts/story-contexts/3-2-timeline-data-points-context.xml</path>
+      <description>Story 3-2 context - ScatterPoint rendering, motion integration patterns, category colors</description>
+    </artifact>
+
+    <artifact type="previous-context" relevance="critical">
+      <path>docs/sprint-artifacts/story-contexts/3-4-zoom-functionality-context.xml</path>
+      <description>Story 3-4 context - Zoom implementation with ViewState, SPRINGS.zoom, useZoom hook - clustering builds on zoom state</description>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code>
+    <file purpose="modify" priority="critical">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>ScatterPlot component - main modification target for clustering integration. Already has pan and zoom from Stories 3-3/3-4.</description>
+      <current-state>
+        Implements scatter plot with pan and zoom functionality:
+        - ParentSize responsive container
+        - ViewState useState for scale, translateX, translateY
+        - xScale (scaleTime) for date positioning
+        - yScale (scaleLinear 0-1) for jitter positioning
+        - Motion values: translateXMotion, springX for pan; scaleMotion, springScale for zoom
+        - useZoom hook for zoom controls
+        - Pan handlers: handlePanStart, handlePanMove, handlePanEnd
+        - Mouse/touch/wheel handlers for pan and zoom interaction
+        - ZoomControls component rendered in bottom-right
+        - data-testid="scatter-plot" on SVG
+        - motion.g wrapper with style={{ x: springX, scale: springScale }}
+        - Dynamic axis tick granularity based on zoom level
+      </current-state>
+      <integration-points>
+        - Import computeClusters, isPointClustered, shouldShowClusters from clustering.ts
+        - Import ClusterBadge component
+        - Import AnimatePresence from 'motion/react' (required for cluster enter/exit transitions)
+        - Import MAX_SCALE from '@/lib/hooks/use-zoom' (needed for handleClusterClick)
+        - Add hoveredClusterId state (string | null)
+        - Create clusters useMemo that computes clusters when shouldShowClusters(viewState.scale) is true
+        - Create handleClusterClick callback to zoom to cluster time bounds
+        - Modify data.map to check isPointClustered - hide dots that are clustered when showing clusters
+        - Add clusters.map to render ClusterBadge components AFTER individual dots (critical for z-index layering - clusters must render on top)
+        - Pass click, hover handlers to ClusterBadge
+      </integration-points>
+      <code-excerpt><![CDATA[
+'use client'
+
+import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
+import { motion, useMotionValue, useSpring, animate } from 'motion/react'
+import { ParentSize } from '@visx/responsive'
+import { scaleTime, scaleLinear } from '@visx/scale'
+import { AxisBottom } from '@visx/axis'
+import { GridColumns } from '@visx/grid'
+import { Group } from '@visx/group'
+import { timeFormat } from 'd3-time-format'
+import type { ObituarySummary } from '@/types/obituary'
+import type { ViewState } from '@/types/visualization'
+import { ScatterPoint } from './scatter-point'
+import { ZoomControls } from './zoom-controls'
+import { hashToJitter, getCategoryColor } from '@/lib/utils/scatter-helpers'
+import { useZoom } from '@/lib/hooks/use-zoom'
+import { SPRINGS } from '@/lib/utils/animation'
+
+export interface ScatterPlotProps {
+  data: ObituarySummary[]
+  height?: number
+}
+
+const MARGIN = { top: 20, right: 20, bottom: 40, left: 20 }
+
+// ... EdgeGradients, formatQuarter, getTickFormatter, getTickCount, getTouchDistance, getTouchCenter ...
+
+export function ScatterPlotInner({
+  data,
+  width,
+  height,
+}: {
+  data: ObituarySummary[]
+  width: number
+  height: number
+}) {
+  const [viewState, setViewState] = useState<ViewState>({
+    scale: 1,
+    translateX: 0,
+    translateY: 0,
+  })
+
+  // ... existing refs and state ...
+
+  const xScale = useMemo(() => {
+    // ... date scale computation
+  }, [data, innerWidth])
+
+  const yScale = useMemo(() => {
+    return scaleLinear({
+      domain: [0, 1],
+      range: [innerHeight, 0],
+    })
+  }, [innerHeight])
+
+  // Motion values for pan and zoom
+  const translateXMotion = useMotionValue(viewState.translateX)
+  const springX = useSpring(translateXMotion, SPRINGS.pan)
+  const scaleMotion = useMotionValue(viewState.scale)
+  const springScale = useSpring(scaleMotion, SPRINGS.zoom)
+
+  // useZoom hook
+  const {
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    handleWheel: handleZoomWheel,
+    handlePinch,
+    isMinZoom,
+    isMaxZoom,
+  } = useZoom(viewState, setViewState)
+
+  // ... pan handlers, wheel handler, touch handlers ...
+
+  return (
+    <div className="relative" style={{ cursor: isDragging ? 'grabbing' : 'grab' }}>
+      <EdgeGradients ... />
+      <svg ref={containerRef} ...>
+        <rect ... />
+        <Group left={MARGIN.left} top={MARGIN.top}>
+          <GridColumns ... />
+          <AxisBottom ... />
+          <motion.g style={{ x: springX, scale: springScale, transformOrigin: '...' }}>
+            <motion.g initial="hidden" animate="visible" variants={...}>
+              {data.map((obituary) => {
+                const xPos = xScale(new Date(obituary.date))
+                const yPos = yScale(hashToJitter(obituary._id))
+                const color = getCategoryColor(obituary.categories)
+
+                return (
+                  <ScatterPoint
+                    key={obituary._id}
+                    obituary={obituary}
+                    x={xPos}
+                    y={yPos}
+                    color={color}
+                  />
+                )
+              })}
+            </motion.g>
+          </motion.g>
+        </Group>
+      </svg>
+      <ZoomControls ... />
+    </div>
+  )
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="modify" priority="high">
+      <path>src/components/visualization/scatter-point.tsx</path>
+      <description>ScatterPoint component - enhance glow effect for overlapping dots</description>
+      <current-state>
+        - 14px diameter circles (POINT_RADIUS = 7)
+        - Category color fill with drop-shadow glow filter
+        - isFiltered, isHovered, isClustered props already defined
+        - Returns null if isClustered is true (hiding logic already present)
+        - Glow intensity varies based on hover (4px default, 6px hovered)
+      </current-state>
+      <integration-points>
+        - EXISTING GLOW SATISFIES AC-3.5.1: The drop-shadow glow from Story 3-2 already satisfies AC-3.5.1.
+          When dots overlap, their drop-shadows naturally combine creating additive brightness effect.
+          This is by design - no additional implementation needed for AC-3.5.1.
+        - Optional enhancement: overlapCount prop could intensify glow further (NOT required for acceptance)
+        - Optional enhancement: SVG filter for true additive blending (NOT required for acceptance)
+      </integration-points>
+      <code-excerpt><![CDATA[
+'use client'
+
+import { motion } from 'motion/react'
+import type { ObituarySummary } from '@/types/obituary'
+
+export interface ScatterPointProps {
+  obituary: ObituarySummary
+  x: number
+  y: number
+  color: string
+  isFiltered?: boolean
+  isHovered?: boolean
+  isClustered?: boolean
+  onMouseEnter?: () => void
+  onMouseLeave?: () => void
+  onClick?: () => void
+}
+
+const POINT_RADIUS = 7 // 14px diameter
+
+export function ScatterPoint({
+  obituary,
+  x,
+  y,
+  color,
+  isFiltered = true,
+  isHovered = false,
+  isClustered = false,
+  onMouseEnter,
+  onMouseLeave,
+  onClick,
+}: ScatterPointProps) {
+  // Hidden if clustered
+  if (isClustered) return null
+
+  const opacity = isFiltered ? (isHovered ? 1 : 0.8) : 0.2
+  const glowIntensity = isHovered ? 6 : 4
+
+  return (
+    <motion.circle
+      data-testid="scatter-point"
+      cx={x}
+      cy={y}
+      r={POINT_RADIUS}
+      fill={color}
+      style={{
+        filter: `drop-shadow(0 0 ${glowIntensity}px ${color})`,
+        cursor: isFiltered ? 'pointer' : 'default',
+        pointerEvents: isFiltered ? 'auto' : 'none',
+      }}
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{
+        opacity,
+        scale: isHovered ? 1.3 : 1,
+      }}
+      transition={{
+        opacity: { duration: 0.15 },
+        scale: { type: 'spring', stiffness: 300, damping: 20 },
+      }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onClick={onClick}
+      role="img"
+      aria-label={`${obituary.source}: ${obituary.claim.slice(0, 50)}...`}
+    />
+  )
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="modify" priority="critical">
+      <path>src/types/visualization.ts</path>
+      <description>Type definitions - Task 1 MUST CREATE PointCluster interface (does not exist yet)</description>
+      <current-state>
+        - YAxisMode type defined
+        - ViewState interface with scale, translateX, translateY
+        - ScatterPlotProps interface
+        - PointCluster interface DOES NOT EXIST - must be created in Task 1
+      </current-state>
+      <integration-points>
+        - Task 1 MUST CREATE PointCluster interface before any other tasks can reference it
+        - This is a CREATE operation, not a modification of an existing interface
+      </integration-points>
+      <interface-to-create><![CDATA[
+/**
+ * Cluster of overlapping points.
+ * Created when points are within clustering threshold at low zoom levels.
+ *
+ * IMPORTANT: This interface does NOT exist yet - Task 1 must create it.
+ */
+export interface PointCluster {
+  /** Unique cluster ID (e.g., "cluster-0", "cluster-1") */
+  id: string
+  /** Center X position (pixel coordinate) */
+  x: number
+  /** Center Y position (pixel coordinate) */
+  y: number
+  /** Number of points in cluster (minimum 5 per ClusterConfig.minPoints) */
+  count: number
+  /** Obituary IDs of all points in this cluster */
+  obituaryIds: string[]
+  /** Primary category - most common category among cluster members */
+  primaryCategory: Category
+  /** Earliest date in cluster - for click-to-zoom bounds calculation */
+  minDate: Date
+  /** Latest date in cluster - for click-to-zoom bounds calculation */
+  maxDate: Date
+}
+]]></interface-to-create>
+      <code-excerpt><![CDATA[
+// Current state of src/types/visualization.ts (PointCluster does NOT exist):
+import type { ObituarySummary, Category } from './obituary'
+
+export type YAxisMode = 'spread' | 'market' | 'capability' | 'agi'
+
+export interface ViewState {
+  /** Zoom scale factor (0.5 to 5) */
+  scale: number
+  /** Pan offset X (pixels) */
+  translateX: number
+  /** Pan offset Y (pixels) */
+  translateY: number
+}
+
+export interface ScatterPlotProps {
+  data: ObituarySummary[]
+  mode?: YAxisMode
+  activeCategories?: Category[]
+  onSelect?: (obituary: ObituarySummary) => void
+  height?: number
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/lib/utils/scatter-helpers.ts</path>
+      <description>Scatter plot utilities - hashToJitter, getCategoryColor, CATEGORY_HEX_COLORS</description>
+      <code-excerpt><![CDATA[
+import type { Category } from '@/types/obituary'
+
+export const CATEGORY_HEX_COLORS: Record<Category, string> = {
+  capability: '#C9A962', // Gold
+  market: '#7B9E89',     // Sage
+  agi: '#9E7B7B',        // Rose
+  dismissive: '#7B7B9E', // Lavender
+}
+
+export function hashToJitter(id: string): number {
+  let hash = 0
+  for (let i = 0; i < id.length; i++) {
+    hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0
+  }
+  return (Math.abs(hash) % 100) / 100
+}
+
+export function getCategoryColor(categories: Category[]): string {
+  const primary = categories[0] || 'capability'
+  return CATEGORY_HEX_COLORS[primary]
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="high">
+      <path>src/lib/hooks/use-zoom.ts</path>
+      <description>Zoom hook - provides setViewState for cluster click-to-zoom behavior. Exports MAX_SCALE constant needed for handleClusterClick.</description>
+      <key-exports>
+        <export name="MIN_SCALE" value="0.5" />
+        <export name="MAX_SCALE" value="5" note="Import this for handleClusterClick clamping" />
+        <export name="ZOOM_STEP" value="1.2" />
+        <export name="useZoom" type="hook" />
+      </key-exports>
+      <code-excerpt><![CDATA[
+'use client'
+
+import { useCallback } from 'react'
+import type { ViewState } from '@/types/visualization'
+
+// Zoom constants - MAX_SCALE is needed for handleClusterClick
+export const MIN_SCALE = 0.5
+export const MAX_SCALE = 5  // Import this for cluster click zoom clamping
+export const ZOOM_STEP = 1.2
+
+export interface UseZoomReturn {
+  scale: number
+  zoomIn: () => void
+  zoomOut: () => void
+  resetZoom: () => void
+  setScale: (scale: number, centerX?: number, centerY?: number) => void
+  handleWheel: (event: WheelEvent, containerRect: DOMRect) => void
+  handlePinch: (pinchScale: number, centerX: number, centerY: number) => void
+  isMinZoom: boolean
+  isMaxZoom: boolean
+}
+
+export function useZoom(
+  viewState: ViewState,
+  setViewState: React.Dispatch<React.SetStateAction<ViewState>>,
+  options?: UseZoomOptions
+): UseZoomReturn {
+  // ... implementation
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>src/lib/utils/animation.ts</path>
+      <description>Animation presets - SPRINGS.zoom for click-to-zoom animation</description>
+      <code-excerpt><![CDATA[
+export const SPRINGS = {
+  hover: { type: 'spring' as const, stiffness: 300, damping: 20 },
+  zoom: { type: 'spring' as const, stiffness: 300, damping: 30 },
+  pan: { type: 'spring' as const, stiffness: 100, damping: 20 },
+} as const
+]]></code-excerpt>
+    </file>
+
+    <file purpose="reference" priority="medium">
+      <path>src/types/obituary.ts</path>
+      <description>Obituary type definitions including Category type</description>
+      <code-excerpt><![CDATA[
+export type Category = 'market' | 'capability' | 'agi' | 'dismissive'
+
+export interface ObituarySummary {
+  _id: string
+  slug: string
+  claim: string
+  source: string
+  date: string
+  categories: Category[]
+}
+]]></code-excerpt>
+    </file>
+
+    <file purpose="test-reference" priority="medium">
+      <path>tests/unit/lib/utils/scatter-helpers.test.ts</path>
+      <description>Unit test pattern for helper functions - use same pattern for clustering tests</description>
+      <test-pattern>Standard Vitest describe/it/expect pattern</test-pattern>
+      <code-excerpt><![CDATA[
+import { describe, it, expect } from 'vitest'
+import {
+  hashToJitter,
+  getCategoryColor,
+  CATEGORY_HEX_COLORS,
+} from '@/lib/utils/scatter-helpers'
+
+describe('hashToJitter', () => {
+  it('produces deterministic output for same input', () => {
+    expect(hashToJitter('abc')).toBe(hashToJitter('abc'))
+  })
+
+  it('produces different values for different inputs', () => {
+    expect(hashToJitter('abc')).not.toBe(hashToJitter('xyz'))
+  })
+
+  it('returns value between 0 and 1', () => {
+    const result = hashToJitter('test-id')
+    expect(result).toBeGreaterThanOrEqual(0)
+    expect(result).toBeLessThanOrEqual(1)
+  })
+})
+]]></code-excerpt>
+    </file>
+
+    <file purpose="test-reference" priority="medium">
+      <path>tests/unit/lib/hooks/use-zoom.test.ts</path>
+      <description>Unit test pattern for hooks - exports helper functions for testing</description>
+      <test-pattern>Module exports testing due to React 19 + Vitest hook resolution issues</test-pattern>
+    </file>
+  </existing-code>
+
+  <development-constraints>
+    <constraint type="algorithm" source="tech-spec">
+      <description>Grid-based clustering algorithm for O(n) performance</description>
+      <implementation-note>
+        effectiveThreshold = threshold / zoomScale (more clustering at low zoom)
+        Sort points by x position for efficient nearby search
+        Minimum 5 points to form a cluster (configurable)
+      </implementation-note>
+    </constraint>
+
+    <constraint type="clustering-threshold" source="story">
+      <description>Zoom-level based clustering behavior</description>
+      <thresholds>
+        <threshold zoom="&lt; 0.7">Show clusters with badges, hide clustered individual dots</threshold>
+        <threshold zoom="0.7 to 1.5">Show individual dots with overlap glow (no clustering badges)</threshold>
+        <threshold zoom="&gt; 1.5">Dots fully separated</threshold>
+      </thresholds>
+    </constraint>
+
+    <constraint type="cluster-config" source="story">
+      <description>Default clustering configuration</description>
+      <values>
+        <value name="threshold">20 pixels</value>
+        <value name="minPoints">5</value>
+      </values>
+      <formula>effectiveThreshold = threshold / zoomScale</formula>
+    </constraint>
+
+    <constraint type="cluster-badge" source="story">
+      <description>Cluster badge visual specifications</description>
+      <specs>
+        <spec>Diameter: 24px (larger than individual dots at 14px)</spec>
+        <spec>Count format: "+N" for counts (e.g., "+12"), "99+" for counts over 99</spec>
+        <spec>Color: Primary category color (most common in cluster)</spec>
+        <spec>Glow: Intensified glow effect using drop-shadow filter</spec>
+        <spec>Hover scale: 1.15x</spec>
+        <spec>Animation: enter/exit with scale 0 to 1, opacity 0 to 1</spec>
+      </specs>
+    </constraint>
+
+    <constraint type="click-to-zoom" source="story">
+      <description>Cluster click behavior</description>
+      <implementation-note>
+        On cluster click:
+        1. Calculate cluster time bounds (minDate to maxDate)
+        2. Determine target scale to fit cluster width with padding
+        3. Target scale should be at least 1.5x to ensure dots separate
+        4. Animate zoom with SPRINGS.zoom spring physics
+        5. Center on cluster centroid
+      </implementation-note>
+    </constraint>
+
+    <constraint type="primary-category" source="story">
+      <description>Determine primary category for cluster color</description>
+      <algorithm>
+        Count occurrences of each category in cluster members.
+        Return the most frequent category.
+        Default to 'capability' if tie or empty.
+      </algorithm>
+    </constraint>
+
+    <constraint type="animation" source="tech-spec">
+      <description>Use SPRINGS.zoom for click-to-zoom animation</description>
+      <spring>{ stiffness: 300, damping: 30 }</spring>
+    </constraint>
+
+    <constraint type="testing" source="existing-tests">
+      <description>Follow existing test pattern - unit tests for pure functions</description>
+    </constraint>
+  </development-constraints>
+
+  <data-flow>
+    <description>Clustering computation and rendering flow</description>
+    <flow name="cluster-computation">
+      <step order="1">Trigger: viewState.scale changes OR data changes</step>
+      <step order="2">Check: shouldShowClusters(viewState.scale) - returns true if scale &lt; 0.7</step>
+      <step order="3">If not showing clusters: return empty array (no cluster computation)</step>
+      <step order="4">Map: Convert data to positionedPoints with { obituary, x, y }</step>
+      <step order="5">Compute: computeClusters(positionedPoints, config, viewState.scale)</step>
+      <step order="6">Result: Array of PointCluster objects with centroid, count, obituaryIds, primaryCategory, minDate, maxDate</step>
+    </flow>
+    <flow name="render-with-clusters">
+      <step order="1">For each obituary in data:</step>
+      <step order="2">Check: isPointClustered(obituary._id, clusters)</step>
+      <step order="3">If clustered AND shouldShowClusters: skip rendering (return null)</step>
+      <step order="4">If not clustered: render ScatterPoint as normal</step>
+      <step order="5">AFTER all individual dots: render clusters.map(cluster =&gt; ClusterBadge)</step>
+      <step order="6">CRITICAL Z-INDEX: ClusterBadge must render AFTER ScatterPoints for proper layering (clusters on top)</step>
+    </flow>
+    <flow name="cluster-click">
+      <step order="1">Event: User clicks ClusterBadge</step>
+      <step order="2">Handler: handleClusterClick(cluster)</step>
+      <step order="3">Calculate: cluster width from minDate to maxDate</step>
+      <step order="4">Calculate: target scale to fit cluster with padding (minimum 1.5x)</step>
+      <step order="5">Calculate: target translateX to center cluster</step>
+      <step order="6">Update: setViewState with new scale and translateX</step>
+      <step order="7">Animate: Motion spring animates to new state</step>
+      <step order="8">Result: Zoom level exceeds 0.7x, clusters disappear, individual dots revealed</step>
+    </flow>
+  </data-flow>
+
+  <dependencies>
+    <dependency type="internal-story" required="true">
+      <name>Story 3-1 (Scatter Plot Foundation)</name>
+      <status>completed</status>
+      <provides>ScatterPlot container, ViewState, xScale, yScale, MARGIN constants</provides>
+    </dependency>
+
+    <dependency type="internal-story" required="true">
+      <name>Story 3-2 (Timeline Data Points)</name>
+      <status>completed</status>
+      <provides>ScatterPoint rendering, getCategoryColor, motion integration</provides>
+    </dependency>
+
+    <dependency type="internal-story" required="true">
+      <name>Story 3-3 (Horizontal Scroll/Pan)</name>
+      <status>completed</status>
+      <provides>Pan state management, ViewState usage, motion values pattern</provides>
+    </dependency>
+
+    <dependency type="internal-story" required="true">
+      <name>Story 3-4 (Zoom Functionality)</name>
+      <status>completed</status>
+      <provides>Zoom state (viewState.scale), useZoom hook, setViewState for animated zoom, SPRINGS.zoom</provides>
+    </dependency>
+
+    <dependency type="package" required="true">
+      <name>motion</name>
+      <version>^12.23.24</version>
+      <imports>motion, AnimatePresence from 'motion/react'</imports>
+      <purpose>Animation for cluster badge enter/exit, hover states</purpose>
+    </dependency>
+
+    <dependency type="package" required="true">
+      <name>@visx/scale</name>
+      <version>^3.12.0</version>
+      <status>already-installed</status>
+      <purpose>xScale for position calculations in clustering</purpose>
+    </dependency>
+  </dependencies>
+
+  <testing-context>
+    <test-framework>Vitest 4.0.14</test-framework>
+    <test-library>@testing-library/react 16.3.0</test-library>
+    <dom-environment>jsdom 27.2.0</dom-environment>
+
+    <test-patterns>
+      <pattern name="unit-tests">
+        Pure function testing with describe/it/expect. See scatter-helpers.test.ts for example.
+        Clustering functions are pure functions - ideal for unit testing.
+      </pattern>
+      <pattern name="component-tests">
+        Component tests for ClusterBadge - render, interaction, styling.
+      </pattern>
+    </test-patterns>
+
+    <test-files-to-create>
+      <file>
+        <path>tests/unit/lib/utils/clustering.test.ts</path>
+        <note>Path follows existing pattern: tests/unit/lib/utils/*.test.ts (see scatter-helpers.test.ts)</note>
+        <test-scenarios>
+          <scenario>computeClusters returns empty array for sparse points</scenario>
+          <scenario>computeClusters creates cluster for nearby points >= minPoints</scenario>
+          <scenario>cluster centroid is average of member positions</scenario>
+          <scenario>primary category is most frequent in cluster</scenario>
+          <scenario>effectiveThreshold scales inversely with zoom</scenario>
+          <scenario>isPointClustered returns true for clustered point</scenario>
+          <scenario>isPointClustered returns false for non-clustered point</scenario>
+          <scenario>shouldShowClusters returns true when zoom &lt; 0.7</scenario>
+          <scenario>shouldShowClusters returns false when zoom >= 0.7</scenario>
+          <scenario>shouldShowClusters boundary condition: returns false when zoom is exactly 0.7</scenario>
+          <scenario>minDate/maxDate correctly calculated from cluster members</scenario>
+        </test-scenarios>
+      </file>
+
+      <file>
+        <path>tests/unit/components/visualization/cluster-badge.test.tsx</path>
+        <note>Path follows existing pattern: tests/unit/components/visualization/*.test.tsx</note>
+        <test-scenarios>
+          <scenario>renders cluster badge with count</scenario>
+          <scenario>displays "+N" format for count</scenario>
+          <scenario>displays "99+" for counts over 99</scenario>
+          <scenario>uses primary category color</scenario>
+          <scenario>calls onClick when clicked</scenario>
+          <scenario>applies hover scale on mouse enter</scenario>
+        </test-scenarios>
+      </file>
+    </test-files-to-create>
+
+    <manual-test-checklist>
+      <item>Navigate to homepage with timeline</item>
+      <item>Zoom out to less than 0.7x (50% zoom)</item>
+      <item>Verify cluster badges appear for dense regions</item>
+      <item>Verify individual dots hidden when in cluster</item>
+      <item>Verify cluster badge shows count (e.g., "+8")</item>
+      <item>Verify cluster uses most common category color</item>
+      <item>Hover cluster badge, verify scale increase</item>
+      <item>Click cluster badge, verify zoom animates in</item>
+      <item>Verify zoom level after click reveals individual dots</item>
+      <item>Zoom to 0.7x - 1.5x range</item>
+      <item>Verify individual dots visible with overlap glow</item>
+      <item>Zoom past 1.5x</item>
+      <item>Verify dots fully separated</item>
+      <item>Test transition smoothness when crossing 0.7x threshold</item>
+      <item>BOUNDARY TEST: Zoom to exactly 0.7x and verify clusters are NOT shown (threshold is strictly less than 0.7)</item>
+      <item>Verify no visual jump during transition</item>
+      <item>Test with reduced motion preference enabled</item>
+    </manual-test-checklist>
+  </testing-context>
+
+  <files-to-create>
+    <file action="create" priority="critical">
+      <path>src/lib/utils/clustering.ts</path>
+      <purpose>Clustering algorithm and helper functions</purpose>
+      <exports><![CDATA[
+export interface ClusterConfig {
+  threshold: number  // pixels
+  minPoints: number
+}
+
+export const DEFAULT_CLUSTER_CONFIG: ClusterConfig = {
+  threshold: 20,
+  minPoints: 5,
+}
+
+interface PositionedPoint {
+  obituary: ObituarySummary
+  x: number
+  y: number
+}
+
+export function computeClusters(
+  points: PositionedPoint[],
+  config: ClusterConfig,
+  zoomScale: number
+): PointCluster[]
+
+export function isPointClustered(
+  obituaryId: string,
+  clusters: PointCluster[]
+): boolean
+
+export function shouldShowClusters(zoomScale: number): boolean
+// Returns zoomScale < 0.7
+]]></exports>
+    </file>
+
+    <file action="create" priority="high">
+      <path>src/components/visualization/cluster-badge.tsx</path>
+      <purpose>Visual cluster badge component</purpose>
+      <interface><![CDATA[
+interface ClusterBadgeProps {
+  cluster: PointCluster
+  onClick: () => void
+  isHovered: boolean
+  onMouseEnter: () => void
+  onMouseLeave: () => void
+}
+]]></interface>
+      <design-notes>
+        - SVG group with circle + text
+        - Main circle: 12px radius (24px diameter)
+        - Glow effect circle behind main (larger, blurred, lower opacity)
+        - Count badge circle positioned top-right
+        - Count text in "+N" format (9px font, monospace)
+        - Uses getCategoryColor for primary category
+        - Cursor: pointer
+        - Hover scale: 1.15x with spring transition
+        - Enter/exit animation: scale 0 to 1
+        - data-testid="cluster-badge"
+      </design-notes>
+    </file>
+
+    <file action="create" priority="high">
+      <path>tests/unit/lib/utils/clustering.test.ts</path>
+      <purpose>Unit tests for clustering algorithm</purpose>
+      <note>Path follows existing pattern - see tests/unit/lib/utils/scatter-helpers.test.ts</note>
+    </file>
+
+    <file action="create" priority="high">
+      <path>tests/unit/components/visualization/cluster-badge.test.tsx</path>
+      <purpose>Component tests for ClusterBadge</purpose>
+      <note>Path follows existing pattern - see tests/unit/components/visualization/</note>
+    </file>
+  </files-to-create>
+
+  <files-to-modify>
+    <file action="modify" priority="critical">
+      <path>src/types/visualization.ts</path>
+      <changes>
+        <change>Add PointCluster interface with id, x, y, count, obituaryIds, primaryCategory, minDate, maxDate</change>
+      </changes>
+    </file>
+
+    <file action="modify" priority="critical">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <changes>
+        <change>Import computeClusters, isPointClustered, shouldShowClusters from @/lib/utils/clustering</change>
+        <change>Import ClusterBadge component from './cluster-badge'</change>
+        <change>Add AnimatePresence to existing motion/react import: import { motion, useMotionValue, useSpring, animate, AnimatePresence } from 'motion/react'</change>
+        <change>Import MAX_SCALE from '@/lib/hooks/use-zoom' (needed for handleClusterClick calculation)</change>
+        <change>Add hoveredClusterId state: useState of string | null</change>
+        <change>Create clusters useMemo that computes clusters based on shouldShowClusters(viewState.scale)</change>
+        <change>Create handleClusterClick callback that zooms to cluster bounds (uses MAX_SCALE for clamping)</change>
+        <change>Modify data.map to check isPointClustered - pass isClustered prop to ScatterPoint</change>
+        <change>Add AnimatePresence around clusters.map rendering ClusterBadge components AFTER the ScatterPoints (critical for z-index layering)</change>
+      </changes>
+    </file>
+
+    <file action="modify" priority="low">
+      <path>src/components/visualization/scatter-point.tsx</path>
+      <note>OPTIONAL MODIFICATIONS - NOT required for AC-3.5.1. Existing drop-shadow glow already satisfies the acceptance criteria when dots overlap.</note>
+      <changes>
+        <change>OPTIONAL: Add overlapCount prop for enhanced glow intensity</change>
+        <change>OPTIONAL: Increase glow blur radius for overlapping dots</change>
+      </changes>
+    </file>
+  </files-to-modify>
+
+  <reference-implementation>
+    <description>
+      The story file contains comprehensive reference implementation. Key code patterns:
+    </description>
+
+    <code-pattern name="clustering-algorithm">
+      <code><![CDATA[
+// src/lib/utils/clustering.ts
+import type { PointCluster } from '@/types/visualization'
+import type { ObituarySummary, Category } from '@/types/obituary'
+
+export interface ClusterConfig {
+  /** Distance threshold in pixels for clustering */
+  threshold: number
+  /** Minimum points to form a cluster */
+  minPoints: number
+}
+
+export const DEFAULT_CLUSTER_CONFIG: ClusterConfig = {
+  threshold: 20,
+  minPoints: 5,
+}
+
+interface PositionedPoint {
+  obituary: ObituarySummary
+  x: number
+  y: number
+}
+
+/**
+ * Compute clusters from positioned points using grid-based approach.
+ * Threshold scales inversely with zoom - at low zoom, more clustering occurs.
+ */
+export function computeClusters(
+  points: PositionedPoint[],
+  config: ClusterConfig = DEFAULT_CLUSTER_CONFIG,
+  zoomScale: number = 1
+): PointCluster[] {
+  // Effective threshold increases as we zoom out (more clustering)
+  const effectiveThreshold = config.threshold / zoomScale
+  const clusters: PointCluster[] = []
+  const assigned = new Set<string>()
+
+  // Sort points by x position for efficient nearby search
+  const sortedPoints = [...points].sort((a, b) => a.x - b.x)
+
+  for (const point of sortedPoints) {
+    if (assigned.has(point.obituary._id)) continue
+
+    // Find all nearby points within threshold
+    const nearby = sortedPoints.filter(p => {
+      if (assigned.has(p.obituary._id)) return false
+      if (p.obituary._id === point.obituary._id) return true
+
+      const dx = p.x - point.x
+      // Early exit if too far in x direction
+      if (Math.abs(dx) > effectiveThreshold) return false
+
+      const dy = p.y - point.y
+      return Math.sqrt(dx * dx + dy * dy) <= effectiveThreshold
+    })
+
+    if (nearby.length >= config.minPoints) {
+      const obituaryIds = nearby.map(p => p.obituary._id)
+      nearby.forEach(p => assigned.add(p.obituary._id))
+
+      // Compute centroid
+      const centerX = nearby.reduce((sum, p) => sum + p.x, 0) / nearby.length
+      const centerY = nearby.reduce((sum, p) => sum + p.y, 0) / nearby.length
+
+      // Find primary category (most common)
+      const categoryCounts = new Map<Category, number>()
+      nearby.forEach(p => {
+        const cat = p.obituary.categories[0]
+        if (cat) {
+          categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1)
+        }
+      })
+
+      let primaryCategory: Category = 'capability'
+      let maxCount = 0
+      categoryCounts.forEach((count, cat) => {
+        if (count > maxCount) {
+          maxCount = count
+          primaryCategory = cat
+        }
+      })
+
+      // Calculate time bounds for click-to-zoom
+      const dates = nearby.map(p => new Date(p.obituary.date).getTime())
+      const minDate = Math.min(...dates)
+      const maxDate = Math.max(...dates)
+
+      clusters.push({
+        id: `cluster-${clusters.length}`,
+        x: centerX,
+        y: centerY,
+        count: nearby.length,
+        obituaryIds,
+        primaryCategory,
+        minDate: new Date(minDate),
+        maxDate: new Date(maxDate),
+      })
+    }
+  }
+
+  return clusters
+}
+
+/**
+ * Check if a point is part of any cluster.
+ */
+export function isPointClustered(
+  obituaryId: string,
+  clusters: PointCluster[]
+): boolean {
+  return clusters.some(c => c.obituaryIds.includes(obituaryId))
+}
+
+/**
+ * Determine if clustering should be shown based on zoom level.
+ */
+export function shouldShowClusters(zoomScale: number): boolean {
+  return zoomScale < 0.7
+}
+]]></code>
+    </code-pattern>
+
+    <code-pattern name="cluster-badge-component">
+      <code><![CDATA[
+// src/components/visualization/cluster-badge.tsx
+'use client'
+
+import { motion } from 'motion/react'
+import { getCategoryColor } from '@/lib/utils/scatter-helpers'
+import type { PointCluster } from '@/types/visualization'
+
+interface ClusterBadgeProps {
+  cluster: PointCluster
+  onClick: () => void
+  isHovered: boolean
+  onMouseEnter: () => void
+  onMouseLeave: () => void
+}
+
+export function ClusterBadge({
+  cluster,
+  onClick,
+  isHovered,
+  onMouseEnter,
+  onMouseLeave,
+}: ClusterBadgeProps) {
+  const color = getCategoryColor([cluster.primaryCategory])
+  const radius = 12 // 24px diameter
+  const badgeRadius = 8
+
+  return (
+    <motion.g
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      style={{ cursor: 'pointer' }}
+      data-testid="cluster-badge"
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0 }}
+      whileHover={{ scale: 1.15 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+    >
+      {/* Glow effect circle */}
+      <circle
+        cx={cluster.x}
+        cy={cluster.y}
+        r={radius + 4}
+        fill={color}
+        opacity={0.3}
+        style={{
+          filter: `blur(4px)`,
+        }}
+      />
+
+      {/* Main cluster circle */}
+      <circle
+        cx={cluster.x}
+        cy={cluster.y}
+        r={radius}
+        fill={color}
+        opacity={isHovered ? 1 : 0.9}
+        style={{
+          filter: `drop-shadow(0 0 ${isHovered ? 8 : 4}px ${color})`,
+        }}
+      />
+
+      {/* Count badge background */}
+      <circle
+        cx={cluster.x + radius - 2}
+        cy={cluster.y - radius + 2}
+        r={badgeRadius}
+        fill="var(--bg-primary)"
+        stroke={color}
+        strokeWidth={1.5}
+      />
+
+      {/* Count text */}
+      <text
+        x={cluster.x + radius - 2}
+        y={cluster.y - radius + 2}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill="var(--text-primary)"
+        fontSize={9}
+        fontWeight={600}
+        fontFamily="var(--font-geist-mono)"
+      >
+        {cluster.count > 99 ? '99+' : `+${cluster.count}`}
+      </text>
+    </motion.g>
+  )
+}
+]]></code>
+    </code-pattern>
+
+    <code-pattern name="point-cluster-type">
+      <code><![CDATA[
+// Add to src/types/visualization.ts
+import type { Category } from './obituary'
+
+/**
+ * Cluster of overlapping points.
+ * Created when points are within clustering threshold.
+ */
+export interface PointCluster {
+  /** Unique cluster ID */
+  id: string
+  /** Center X position */
+  x: number
+  /** Center Y position */
+  y: number
+  /** Number of points in cluster */
+  count: number
+  /** Obituary IDs in cluster */
+  obituaryIds: string[]
+  /** Primary category (most common in cluster) */
+  primaryCategory: Category
+  /** Earliest date in cluster - for click-to-zoom bounds */
+  minDate: Date
+  /** Latest date in cluster - for click-to-zoom bounds */
+  maxDate: Date
+}
+]]></code>
+    </code-pattern>
+
+    <code-pattern name="scatter-plot-integration">
+      <code><![CDATA[
+// Updates to scatter-plot.tsx for clustering integration
+import { computeClusters, isPointClustered, shouldShowClusters, DEFAULT_CLUSTER_CONFIG } from '@/lib/utils/clustering'
+import { ClusterBadge } from './cluster-badge'
+import { AnimatePresence } from 'motion/react'
+import { MAX_SCALE } from '@/lib/hooks/use-zoom' // Required for handleClusterClick
+
+// Inside ScatterPlotInner component:
+
+// State for hovered cluster
+const [hoveredClusterId, setHoveredClusterId] = useState<string | null>(null)
+
+// Compute clusters based on current positions and zoom
+const clusters = useMemo(() => {
+  if (!shouldShowClusters(viewState.scale)) {
+    return []
+  }
+
+  const positionedPoints = data.map(obituary => ({
+    obituary,
+    x: xScale(new Date(obituary.date)) ?? 0,
+    y: yScale(hashToJitter(obituary._id)) ?? 0,
+  }))
+
+  return computeClusters(positionedPoints, DEFAULT_CLUSTER_CONFIG, viewState.scale)
+}, [data, xScale, yScale, viewState.scale])
+
+// Handler for cluster click - zoom to cluster bounds
+const handleClusterClick = useCallback((cluster: PointCluster) => {
+  const padding = 50 // pixels of padding around cluster
+  const minDateX = xScale(cluster.minDate)
+  const maxDateX = xScale(cluster.maxDate)
+  const clusterWidth = maxDateX - minDateX
+
+  // Calculate target scale to fit cluster with padding
+  // Minimum scale of 1.5 ensures dots will separate
+  const targetScale = Math.min(
+    MAX_SCALE,
+    Math.max(1.5, innerWidth / (clusterWidth + padding * 2))
+  )
+
+  const centerX = (minDateX + maxDateX) / 2
+
+  setViewState(prev => ({
+    ...prev,
+    scale: targetScale,
+    translateX: innerWidth / 2 - centerX * targetScale,
+  }))
+}, [xScale, innerWidth, setViewState])
+
+// In render, modify data.map to pass isClustered:
+{data.map(obituary => {
+  const isClustered = isPointClustered(obituary._id, clusters)
+
+  return (
+    <ScatterPoint
+      key={obituary._id}
+      obituary={obituary}
+      x={xScale(new Date(obituary.date))}
+      y={yScale(hashToJitter(obituary._id))}
+      color={getCategoryColor(obituary.categories)}
+      isClustered={isClustered && shouldShowClusters(viewState.scale)}
+    />
+  )
+})}
+
+{/* CRITICAL: Render cluster badges AFTER ScatterPoints for proper z-index layering */}
+{/* Clusters must appear on top of any remaining individual dots */}
+<AnimatePresence>
+  {clusters.map(cluster => (
+    <ClusterBadge
+      key={cluster.id}
+      cluster={cluster}
+      onClick={() => handleClusterClick(cluster)}
+      isHovered={hoveredClusterId === cluster.id}
+      onMouseEnter={() => setHoveredClusterId(cluster.id)}
+      onMouseLeave={() => setHoveredClusterId(null)}
+    />
+  ))}
+</AnimatePresence>
+]]></code>
+    </code-pattern>
+  </reference-implementation>
+
+  <implementation-notes>
+    <note priority="high">
+      Clustering only shows when viewState.scale is less than 0.7 (shouldShowClusters returns true).
+      At zoom levels 0.7x and above, return empty clusters array to skip computation.
+    </note>
+    <note priority="high">
+      effectiveThreshold = threshold / zoomScale. At 0.5x zoom, threshold is 40px (20/0.5).
+      This means more aggressive clustering at low zoom levels.
+    </note>
+    <note priority="high">
+      Click-to-zoom: Calculate target scale to be at least 1.5x so dots will be separated after zoom.
+      Use xScale to convert cluster minDate/maxDate to pixel positions for width calculation.
+    </note>
+    <note priority="medium">
+      Use AnimatePresence from motion/react to animate cluster badge enter/exit smoothly
+      when zoom crosses the 0.7x threshold.
+    </note>
+    <note priority="medium">
+      ScatterPoint already has isClustered prop that returns null when true.
+      Just need to pass the computed isClustered value based on clusters and zoom state.
+    </note>
+    <note priority="high">
+      AC-3.5.1 GLOW CLARIFICATION: The existing drop-shadow glow from Story 3-2 ALREADY SATISFIES AC-3.5.1.
+      When overlapping dots render, their individual drop-shadows naturally combine to create additive
+      brightness. This is by design - Task 5 enhancement is OPTIONAL, not required for acceptance.
+      The existing implementation with filter: drop-shadow(0 0 ${glowIntensity}px ${color}) is sufficient.
+    </note>
+    <note priority="low">
+      Optional enhancement: Could add overlapCount prop to ScatterPoint for more intensity,
+      but this is NOT required for AC-3.5.1 acceptance.
+    </note>
+  </implementation-notes>
+
+  <learnings-from-previous-stories>
+    <learning source="Story 3-1">
+      ViewState Interface with scale field (0.5 to 5) already exists
+    </learning>
+    <learning source="Story 3-1">
+      MARGIN constants defined: { top: 20, right: 20, bottom: 40, left: 20 }
+    </learning>
+    <learning source="Story 3-1">
+      xScale/yScale already memoized with useMemo
+    </learning>
+    <learning source="Story 3-2">
+      ScatterPoint already has isClustered prop that hides point when true
+    </learning>
+    <learning source="Story 3-2">
+      getCategoryColor helper available for cluster badge color
+    </learning>
+    <learning source="Story 3-2">
+      motion/react patterns established for enter/exit animations
+    </learning>
+    <learning source="Story 3-4">
+      useZoom hook provides setViewState for programmatic zoom
+    </learning>
+    <learning source="Story 3-4">
+      SPRINGS.zoom for animated zoom transitions
+    </learning>
+    <learning source="Story 3-4">
+      viewState.scale available for zoom-based clustering decisions
+    </learning>
+    <learning source="Story 3-4">
+      Zoom limits: MIN_SCALE = 0.5, MAX_SCALE = 5
+    </learning>
+  </learnings-from-previous-stories>
+
+  <definition-of-done>
+    <item>Overlapping dots create brighter glow effect</item>
+    <item>Cluster badges appear at zoom less than 0.7x for 5+ nearby dots</item>
+    <item>Cluster badges display count in "+N" format</item>
+    <item>Cluster badges use primary category color</item>
+    <item>Individual dots hidden when part of visible cluster</item>
+    <item>Clicking cluster badge zooms into that time period</item>
+    <item>Zoom reveals individual dots after cluster click</item>
+    <item>Dots fully separated at zoom greater than 1.5x</item>
+    <item>Smooth transition when crossing 0.7x zoom threshold</item>
+    <item>Unit tests pass for clustering algorithm</item>
+    <item>Component tests pass for ClusterBadge</item>
+    <item>No TypeScript errors</item>
+    <item>Lint passes (pnpm lint)</item>
+    <item>Performance acceptable with 200+ dots</item>
+  </definition-of-done>
+
+  <fr-coverage>
+    <fr id="FR10" satisfied="true">
+      Timeline displays density visualization showing clusters of obituaries
+    </fr>
+    <implementation-note>
+      Clustering algorithm groups nearby points based on zoom level.
+      Cluster badges show count with primary category color.
+      Overlapping glow indicates density at normal zoom.
+      Click-to-zoom reveals individual dots in cluster region.
+    </implementation-note>
+  </fr-coverage>
+</story-context>

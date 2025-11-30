@@ -1,7 +1,13 @@
 'use client'
 
 import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
-import { motion, useMotionValue, useSpring, animate } from 'motion/react'
+import {
+  motion,
+  useMotionValue,
+  useSpring,
+  animate,
+  AnimatePresence,
+} from 'motion/react'
 import { ParentSize } from '@visx/responsive'
 import { scaleTime, scaleLinear } from '@visx/scale'
 import { AxisBottom } from '@visx/axis'
@@ -9,12 +15,19 @@ import { GridColumns } from '@visx/grid'
 import { Group } from '@visx/group'
 import { timeFormat } from 'd3-time-format'
 import type { ObituarySummary } from '@/types/obituary'
-import type { ViewState } from '@/types/visualization'
+import type { ViewState, PointCluster } from '@/types/visualization'
 import { ScatterPoint } from './scatter-point'
 import { ZoomControls } from './zoom-controls'
+import { ClusterBadge } from './cluster-badge'
 import { hashToJitter, getCategoryColor } from '@/lib/utils/scatter-helpers'
-import { useZoom } from '@/lib/hooks/use-zoom'
+import { useZoom, MAX_SCALE } from '@/lib/hooks/use-zoom'
 import { SPRINGS } from '@/lib/utils/animation'
+import {
+  computeClusters,
+  isPointClustered,
+  shouldShowClusters,
+  DEFAULT_CLUSTER_CONFIG,
+} from '@/lib/utils/clustering'
 
 export interface ScatterPlotProps {
   data: ObituarySummary[]
@@ -153,6 +166,9 @@ export function ScatterPlotInner({
   // State for cursor (triggers re-render for cursor change)
   const [isDragging, setIsDragging] = useState(false)
 
+  // State for hovered cluster badge
+  const [hoveredClusterId, setHoveredClusterId] = useState<string | null>(null)
+
   // Compute inner dimensions
   const innerWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
   const innerHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
@@ -186,6 +202,21 @@ export function ScatterPlotInner({
     })
   }, [innerHeight])
 
+  // Compute clusters based on current positions and zoom level
+  const clusters = useMemo(() => {
+    if (!shouldShowClusters(viewState.scale)) {
+      return []
+    }
+
+    const positionedPoints = data.map((obituary) => ({
+      obituary,
+      x: xScale(new Date(obituary.date)) ?? 0,
+      y: yScale(hashToJitter(obituary._id)) ?? 0,
+    }))
+
+    return computeClusters(positionedPoints, DEFAULT_CLUSTER_CONFIG, viewState.scale)
+  }, [data, xScale, yScale, viewState.scale])
+
   // Motion values for smooth pan animation
   const translateXMotion = useMotionValue(viewState.translateX)
   const springX = useSpring(translateXMotion, SPRINGS.pan)
@@ -209,6 +240,32 @@ export function ScatterPlotInner({
     isMinZoom,
     isMaxZoom,
   } = useZoom(viewState, setViewState)
+
+  // Handler for cluster click - zoom to cluster time bounds
+  const handleClusterClick = useCallback(
+    (cluster: PointCluster) => {
+      const padding = 50 // pixels of padding around cluster
+      const minDateX = xScale(cluster.minDate)
+      const maxDateX = xScale(cluster.maxDate)
+      const clusterWidth = maxDateX - minDateX
+
+      // Calculate target scale to fit cluster with padding
+      // Minimum scale of 1.5 ensures dots will separate after zoom
+      const targetScale = Math.min(
+        MAX_SCALE,
+        Math.max(1.5, innerWidth / (clusterWidth + padding * 2))
+      )
+
+      const centerX = (minDateX + maxDateX) / 2
+
+      setViewState((prev) => ({
+        ...prev,
+        scale: targetScale,
+        translateX: innerWidth / 2 - centerX * targetScale,
+      }))
+    },
+    [xScale, innerWidth, setViewState]
+  )
 
   // Calculate pan bounds (adjusted for zoom)
   const panBounds = useMemo(() => {
@@ -517,6 +574,9 @@ export function ScatterPlotInner({
                 const xPos = xScale(new Date(obituary.date))
                 const yPos = yScale(hashToJitter(obituary._id))
                 const color = getCategoryColor(obituary.categories)
+                const isClustered =
+                  isPointClustered(obituary._id, clusters) &&
+                  shouldShowClusters(viewState.scale)
 
                 return (
                   <ScatterPoint
@@ -525,10 +585,25 @@ export function ScatterPlotInner({
                     x={xPos}
                     y={yPos}
                     color={color}
+                    isClustered={isClustered}
                   />
                 )
               })}
             </motion.g>
+
+            {/* Cluster badges - render AFTER individual dots for proper z-index layering */}
+            <AnimatePresence>
+              {clusters.map((cluster) => (
+                <ClusterBadge
+                  key={cluster.id}
+                  cluster={cluster}
+                  onClick={() => handleClusterClick(cluster)}
+                  isHovered={hoveredClusterId === cluster.id}
+                  onMouseEnter={() => setHoveredClusterId(cluster.id)}
+                  onMouseLeave={() => setHoveredClusterId(null)}
+                />
+              ))}
+            </AnimatePresence>
           </motion.g>
         </Group>
       </svg>
