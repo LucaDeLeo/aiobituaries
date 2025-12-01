@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, forwardRef, useImperativeHandle } from 'react'
+import { useRef, forwardRef, useImperativeHandle, memo } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { staggerItem } from '@/lib/utils/animation'
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint'
@@ -34,7 +34,25 @@ const FOCUSED_POINT_RADIUS = 9 // ~1.25x scale when focused (AC-6.2.5)
 const TABLET_TOUCH_RADIUS = 22 // 44px diameter touch target for tablet
 const FOCUS_RING_RADIUS = 14 // 2px gold ring outside point (AC-6.2.5)
 
-export const ScatterPoint = forwardRef<SVGGElement, ScatterPointProps>(
+/**
+ * Custom comparison function for React.memo to prevent unnecessary re-renders.
+ * Only re-render if critical props change (position, state, or obituary data).
+ */
+function arePropsEqual(prev: ScatterPointProps, next: ScatterPointProps): boolean {
+  return (
+    prev.obituary._id === next.obituary._id &&
+    prev.x === next.x &&
+    prev.y === next.y &&
+    prev.isFocused === next.isFocused &&
+    prev.isFiltered === next.isFiltered &&
+    prev.isHovered === next.isHovered &&
+    prev.isClustered === next.isClustered &&
+    prev.color === next.color &&
+    prev.tabIndex === next.tabIndex
+  )
+}
+
+const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
   function ScatterPoint(
     {
       obituary,
@@ -189,3 +207,9 @@ export const ScatterPoint = forwardRef<SVGGElement, ScatterPointProps>(
     )
   }
 )
+
+/**
+ * Memoized ScatterPoint component to prevent unnecessary re-renders during scroll/pan.
+ * Uses custom comparison to only re-render when relevant props change.
+ */
+export const ScatterPoint = memo(ScatterPointComponent, arePropsEqual)

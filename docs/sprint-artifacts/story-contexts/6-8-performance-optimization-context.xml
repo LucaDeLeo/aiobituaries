@@ -1,0 +1,380 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>epic-6</epicId>
+    <storyId>6-8-performance-optimization</storyId>
+    <title>Performance Optimization</title>
+    <status>drafted</status>
+    <generatedAt>2025-12-01</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/6-8-performance-optimization.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>site visitor</asA>
+    <iWant>the site to load quickly and interactions to feel instant</iWant>
+    <soThat>I can explore the archive without delays or jank, regardless of my device or network speed</soThat>
+    <tasks>
+      - Install performance dependencies (@next/bundle-analyzer, playwright-lighthouse)
+      - Create Lighthouse CI configuration with Core Web Vitals thresholds
+      - Create performance test suite with FPS and modal performance tests
+      - Optimize Next.js configuration (bundle analyzer, package imports, image config, cache headers)
+      - Optimize font loading (display: swap, preload: true)
+      - Optimize ScatterPlot component (memoization, virtualization, debouncing)
+      - Optimize ScatterPoint component (memo with custom comparison)
+      - Create performance utilities (debounce, FPS counter, Web Vitals logger)
+      - Run bundle analysis and verify tree-shaking
+      - Run performance tests and verify all metrics pass
+      - Verify image optimization (WebP/AVIF formats, device sizes, cache headers)
+      - Create performance documentation with metrics and recommendations
+      - Fix any performance issues if found
+      - Final test and verification
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    - AC-6.8.1: Lighthouse Performance >= 90 on homepage and obituary pages
+    - AC-6.8.2: LCP < 2.5s on both desktop and mobile
+    - AC-6.8.3: CLS < 0.1
+    - AC-6.8.4: TBT < 300ms
+    - AC-6.8.5: Timeline scroll maintains 60fps (>55fps) with 200+ data points
+    - AC-6.8.6: Modal opens < 300ms from click to visible
+    - AC-6.8.7: Bundle optimized with tree-shaking verified for @visx, lucide-react, date-fns
+    - AC-6.8.8: Images optimized with WebP/AVIF formats and proper device sizes
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <!-- Epic Tech Spec -->
+      <doc path="docs/sprint-artifacts/epic-tech-specs/epic-6-tech-spec.md" type="epic-tech-spec">
+        Epic 6 technical specification containing Section 4.8 (Performance Optimization) with complete implementation patterns for Lighthouse CI configuration, performance test patterns, Next.js optimization (bundle analyzer, experimental.optimizePackageImports, image config, cache headers), component memoization and virtualization patterns, font optimization with display: swap and preload: true, and bundle tree-shaking verification for @visx, lucide-react, and date-fns. Section 5.1 defines Core Web Vitals targets: LCP < 2.5s, CLS < 0.1, TBT < 300ms, FID < 100ms, INP < 200ms, Timeline FPS target: 60fps, Modal open target: < 300ms.
+      </doc>
+
+      <!-- Architecture Documentation -->
+      <doc path="docs/architecture.md" type="architecture">
+        Project architecture document containing Decision Summary table with Next.js 16.0.5 (Cache Components, Turbopack, ISR, React Compiler), Visx 3.12.0 (tree-shakeable), Motion 12.9.2 (60fps animations), and performance stack details. Performance Considerations section (lines 870-893) defines Core Web Vitals strategy (LCP < 2.5s via SSG + CDN, FID < 100ms via minimal client JS, CLS < 0.1 via reserved space, INP < 200ms via optimized handlers), visualization performance techniques (SVG virtualization, 16ms debounced zoom/pan, memoized calculations, requestAnimationFrame for 60fps), and bundle optimization (tree-shaking for Visx, code splitting, font optimization).
+      </doc>
+
+      <!-- Story File -->
+      <doc path="docs/sprint-artifacts/stories/6-8-performance-optimization.md" type="story">
+        Complete story file with acceptance criteria, technical approach covering Lighthouse CI configuration, performance test suite implementation, Next.js configuration optimization (bundle analyzer, package import optimization, image optimization, cache headers), component performance optimization (memoization, virtualization, debouncing for ScatterPlot), font loading optimization, cache strategy, bundle analysis verification, and performance monitoring setup. Reference implementation includes complete lighthouserc.js config, next.config.ts with bundle analyzer and optimization settings, ScatterPlot performance patterns (memo, useMemo, viewport virtualization, debounced scroll), and layout.tsx font optimization. Files to create/modify section lists all 10 files with actions and descriptions.
+      </doc>
+
+      <!-- Project README -->
+      <doc path="CLAUDE.md" type="project-readme">
+        Project README with commands section showing pnpm dev, pnpm build, pnpm test, pnpm test:run, pnpm test:coverage for running tests. Architecture section describes data flow (Sanity CMS → GROQ queries → Server Components → Client Components with ISR via /api/revalidate webhook), key directories (src/app/, src/components/, src/lib/, src/types/, tests/unit/), patterns (Server Components default, only use 'use client' when interactivity needed, data fetching always in Server Components, ISR tags for cache invalidation, URL state with nuqs, path alias @/ for imports), and test structure (tests mirror source structure).
+      </doc>
+    </docs>
+
+    <code>
+      <!-- Existing Visualization Components -->
+      <file path="src/components/visualization/scatter-plot.tsx" type="client-component">
+        Main timeline visualization component (1020 lines). Already imports useMemo, useCallback, and startTransition from React for performance. Uses Motion library with useReducedMotion hook for animations. Implements performance monitoring with markPerformance and measurePerformance calls around scale computation (lines 215-237). Has ParentSize wrapper for responsive sizing. Uses visx scale, axis, and grid components. Contains edge gradients, pan/zoom handlers, touch handlers, keyboard navigation, and roving focus. Current implementation has memoized scales (useMemo on lines 214-240 for xScale, 242-247 for yScale) and clusters computation (lines 250-262). Needs additional optimization: ScatterPoint memoization, position calculation optimization, viewport-based virtualization for rendering only visible points, and debounced scroll handler.
+      </file>
+
+      <file path="src/components/visualization/scatter-point.tsx" type="client-component">
+        Individual scatter point component (192 lines). Uses forwardRef for ref forwarding to SVG group element. Already uses Motion library with useReducedMotion hook. Has hover animations with whileHover scale: 1.3 (line 177). Implements focus ring for keyboard navigation (lines 124-136) and touch target sizing (lines 74, 139-153). Currently NOT memoized - needs React.memo() with custom comparison function to prevent unnecessary re-renders. Props include obituary, x, y, color, isFiltered, isHovered, isClustered, mouse/keyboard handlers. Animation transitions use 200ms duration for opacity and spring physics for scale (lines 181-186).
+      </file>
+
+      <!-- Font Configuration -->
+      <file path="src/app/layout.tsx" type="layout">
+        Root layout component with font imports from next/font/google. Currently imports Geist, Geist_Mono, and Instrument_Serif (lines 2, 11-25). Font configurations are basic with only variable and subsets specified. Needs optimization: add display: 'swap' to all three font configs (Instrument_Serif line 21-25, Geist line 11-14, Geist_Mono line 16-19), add preload: true to critical fonts. Font variables already applied to body className (line 44). No current display or preload settings - this is the primary file to modify for font loading optimization.
+      </file>
+
+      <!-- Next.js Configuration -->
+      <file path="next.config.ts" type="config">
+        Minimal Next.js configuration (8 lines total). Currently only has empty config object with comment "config options here" (lines 3-5). This file needs complete overhaul to add: @next/bundle-analyzer integration with ANALYZE env var toggle, experimental.optimizePackageImports array for @visx/visx, lucide-react, date-fns, images object with formats: ['image/avif', 'image/webp'], deviceSizes: [320, 640, 768, 1024, 1280, 1920], minimumCacheTTL: 31536000 (1 year), and async headers() function returning cache headers for static assets (svg|jpg|jpeg|png|gif|ico|webp|avif) and _next/static files with 'public, max-age=31536000, immutable'.
+      </file>
+
+      <!-- Existing Performance Utilities -->
+      <file path="src/lib/utils/performance.ts" type="utility">
+        Performance monitoring utilities module (160 lines). Already implements measureInteraction function (lines 31-51) for measuring callback execution time with optional threshold warnings, markPerformance function (lines 66-75) for creating Performance API marks, measurePerformance function (lines 93-113) for measuring duration between marks with threshold support, and monitorFrameRate function (lines 131-159) for FPS monitoring over specified duration using requestAnimationFrame. All functions no-op in production (process.env.NODE_ENV !== 'development' checks). This file already has most utilities needed - may need to add debounce utility if not present elsewhere, and Core Web Vitals logger for development console. Module already used in scatter-plot.tsx for scale computation monitoring (lines 215, 236-237).
+      </file>
+
+      <!-- Animation Utilities -->
+      <file path="src/lib/utils/animation.ts" type="utility">
+        Animation presets and utilities module (174 lines). Defines DURATIONS constants (fast: 0.15s, normal: 0.2s, slow: 0.3s), REDUCED_DURATION: 0.01s for reduced motion. SPRINGS presets for hover, zoom, and pan with specific stiffness/damping values (lines 35-42). Pan spring uses stiffness: 100, damping: 20 for momentum feel. Functions include shouldReduceMotion() (lines 50-54) checking window.matchMedia, getTransition() (lines 63-68) returning spring or zero duration based on preference, and getReducedMotionVariants() (lines 140-163) for converting full variants to reduced motion. Export variants: tooltipAppear (fade-in with scale), modalSlideIn (slide from right), staggerContainer (50ms stagger), and staggerItem (fade and scale). This file contains all animation constants and reduced motion helpers that will be used in performance optimizations.
+      </file>
+
+      <!-- Package Dependencies -->
+      <file path="package.json" type="config">
+        Package manifest with scripts and dependencies. Scripts include dev, build, test, test:run, test:coverage, test:a11y (Playwright a11y tests). Current dependencies (lines 18-38): @visx packages (axis, grid, group, responsive, scale) at 3.12.0, motion at 12.23.24, next at 16.0.5, lucide-react at 0.555.0, date-fns at 4.1.0. DevDependencies (lines 40-58): @playwright/test at 1.49.0, vitest at 4.0.14. Missing dependencies that need to be added: @next/bundle-analyzer (devDependency) for bundle analysis with ANALYZE=true pnpm build, playwright-lighthouse (devDependency) for Lighthouse integration in performance tests. All tree-shakeable libraries already installed (Visx, lucide-react, date-fns).
+      </file>
+    </code>
+
+    <dependencies>
+      <!-- External Dependencies to Install -->
+      <dependency name="@next/bundle-analyzer" version="latest" type="devDependency">
+        Official Next.js bundle analyzer plugin. Wraps webpack-bundle-analyzer to visualize bundle composition. Enables ANALYZE=true pnpm build to generate interactive treemap showing all modules and their sizes. Required to verify tree-shaking effectiveness for @visx, lucide-react, date-fns and identify any duplicate dependencies. Zero runtime overhead - only affects development builds when ANALYZE env var is set.
+      </dependency>
+
+      <dependency name="playwright-lighthouse" version="latest" type="devDependency">
+        Lighthouse integration for Playwright tests. Enables programmatic Lighthouse audits within test suite for automated Core Web Vitals monitoring. Provides playAudit() function to run Lighthouse against pages and assert on performance scores, LCP, CLS, TBT metrics. Required for tests/performance/lighthouse.spec.ts implementation to verify AC-6.8.1 through AC-6.8.4 automatically in CI/CD.
+      </dependency>
+
+      <!-- Existing Dependencies -->
+      <dependency name="next" version="16.0.5" type="dependency">
+        Next.js framework with built-in image optimization (next/image component with automatic WebP/AVIF format conversion, responsive srcset generation, lazy loading), font optimization (next/font with automatic font subsetting, preloading, font-display control), and Turbopack bundler. Required for image optimization (AC-6.8.8) and font loading optimization. Already installed.
+      </dependency>
+
+      <dependency name="@visx/axis" version="3.12.0" type="dependency">
+        Visx axis component used in scatter-plot.tsx AxisBottom. Tree-shakeable when using experimental.optimizePackageImports. Part of bundle optimization verification (AC-6.8.7). Already installed, needs optimization config.
+      </dependency>
+
+      <dependency name="@visx/scale" version="3.12.0" type="dependency">
+        Visx scale utilities (scaleTime, scaleLinear) used in scatter-plot.tsx for xScale and yScale computation. Tree-shakeable when using experimental.optimizePackageImports. Part of bundle optimization verification (AC-6.8.7). Already installed, needs optimization config.
+      </dependency>
+
+      <dependency name="motion" version="12.23.24" type="dependency">
+        Motion animation library (formerly Framer Motion) used throughout visualization components. Built-in 60fps optimization with GPU acceleration, reduced motion support via useReducedMotion hook. Already optimized for performance - no additional config needed. Used in scatter-plot.tsx and scatter-point.tsx for smooth animations.
+      </dependency>
+
+      <dependency name="lucide-react" version="0.555.0" type="dependency">
+        Icon library with tree-shakeable exports. Each icon imported individually to minimize bundle size. Part of bundle optimization verification (AC-6.8.7) - ensure full icon set not bundled, only imported icons. Already installed, needs experimental.optimizePackageImports config in next.config.ts.
+      </dependency>
+
+      <dependency name="date-fns" version="4.1.0" type="dependency">
+        Date utility library with tree-shakeable exports. Individual functions imported (format, parseISO, etc.) to minimize bundle size. Part of bundle optimization verification (AC-6.8.7) - ensure only used functions bundled. Already installed, needs experimental.optimizePackageImports config in next.config.ts.
+      </dependency>
+
+      <dependency name="@playwright/test" version="1.49.0" type="devDependency">
+        Playwright test framework already installed for a11y tests. Will be used for performance tests (tests/performance/lighthouse.spec.ts) in combination with playwright-lighthouse. Provides browser automation for measuring modal open time (AC-6.8.6) and FPS during timeline scroll (AC-6.8.5). Already installed.
+      </dependency>
+
+      <dependency name="vitest" version="4.0.14" type="devDependency">
+        Unit test framework already used throughout project. Will be used for unit testing performance utilities (tests/unit/lib/utils/performance.test.ts) including debounce function, FPS counter, and Web Vitals logger. Already installed.
+      </dependency>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <!-- Performance Budget Constraints -->
+    <constraint type="performance-budget">
+      Lighthouse Performance score must be >= 90 for both homepage and obituary pages. This is a hard requirement for AC-6.8.1. If score falls below 90, identify and fix bottlenecks before story completion. Common causes: unoptimized images, excessive JavaScript, render-blocking resources, poor font loading.
+    </constraint>
+
+    <constraint type="core-web-vitals">
+      Core Web Vitals thresholds are strict requirements: LCP < 2.5s (AC-6.8.2), CLS < 0.1 (AC-6.8.3), TBT < 300ms (AC-6.8.4). These are Google's "good" thresholds for real-world user experience. All three must pass on both desktop and mobile. Use Lighthouse CI configuration (lighthouserc.js) to enforce these thresholds in automated tests.
+    </constraint>
+
+    <constraint type="animation-performance">
+      Timeline scroll must maintain >= 55fps (close to 60fps target) with 200+ data points (AC-6.8.5). Test with performance.now() and requestAnimationFrame to measure actual frame times. If FPS drops below 55, implement virtualization to render only visible points within viewport + 100px buffer. Debounce scroll handler to ~60fps (16ms) to prevent excessive re-renders.
+    </constraint>
+
+    <constraint type="interaction-latency">
+      Modal open latency must be < 300ms from click to modal visible (AC-6.8.6). Measure with performance.now() in click handler to modal animate completion. If exceeds 300ms, optimize modal component loading (check for heavy imports), reduce initial render complexity, or implement code splitting for modal content.
+    </constraint>
+
+    <constraint type="bundle-size">
+      Bundle analysis must verify tree-shaking for @visx/visx, lucide-react, and date-fns (AC-6.8.7). Run ANALYZE=true pnpm build and inspect bundle analyzer report. Visx should show only used packages (@visx/scale, @visx/axis, etc.), not full @visx/visx bundle. lucide-react should show individual icon imports, not full icon set. date-fns should show only used functions (format, parseISO, etc.), not entire library. No duplicate dependencies allowed in bundle.
+    </constraint>
+
+    <constraint type="image-optimization">
+      All images must use Next.js Image component with WebP/AVIF format conversion and proper device sizes (AC-6.8.8). Verify in browser Network tab that images serve as image/webp or image/avif based on browser support. Check that appropriate device size loaded (not full-size image on mobile). Cache headers must be present: Cache-Control: public, max-age=31536000, immutable for long-term caching.
+    </constraint>
+
+    <constraint type="reduced-motion">
+      All performance optimizations must respect prefers-reduced-motion preference (from Story 6-6). Debouncing, memoization, and virtualization should work regardless of motion preference. Motion library already handles animation performance with reduced motion - ensure new optimizations don't break this. Test with prefers-reduced-motion: reduce enabled in browser DevTools.
+    </constraint>
+
+    <constraint type="existing-patterns">
+      Follow existing performance patterns from architecture.md and scatter-plot.tsx. Use useMemo for expensive calculations, useCallback for event handlers, React.memo() for components. Use Motion's spring physics (SPRINGS.pan, SPRINGS.zoom from animation.ts) for smooth interactions. Use performance monitoring utilities (markPerformance, measurePerformance) only in development (already implemented in performance.ts).
+    </constraint>
+
+    <constraint type="next-js-conventions">
+      Next.js configuration changes must use TypeScript (next.config.ts not .js). Use type-safe config: import type { NextConfig } from 'next'. Bundle analyzer should be wrapped with withBundleAnalyzer() function, not inline. Image config should use built-in types for formats, deviceSizes. Headers function must return array of {source, headers} objects with proper Cache-Control values.
+    </constraint>
+
+    <constraint type="font-loading">
+      Font optimization must use Next.js next/font/google API (already imported in layout.tsx). Add display: 'swap' to prevent FOIT (flash of invisible text), add preload: true to critical fonts (Instrument_Serif, Geist) to start loading immediately. DO NOT use font-display CSS property directly - Next.js font config handles this. Verify fonts load with font-display: swap in browser DevTools Network tab.
+    </constraint>
+
+    <constraint type="test-coverage">
+      Performance test suite (tests/performance/lighthouse.spec.ts) must cover all acceptance criteria: AC-6.8.1 (Lighthouse score), AC-6.8.2-6.8.4 (Core Web Vitals), AC-6.8.5 (FPS test), AC-6.8.6 (modal latency). Use playwright-lighthouse for Lighthouse integration. Implement custom FPS measurement with requestAnimationFrame counter. Implement custom modal timing with performance.now() marks. All tests must be automated and runnable in CI.
+    </constraint>
+
+    <constraint type="backward-compatibility">
+      Performance optimizations must not break existing functionality from Stories 6-1 through 6-7. Keyboard navigation (Story 6-1, 6-2), screen reader support (Story 6-3), table view (Story 6-4), color contrast (Story 6-5), reduced motion (Story 6-6), and WCAG compliance (Story 6-7) must all continue working. Run existing test suites (pnpm test, pnpm test:a11y) after optimizations to verify no regressions.
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <!-- React and Motion Hooks -->
+    <interface name="React.memo" type="react-api">
+      React.memo(Component, arePropsEqual?) for memoizing component renders. Use for ScatterPoint component to prevent re-renders when props unchanged. Custom comparison function (arePropsEqual) should check obituary._id, x, y, isFocused, isFiltered, and other relevant props. Example from story reference implementation (lines 192-200): memo(ScatterPoint, (prev, next) => prev.obituary._id === next.obituary._id && prev.isFocused === next.isFocused && prev.isFiltered === next.isFiltered && prev.x === next.x && prev.y === next.y). Prevents unnecessary re-renders during scroll/pan when point props haven't changed.
+    </interface>
+
+    <interface name="useMemo" type="react-hook">
+      useMemo(calculateValue, dependencies) for memoizing expensive computations. Already used in scatter-plot.tsx for scales (lines 214-247) and clusters (lines 250-262). Add useMemo for position calculations and viewport filtering. Example from story reference implementation (lines 204-206): const { positions, bounds } = useMemo(() => calculatePositions(data, width, height), [data, width, height]). Dependencies array critical - only recalculate when data, width, or height change.
+    </interface>
+
+    <interface name="useCallback" type="react-hook">
+      useCallback(callback, dependencies) for memoizing event handlers. Use for debounced scroll handler to prevent function recreation on each render. Example from story reference implementation (lines 209-216): const handleScroll = useCallback(debounce((scrollX: number) => { startTransition(() => setScrollPosition(scrollX)) }, 16), []). Empty dependencies array means function created once and reused. Debounce delay of 16ms ensures ~60fps update rate.
+    </interface>
+
+    <interface name="startTransition" type="react-api">
+      startTransition(callback) for marking state updates as non-urgent. Use for scroll position updates to allow React to prioritize more urgent updates (like hover states). Example from story reference implementation (line 212): startTransition(() => setScrollPosition(scrollX)). Prevents scroll state updates from blocking high-priority interactions. Part of React 19 concurrent features.
+    </interface>
+
+    <interface name="useReducedMotion" type="motion-hook">
+      useReducedMotion() from motion/react returns boolean | null indicating if user prefers reduced motion. Already used in scatter-plot.tsx (line 191) and scatter-point.tsx (line 67). Returns null if preference unknown (treat as false). Use to conditionally disable animations: const shouldReduceMotion = prefersReducedMotion ?? false. When true, use instant transitions (duration: 0) instead of springs. Motion library respects this automatically but custom optimizations should check this value.
+    </interface>
+
+    <interface name="ParentSize" type="visx-component">
+      ParentSize from @visx/responsive provides width and height to children based on parent container size. Already used in scatter-plot.tsx (lines 974-983) as wrapper for ScatterPlotInner. Passes width and parentHeight to inner component. Ensures responsive sizing without manual resize listeners. Zero configuration needed - just wrap component and destructure width/height from render props.
+    </interface>
+
+    <interface name="performance.mark/measure" type="web-api">
+      Performance API for creating named timestamps and measuring durations. Already wrapped in performance.ts utilities (markPerformance lines 66-75, measurePerformance lines 93-113). Use for monitoring expensive operations: markPerformance('start'), /* work */, markPerformance('end'), measurePerformance('operation', 'start', 'end', thresholdMs). No-op in production to avoid overhead. Use to identify performance bottlenecks during development.
+    </interface>
+
+    <interface name="requestAnimationFrame" type="web-api">
+      requestAnimationFrame(callback) for frame-rate monitoring and smooth animations. Already used in performance.ts monitorFrameRate function (lines 131-159). Use for FPS test in performance suite: track frame count over duration, calculate fps = frames * 1000 / duration. Cancel with cancelAnimationFrame(id) in cleanup. Ensures measurements sync with browser's repaint cycle for accurate FPS calculation.
+    </interface>
+
+    <interface name="Next.js Image" type="next-component">
+      next/image component for optimized image loading. Not currently used extensively in project but required for AC-6.8.8. Provides automatic WebP/AVIF conversion based on browser support, responsive srcset generation with deviceSizes from next.config.ts, lazy loading by default, and blur placeholder support. Usage: &lt;Image src="/path" alt="..." width={600} height={400} /&gt;. Formats and sizes configured in next.config.ts images object.
+    </interface>
+
+    <interface name="next/font/google" type="next-api">
+      Next.js font optimization API already imported in layout.tsx. Currently using Geist, Geist_Mono, and Instrument_Serif. Font loader returns object with variable property for CSS variable. Configuration object supports: subsets (array), weight (string or array), display ('auto' | 'block' | 'swap' | 'fallback' | 'optional'), preload (boolean). Add display: 'swap' and preload: true to each font config for optimal loading. Example: Geist({ subsets: ['latin'], display: 'swap', preload: true, variable: '--font-geist-sans' }).
+    </interface>
+
+    <interface name="withBundleAnalyzer" type="next-plugin">
+      @next/bundle-analyzer plugin wrapper for Next.js config. Import: import bundleAnalyzer from '@next/bundle-analyzer'. Create wrapper: const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === 'true' }). Wrap config: export default withBundleAnalyzer(nextConfig). Enables bundle analysis with ANALYZE=true pnpm build. Opens interactive treemap in browser showing all modules and sizes. Essential for verifying tree-shaking (AC-6.8.7).
+    </interface>
+
+    <interface name="Lighthouse CI" type="testing-tool">
+      Lighthouse CI configuration via lighthouserc.js in project root. Config object with ci.collect (URLs to test, numberOfRuns, settings), ci.assert (assertions object with category scores and metric thresholds), and ci.upload (target: 'temporary-public-storage'). Assertions use format: 'metric-name': ['error', { minScore: 0.9 }] for scores or { maxNumericValue: 2500 } for metrics. Reference implementation in story lines 103-134 shows complete config with all thresholds.
+    </interface>
+
+    <interface name="playwright-lighthouse" type="testing-library">
+      Playwright Lighthouse integration for automated audits. Import playAudit from 'playwright-lighthouse'. Use in test: await playAudit({ page, thresholds: { performance: 90, accessibility: 95 }, port: 9222 }). Returns audit results with scores and metrics. Configure Chrome with --remote-debugging-port=9222 for Lighthouse connection. Use for implementing AC-6.8.1 through AC-6.8.4 tests in tests/performance/lighthouse.spec.ts.
+    </interface>
+
+    <!-- Existing Component Interfaces -->
+    <interface name="ScatterPlot Props" type="component-interface">
+      ScatterPlotProps interface from scatter-plot.tsx (lines 38-43): data (ObituarySummary[]), height (optional number), activeCategories (optional Category[]). Component already implements pan/zoom with viewState, keyboard navigation with roving focus, touch handlers, and performance monitoring. Optimization target: add viewport-based virtualization to only render visible points, memoize ScatterPoint components, debounce scroll handler with 16ms delay for 60fps.
+    </interface>
+
+    <interface name="ScatterPoint Props" type="component-interface">
+      ScatterPointProps interface from scatter-point.tsx (lines 9-30): obituary (ObituarySummary), x/y (number), color (string), isFiltered/isHovered/isClustered (boolean), mouse/keyboard handlers (callbacks), shouldReduceMotion (optional boolean), tabIndex (0 | -1), isFocused (boolean), onKeyDown/onFocus (optional callbacks). Component already implements motion animations, focus ring, touch targets, and reduced motion support. Optimization target: wrap entire component with React.memo() using custom comparison function to check relevant props.
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <!-- Testing Standards from Project -->
+      - Unit tests use Vitest framework (vitest at 4.0.14)
+      - Test files mirror source structure: tests/unit/lib/utils/performance.test.ts for src/lib/utils/performance.ts
+      - Component tests use @testing-library/react at 16.3.0 with @testing-library/jest-dom at 6.9.1
+      - E2E/performance tests use @playwright/test at 1.49.0
+      - Test file naming: *.test.ts for unit tests, *.spec.ts for E2E tests
+      - All tests must pass before story completion: pnpm test (unit) and pnpm test:a11y (E2E)
+      - Code coverage tracked with pnpm test:coverage
+      - Tests should cover happy path, edge cases, and error conditions
+      - Mock external dependencies (Sanity client, browser APIs) where appropriate
+      - Performance tests run against localhost:3000 (requires dev server running)
+      - Lighthouse tests require 3 runs for averaging to account for variance
+    </standards>
+
+    <locations>
+      <!-- Test File Locations to Create -->
+      - tests/performance/lighthouse.spec.ts - Lighthouse CI integration tests for AC-6.8.1 through AC-6.8.4 (Core Web Vitals)
+      - tests/performance/interaction.spec.ts - FPS monitoring test (AC-6.8.5) and modal latency test (AC-6.8.6)
+      - tests/unit/lib/utils/performance.test.ts - Already exists with tests for measureInteraction, markPerformance, measurePerformance, monitorFrameRate. Add tests for any new utilities (debounce, Core Web Vitals logger).
+      - tests/unit/components/visualization/scatter-plot.test.tsx - Add tests for memoization, virtualization, and debouncing behavior
+      - tests/unit/components/visualization/scatter-point.test.tsx - Add tests for memo behavior with custom comparison
+
+      <!-- Existing Test Files to Verify -->
+      - tests/a11y/keyboard.spec.ts - Verify keyboard navigation still works after performance optimizations
+      - tests/a11y/screen-reader.spec.ts - Verify screen reader support not broken by memoization
+      - tests/a11y/axe.spec.ts - Run axe accessibility tests to ensure no regressions
+      - All tests in tests/unit/lib/ - Run full unit test suite to catch any breaking changes
+    </locations>
+
+    <ideas>
+      <!-- Performance Test Ideas -->
+      1. **Lighthouse CI Test (AC-6.8.1-6.8.4)**
+         - Navigate to http://localhost:3000/ and sample obituary page
+         - Run Lighthouse audit 3 times for average
+         - Assert performance score >= 90
+         - Assert LCP < 2500ms (2.5s)
+         - Assert CLS < 0.1
+         - Assert TBT < 300ms
+         - Generate report and save artifacts
+
+      2. **Timeline FPS Test (AC-6.8.5)**
+         - Load homepage with 200+ obituaries
+         - Start FPS counter using requestAnimationFrame
+         - Simulate horizontal scroll across timeline (drag or wheel events)
+         - Measure FPS over 2-3 second scroll duration
+         - Assert average FPS > 55 (close to 60fps target)
+         - Test on both desktop and mobile viewport sizes
+
+      3. **Modal Open Latency Test (AC-6.8.6)**
+         - Navigate to homepage
+         - Mark start time with performance.now()
+         - Click scatter point to trigger modal
+         - Wait for modal to be visible (check for modal element with opacity: 1)
+         - Mark end time with performance.now()
+         - Calculate duration = endTime - startTime
+         - Assert duration < 300ms
+         - Repeat test 5 times and take average to account for variance
+
+      4. **Bundle Analysis Test (AC-6.8.7)**
+         - Run ANALYZE=true pnpm build to generate bundle report
+         - Parse bundle analyzer output (JSON format)
+         - Assert @visx packages only include used modules (@visx/scale, @visx/axis, etc.), not full @visx/visx
+         - Assert lucide-react only includes individual icons, not full icon set
+         - Assert date-fns only includes used functions (format, parseISO, etc.)
+         - Assert no duplicate dependencies (check for multiple versions of same package)
+         - Document bundle sizes in performance report
+
+      5. **Image Optimization Test (AC-6.8.8)**
+         - Navigate to page with images
+         - Intercept Network requests for images
+         - Assert Content-Type is image/webp or image/avif (based on browser support)
+         - Assert proper device size loaded (not full-size on mobile)
+         - Assert Cache-Control header includes 'max-age=31536000' and 'immutable'
+         - Test in Chrome (supports AVIF/WebP) and older browser (falls back to JPG/PNG)
+
+      6. **Memoization Behavior Test**
+         - Render ScatterPlot with 100 points
+         - Track component renders using React DevTools Profiler API
+         - Update unrelated state (e.g., hover state on different point)
+         - Assert ScatterPoint components don't re-render if props unchanged
+         - Test custom comparison function by changing only some props (x/y vs isFocused)
+
+      7. **Virtualization Test**
+         - Render ScatterPlot with 500 points (more than viewport can show)
+         - Count number of ScatterPoint elements in DOM
+         - Assert only visible points + buffer rendered (not all 500)
+         - Scroll to different position
+         - Assert new visible points rendered, off-screen points removed
+         - Verify no visual gaps or missing points during scroll
+
+      8. **Reduced Motion Performance Test**
+         - Enable prefers-reduced-motion in browser
+         - Run FPS test with reduced motion enabled
+         - Assert FPS still > 55 (optimizations work with reduced motion)
+         - Assert modal still opens < 300ms with reduced motion
+         - Verify no animation overhead when motion disabled
+
+      9. **Font Loading Test**
+         - Navigate to homepage
+         - Check Network tab for font requests
+         - Assert fonts have font-display: swap in response headers
+         - Assert critical fonts (Geist, Instrument_Serif) preloaded
+         - Measure LCP with slow 3G throttling - ensure text visible before 2.5s
+         - Verify no FOIT (flash of invisible text) during load
+
+      10. **Cache Headers Test**
+          - Request static asset (image, JS bundle, CSS file)
+          - Assert response has Cache-Control: public, max-age=31536000, immutable
+          - Request image from /public directory
+          - Assert same cache headers present
+          - Verify Next.js /_next/static files have immutable cache headers
+          - Test cache behavior: second request should hit browser cache (from disk cache)
+    </ideas>
+  </tests>
+</story-context>

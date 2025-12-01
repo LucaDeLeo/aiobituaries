@@ -157,3 +157,63 @@ export function monitorFrameRate(
 
   return () => cancelAnimationFrame(animationId)
 }
+
+/**
+ * Debounce a function to limit execution frequency.
+ * Useful for high-frequency events like scroll, resize, or mouse move.
+ *
+ * @param callback - Function to debounce
+ * @param delay - Delay in milliseconds (e.g., 16ms for ~60fps)
+ * @returns Debounced function
+ *
+ * @example
+ * const debouncedScroll = debounce((scrollX: number) => {
+ *   updateScrollPosition(scrollX)
+ * }, 16) // ~60fps
+ */
+export function debounce<T extends (...args: unknown[]) => void>(
+  callback: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: ReturnType<typeof setTimeout>
+
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId)
+    timeoutId = setTimeout(() => {
+      callback(...args)
+    }, delay)
+  }
+}
+
+/**
+ * Log Core Web Vitals to console (development only).
+ * Useful for debugging and verifying performance improvements.
+ *
+ * @param metric - Web Vitals metric object
+ *
+ * @example
+ * // In layout.tsx or page.tsx:
+ * if (typeof window !== 'undefined') {
+ *   import('web-vitals').then(({ onCLS, onFID, onLCP, onFCP, onTTFB }) => {
+ *     onCLS(logWebVitals)
+ *     onFID(logWebVitals)
+ *     onLCP(logWebVitals)
+ *     onFCP(logWebVitals)
+ *     onTTFB(logWebVitals)
+ *   })
+ * }
+ */
+export function logWebVitals(metric: {
+  name: string
+  value: number
+  id: string
+  rating?: 'good' | 'needs-improvement' | 'poor'
+}): void {
+  if (process.env.NODE_ENV !== 'development') return
+
+  const color = metric.rating === 'good' ? 'green' : metric.rating === 'poor' ? 'red' : 'orange'
+  console.log(
+    `%c[Web Vitals] ${metric.name}: ${metric.value.toFixed(2)}ms (${metric.rating || 'unknown'})`,
+    `color: ${color}; font-weight: bold`
+  )
+}

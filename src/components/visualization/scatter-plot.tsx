@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
+import { useMemo, useRef, useState, useCallback, useEffect, startTransition } from 'react'
 import {
   motion,
   useMotionValue,
@@ -246,20 +246,24 @@ export function ScatterPlotInner({
     })
   }, [innerHeight])
 
+  // Memoize point positions for performance (AC-6.8.5)
+  const pointPositions = useMemo(() => {
+    return data.map((obituary) => ({
+      obituary,
+      x: xScale(new Date(obituary.date)) ?? 0,
+      y: yScale(hashToJitter(obituary._id)) ?? 0,
+      color: getCategoryColor(obituary.categories),
+    }))
+  }, [data, xScale, yScale])
+
   // Compute clusters based on current positions and zoom level
   const clusters = useMemo(() => {
     if (!shouldShowClusters(viewState.scale)) {
       return []
     }
 
-    const positionedPoints = data.map((obituary) => ({
-      obituary,
-      x: xScale(new Date(obituary.date)) ?? 0,
-      y: yScale(hashToJitter(obituary._id)) ?? 0,
-    }))
-
-    return computeClusters(positionedPoints, DEFAULT_CLUSTER_CONFIG, viewState.scale)
-  }, [data, xScale, yScale, viewState.scale])
+    return computeClusters(pointPositions, DEFAULT_CLUSTER_CONFIG, viewState.scale)
+  }, [pointPositions, viewState.scale])
 
   // Determine if a point should be filtered-in (visible at full opacity)
   // Empty activeCategories = show all; otherwise match any category (OR logic)
@@ -288,6 +292,20 @@ export function ScatterPlotInner({
       }),
     [sortedData, isPointFiltered, clusters, viewState.scale]
   )
+
+  // Viewport virtualization: Only render points within visible viewport (AC-6.8.5)
+  // Calculate viewport bounds with buffer for smooth scrolling
+  const VIEWPORT_BUFFER = 100 // px buffer on each side
+  const visiblePointPositions = useMemo(() => {
+    const viewportLeft = -viewState.translateX - VIEWPORT_BUFFER
+    const viewportRight = -viewState.translateX + width + VIEWPORT_BUFFER
+
+    return pointPositions.filter(({ x }) => {
+      // Transform x position by current pan/zoom
+      const transformedX = x * viewState.scale + viewState.translateX
+      return transformedX >= viewportLeft && transformedX <= viewportRight
+    })
+  }, [pointPositions, viewState.translateX, viewState.scale, width])
 
   // Create refs for scatter points
   const pointRefs = useRef<(SVGGElement | null)[]>([])
@@ -732,13 +750,16 @@ export function ScatterPlotInner({
       const isShiftScroll = e.shiftKey
 
       if (isShiftScroll || isHorizontalScroll) {
-        // Pan behavior (from Story 3-3)
+        // Pan behavior (from Story 3-3) - use startTransition for performance (AC-6.8.5)
         const deltaX = e.shiftKey ? e.deltaY : e.deltaX
         if (Math.abs(deltaX) > 0) {
           e.preventDefault()
           const newTranslateX = clampTranslateX(translateXMotion.get() - deltaX)
           translateXMotion.set(newTranslateX)
-          setViewState((prev) => ({ ...prev, translateX: newTranslateX }))
+          // Use startTransition to mark scroll updates as non-urgent
+          startTransition(() => {
+            setViewState((prev) => ({ ...prev, translateX: newTranslateX }))
+          })
         }
         return
       }
@@ -862,6 +883,7 @@ export function ScatterPlotInner({
             }}
           >
             {/* Data Points with staggered entrance animation (role="list" for keyboard nav) */}
+            {/* Performance optimization (AC-6.8.5): Only render visible points with viewport virtualization */}
             <motion.g
               role="list"
               aria-label="Obituary data points"
@@ -869,10 +891,7 @@ export function ScatterPlotInner({
               initial={shouldReduceMotion ? undefined : "initial"}
               animate={shouldReduceMotion ? undefined : "animate"}
             >
-              {data.map((obituary) => {
-                const xPos = xScale(new Date(obituary.date))
-                const yPos = yScale(hashToJitter(obituary._id))
-                const color = getCategoryColor(obituary.categories)
+              {visiblePointPositions.map(({ obituary, x: xPos, y: yPos, color }) => {
                 const isClustered =
                   isPointClustered(obituary._id, clusters) &&
                   shouldShowClusters(viewState.scale)

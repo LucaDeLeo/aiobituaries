@@ -1,7 +1,54 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Performance optimization: Enable package import optimization for tree-shaking (AC-6.8.7)
+  experimental: {
+    optimizePackageImports: [
+      '@visx/axis',
+      '@visx/scale',
+      '@visx/grid',
+      '@visx/group',
+      '@visx/responsive',
+      'lucide-react',
+      'date-fns'
+    ]
+  },
+
+  // Image optimization configuration (AC-6.8.8)
+  images: {
+    // Serve modern formats (AVIF preferred, fallback to WebP)
+    formats: ['image/avif', 'image/webp'],
+    // Responsive image sizes for different device breakpoints
+    deviceSizes: [320, 640, 768, 1024, 1280, 1920],
+    // Cache images for 1 year (31536000 seconds)
+    minimumCacheTTL: 31536000
+  },
+
+  // Cache headers for static assets
+  async headers() {
+    return [
+      // Cache images with immutable headers for maximum performance
+      {
+        source: '/:all*(svg|jpg|jpeg|png|gif|ico|webp|avif)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          }
+        ]
+      },
+      // Cache Next.js static files (JS, CSS) with immutable headers
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          }
+        ]
+      }
+    ];
+  }
 };
 
 export default nextConfig;
