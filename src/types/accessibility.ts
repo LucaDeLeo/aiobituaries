@@ -51,3 +51,20 @@ export interface KeyboardFocusableProps {
   /** Handler for focus events */
   onFocus: () => void
 }
+
+/**
+ * View mode for timeline visualization.
+ * Controls whether to show the scatter plot or table view.
+ */
+export type TimelineViewMode = 'visualization' | 'table'
+
+/**
+ * Configuration for table sorting state.
+ * Used by ObituaryTable component.
+ */
+export interface TableSortConfig {
+  /** Column to sort by */
+  column: 'date' | 'source' | 'category'
+  /** Sort direction */
+  direction: 'asc' | 'desc'
+}

@@ -92,7 +92,7 @@ development_status:
   6-1-keyboard-navigation-foundation: done
   6-2-timeline-keyboard-access: done
   6-3-screen-reader-support: done
-  6-4-alternative-table-view: backlog
+  6-4-alternative-table-view: done
   6-5-color-contrast-and-visual-accessibility: backlog
   6-6-reduced-motion-support: backlog
   6-7-wcag-compliance-audit: backlog

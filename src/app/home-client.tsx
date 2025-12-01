@@ -9,12 +9,21 @@
  *
  * The homepage server component fetches data and passes it here;
  * this client component handles interactivity and filter state.
+ *
+ * Also supports alternative table view for accessibility (Story 6-4).
+ * Table view toggle is hidden on mobile (desktop/tablet only).
  */
 
 import { useMemo } from 'react'
 import { CategoryFilter } from '@/components/filters/category-filter'
 import { ScatterPlot } from '@/components/visualization/scatter-plot'
 import { CategoryChart } from '@/components/visualization/category-chart'
+import {
+  TableViewToggle,
+  useViewModeStorage,
+} from '@/components/obituary/table-view-toggle'
+import { ObituaryTable } from '@/components/obituary/obituary-table'
+import { useLiveRegionOptional } from '@/components/accessibility/live-region'
 import type { ObituarySummary } from '@/types/obituary'
 import { useFilters } from '@/lib/hooks/use-filters'
 
@@ -29,6 +38,8 @@ export interface HomeClientProps {
  */
 export function HomeClient({ obituaries }: HomeClientProps) {
   const { categories, toggleCategory, clearFilters } = useFilters()
+  const { mode, setMode, isHydrated } = useViewModeStorage()
+  const liveRegion = useLiveRegionOptional()
 
   // Calculate filtered count for accessibility announcements
   const filteredCount = useMemo(() => {
@@ -38,11 +49,36 @@ export function HomeClient({ obituaries }: HomeClientProps) {
     ).length
   }, [obituaries, categories])
 
+  // Handle view mode change with screen reader announcement
+  const handleModeChange = (newMode: typeof mode) => {
+    setMode(newMode)
+    liveRegion?.announcePolite(
+      newMode === 'table'
+        ? 'Switched to table view'
+        : 'Switched to timeline view'
+    )
+  }
+
   return (
     <>
-      {/* Timeline Visualization */}
+      {/* Timeline/Table Visualization */}
       <section className="container mx-auto px-4 py-8">
-        <ScatterPlot data={obituaries} activeCategories={categories} />
+        {/* View toggle - hidden on mobile (md:inline-flex) */}
+        <div className="flex justify-end mb-4">
+          <TableViewToggle mode={mode} onModeChange={handleModeChange} />
+        </div>
+
+        {/* Conditional view rendering */}
+        {/* During SSR or before hydration, show timeline only */}
+        {/* After hydration, show based on user preference */}
+        {!isHydrated || mode === 'visualization' ? (
+          <ScatterPlot data={obituaries} activeCategories={categories} />
+        ) : (
+          <ObituaryTable
+            obituaries={obituaries}
+            activeCategories={categories}
+          />
+        )}
       </section>
 
       {/* Category Breakdown Chart */}

@@ -1,0 +1,875 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context XML for Story 6-4: Alternative Table View
+  Generated: 2025-12-01
+  Epic: Epic 6 - Accessibility & Quality
+  Status: drafted -> ready-for-dev
+
+  This context provides all implementation details, code references,
+  and patterns needed for creating an accessible alternative table view
+  of the timeline data.
+-->
+<story-context>
+  <metadata>
+    <story-key>6-4-alternative-table-view</story-key>
+    <epic>Epic 6 - Accessibility & Quality</epic>
+    <story-title>Alternative Table View</story-title>
+    <priority>High</priority>
+    <estimated-effort>4-5 hours</estimated-effort>
+    <generated>2025-12-01</generated>
+  </metadata>
+
+  <story-reference>
+    <path>docs/sprint-artifacts/stories/6-4-alternative-table-view.md</path>
+    <summary>
+      Implement an accessible alternative table view for timeline data by creating
+      an ObituaryTable component with sortable columns, proper ARIA semantics
+      (role="grid", aria-sort, caption), and a TableViewToggle component that
+      persists view preference in localStorage. Provides accessible data access
+      for users who cannot use the visual scatter plot timeline.
+    </summary>
+  </story-reference>
+
+  <epic-context>
+    <tech-spec-path>docs/sprint-artifacts/epic-tech-specs/epic-6-tech-spec.md</tech-spec-path>
+    <epic-summary>
+      Epic 6 delivers full WCAG 2.1 AA compliance, performance optimization, and
+      quality refinements. This story (6-4) focuses on providing an alternative
+      table view of timeline data for users who cannot use the visual scatter plot.
+    </epic-summary>
+    <related-frs>
+      <fr id="FR42">System provides alternative table view of timeline data</fr>
+      <fr id="FR38">Site meets WCAG 2.1 AA compliance standards (partial)</fr>
+    </related-frs>
+  </epic-context>
+
+  <dependencies>
+    <completed-stories>
+      <story key="6-1-keyboard-navigation-foundation">
+        Provides a11y.ts utilities (handleKeyboardNavigation, generateId, isFocusable,
+        getFocusableElements), SkipLink component, global focus styles in globals.css.
+        Focus-visible styles will apply to table buttons and links.
+      </story>
+      <story key="6-2-timeline-keyboard-access">
+        Provides useRovingFocus hook pattern (not directly used but pattern reference).
+        ScatterPoint has ARIA attributes pattern (title/desc with aria-labelledby).
+      </story>
+      <story key="6-3-screen-reader-support">
+        Provides LiveRegionProvider for announcements, VisuallyHidden component
+        for sr-only content, useLiveRegion hook. These are essential for table
+        view announcements and accessible column headers.
+      </story>
+      <story key="4-1-category-data-model">
+        Provides Category type and CATEGORY_LABELS for table display.
+      </story>
+      <story key="4-2-category-filter-bar">
+        Provides CategoryFilter component and CategoryPill for category display.
+        Pattern for category badge styling to reuse in table cells.
+      </story>
+    </completed-stories>
+    <external-dependencies>
+      <dependency name="date-fns" version="4.1.0">
+        Date formatting with format() function. Already in package.json.
+        Import: import { format } from 'date-fns'
+      </dependency>
+      <dependency name="lucide-react" version="0.555.0">
+        Icons for toggle and sort indicators.
+        Icons needed: Table, ScatterChart, ArrowUp, ArrowDown
+        CRITICAL: lucide-react uses 'ScatterChart' NOT 'ChartScatterIcon'
+      </dependency>
+    </external-dependencies>
+  </dependencies>
+
+  <acceptance-criteria>
+    <criterion id="AC-6.4.1">
+      View toggle visible - Given homepage, when page loads, then a toggle button
+      group is visible with "Timeline" and "Table" options
+    </criterion>
+    <criterion id="AC-6.4.2">
+      Toggle switches view - Given user clicks "Table" toggle, when toggle is clicked,
+      then timeline is replaced with data table view
+    </criterion>
+    <criterion id="AC-6.4.3">
+      Table shows all columns - Given table view active, when table renders, then
+      columns display: Date, Source, Claim, Category, Actions
+    </criterion>
+    <criterion id="AC-6.4.4">
+      Sortable columns - Given table view active, when user clicks Date/Source/Category
+      header, then table sorts by that column
+    </criterion>
+    <criterion id="AC-6.4.5">
+      Sort state indication - Given column sorted, when sort is active, then header
+      shows arrow icon (up/down) and aria-sort attribute
+    </criterion>
+    <criterion id="AC-6.4.6">
+      Table respects filters - Given category filter active, when table view is shown,
+      then only filtered obituaries appear in table
+    </criterion>
+    <criterion id="AC-6.4.7">
+      Row links to detail - Given table row, when user clicks "View details" link,
+      then user navigates to /obituary/[slug] page
+    </criterion>
+    <criterion id="AC-6.4.8">
+      Proper table semantics - Given table renders, when screen reader reads table,
+      then announces as grid with proper th scope="col" headers
+    </criterion>
+    <criterion id="AC-6.4.9">
+      Caption describes state - Given table with filters/sort, when screen reader
+      reads caption, then announces sort order and filter status
+    </criterion>
+    <criterion id="AC-6.4.10">
+      Empty state message - Given no obituaries match filters, when table renders,
+      then shows "No obituaries match the selected filters"
+    </criterion>
+    <criterion id="AC-6.4.11">
+      Row count in footer - Given table renders, when tfoot is present, then shows
+      "Showing X of Y obituaries"
+    </criterion>
+    <criterion id="AC-6.4.12">
+      Detail link accessible - Given "View details" link in table, when clicked,
+      then navigates to /obituary/[slug] page (NOT external source - sourceUrl not in ObituarySummary)
+    </criterion>
+    <criterion id="AC-6.4.13">
+      Toggle state persisted - Given user selects table view, when navigating away
+      and back, then table view remains selected (localStorage)
+    </criterion>
+    <criterion id="AC-6.4.14">
+      Toggle keyboard accessible - Given toggle buttons, when user tabs to toggle,
+      then can switch views with Enter/Space
+    </criterion>
+    <criterion id="AC-6.4.15">
+      Alternating row colors - Given table rows, when rendered, then alternating
+      rows have subtle background difference for visual distinction
+    </criterion>
+  </acceptance-criteria>
+
+  <documentation-artifacts>
+    <artifact type="architecture">
+      <path>docs/architecture.md</path>
+      <relevant-sections>
+        <section name="Accessibility">
+          Table view (FR42) requirement. ARIA patterns for accessible components.
+          Design tokens for consistent styling (--bg-secondary, --bg-tertiary, etc.)
+        </section>
+        <section name="Component Pattern">
+          Server Components default, 'use client' for interactivity. Table will
+          need 'use client' for sort state management.
+        </section>
+        <section name="Testing Patterns">
+          Test organization under tests/unit/. Component tests with Testing Library.
+          Naming: *.test.tsx for component tests.
+        </section>
+      </relevant-sections>
+    </artifact>
+
+    <artifact type="tech-spec">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-6-tech-spec.md</path>
+      <relevant-sections>
+        <section name="Section 4.4: Story 6-4 Alternative Table View">
+          Complete reference implementations for ObituaryTable component with
+          SortButton, aria-sort, sr-only caption. TableViewToggle with aria-pressed.
+          Homepage integration pattern with conditional rendering.
+        </section>
+        <section name="Section 3.1: Accessibility State Types">
+          TimelineViewMode type: 'visualization' | 'table'
+          TableSortConfig interface: { column: 'date' | 'source' | 'category', direction: 'asc' | 'desc' }
+        </section>
+      </relevant-sections>
+    </artifact>
+
+    <artifact type="story">
+      <path>docs/sprint-artifacts/stories/6-4-alternative-table-view.md</path>
+      <relevant-sections>
+        <section name="Technical Approach">
+          Detailed implementation for TableViewToggle, ObituaryTable, useViewModeStorage
+          hook, sorting logic, date formatting, category display, homepage integration.
+        </section>
+        <section name="Reference Implementation">
+          Complete code samples for TableViewToggle (lines 103-175) and
+          ObituaryTable (lines 177-370).
+        </section>
+        <section name="Tasks">
+          12 tasks with detailed subtasks for implementation.
+        </section>
+      </relevant-sections>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code-interfaces>
+    <!-- Files to MODIFY -->
+    <file action="modify">
+      <path>src/app/home-client.tsx</path>
+      <description>
+        Client wrapper for homepage that manages filter state. Needs to add
+        view mode toggle and conditionally render ScatterPlot vs ObituaryTable.
+      </description>
+      <current-interface>
+        export interface HomeClientProps {
+          obituaries: ObituarySummary[]
+        }
+
+        export function HomeClient({ obituaries }: HomeClientProps)
+
+        Uses useFilters hook for category state.
+        Renders: ScatterPlot, CategoryChart, CategoryFilter
+      </current-interface>
+      <modifications-needed>
+        1. Import TableViewToggle, useViewModeStorage, ObituaryTable
+        2. Import useLiveRegionOptional for view change announcements
+        3. Add viewMode state using useViewModeStorage hook
+        4. Create handleModeChange that updates state and announces via LiveRegion
+        5. Add TableViewToggle component above ScatterPlot section
+        6. Conditionally render ScatterPlot or ObituaryTable based on mode
+        7. Pass activeCategories to ObituaryTable
+        8. Handle hydration state to prevent flash (isHydrated from hook)
+      </modifications-needed>
+      <current-code-snippet>
+        return (
+          &lt;&gt;
+            {/* Timeline Visualization */}
+            &lt;section className="container mx-auto px-4 py-8"&gt;
+              &lt;ScatterPlot data={obituaries} activeCategories={categories} /&gt;
+            &lt;/section&gt;
+            ...
+          &lt;/&gt;
+        )
+      </current-code-snippet>
+    </file>
+
+    <file action="modify">
+      <path>src/types/accessibility.ts</path>
+      <description>
+        Accessibility types from Story 6-2. Needs TimelineViewMode and
+        TableSortConfig types added.
+      </description>
+      <current-types>
+        NavigationDirection, RovingFocusState, Announcement, KeyboardFocusableProps
+      </current-types>
+      <additions-needed>
+        export type TimelineViewMode = 'visualization' | 'table'
+
+        export interface TableSortConfig {
+          column: 'date' | 'source' | 'category'
+          direction: 'asc' | 'desc'
+        }
+      </additions-needed>
+    </file>
+
+    <!-- Files to CREATE -->
+    <file action="create">
+      <path>src/components/obituary/table-view-toggle.tsx</path>
+      <description>
+        Toggle button group for switching between timeline and table views.
+        Includes useViewModeStorage hook for localStorage persistence.
+      </description>
+      <implementation-guide>
+        'use client' directive required for state and localStorage access.
+
+        Components:
+        - TableViewToggle: Toggle button group with aria-pressed
+        - useViewModeStorage: Hook for localStorage persistence with hydration handling
+
+        Key features:
+        - role="group" with aria-label="View mode"
+        - Two buttons with aria-pressed reflecting current mode
+        - Icons: ScatterChart (NOT ChartScatterIcon), Table from lucide-react
+        - STORAGE_KEY constant: 'timeline-view-mode'
+        - isHydrated state to prevent hydration mismatch
+        - Wrapper should use className="hidden md:flex" for mobile hiding
+
+        CRITICAL ICON FIX:
+        ```typescript
+        // CORRECT
+        import { Table, ScatterChart } from 'lucide-react'
+
+        // WRONG - DO NOT USE
+        import { TableIcon, ChartScatterIcon } from 'lucide-react'
+        ```
+
+        Styling:
+        - Bordered pill group (rounded-lg border)
+        - Gold background on active (--accent-primary)
+        - Focus-visible styles for keyboard accessibility
+      </implementation-guide>
+    </file>
+
+    <file action="create">
+      <path>src/components/obituary/obituary-table.tsx</path>
+      <description>
+        Accessible sortable data table displaying obituaries as an alternative
+        to the scatter plot timeline visualization.
+      </description>
+      <implementation-guide>
+        'use client' directive for sort state management.
+
+        Props interface:
+        - obituaries: ObituarySummary[] (from Sanity)
+        - activeCategories: Category[]
+
+        Internal state:
+        - sortConfig: TableSortConfig (default: { column: 'date', direction: 'desc' })
+
+        Key features:
+        - role="grid" on table element
+        - sr-only caption describing sort order and filter status
+        - th elements with scope="col"
+        - Sortable columns: Date, Source, Category (Claim is not sortable)
+        - SortButton subcomponent with aria-sort attribute
+        - "View details" links to /obituary/${slug} (NOT external - sourceUrl unavailable)
+        - CRITICAL: ObituarySummary does NOT have sourceUrl field
+        - Empty state message
+        - tfoot with row count
+        - Alternating row backgrounds
+
+        Data processing:
+        - useMemo for filtered and sorted data
+        - Filter by activeCategories first
+        - Sort by configured column and direction
+
+        Date formatting:
+        - Use date-fns format: 'MMM d, yyyy' (e.g., "Dec 1, 2025")
+        - Wrap in time element with dateTime={isoDate}
+
+        Category display:
+        - Use CategoryPill or create simple CategoryBadge
+        - Flex container for multiple categories
+      </implementation-guide>
+    </file>
+
+    <!-- DECISION: Do NOT create CategoryBadge - reuse CategoryPill with display-only styling -->
+    <file action="reference-for-reuse">
+      <path>src/components/filters/category-pill.tsx</path>
+      <description>
+        REUSE CategoryPill for category display in table cells.
+        CategoryPill already has the dot + label pattern with proper styling.
+      </description>
+      <implementation-guide>
+        DECISION: Reuse CategoryPill instead of creating CategoryBadge.
+
+        For table display, create a simple inline badge that mimics CategoryPill styling:
+        - Color dot (getCategoryColor) + label (getCategoryLabel)
+        - Use CATEGORIES constant from lib/constants/categories.ts
+        - Inline in ObituaryTable as a simple span, no separate component needed
+
+        Example inline badge:
+        &lt;span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs"
+              style={{ backgroundColor: `${getCategoryColor(cat)}20` }}&gt;
+          &lt;span className="w-1.5 h-1.5 rounded-full"
+                style={{ backgroundColor: getCategoryColor(cat) }} /&gt;
+          {getCategoryLabel(cat)}
+        &lt;/span&gt;
+
+        This avoids creating a separate component and avoids motion/react dependency in table.
+      </implementation-guide>
+    </file>
+
+    <file action="create">
+      <path>tests/unit/components/obituary/obituary-table.test.tsx</path>
+      <description>Unit tests for ObituaryTable component.</description>
+      <test-scenarios>
+        - Renders table with role="grid" attribute
+        - All column headers have scope="col"
+        - Default sort: date descending
+        - Clicking date header toggles sort direction
+        - Clicking source header sorts by source
+        - aria-sort attribute reflects current sort state (ascending/descending/none)
+        - Non-sorted columns have aria-sort="none"
+        - Caption describes sort order and filter state
+        - Empty state shown when displayData is empty
+        - Footer shows "Showing X of Y obituaries"
+        - Source column displays plain text (NOT external link)
+        - "View details" links point to /obituary/[slug]
+        - "View details" links include sr-only obituary context
+        - Alternating row backgrounds applied
+        - Respects activeCategories filter
+      </test-scenarios>
+    </file>
+
+    <file action="create">
+      <path>tests/unit/components/obituary/table-view-toggle.test.tsx</path>
+      <description>Unit tests for TableViewToggle component.</description>
+      <test-scenarios>
+        - Renders both toggle buttons
+        - Timeline button has aria-pressed when mode is 'visualization'
+        - Table button has aria-pressed when mode is 'table'
+        - Clicking table button calls onModeChange with 'table'
+        - Toggle group has aria-label "View mode"
+        - Icons have aria-hidden="true"
+        - Focus-visible styles apply on keyboard focus
+      </test-scenarios>
+    </file>
+
+    <!-- DECISION: useViewModeStorage hook lives in table-view-toggle.tsx, test with component -->
+    <file action="note">
+      <path>tests/unit/components/obituary/table-view-toggle.test.tsx</path>
+      <description>
+        HOOK ORGANIZATION DECISION: Keep useViewModeStorage hook in table-view-toggle.tsx file.
+        Test hook behavior as part of TableViewToggle component tests, not as separate hook test.
+
+        Include these hook behaviors in table-view-toggle.test.tsx:
+        - Returns default mode before hydration (isHydrated = false)
+        - Returns 'visualization' when localStorage empty
+        - Reads mode from localStorage on mount
+        - setMode updates localStorage
+        - Invalid stored values default to 'visualization'
+        - isHydrated becomes true after mount
+
+        No separate tests/unit/hooks/use-view-mode-storage.test.ts file needed.
+      </description>
+    </file>
+
+    <!-- Reference files -->
+    <file action="reference">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>
+        Main timeline visualization. Will be conditionally rendered alongside
+        ObituaryTable based on viewMode state. Already accepts activeCategories prop.
+      </description>
+      <relevant-props>
+        export interface ScatterPlotProps {
+          data: ObituarySummary[]
+          height?: number
+          activeCategories?: Category[]
+        }
+      </relevant-props>
+    </file>
+
+    <file action="reference">
+      <path>src/components/filters/category-filter.tsx</path>
+      <description>
+        Category filter component with pills. Uses useLiveRegionOptional
+        for announcing filter changes. Pattern for filter integration.
+      </description>
+      <relevant-features>
+        - role="group" with aria-label="Category filters"
+        - aria-pressed on filter buttons
+        - Live region announcement on filter change
+      </relevant-features>
+    </file>
+
+    <file action="reference">
+      <path>src/components/filters/category-pill.tsx</path>
+      <description>
+        Individual category toggle pill. Pattern for category display with
+        color dot and label. Could be simplified for table use.
+      </description>
+    </file>
+
+    <file action="reference">
+      <path>src/components/accessibility/live-region.tsx</path>
+      <description>
+        LiveRegionProvider and useLiveRegion hook for announcements.
+        Use useLiveRegionOptional to announce view mode changes.
+      </description>
+      <exports>
+        useLiveRegion(), useLiveRegionOptional(), LiveRegionProvider
+      </exports>
+    </file>
+
+    <file action="reference">
+      <path>src/components/accessibility/visually-hidden.tsx</path>
+      <description>
+        VisuallyHidden component for sr-only content. Use for Actions
+        column header and external link text.
+      </description>
+      <interface>
+        interface VisuallyHiddenProps {
+          children: React.ReactNode
+          as?: 'span' | 'div' | 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
+        }
+      </interface>
+    </file>
+
+    <file action="reference">
+      <path>src/lib/utils.ts</path>
+      <description>
+        cn() utility for className merging using clsx and tailwind-merge.
+      </description>
+      <usage>
+        import { cn } from '@/lib/utils'
+      </usage>
+    </file>
+
+    <file action="reference">
+      <path>src/lib/hooks/use-filters.ts</path>
+      <description>
+        URL-synced filter state using nuqs. Already used in HomeClient.
+        Provides categories, toggleCategory, clearFilters.
+      </description>
+    </file>
+
+    <file action="reference">
+      <path>src/lib/constants/categories.ts</path>
+      <description>
+        Category definitions with colors and labels.
+      </description>
+      <relevant-exports>
+        CATEGORIES: Record&lt;Category, CategoryDefinition&gt;
+        CATEGORY_LABELS: Record&lt;Category, string&gt;
+        getCategoryLabel(id: Category): string
+        getCategoryColor(id: Category): string
+      </relevant-exports>
+    </file>
+
+    <file action="reference">
+      <path>src/types/obituary.ts</path>
+      <description>
+        Core data types for obituaries.
+      </description>
+      <relevant-types>
+        type Category = 'market' | 'capability' | 'agi' | 'dismissive'
+
+        interface ObituarySummary {
+          _id: string
+          slug: string
+          claim: string
+          source: string
+          date: string  // ISO 8601
+          categories: Category[]
+        }
+      </relevant-types>
+    </file>
+
+    <file action="reference">
+      <path>src/components/mobile/mobile-timeline.tsx</path>
+      <description>
+        Mobile hybrid view component. DO NOT modify for table view.
+      </description>
+      <integration-note>
+        **DECISION: Table view is desktop/tablet only (min-width: 768px)**
+
+        DO NOT integrate table view toggle into mobile-timeline.tsx.
+        Mobile users have the dedicated MobileTimeline component.
+
+        Implementation:
+        - Hide TableViewToggle on mobile using `className="hidden md:flex"`
+        - No modifications to mobile-timeline.tsx needed
+      </integration-note>
+    </file>
+
+    <file action="reference">
+      <path>tests/unit/components/obituary/obituary-card.test.tsx</path>
+      <description>
+        Existing test file pattern for obituary components.
+        Use as reference for test structure and mocking patterns.
+      </description>
+    </file>
+
+    <file action="reference">
+      <path>package.json</path>
+      <description>
+        Project dependencies. Confirms date-fns@4.1.0 and lucide-react@0.555.0
+        are already installed. No additional dependencies needed.
+      </description>
+    </file>
+
+    <file action="reference">
+      <path>src/app/layout.tsx</path>
+      <description>
+        Root layout with LiveRegionProvider already integrated.
+        View mode announcements will work via useLiveRegionOptional.
+      </description>
+    </file>
+  </existing-code-interfaces>
+
+  <development-constraints>
+    <!-- CRITICAL CONSTRAINT - sourceUrl NOT AVAILABLE -->
+    <constraint type="critical" priority="highest">
+      **CRITICAL: sourceUrl is NOT in ObituarySummary type!**
+
+      The ObituarySummary interface does NOT include sourceUrl field:
+      ```typescript
+      interface ObituarySummary {
+        _id: string
+        slug: string
+        claim: string
+        source: string      // Source NAME only
+        date: string
+        categories: Category[]
+        // NO sourceUrl field!
+      }
+      ```
+
+      DO NOT attempt to render external source links in the table.
+      Table rows should link to the DETAIL PAGE: `/obituary/${obituary.slug}`
+      The detail page has the full Obituary with sourceUrl.
+
+      The Source column should display the source NAME as plain text, not a link.
+      The Actions column has "View details" link to /obituary/[slug].
+    </constraint>
+
+    <constraint type="architecture">
+      TableViewToggle and ObituaryTable must be client components ('use client')
+      since they use useState, useMemo, and localStorage.
+    </constraint>
+    <constraint type="pattern">
+      Use role="grid" on table for screen reader grid navigation.
+      Each th should have scope="col" for proper header association.
+    </constraint>
+    <constraint type="pattern">
+      aria-sort attribute values:
+      - Sorted column: 'ascending' or 'descending'
+      - Non-sorted columns: aria-sort="none"
+      All sortable column headers should have aria-sort attribute.
+    </constraint>
+    <constraint type="pattern">
+      Caption element should be sr-only and describe current state:
+      sort column, sort direction, and filter status.
+    </constraint>
+    <constraint type="hydration">
+      localStorage is not available during SSR. Use isHydrated pattern to
+      prevent hydration mismatch when restoring view mode from storage.
+
+      **Explicit Hydration Pattern:**
+      ```typescript
+      export function useViewModeStorage(defaultMode: TimelineViewMode = 'visualization') {
+        const [mode, setMode] = useState&lt;TimelineViewMode&gt;(defaultMode)
+        const [isHydrated, setIsHydrated] = useState(false)
+
+        useEffect(() =&gt; {
+          const stored = localStorage.getItem(STORAGE_KEY) as TimelineViewMode | null
+          if (stored === 'visualization' || stored === 'table') {
+            setMode(stored)
+          }
+          setIsHydrated(true)  // Mark as hydrated AFTER reading localStorage
+        }, [])
+
+        // Return isHydrated so parent can conditionally render
+        return { mode, setMode: setModeWithPersistence, isHydrated }
+      }
+      ```
+
+      Usage in HomeClient:
+      ```typescript
+      const { mode, setMode, isHydrated } = useViewModeStorage()
+
+      // During SSR and initial hydration, always render timeline
+      // Only switch to table after hydration if that was stored preference
+      if (!isHydrated) {
+        return &lt;ScatterPlot ... /&gt;  // Or render both with CSS hiding
+      }
+      ```
+    </constraint>
+
+    <constraint type="responsive" priority="high">
+      **MOBILE BEHAVIOR: Table view is desktop/tablet only (min-width: 768px)**
+
+      Do NOT show TableViewToggle on mobile screens.
+      Mobile users should use the existing MobileTimeline component.
+
+      Implementation:
+      - Use CSS: className="hidden md:flex" on TableViewToggle wrapper
+      - Or use useMediaQuery hook to conditionally render
+      - Table view requires horizontal space for columns
+
+      Mobile breakpoint: 768px (md in Tailwind)
+    </constraint>
+    <constraint type="performance">
+      Table should use useMemo for filtered and sorted data to avoid
+      recalculating on every render.
+    </constraint>
+    <constraint type="accessibility">
+      External links must have sr-only text indicating they open in new tab.
+      This is required for WCAG 2.1 AA (G201 technique).
+    </constraint>
+    <constraint type="styling">
+      Alternating row colors should use subtle background difference.
+      Use --bg-secondary/30 for even rows, transparent for odd rows.
+    </constraint>
+    <constraint type="icons" priority="high">
+      **CRITICAL: lucide-react icon names**
+
+      CORRECT imports:
+      ```typescript
+      import { Table, ScatterChart, ArrowUp, ArrowDown } from 'lucide-react'
+      ```
+
+      WRONG (DO NOT USE):
+      - ChartScatterIcon (WRONG - use ScatterChart)
+      - TableIcon (WRONG - use Table)
+      - ExternalLinkIcon (not needed - no external links in table)
+
+      The story reference implementation incorrectly uses ChartScatterIcon.
+      Use ScatterChart instead.
+    </constraint>
+  </development-constraints>
+
+  <data-considerations>
+    <consideration type="schema" priority="critical">
+      **RESOLVED: sourceUrl NOT available in ObituarySummary**
+
+      ObituarySummary does NOT include sourceUrl field. This is BY DESIGN per
+      src/types/obituary.ts comment: "Excludes context metadata and sourceUrl
+      for smaller payload and faster rendering."
+
+      DECISION: Link to detail page instead of external source.
+      - Source column: Display source NAME as plain text (not a link)
+      - Actions column: "View details" link to /obituary/${slug}
+      - User can access sourceUrl from the detail page
+
+      DO NOT:
+      - Attempt to use sourceUrl (it doesn't exist on ObituarySummary)
+      - Fetch full Obituary objects (defeats purpose of summary type)
+      - Modify Sanity queries (unnecessary complexity)
+    </consideration>
+    <consideration type="categories">
+      Obituaries can have multiple categories. Table should display all
+      categories in the Category column, not just the first one. Use flex
+      container with gap for multiple badges.
+    </consideration>
+  </data-considerations>
+
+  <testing-context>
+    <test-framework>Vitest with @testing-library/react</test-framework>
+    <test-location>tests/unit/components/obituary/</test-location>
+    <mock-data-pattern>
+      Use mock ObituarySummary objects matching the interface.
+      Example:
+      const mockObituary: ObituarySummary = {
+        _id: 'test-1',
+        slug: 'test-obituary',
+        claim: 'AI will never...',
+        source: 'Test Source',
+        date: '2024-01-15',
+        categories: ['capability']
+      }
+    </mock-data-pattern>
+    <existing-test-patterns>
+      <pattern path="tests/unit/components/obituary/obituary-card.test.tsx">
+        Pattern for testing obituary display components with mock data.
+      </pattern>
+      <pattern path="tests/unit/components/obituary/obituary-modal-a11y.test.tsx">
+        Pattern for testing accessibility attributes like aria-* props.
+      </pattern>
+    </existing-test-patterns>
+    <manual-testing-required>
+      <test>Toggle switches between timeline and table views</test>
+      <test>Toggle hidden on mobile viewport (below 768px)</test>
+      <test>Table sorts correctly when clicking column headers</test>
+      <test>Category filter applies to table data</test>
+      <test>View mode persists after page refresh (localStorage)</test>
+      <test>No hydration mismatch when localStorage has stored preference</test>
+      <test>Source column shows plain text (NOT external link)</test>
+      <test>"View details" links navigate to /obituary/[slug]</test>
+      <test>VoiceOver: Table announced as grid with column/row count</test>
+      <test>VoiceOver: Sort button announces current sort state</test>
+      <test>VoiceOver: Non-sorted columns announce aria-sort="none"</test>
+      <test>VoiceOver: Caption read with sort and filter status</test>
+      <test>VoiceOver: "View details" links have context</test>
+      <test>Keyboard: Tab navigates through table links</test>
+      <test>Keyboard: Enter on toggle switches view</test>
+    </manual-testing-required>
+  </testing-context>
+
+  <implementation-notes>
+    <note priority="critical">
+      **STORY REFERENCE IMPLEMENTATION CORRECTIONS NEEDED:**
+
+      The reference implementation in the story markdown has errors. Use these corrections:
+
+      1. ICON NAME: Use `ScatterChart` not `ChartScatterIcon`
+         - WRONG: `import { ChartScatterIcon } from 'lucide-react'`
+         - CORRECT: `import { ScatterChart } from 'lucide-react'`
+
+      2. SOURCE COLUMN: Do NOT use sourceUrl (doesn't exist on ObituarySummary)
+         - WRONG: `&lt;a href={obituary.sourceUrl}&gt;{obituary.source}&lt;/a&gt;`
+         - CORRECT: `&lt;td&gt;{obituary.source}&lt;/td&gt;` (plain text)
+
+      3. REMOVE ExternalLinkIcon import (not needed)
+    </note>
+    <note priority="high">
+      **CORRECTED TABLE ROW IMPLEMENTATION:**
+      ```typescript
+      &lt;tr key={obituary._id}&gt;
+        &lt;td&gt;{format(new Date(obituary.date), 'MMM d, yyyy')}&lt;/td&gt;
+        &lt;td&gt;{obituary.source}&lt;/td&gt;  {/* Plain text, NOT a link */}
+        &lt;td&gt;&lt;p className="line-clamp-2"&gt;{obituary.claim}&lt;/p&gt;&lt;/td&gt;
+        &lt;td&gt;{/* category badges */}&lt;/td&gt;
+        &lt;td&gt;
+          &lt;Link href={`/obituary/${obituary.slug}`}&gt;
+            View details
+            &lt;VisuallyHidden&gt; for {obituary.source} obituary&lt;/VisuallyHidden&gt;
+          &lt;/Link&gt;
+        &lt;/td&gt;
+      &lt;/tr&gt;
+      ```
+    </note>
+    <note priority="medium">
+      Claim column should be truncated using line-clamp-2 Tailwind class
+      with max-w-md for consistent column width.
+    </note>
+    <note priority="medium">
+      Consider announcing view change via LiveRegion when user switches views:
+      "Switched to table view" or "Switched to timeline view"
+    </note>
+    <note priority="medium">
+      **MOBILE: Table view is desktop/tablet only (min-width: 768px)**
+      Hide TableViewToggle on mobile using `className="hidden md:flex"`.
+      Mobile users have the MobileTimeline component.
+    </note>
+    <note priority="medium">
+      **CATEGORY DISPLAY: Use inline badge styling, not separate component**
+      Do not create CategoryBadge component. Use inline spans in ObituaryTable
+      with getCategoryColor/getCategoryLabel from lib/constants/categories.ts.
+    </note>
+    <note priority="medium">
+      **HOOK ORGANIZATION: useViewModeStorage stays in table-view-toggle.tsx**
+      Test hook behavior as part of TableViewToggle component tests.
+      No separate hook test file needed.
+    </note>
+  </implementation-notes>
+
+  <quality-checklist>
+    <item>TypeScript check passes: pnpm tsc --noEmit</item>
+    <item>Lint passes: pnpm lint</item>
+    <item>Unit tests pass: pnpm test:run</item>
+    <item>Toggle switches between timeline and table views</item>
+    <item>Table has role="grid" attribute</item>
+    <item>All th elements have scope="col"</item>
+    <item>aria-sort="none" on non-sorted columns, "ascending"/"descending" on sorted column</item>
+    <item>Caption describes sort order and filter status</item>
+    <item>Empty state shows when no matches</item>
+    <item>Footer shows row count</item>
+    <item>Source column displays source NAME as plain text (NOT external link)</item>
+    <item>"View details" links navigate to /obituary/[slug] with sr-only context</item>
+    <item>View mode persists in localStorage</item>
+    <item>isHydrated pattern prevents hydration mismatch</item>
+    <item>Alternating row colors visible</item>
+    <item>Toggle hidden on mobile (md:flex)</item>
+    <item>VoiceOver announces table structure correctly</item>
+    <item>Keyboard navigation works for toggle and table links</item>
+    <item>Uses ScatterChart icon (NOT ChartScatterIcon)</item>
+  </quality-checklist>
+
+  <files-summary>
+    <files-to-create>
+      <file>src/components/obituary/table-view-toggle.tsx (includes useViewModeStorage hook)</file>
+      <file>src/components/obituary/obituary-table.tsx</file>
+      <!-- DO NOT CREATE: src/components/filters/category-badge.tsx - use inline styling -->
+      <file>tests/unit/components/obituary/obituary-table.test.tsx</file>
+      <file>tests/unit/components/obituary/table-view-toggle.test.tsx (includes hook tests)</file>
+      <!-- DO NOT CREATE: tests/unit/hooks/use-view-mode-storage.test.ts - tested with component -->
+    </files-to-create>
+    <files-to-modify>
+      <file>src/types/accessibility.ts</file>
+      <file>src/app/home-client.tsx</file>
+    </files-to-modify>
+    <files-to-reference>
+      <file>docs/sprint-artifacts/stories/6-4-alternative-table-view.md</file>
+      <file>docs/sprint-artifacts/epic-tech-specs/epic-6-tech-spec.md</file>
+      <file>docs/architecture.md</file>
+      <file>src/components/visualization/scatter-plot.tsx</file>
+      <file>src/components/filters/category-filter.tsx</file>
+      <file>src/components/filters/category-pill.tsx</file>
+      <file>src/components/accessibility/live-region.tsx</file>
+      <file>src/components/accessibility/visually-hidden.tsx</file>
+      <file>src/lib/utils.ts</file>
+      <file>src/lib/hooks/use-filters.ts</file>
+      <file>src/lib/constants/categories.ts</file>
+      <file>src/types/obituary.ts</file>
+      <file>src/types/accessibility.ts</file>
+      <file>src/app/layout.tsx</file>
+      <file>package.json</file>
+    </files-to-reference>
+  </files-summary>
+</story-context>
