@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context XML for Story 5-4: Breadcrumb Navigation
+  Generated: 2025-11-30
+  Epic: Epic 5 - Navigation & Responsive Experience
+
+  This context file provides all the information needed for the dev agent to
+  implement breadcrumb navigation on obituary detail pages.
+-->
+<story-context version="1.0">
+
+  <story-reference>
+    <key>5-4-breadcrumb-navigation</key>
+    <title>Breadcrumb Navigation</title>
+    <file>docs/sprint-artifacts/stories/5-4-breadcrumb-navigation.md</file>
+    <epic>Epic 5 - Navigation and Responsive Experience</epic>
+    <epic-tech-spec>docs/sprint-artifacts/epic-tech-specs/epic-5-tech-spec.md</epic-tech-spec>
+    <status>drafted</status>
+    <priority>Medium</priority>
+  </story-reference>
+
+  <documentation-artifacts>
+    <artifact type="story">
+      <path>docs/sprint-artifacts/stories/5-4-breadcrumb-navigation.md</path>
+      <description>Complete story definition with acceptance criteria, tasks, and reference implementation</description>
+      <relevance>Primary implementation guide - contains all ACs, tasks, and code snippets</relevance>
+    </artifact>
+
+    <artifact type="tech-spec">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-5-tech-spec.md</path>
+      <description>Epic 5 technical specification with breadcrumb component details</description>
+      <relevance>Section 4.4 covers breadcrumb implementation pattern and shadcn/ui integration</relevance>
+    </artifact>
+
+    <artifact type="architecture">
+      <path>docs/architecture.md</path>
+      <description>Project architecture document with component patterns and styling conventions</description>
+      <relevance>Defines shadcn/ui component pattern, import order, naming conventions</relevance>
+    </artifact>
+
+    <artifact type="project-config">
+      <path>CLAUDE.md</path>
+      <description>Project-level AI assistant instructions</description>
+      <relevance>Defines pnpm usage, test commands, architecture patterns</relevance>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code-interfaces>
+    <interface type="page-to-modify">
+      <path>src/app/obituary/[slug]/page.tsx</path>
+      <description>Obituary detail page - primary file to modify for breadcrumb integration</description>
+      <relevance>Breadcrumb must be added at top of content, after "Back to Timeline" link but before ObituaryDetail</relevance>
+      <current-structure>
+        <![CDATA[
+// Current page structure (lines 53-71):
+return (
+  <>
+    <JsonLd obituary={obituary} />
+    <div className="max-w-3xl mx-auto px-4 py-12">
+      {/* Back to Timeline link */}
+      <Link
+        href="/"
+        className="inline-flex items-center gap-2 text-sm text-[--text-muted] hover:text-[--text-secondary] transition-colors mb-6"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Timeline
+      </Link>
+      <ObituaryDetail obituary={obituary} />
+      <ObituaryContext context={obituary.context} />
+      <ObituaryNav previous={obituary.previous} next={obituary.next} />
+    </div>
+  </>
+)
+        ]]>
+      </current-structure>
+      <integration-point>Add Breadcrumb component after the "Back to Timeline" link and before ObituaryDetail</integration-point>
+    </interface>
+
+    <interface type="ui-component-reference">
+      <path>src/components/ui/button.tsx</path>
+      <description>Existing shadcn/ui button component showing asChild pattern usage</description>
+      <relevance>Reference for shadcn/ui component patterns - uses Slot from @radix-ui/react-slot for asChild</relevance>
+      <pattern-example>
+        <![CDATA[
+import { Slot } from "@radix-ui/react-slot"
+const Comp = asChild ? Slot : "button"
+        ]]>
+      </pattern-example>
+    </interface>
+
+    <interface type="ui-component-reference">
+      <path>src/components/ui/sheet.tsx</path>
+      <description>Existing shadcn/ui sheet component showing component structure</description>
+      <relevance>Reference for shadcn/ui component structure - uses cn() utility, data-slot attributes</relevance>
+    </interface>
+
+    <interface type="navigation-component">
+      <path>src/components/obituary/obituary-nav.tsx</path>
+      <description>Previous/Next navigation component for obituary pages</description>
+      <relevance>Reference for navigation styling patterns - uses text-[--text-muted], hover states, transition-colors</relevance>
+      <styling-patterns>
+        <![CDATA[
+// Muted text: text-[--text-muted]
+// Secondary text: text-[--text-secondary]
+// Hover accent: hover:text-[--accent-primary]
+// Group hover: group-hover:text-[--accent-primary]
+// Transitions: transition-colors
+// Border: border-[--border]
+        ]]>
+      </styling-patterns>
+    </interface>
+
+    <interface type="utility-function">
+      <path>src/lib/utils.ts</path>
+      <description>cn() utility for class name merging</description>
+      <relevance>Required utility for combining Tailwind classes in shadcn/ui components</relevance>
+      <code>
+        <![CDATA[
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+        ]]>
+      </code>
+    </interface>
+
+    <interface type="types">
+      <path>src/types/obituary.ts</path>
+      <description>Obituary type definition</description>
+      <relevance>Obituary.source field used for breadcrumb current page label</relevance>
+      <relevant-fields>
+        <![CDATA[
+export interface Obituary {
+  _id: string
+  slug: string
+  claim: string
+  source: string  // Used for breadcrumb display
+  sourceUrl: string
+  date: string
+  categories: Category[]
+  context: ContextMetadata
+}
+        ]]>
+      </relevant-fields>
+    </interface>
+  </existing-code-interfaces>
+
+  <development-constraints>
+    <constraint type="architecture">
+      <name>Server Components Default</name>
+      <description>Only use 'use client' when interactivity is required</description>
+      <impact>Breadcrumb is static content - can be rendered as Server Component (no 'use client' needed)</impact>
+    </constraint>
+
+    <constraint type="styling">
+      <name>Deep Archive Theme Colors</name>
+      <description>Use CSS custom properties for theming</description>
+      <variables>
+        <![CDATA[
+--text-primary: #E8E6E3
+--text-secondary: #A8A5A0  // Used for breadcrumb links and text
+--text-muted: #6B6860      // Used for separators and muted elements
+--accent-primary: #C9A962  // Gold accent (optional for hover)
+--bg-primary: #0C0C0F
+--border: #2A2A35
+        ]]>
+      </variables>
+      <impact>Breadcrumb should use text-[--text-secondary] for muted appearance</impact>
+    </constraint>
+
+    <constraint type="component-library">
+      <name>shadcn/ui Component Pattern</name>
+      <description>Add components via CLI, customize in place</description>
+      <command>npx shadcn@latest add breadcrumb</command>
+      <impact>
+        <![CDATA[
+Creates src/components/ui/breadcrumb.tsx with:
+- Breadcrumb (root wrapper with nav element)
+- BreadcrumbList (ol element)
+- BreadcrumbItem (li element)
+- BreadcrumbLink (anchor, supports asChild)
+- BreadcrumbPage (span with aria-current="page")
+- BreadcrumbSeparator (li with separator icon)
+        ]]>
+      </impact>
+    </constraint>
+
+    <constraint type="accessibility">
+      <name>WCAG 2.1 AA Compliance</name>
+      <description>Breadcrumb must have proper semantic structure</description>
+      <requirements>
+        <![CDATA[
+- Wrapped in <nav aria-label="Breadcrumb">
+- Uses <ol> for list structure
+- Current page marked with aria-current="page"
+- Keyboard navigable (Tab to links)
+        ]]>
+      </requirements>
+    </constraint>
+
+    <constraint type="import-order">
+      <name>Import Organization</name>
+      <description>Follow established import order convention</description>
+      <order>
+        <![CDATA[
+1. React/Next.js (import Link from 'next/link')
+2. Third-party libraries
+3. Internal: lib/utils (import { cn } from '@/lib/utils')
+4. Internal: components (import { Breadcrumb } from '@/components/ui/breadcrumb')
+5. Internal: types (import type { Obituary } from '@/types/obituary')
+        ]]>
+      </order>
+    </constraint>
+
+    <constraint type="responsive">
+      <name>Mobile Responsive</name>
+      <description>Breadcrumb must fit on mobile without overflow</description>
+      <approach>Use text truncation for long source names (max ~40 chars)</approach>
+    </constraint>
+  </development-constraints>
+
+  <dependencies>
+    <dependency type="framework">
+      <name>Next.js</name>
+      <version>16.0.5</version>
+      <usage>Link component for client-side navigation</usage>
+    </dependency>
+
+    <dependency type="component-library">
+      <name>shadcn/ui</name>
+      <version>CLI latest</version>
+      <usage>Breadcrumb component to be added via CLI</usage>
+      <note>No breadcrumb.tsx currently exists - must run npx shadcn@latest add breadcrumb</note>
+    </dependency>
+
+    <dependency type="styling">
+      <name>@radix-ui/react-slot</name>
+      <version>^1.2.4</version>
+      <usage>Already installed - used by shadcn/ui for asChild pattern</usage>
+    </dependency>
+
+    <dependency type="icons">
+      <name>lucide-react</name>
+      <version>^0.555.0</version>
+      <usage>ChevronRight icon for breadcrumb separator (if using icon separator)</usage>
+    </dependency>
+
+    <dependency type="utility">
+      <name>clsx + tailwind-merge</name>
+      <version>^2.1.1 / ^3.4.0</version>
+      <usage>cn() utility for class merging in breadcrumb component</usage>
+    </dependency>
+  </dependencies>
+
+  <testing-context>
+    <test-framework>Vitest 4.x with @testing-library/react</test-framework>
+    <test-setup-file>tests/setup.tsx</test-setup-file>
+    <test-pattern>Module export tests and behavior documentation (due to React 19 + Vitest limitations)</test-pattern>
+
+    <test-location>tests/unit/app/obituary/breadcrumb.test.tsx</test-location>
+
+    <test-examples>
+      <reference-test>tests/unit/components/obituary/obituary-nav.test.tsx</reference-test>
+      <description>Follow same pattern - test exports, document behavior via code review comments</description>
+    </test-examples>
+
+    <test-commands>
+      <run-all>pnpm test:run</run-all>
+      <run-single>pnpm vitest tests/unit/app/obituary/breadcrumb.test.tsx</run-single>
+      <type-check>pnpm tsc --noEmit</type-check>
+      <lint>pnpm lint</lint>
+    </test-commands>
+
+    <test-scenarios>
+      <scenario id="1">Breadcrumb component exports correctly</scenario>
+      <scenario id="2">Breadcrumb renders Home and source name</scenario>
+      <scenario id="3">Home link points to /</scenario>
+      <scenario id="4">Current page (source) is not a link</scenario>
+      <scenario id="5">nav element has aria-label="Breadcrumb"</scenario>
+      <scenario id="6">Long source names are truncated</scenario>
+      <scenario id="7">Separator is rendered between items</scenario>
+    </test-scenarios>
+  </testing-context>
+
+  <implementation-notes>
+    <note type="guidance">
+      <title>Integration Location</title>
+      <content>
+        <![CDATA[
+The breadcrumb should be placed AFTER the existing "Back to Timeline" link in the
+obituary page. The "Back to Timeline" link serves a different purpose (returning
+to the timeline with position preserved) while the breadcrumb provides location
+hierarchy context.
+
+Recommended placement:
+1. JsonLd (existing)
+2. Container div (existing)
+3. "Back to Timeline" link (existing)
+4. Breadcrumb (NEW - add here)
+5. ObituaryDetail (existing)
+6. ObituaryContext (existing)
+7. ObituaryNav (existing)
+        ]]>
+      </content>
+    </note>
+
+    <note type="guidance">
+      <title>Styling Approach</title>
+      <content>
+        <![CDATA[
+Match existing muted navigation styling:
+- Text: text-sm text-[--text-secondary]
+- Hover: hover:text-[--text-primary] or hover:underline
+- Separator: Use ChevronRight icon or "/" character
+- Font-size: text-sm (small, unobtrusive)
+- Spacing: mb-6 below breadcrumb for spacing before content
+        ]]>
+      </content>
+    </note>
+
+    <note type="warning">
+      <title>asChild Pattern for Next.js Link</title>
+      <content>
+        <![CDATA[
+When using shadcn/ui BreadcrumbLink with Next.js Link, use the asChild pattern:
+
+<BreadcrumbLink asChild>
+  <Link href="/">Home</Link>
+</BreadcrumbLink>
+
+This ensures proper client-side navigation and preserves timeline position state.
+        ]]>
+      </content>
+    </note>
+
+    <note type="warning">
+      <title>Long Source Name Handling</title>
+      <content>
+        <![CDATA[
+Some obituary sources may have long names. Implement truncation:
+- Max display length: ~40 characters
+- Use CSS text-ellipsis: truncate class
+- Add title attribute for full text on hover
+
+Example:
+<BreadcrumbPage className="truncate max-w-[40ch]" title={obituary.source}>
+  {obituary.source}
+</BreadcrumbPage>
+        ]]>
+      </content>
+    </note>
+  </implementation-notes>
+
+  <reference-implementation>
+    <description>Reference code from story document showing expected implementation</description>
+    <code>
+      <![CDATA[
+// src/app/obituary/[slug]/page.tsx - Integration example
+
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
+import Link from 'next/link'
+
+// Inside the page component, after "Back to Timeline" link:
+<Breadcrumb className="mb-6">
+  <BreadcrumbList>
+    <BreadcrumbItem>
+      <BreadcrumbLink asChild>
+        <Link href="/">Home</Link>
+      </BreadcrumbLink>
+    </BreadcrumbItem>
+    <BreadcrumbSeparator />
+    <BreadcrumbItem>
+      <BreadcrumbPage>{obituary.source}</BreadcrumbPage>
+    </BreadcrumbItem>
+  </BreadcrumbList>
+</Breadcrumb>
+      ]]>
+    </code>
+  </reference-implementation>
+
+  <acceptance-criteria-checklist>
+    <criterion id="AC-5.4.1">Breadcrumb shows "Home > [Source Name]" on obituary detail page</criterion>
+    <criterion id="AC-5.4.2">Home link navigates to homepage (/)</criterion>
+    <criterion id="AC-5.4.3">Current page segment ([Source Name]) is plain text, not a link</criterion>
+    <criterion id="AC-5.4.4">Uses muted text color (--text-secondary) with subtle styling</criterion>
+    <criterion id="AC-5.4.5">Positioned above content area, below header, left-aligned</criterion>
+    <criterion id="AC-5.4.6">Separator character (> or /) visible between segments</criterion>
+    <criterion id="AC-5.4.7">Links show underline on hover</criterion>
+    <criterion id="AC-5.4.8">Clicking Home preserves timeline position via standard Link navigation</criterion>
+    <criterion id="AC-5.4.9">Fits on mobile viewport without overflow</criterion>
+    <criterion id="AC-5.4.10">Accessible with proper nav, aria-label, and aria-current attributes</criterion>
+  </acceptance-criteria-checklist>
+
+  <files-to-create>
+    <file>
+      <path>src/components/ui/breadcrumb.tsx</path>
+      <action>Create via shadcn CLI</action>
+      <command>npx shadcn@latest add breadcrumb</command>
+    </file>
+    <file>
+      <path>tests/unit/app/obituary/breadcrumb.test.tsx</path>
+      <action>Create new test file</action>
+    </file>
+  </files-to-create>
+
+  <files-to-modify>
+    <file>
+      <path>src/app/obituary/[slug]/page.tsx</path>
+      <action>Add breadcrumb component import and integration</action>
+    </file>
+    <file>
+      <path>docs/sprint-artifacts/sprint-status.yaml</path>
+      <action>Update story status after completion</action>
+    </file>
+  </files-to-modify>
+
+</story-context>

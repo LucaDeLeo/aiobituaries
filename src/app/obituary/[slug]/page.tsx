@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
 import {
   getObituaryBySlug,
   getObituaryWithNav,
@@ -11,6 +10,14 @@ import { ObituaryContext } from '@/components/obituary/obituary-context'
 import { ObituaryNav } from '@/components/obituary/obituary-nav'
 import { JsonLd } from '@/components/seo/json-ld'
 import { generateObituaryMetadata } from '@/lib/utils/seo'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -50,18 +57,37 @@ export default async function ObituaryPage({ params }: PageProps) {
     notFound()
   }
 
+  // Truncate long source names to ~40 characters
+  const truncatedSource =
+    obituary.source.length > 40
+      ? `${obituary.source.slice(0, 37)}...`
+      : obituary.source
+
   return (
     <>
       <JsonLd obituary={obituary} />
       <div className="max-w-3xl mx-auto px-4 py-12">
-        {/* Back to Timeline link */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-sm text-[--text-muted] hover:text-[--text-secondary] transition-colors mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Timeline
-        </Link>
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb className="mb-6">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/" className="text-[--text-muted] hover:text-[--text-secondary]">
+                  Home
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="text-[--text-muted]" />
+            <BreadcrumbItem>
+              <BreadcrumbPage
+                className="text-[--text-secondary]"
+                title={obituary.source.length > 40 ? obituary.source : undefined}
+              >
+                {truncatedSource}
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
         <ObituaryDetail obituary={obituary} />
         <ObituaryContext context={obituary.context} />
         <ObituaryNav previous={obituary.previous} next={obituary.next} />
