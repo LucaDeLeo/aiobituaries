@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <meta>
+    <story-key>4-1-category-data-model</story-key>
+    <story-title>Category Data Model</story-title>
+    <epic>Epic 4 - Category System &amp; Filtering</epic>
+    <created>2025-11-30</created>
+    <status>ready-for-dev</status>
+  </meta>
+
+  <story-reference>
+    <file path="docs/sprint-artifacts/stories/4-1-category-data-model.md">
+      Full story definition with acceptance criteria, tasks, and technical approach.
+    </file>
+  </story-reference>
+
+  <epic-context>
+    <file path="docs/sprint-artifacts/epic-tech-specs/epic-4-tech-spec.md">
+      Epic 4 technical specification covering category system and filtering.
+      Story 4.1 is the foundation for all other stories in this epic.
+    </file>
+  </epic-context>
+
+  <documentation-artifacts>
+    <artifact path="docs/architecture.md" relevance="high">
+      <description>Core architecture document defining Category type, CSS variable patterns, and implementation patterns for constants files.</description>
+      <key-sections>
+        <section>Category type definition: 'market' | 'capability' | 'agi' | 'dismissive'</section>
+        <section>CSS variables defined in globals.css under :root</section>
+        <section>Naming conventions: Constants use SCREAMING_SNAKE_CASE</section>
+        <section>Animation presets pattern in src/lib/utils/animation.ts as reference</section>
+      </key-sections>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code-interfaces>
+    <!-- Category Type Definition -->
+    <code-file path="src/types/obituary.ts" relevance="critical">
+      <description>Source of truth for Category type definition. The new categories.ts must import this type.</description>
+      <content><![CDATA[
+/**
+ * Categorization of AI skepticism claims.
+ * Each obituary can have multiple categories.
+ * Categories determine Y-axis behavior in the contextual scatter plot visualization.
+ */
+export type Category = 'market' | 'capability' | 'agi' | 'dismissive'
+]]></content>
+    </code-file>
+
+    <!-- CSS Variables for Category Colors -->
+    <code-file path="src/app/globals.css" relevance="critical">
+      <description>CSS variables defining category colors. The hex values in categories.ts MUST match these exactly.</description>
+      <content><![CDATA[
+:root {
+  /* Category colors (for timeline visualization) */
+  --category-capability: #C9A962;
+  --category-market: #7B9E89;
+  --category-agi: #9E7B7B;
+  --category-dismissive: #7B7B9E;
+}
+]]></content>
+    </code-file>
+
+    <!-- Existing Categories Constants File (to be extended) -->
+    <code-file path="src/lib/constants/categories.ts" relevance="critical">
+      <description>EXISTING file with partial category definitions. This file needs to be EXTENDED with new exports per story requirements.</description>
+      <content><![CDATA[
+import type { Category } from '@/types/obituary'
+
+/**
+ * Category color mappings using CSS variables for the Deep Archive theme.
+ * Colors are defined in globals.css under :root.
+ */
+export const CATEGORY_COLORS: Record<Category, string> = {
+  capability: 'bg-[--category-capability]',
+  market: 'bg-[--category-market]',
+  agi: 'bg-[--category-agi]',
+  dismissive: 'bg-[--category-dismissive]',
+}
+
+/**
+ * Human-readable labels for each category.
+ * Used in UI elements like tooltips, filters, and accessibility.
+ */
+export const CATEGORY_LABELS: Record<Category, string> = {
+  capability: 'Capability Doubt',
+  market: 'Market/Bubble',
+  agi: 'AGI Skepticism',
+  dismissive: 'Dismissive Framing',
+}
+]]></content>
+      <note>IMPORTANT: This file already exists but is INCOMPLETE. Story requires adding:
+        - CategoryDefinition interface
+        - CATEGORIES constant with full definitions (id, label, description, color, colorVar)
+        - CATEGORY_ORDER array
+        - getCategory(), getCategoryColor(), getCategoryLabel(), getAllCategories(), isValidCategory() functions
+      </note>
+    </code-file>
+
+    <!-- Pattern Reference: Animation Constants File -->
+    <code-file path="src/lib/utils/animation.ts" relevance="high">
+      <description>Reference pattern for constants file structure with JSDoc comments, TypeScript typing, and utility functions.</description>
+      <content><![CDATA[
+/**
+ * Animation Presets and Utilities
+ *
+ * Shared animation constants and helpers for consistent motion behavior
+ * across the application. Includes spring configurations and reduced motion support.
+ */
+
+import type { Variants } from 'motion/react'
+
+/**
+ * Standard duration presets (in seconds)
+ */
+export const DURATIONS = {
+  /** 150ms - hover states, tooltips */
+  fast: 0.15,
+  /** 200ms - state changes */
+  normal: 0.2,
+  /** 300ms - modal open/close */
+  slow: 0.3,
+} as const
+
+/**
+ * Spring animation presets for Motion/Framer
+ */
+export const SPRINGS = {
+  /** Quick response for hover/focus states */
+  hover: { type: 'spring' as const, stiffness: 300, damping: 20 },
+  /** Snappy zoom transitions */
+  zoom: { type: 'spring' as const, stiffness: 300, damping: 30 },
+  /** Smooth pan with momentum feel */
+  pan: { type: 'spring' as const, stiffness: 100, damping: 20 },
+} as const
+]]></content>
+    </code-file>
+
+    <!-- Scatter Helpers with Hex Colors (for reference) -->
+    <code-file path="src/lib/utils/scatter-helpers.ts" relevance="medium">
+      <description>Contains CATEGORY_HEX_COLORS and getCategoryColor for SVG. The new centralized categories.ts should be the single source of truth - consider refactoring this to use the new constants.</description>
+      <content><![CDATA[
+import type { Category } from '@/types/obituary'
+
+/**
+ * Category colors as hex values for SVG fill.
+ * These match the CSS variables defined in globals.css.
+ */
+export const CATEGORY_HEX_COLORS: Record<Category, string> = {
+  capability: '#C9A962', // Gold
+  market: '#7B9E89', // Sage
+  agi: '#9E7B7B', // Rose
+  dismissive: '#7B7B9E', // Lavender
+}
+
+/**
+ * Get color for obituary based on primary category.
+ * Uses first category in array.
+ */
+export function getCategoryColor(categories: Category[]): string {
+  const primary = categories[0] || 'capability'
+  return CATEGORY_HEX_COLORS[primary]
+}
+]]></content>
+      <note>After implementing categories.ts, consider whether scatter-helpers.ts should import from there for consistency.</note>
+    </code-file>
+  </existing-code-interfaces>
+
+  <development-constraints>
+    <constraint type="type-safety">
+      Category type is defined in src/types/obituary.ts - import and use this type, do not redefine it.
+    </constraint>
+    <constraint type="color-alignment">
+      Hex colors in categories.ts MUST exactly match CSS variables in globals.css:
+      - capability: #C9A962
+      - market: #7B9E89
+      - agi: #9E7B7B
+      - dismissive: #7B7B9E
+    </constraint>
+    <constraint type="naming">
+      Constants use SCREAMING_SNAKE_CASE (e.g., CATEGORIES, CATEGORY_ORDER).
+      Functions use camelCase (e.g., getCategoryColor, isValidCategory).
+    </constraint>
+    <constraint type="immutability">
+      Use 'as const' for full type inference on constant objects.
+    </constraint>
+    <constraint type="jsdoc">
+      All exports require JSDoc comments explaining purpose and usage.
+    </constraint>
+    <constraint type="return-types">
+      All functions must have explicit return types.
+    </constraint>
+    <constraint type="file-location">
+      Categories constants file: src/lib/constants/categories.ts (already exists, extend it).
+    </constraint>
+  </development-constraints>
+
+  <dependencies>
+    <dependency type="type">
+      <name>Category</name>
+      <source>src/types/obituary.ts</source>
+      <usage>Import and use for typing CATEGORIES, CATEGORY_ORDER, and function parameters</usage>
+    </dependency>
+    <dependency type="css">
+      <name>Category CSS Variables</name>
+      <source>src/app/globals.css</source>
+      <usage>Hex values must match; colorVar property references variable names</usage>
+    </dependency>
+  </dependencies>
+
+  <testing-context>
+    <test-framework>Vitest</test-framework>
+    <test-location>tests/unit/lib/constants/categories.test.ts</test-location>
+    <test-patterns>
+      <pattern-file path="tests/unit/lib/utils/animation.test.ts">
+        <description>Reference pattern for testing constants and utility functions</description>
+        <structure><![CDATA[
+import { describe, it, expect } from 'vitest'
+import {
+  DURATIONS,
+  SPRINGS,
+  // ... exports
+} from '@/lib/utils/animation'
+
+describe('DURATIONS', () => {
+  it('exports standard duration presets', () => {
+    expect(DURATIONS.fast).toBe(0.15)
+    // ...
+  })
+})
+]]></structure>
+      </pattern-file>
+      <pattern-file path="tests/unit/lib/utils/scatter-helpers.test.ts">
+        <description>Reference pattern for testing category-related functions and hex color validation</description>
+        <structure><![CDATA[
+describe('CATEGORY_HEX_COLORS', () => {
+  it('has all four categories', () => {
+    expect(Object.keys(CATEGORY_HEX_COLORS)).toHaveLength(4)
+  })
+
+  it('values are valid hex colors', () => {
+    const hexPattern = /^#[0-9A-Fa-f]{6}$/
+    Object.values(CATEGORY_HEX_COLORS).forEach((color) => {
+      expect(color).toMatch(hexPattern)
+    })
+  })
+})
+]]></structure>
+      </pattern-file>
+    </test-patterns>
+    <test-requirements>
+      <requirement>Test CATEGORIES constant has exactly 4 categories</requirement>
+      <requirement>Test each category has all required properties (id, label, description, color, colorVar)</requirement>
+      <requirement>Test color format is valid hex (#XXXXXX)</requirement>
+      <requirement>Test colorVar format starts with --category-</requirement>
+      <requirement>Test CATEGORY_ORDER contains exactly 4 elements in correct order</requirement>
+      <requirement>Test getCategoryColor returns correct hex for each category</requirement>
+      <requirement>Test getCategoryLabel returns correct label for each category</requirement>
+      <requirement>Test getCategory returns full CategoryDefinition object</requirement>
+      <requirement>Test getAllCategories returns ordered array of CategoryDefinition</requirement>
+      <requirement>Test isValidCategory returns true for valid, false for invalid strings</requirement>
+    </test-requirements>
+  </testing-context>
+
+  <acceptance-criteria-mapping>
+    <criterion id="AC-4.1.1" testable="true">
+      <description>Four categories exist</description>
+      <implementation>CATEGORIES constant with 4 keys: capability, market, agi, dismissive</implementation>
+    </criterion>
+    <criterion id="AC-4.1.2" testable="true">
+      <description>Category properties complete</description>
+      <implementation>CategoryDefinition interface with id, label, description, color, colorVar properties</implementation>
+    </criterion>
+    <criterion id="AC-4.1.3" testable="true">
+      <description>getCategoryColor works</description>
+      <implementation>getCategoryColor('market') returns '#7B9E89'</implementation>
+    </criterion>
+    <criterion id="AC-4.1.4" testable="true">
+      <description>getCategoryLabel works</description>
+      <implementation>getCategoryLabel('agi') returns 'AGI Skepticism'</implementation>
+    </criterion>
+    <criterion id="AC-4.1.5" testable="true">
+      <description>isValidCategory valid</description>
+      <implementation>isValidCategory('market') returns true</implementation>
+    </criterion>
+    <criterion id="AC-4.1.6" testable="true">
+      <description>isValidCategory invalid</description>
+      <implementation>isValidCategory('invalid') returns false</implementation>
+    </criterion>
+  </acceptance-criteria-mapping>
+
+  <implementation-notes>
+    <note type="existing-file">
+      The file src/lib/constants/categories.ts already exists with CATEGORY_COLORS and CATEGORY_LABELS.
+      EXTEND this file rather than replacing it - keep existing exports for backward compatibility.
+    </note>
+    <note type="reference-implementation">
+      The story document contains a complete reference implementation in the "Reference Implementation" section.
+      Follow this pattern but adapt to extend the existing file.
+    </note>
+    <note type="category-order">
+      CATEGORY_ORDER should be: ['capability', 'market', 'agi', 'dismissive'] for consistent display.
+    </note>
+    <note type="descriptions">
+      Category descriptions for tooltips:
+      - capability: "Claims AI cannot do specific tasks"
+      - market: "AI is overhyped or a bubble"
+      - agi: "AGI is impossible or very far away"
+      - dismissive: "Casual dismissal or mockery of AI"
+    </note>
+  </implementation-notes>
+
+  <files-to-create>
+    <file path="tests/unit/lib/constants/categories.test.ts" action="create">
+      Unit tests for categories module
+    </file>
+  </files-to-create>
+
+  <files-to-modify>
+    <file path="src/lib/constants/categories.ts" action="extend">
+      Add CategoryDefinition interface, CATEGORIES, CATEGORY_ORDER, and utility functions
+    </file>
+  </files-to-modify>
+
+  <files-to-verify>
+    <file path="src/app/globals.css" action="verify">
+      Confirm category CSS variables exist with correct hex values
+    </file>
+  </files-to-verify>
+</story-context>

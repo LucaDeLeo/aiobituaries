@@ -69,8 +69,8 @@ development_status:
   epic-3-retrospective: optional
 
   # Epic 4: Category System & Filtering
-  epic-4: backlog
-  4-1-category-data-model: backlog
+  epic-4: contexted
+  4-1-category-data-model: done
   4-2-category-filter-bar: backlog
   4-3-url-state-with-nuqs: backlog
   4-4-filter-effect-on-timeline: backlog
