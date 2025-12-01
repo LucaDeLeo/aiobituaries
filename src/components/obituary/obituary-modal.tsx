@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { ExternalLink, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { ObituaryContext } from '@/components/obituary/obituary-context'
 import { CopyButton } from '@/components/ui/copy-button'
@@ -33,6 +34,8 @@ export interface ObituaryModalProps {
   onClose: () => void
   /** Optional: ref to element that opened modal (for focus restoration) */
   triggerRef?: React.RefObject<HTMLElement | null>
+  /** Side of the screen to slide in from. Default: "right" */
+  side?: 'top' | 'right' | 'bottom' | 'left'
 }
 
 export function ObituaryModal({
@@ -40,6 +43,7 @@ export function ObituaryModal({
   isOpen,
   onClose,
   triggerRef,
+  side = 'right',
 }: ObituaryModalProps) {
   const [obituary, setObituary] = useState<Obituary | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -101,8 +105,11 @@ export function ObituaryModal({
   return (
     <Sheet open={isOpen} onOpenChange={handleClose}>
       <SheetContent
-        side="right"
-        className="w-full sm:max-w-lg overflow-y-auto p-6"
+        side={side}
+        className={cn(
+          'overflow-y-auto p-6',
+          side === 'bottom' ? 'h-[85vh] max-h-[85vh]' : 'w-full sm:max-w-lg'
+        )}
         data-testid="obituary-modal"
       >
         {isLoading && (

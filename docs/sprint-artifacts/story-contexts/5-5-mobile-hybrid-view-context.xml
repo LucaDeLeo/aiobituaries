@@ -1,0 +1,914 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <meta>
+    <story-key>5-5-mobile-hybrid-view</story-key>
+    <story-file>docs/sprint-artifacts/stories/5-5-mobile-hybrid-view.md</story-file>
+    <epic>Epic 5 - Navigation & Responsive Experience</epic>
+    <epic-tech-spec>docs/sprint-artifacts/epic-tech-specs/epic-5-tech-spec.md</epic-tech-spec>
+    <generated-date>2025-11-30</generated-date>
+    <context-version>1.0</context-version>
+  </meta>
+
+  <story-summary>
+    <title>Mobile Hybrid View</title>
+    <description>
+      Create mobile-first hybrid view (density bar + vertical card list) that replaces the horizontal
+      ScatterPlot on screens smaller than 768px. On desktop/tablet (>= 768px), the existing ScatterPlot
+      remains unchanged. The density bar provides visual overview of obituary distribution over time,
+      while the card list enables easy browsing with tap-to-modal interactions.
+    </description>
+    <acceptance-criteria-count>12</acceptance-criteria-count>
+    <estimated-effort>3-4 hours</estimated-effort>
+  </story-summary>
+
+  <documentation-artifacts>
+    <artifact>
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-5-tech-spec.md</path>
+      <type>epic-technical-specification</type>
+      <relevance>complete technical architecture for Epic 5 navigation and responsive experience</relevance>
+      <key-sections>
+        <section>4.5 Story 5.5: Mobile Hybrid View - Component specifications for MobileTimeline, DensityBar, MobileCardList</section>
+        <section>2.4 Integration Points - Visual flow diagram showing mobile vs desktop layout switching</section>
+        <section>3.1 Navigation Types - Breakpoint enum and BREAKPOINTS constants</section>
+        <section>4.6 Story 5.6: Tablet & Desktop Polish - Homepage layout integration pattern</section>
+      </key-sections>
+    </artifact>
+
+    <artifact>
+      <path>docs/sprint-artifacts/stories/5-5-mobile-hybrid-view.md</path>
+      <type>story-specification</type>
+      <relevance>complete story requirements including acceptance criteria, tasks, and reference implementation</relevance>
+      <key-sections>
+        <section>Technical Approach - Complete component architecture and state management patterns</section>
+        <section>Reference Implementation - Full code examples for MobileTimeline, DensityBar, MobileCardList</section>
+        <section>Files to Create/Modify - Comprehensive list of all files affected by this story</section>
+        <section>Test Scenarios - Unit, E2E, and manual testing requirements</section>
+      </key-sections>
+    </artifact>
+
+    <artifact>
+      <path>CLAUDE.md</path>
+      <type>project-instructions</type>
+      <relevance>project overview, architecture patterns, and development guidelines</relevance>
+      <key-sections>
+        <section>Stack: Next.js 16 (App Router), React 19, Tailwind CSS v4, Visx, shadcn/ui</section>
+        <section>Patterns: Server Components default, only use 'use client' when interactivity needed</section>
+        <section>Test Structure: Tests mirror source structure in tests/unit/</section>
+      </key-sections>
+    </artifact>
+
+    <artifact>
+      <path>package.json</path>
+      <type>dependencies-manifest</type>
+      <relevance>available packages and versions for implementation</relevance>
+      <key-dependencies>
+        <dependency>motion@12.23.24 - animation library for component transitions</dependency>
+        <dependency>nuqs@2.8.1 - URL state management for filters</dependency>
+        <dependency>next@16.0.5 - App Router, Suspense, Link component</dependency>
+        <dependency>tailwindcss@4 - responsive breakpoints (md, lg)</dependency>
+        <dependency>@visx/responsive@3.12.0 - ParentSize for responsive containers</dependency>
+      </key-dependencies>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code-interfaces>
+    <interface>
+      <component>src/app/page.tsx</component>
+      <type>server-component</type>
+      <current-implementation>
+        Renders CountDisplay, HomeClient (with ScatterPlot and CategoryChart), and ObituaryList.
+        Server component that fetches obituaries and passes to client components.
+      </current-implementation>
+      <modifications-needed>
+        Add responsive layout switching using Tailwind breakpoint classes.
+        Desktop (md:hidden): Show ScatterPlot with fixed-bottom CategoryFilter.
+        Mobile (md:flex): Show MobileTimeline with sticky-bottom CategoryFilter.
+        Import MobileTimeline component and wrap in Suspense boundary.
+      </modifications-needed>
+      <example-pattern>
+        {`<div className="hidden md:flex flex-col flex-1">
+          <ScatterPlot ... />
+          <CategoryFilter className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10" />
+        </div>
+        <div className="md:hidden flex flex-col flex-1">
+          <MobileTimeline ... />
+          <CategoryFilter className="sticky bottom-0 z-10" />
+        </div>`}
+      </example-pattern>
+    </interface>
+
+    <interface>
+      <component>src/app/home-client.tsx</component>
+      <type>client-component</type>
+      <current-implementation>
+        Client wrapper for homepage using useFilters hook to manage URL-synced category state.
+        Renders ScatterPlot, CategoryChart, and CategoryFilter with filter callbacks.
+      </current-implementation>
+      <integration-notes>
+        HomeClient currently handles desktop/tablet experience. Mobile view will use separate
+        MobileTimeline component that also uses useFilters hook for consistency.
+        Both views share same filter state management pattern via nuqs.
+      </integration-notes>
+    </interface>
+
+    <interface>
+      <component>src/components/visualization/scatter-plot.tsx</component>
+      <type>client-component</type>
+      <current-implementation>
+        Interactive timeline visualization with pan, zoom, clustering, tooltips, and modal integration.
+        Uses motion/react for animations, @visx for scales/axes, and useTimelinePosition for state persistence.
+        Supports activeCategories prop for filtering (empty array = show all).
+      </current-implementation>
+      <relevant-patterns>
+        <pattern>Filter logic: isPointFiltered checks if activeCategories.length === 0 (show all) or category matches</pattern>
+        <pattern>Motion animations: Uses useReducedMotion() and conditional animation variants</pattern>
+        <pattern>Touch support: handleTouchStart/Move/End for single-finger pan, two-finger pinch zoom</pattern>
+        <pattern>Modal integration: Sets selectedSummary state and passes to ObituaryModal</pattern>
+      </relevant-patterns>
+      <do-not-modify>
+        ScatterPlot remains unchanged for desktop. Mobile view uses different component tree.
+      </do-not-modify>
+    </interface>
+
+    <interface>
+      <component>src/components/obituary/obituary-card.tsx</component>
+      <type>server-component</type>
+      <current-implementation>
+        Server Component displaying truncated claim, source, date, and category indicator.
+        Links to /obituary/[slug] with hover animations and focus-visible states.
+        Uses truncateClaim() helper (150 char max with word boundary respect).
+      </current-implementation>
+      <props-interface>
+        {`interface ObituaryCardProps {
+          obituary: ObituarySummary
+        }`}
+      </props-interface>
+      <potential-enhancement>
+        Story mentions "compact" prop for smaller mobile cards. Check if needed based on visual testing.
+        If added: `compact?: boolean` prop to reduce padding/font sizes for mobile density.
+      </potential-enhancement>
+    </interface>
+
+    <interface>
+      <component>src/components/obituary/obituary-modal.tsx</component>
+      <type>client-component</type>
+      <current-implementation>
+        Fetches full obituary data when modal opens, displays in Sheet from shadcn/ui.
+        Currently side="right" for desktop. Supports "View full page" button linking to /obituary/[slug].
+        Uses motion/react for slide-in animations with reduced motion support.
+      </current-implementation>
+      <props-interface>
+        {`interface ObituaryModalProps {
+          selectedSummary: ObituarySummary | null
+          isOpen: boolean
+          onClose: () => void
+          triggerRef?: React.RefObject<HTMLElement | null>
+        }`}
+      </props-interface>
+      <side-prop-support>
+        Sheet component supports side="bottom" for mobile sheet from bottom.
+        MobileTimeline should pass side="bottom" when rendering ObituaryModal.
+      </side-prop-support>
+    </interface>
+
+    <interface>
+      <component>src/components/filters/category-filter.tsx</component>
+      <type>client-component</type>
+      <current-implementation>
+        Floating filter bar with "All" button and category pills. Fixed bottom-center positioning.
+        Uses motion.div for entrance animation (y: 20 to 0, opacity: 0 to 1, 300ms delay).
+        Supports className prop for positioning overrides per breakpoint.
+      </current-implementation>
+      <props-interface>
+        {`interface CategoryFilterProps {
+          activeCategories: Category[]
+          onToggle: (category: Category) => void
+          onShowAll: () => void
+          className?: string
+        }`}
+      </props-interface>
+      <responsive-positioning>
+        Desktop: className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10"
+        Mobile: className="sticky bottom-0 z-10"
+        Component already has overflow-x-auto and scrollbar-hide for mobile horizontal scroll.
+      </responsive-positioning>
+    </interface>
+
+    <interface>
+      <hook>src/lib/hooks/use-filters.ts</hook>
+      <type>client-hook</type>
+      <implementation>
+        Manages URL-synced filter state using nuqs parseAsArrayOf with category validation.
+        Returns FilterState with categories array, toggleCategory, clearFilters, setCategories.
+        URL format: ?cat=market,agi (comma-separated) or no param for show all.
+      </implementation>
+      <return-interface>
+        {`interface FilterState {
+          categories: Category[]
+          setCategories: (categories: Category[]) => void
+          toggleCategory: (category: Category) => void
+          clearFilters: () => void
+          hasActiveFilters: boolean
+          isCategoryActive: (category: Category) => boolean
+        }`}
+      </return-interface>
+      <usage-pattern>
+        MobileTimeline receives activeCategories as prop from page.tsx (server-parsed searchParams).
+        Does NOT use useFilters directly - follows same pattern as ScatterPlot (prop-based).
+      </usage-pattern>
+    </interface>
+
+    <interface>
+      <type>src/types/obituary.ts</type>
+      <type>typescript-types</type>
+      <key-types>
+        <type>Category = 'market' | 'capability' | 'agi' | 'dismissive'</type>
+        <type>ObituarySummary { _id, slug, claim, source, date, categories }</type>
+        <type>Obituary extends ObituarySummary with context, sourceUrl</type>
+      </key-types>
+    </interface>
+
+    <interface>
+      <type>src/types/navigation.ts</type>
+      <type>typescript-types</type>
+      <key-types>
+        <type>TimelinePosition { scrollX, zoom, timestamp } - used by useTimelinePosition hook</type>
+        <type>AdjacentObituary { slug, claimPreview, source, date } - for prev/next nav</type>
+      </key-types>
+    </interface>
+  </existing-code-interfaces>
+
+  <development-constraints>
+    <constraint>
+      <category>architecture</category>
+      <rule>Server Components by Default</rule>
+      <description>
+        Only use 'use client' directive when component needs interactivity (state, effects, event handlers).
+        MobileTimeline, DensityBar, MobileCardList all need 'use client' for interactive state.
+        Page.tsx remains server component to fetch data and parse searchParams.
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>architecture</category>
+      <rule>URL State for Filters Only</rule>
+      <description>
+        Category filters live in URL via nuqs (?cat=market,agi). Date filter from density bar
+        is ephemeral local state (NOT in URL) - only lives within MobileTimeline component session.
+        Timeline position uses sessionStorage, not URL (see useTimelinePosition hook).
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>responsive</category>
+      <rule>Mobile Breakpoint: &lt; 768px</rule>
+      <description>
+        Mobile view: &lt; 768px (Tailwind: default, hidden on md+)
+        Tablet/Desktop: >= 768px (Tailwind: md:flex, hidden on mobile)
+        Use Tailwind breakpoint classes for responsive switching, not JavaScript media queries.
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>responsive</category>
+      <rule>Component Separation, Not Conditional Rendering</rule>
+      <description>
+        Desktop and mobile use DIFFERENT component trees, not conditional rendering within same component.
+        page.tsx renders both views with display classes: &lt;div className="hidden md:flex"&gt; for desktop,
+        &lt;div className="md:hidden flex"&gt; for mobile. Both trees exist in DOM, CSS controls visibility.
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>performance</category>
+      <rule>useMemo for Expensive Calculations</rule>
+      <description>
+        DensityBar density calculation (counts by month, year range, maxCount) must use useMemo
+        with dependencies [obituaries, activeCategories]. Prevents recalculation on every render.
+        Pattern from ScatterPlot scales computation (lines 209-235).
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>accessibility</category>
+      <rule>Touch Targets Minimum 44px</rule>
+      <description>
+        All tappable elements (density bars, cards, buttons) must have min-h-[44px] or equivalent.
+        DensityBar buttons use flex-1 width but ensure height meets 44px minimum via container.
+        CategoryFilter pills already have min-h-[44px] class (see category-filter.tsx line 80).
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>accessibility</category>
+      <rule>ARIA Labels for Non-Text Interactive Elements</rule>
+      <description>
+        Density bar buttons (visual-only bars) need aria-label describing content:
+        aria-label="{count} obituaries in {month} {year}" pattern.
+        Follow ScatterPlot pattern: role="img" and descriptive aria-label for SVG container.
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>animation</category>
+      <rule>Respect Reduced Motion Preference</rule>
+      <description>
+        Use useReducedMotion() from motion/react (see ScatterPlot line 190).
+        Conditionally apply animation variants: variants={shouldReduceMotion ? undefined : animationVariant}
+        Always provide initial/animate/exit states but make them conditional on motion preference.
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>testing</category>
+      <rule>Module Export Pattern for React 19 + Vitest</rule>
+      <description>
+        Due to React 19 + Vitest compatibility issues, tests verify module exports and dependencies
+        rather than full component rendering. See tests/unit/components/filters/category-filter.test.tsx
+        for pattern: describe('Component module exports'), describe('Component dependencies').
+        Focus on integration contracts, behavior logic, and accessibility requirements.
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>styling</category>
+      <rule>CSS Custom Properties for Theming</rule>
+      <description>
+        Use CSS custom properties (--bg-primary, --text-primary, --accent-primary, --border, etc.)
+        not hardcoded colors. Follow existing component patterns from ObituaryCard, CategoryFilter.
+        Category colors available via --category-capability, --category-market, etc.
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>data-flow</category>
+      <rule>Filter Combination Logic (AND)</rule>
+      <description>
+        Category filters and date filters must combine with AND logic. A point matches if:
+        (activeCategories.length === 0 OR point.categories intersects activeCategories) AND
+        (dateFilter === null OR point.date within dateFilter range).
+        See MobileTimeline reference implementation lines 98-112 in story file.
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>file-organization</category>
+      <rule>New Mobile Directory</rule>
+      <description>
+        Create src/components/mobile/ directory for mobile-specific components.
+        mobile-timeline.tsx, density-bar.tsx, mobile-card-list.tsx.
+        Do NOT mix mobile components into visualization/ or obituary/ directories.
+      </description>
+    </constraint>
+  </development-constraints>
+
+  <dependencies>
+    <external-library>
+      <name>motion (motion/react)</name>
+      <version>12.23.24</version>
+      <usage>
+        Component animations with reduced motion support. Import { motion, useReducedMotion }.
+        Use motion.div, motion.g for animated containers. Conditional variants based on preference.
+      </usage>
+    </external-library>
+
+    <external-library>
+      <name>nuqs</name>
+      <version>2.8.1</version>
+      <usage>
+        URL state management for category filters. NOT used directly in mobile components.
+        Page.tsx parses searchParams, passes activeCategories as prop to MobileTimeline.
+      </usage>
+    </external-library>
+
+    <external-library>
+      <name>next</name>
+      <version>16.0.5</version>
+      <usage>
+        Link component for navigation. Suspense boundary for async components.
+        App Router patterns: server components, searchParams as promise in Next 16.
+      </usage>
+    </external-library>
+
+    <external-library>
+      <name>tailwindcss</name>
+      <version>4</version>
+      <usage>
+        Responsive breakpoints (md:768px, lg:1024px). Utility classes for layout, spacing, colors.
+        Custom properties via var(--property-name). Arbitrary values like min-h-[44px].
+      </usage>
+    </external-library>
+
+    <internal-dependency>
+      <name>ObituaryCard component</name>
+      <path>src/components/obituary/obituary-card.tsx</path>
+      <usage>
+        MobileCardList maps obituaries to ObituaryCard components.
+        May need to add optional "compact" prop for smaller mobile display.
+        Check visual appearance and add prop only if needed for density.
+      </usage>
+    </internal-dependency>
+
+    <internal-dependency>
+      <name>ObituaryModal component</name>
+      <path>src/components/obituary/obituary-modal.tsx</path>
+      <usage>
+        MobileTimeline renders modal with side="bottom" for mobile sheet.
+        Pass selectedSummary, isOpen, onClose props. Modal handles data fetching internally.
+      </usage>
+    </internal-dependency>
+
+    <internal-dependency>
+      <name>CategoryFilter component</name>
+      <path>src/components/filters/category-filter.tsx</path>
+      <usage>
+        Positioned differently per breakpoint via className prop.
+        Desktop: fixed bottom-6 left-1/2 -translate-x-1/2
+        Mobile: sticky bottom-0
+        Both views render same CategoryFilter with different positioning.
+      </usage>
+    </internal-dependency>
+
+    <internal-dependency>
+      <name>useFilters hook</name>
+      <path>src/lib/hooks/use-filters.ts</path>
+      <usage>
+        Used in HomeClient for desktop view. NOT used in MobileTimeline.
+        MobileTimeline receives activeCategories as prop from page.tsx (server-parsed).
+        Maintains consistency: filters managed at page level, passed down to views.
+      </usage>
+    </internal-dependency>
+
+    <internal-dependency>
+      <name>ObituarySummary type</name>
+      <path>src/types/obituary.ts</path>
+      <usage>
+        Primary data type for components. Contains _id, slug, claim, source, date, categories.
+        Used by DensityBar for density calculation, MobileCardList for rendering, modal for fetching.
+      </usage>
+    </internal-dependency>
+
+    <internal-dependency>
+      <name>cn utility</name>
+      <path>src/lib/utils/cn.ts (via @/lib/utils)</path>
+      <usage>
+        Class name merging utility (tailwind-merge + clsx). Use for conditional classes.
+        Example: cn('base-class', condition && 'conditional-class', className)
+      </usage>
+    </internal-dependency>
+  </dependencies>
+
+  <testing-requirements>
+    <unit-tests>
+      <test-file>tests/unit/components/mobile/density-bar.test.tsx</test-file>
+      <test-scenarios>
+        <scenario>Module exports DensityBar component and props interface</scenario>
+        <scenario>Density calculation logic: counts by month, handles empty months, year range</scenario>
+        <scenario>Bar height scaling: count / maxCount * 48px, minimum 2px for empty months</scenario>
+        <scenario>Year labels render correctly from dates array</scenario>
+        <scenario>Category filter affects density calculation (useMemo dependency)</scenario>
+        <scenario>ARIA labels include count and formatted date for accessibility</scenario>
+      </test-scenarios>
+    </unit-tests>
+
+    <unit-tests>
+      <test-file>tests/unit/components/mobile/mobile-card-list.test.tsx</test-file>
+      <test-scenarios>
+        <scenario>Module exports MobileCardList component</scenario>
+        <scenario>Renders ObituaryCard for each obituary in array</scenario>
+        <scenario>Empty state displays when obituaries.length === 0</scenario>
+        <scenario>Empty state includes clear filters link</scenario>
+        <scenario>Cards wrapped in button elements for tap handling</scenario>
+      </test-scenarios>
+    </unit-tests>
+
+    <unit-tests>
+      <test-file>tests/unit/components/mobile/mobile-timeline.test.tsx</test-file>
+      <test-scenarios>
+        <scenario>Module exports MobileTimeline component</scenario>
+        <scenario>Renders DensityBar and MobileCardList components</scenario>
+        <scenario>Filter logic: category filter (activeCategories prop)</scenario>
+        <scenario>Filter logic: date filter (local state from density bar tap)</scenario>
+        <scenario>Filter logic: combines category AND date filters correctly</scenario>
+        <scenario>Modal state management: selectedObituary, isOpen, onClose</scenario>
+        <scenario>Modal side="bottom" for mobile sheet</scenario>
+      </test-scenarios>
+    </unit-tests>
+
+    <integration-tests>
+      <test-approach>
+        Manual testing and visual regression due to React 19 + Vitest rendering limitations.
+        Focus on responsive breakpoints, touch interactions, filter combinations.
+      </test-approach>
+      <critical-scenarios>
+        <scenario>Viewport &lt; 768px shows mobile view (density bar + cards), hides ScatterPlot</scenario>
+        <scenario>Viewport >= 768px shows desktop view (ScatterPlot), hides mobile view</scenario>
+        <scenario>Density bar tap filters card list to date range</scenario>
+        <scenario>Card tap opens modal from bottom (side="bottom")</scenario>
+        <scenario>Category filter + date filter combine (both must match)</scenario>
+        <scenario>Clear date filter link removes date filter, keeps category filters</scenario>
+        <scenario>Empty state shows when no matches (message + clear link)</scenario>
+      </critical-scenarios>
+    </integration-tests>
+
+    <accessibility-tests>
+      <requirement>Density bar buttons have aria-label with count and period</requirement>
+      <requirement>Cards wrapped in buttons with proper focus states</requirement>
+      <requirement>Modal has aria-modal and focus trap</requirement>
+      <requirement>Empty state message is readable by screen readers</requirement>
+      <requirement>Touch targets minimum 44px (verify density bar height)</requirement>
+    </accessibility-tests>
+
+    <performance-tests>
+      <requirement>Density calculation uses useMemo (no recalc on unrelated renders)</requirement>
+      <requirement>Vertical scroll smooth at 60fps (CSS overflow-y-auto, no jank)</requirement>
+      <requirement>Filter changes update UI &lt; 50ms (no blocking calculations)</requirement>
+    </performance-tests>
+  </testing-requirements>
+
+  <implementation-notes>
+    <note priority="critical">
+      <title>Responsive Layout Pattern</title>
+      <description>
+        Use Tailwind display utilities for responsive switching, NOT JavaScript media queries.
+        Both component trees exist in DOM, CSS controls visibility. Benefits: no hydration issues,
+        simpler state management, follows Next.js SSR best practices.
+      </description>
+      <code-example>
+        {`// src/app/page.tsx
+<main className="flex flex-col min-h-screen">
+  {/* Desktop/Tablet: Full timeline */}
+  <div className="hidden md:flex flex-col flex-1">
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeClient obituaries={obituaries} activeCategories={activeCategories} />
+    </Suspense>
+    <CategoryFilter className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10" />
+  </div>
+
+  {/* Mobile: Hybrid view */}
+  <div className="md:hidden flex flex-col flex-1">
+    <Suspense fallback={<div>Loading...</div>}>
+      <MobileTimeline obituaries={obituaries} activeCategories={activeCategories} />
+    </Suspense>
+    <CategoryFilter className="sticky bottom-0 z-10" />
+  </div>
+</main>`}
+      </code-example>
+    </note>
+
+    <note priority="critical">
+      <title>Filter State Flow</title>
+      <description>
+        Category filters managed at page level (server searchParams), passed as prop to both views.
+        Date filter (density bar tap) is LOCAL state in MobileTimeline, not URL.
+        Both filters combine with AND logic for final filtered list.
+      </description>
+      <code-example>
+        {`// MobileTimeline filtering logic
+const filteredObituaries = obituaries.filter(ob => {
+  // Category filter (from URL/props)
+  if (activeCategories.length > 0 &&
+      !ob.categories.some(c => activeCategories.includes(c))) {
+    return false
+  }
+  // Date filter (from local state)
+  if (dateFilter) {
+    const date = new Date(ob.date)
+    if (dateFilter.start && date < dateFilter.start) return false
+    if (dateFilter.end && date > dateFilter.end) return false
+  }
+  return true
+})`}
+      </code-example>
+    </note>
+
+    <note priority="high">
+      <title>Density Bar Calculation</title>
+      <description>
+        Calculate density by month (not week or day). Use useMemo with [obituaries, activeCategories].
+        Build counts map keyed by "YYYY-MM" format. Generate density array with all months in year range
+        (12 months * number of years). Height scaling: (count / maxCount) * 48px, min 2px for empty months.
+      </description>
+      <code-example>
+        {`const { density, years, maxCount } = useMemo(() => {
+  const counts: Record<string, number> = {}
+
+  obituaries.forEach(ob => {
+    // Apply category filter
+    if (activeCategories.length > 0 &&
+        !ob.categories.some(c => activeCategories.includes(c))) return
+
+    const date = new Date(ob.date)
+    const key = \`\${date.getFullYear()}-\${date.getMonth()}\`
+    counts[key] = (counts[key] || 0) + 1
+  })
+
+  // Calculate year range and build density array...
+  // See story file lines 167-207 for complete implementation
+}, [obituaries, activeCategories])`}
+      </code-example>
+    </note>
+
+    <note priority="high">
+      <title>Modal Integration Pattern</title>
+      <description>
+        MobileTimeline manages selectedObituary state (local). ObituaryModal receives selectedSummary
+        and fetches full data internally (see obituary-modal.tsx useEffect). Pass side="bottom" for
+        mobile sheet animation. Modal auto-closes on navigation via Link to /obituary/[slug].
+      </description>
+    </note>
+
+    <note priority="medium">
+      <title>ObituaryCard Compact Mode</title>
+      <description>
+        Story suggests optional "compact" prop for smaller mobile cards. Implement only if needed
+        after visual testing. If current card size works well in mobile list, skip this enhancement.
+        Decision point: Task 5 in story task list.
+      </description>
+    </note>
+
+    <note priority="medium">
+      <title>Animation and Reduced Motion</title>
+      <description>
+        Follow ScatterPlot pattern for reduced motion support. Import useReducedMotion from motion/react.
+        Make all animation variants conditional. Provide smooth experience for users who prefer motion,
+        instant updates for those who don't.
+      </description>
+      <code-example>
+        {`const shouldReduceMotion = useReducedMotion()
+
+<motion.div
+  variants={shouldReduceMotion ? undefined : slideInVariant}
+  initial={shouldReduceMotion ? undefined : "initial"}
+  animate={shouldReduceMotion ? undefined : "animate"}
+/>`}
+      </code-example>
+    </note>
+
+    <note priority="low">
+      <title>Empty State Messaging</title>
+      <description>
+        When filteredObituaries.length === 0, show helpful message with clear filters link.
+        Link should navigate to "/" (clears URL params). Message: "No obituaries match your filters."
+        Center in flex-1 container for proper vertical centering.
+      </description>
+    </note>
+
+    <note priority="low">
+      <title>Performance Monitoring</title>
+      <description>
+        DensityBar density calculation is the most expensive operation. Monitor with useMemo.
+        Card list scrolling uses native overflow-y-auto (hardware accelerated).
+        Filter changes should feel instant (&lt; 50ms). No need for virtualization unless
+        dataset grows significantly beyond current size.
+      </description>
+    </note>
+  </implementation-notes>
+
+  <potential-issues>
+    <issue>
+      <title>Hydration Mismatch with Responsive Classes</title>
+      <severity>medium</severity>
+      <description>
+        Using "hidden md:flex" and "md:hidden flex" on sibling divs could cause hydration warnings
+        if server renders at different viewport than client. Both trees exist in DOM, just hidden.
+      </description>
+      <mitigation>
+        This is standard Next.js pattern for responsive layouts. Hydration matches because both
+        trees always render, only CSS display differs. No JavaScript-based conditional rendering.
+      </mitigation>
+    </issue>
+
+    <issue>
+      <title>Density Bar Tap Target Size</title>
+      <severity>medium</severity>
+      <description>
+        Individual month bars might be too narrow for comfortable tapping on phones (especially
+        if many years of data). flex-1 width could be &lt; 44px wide.
+      </description>
+      <mitigation>
+        Container height is 48px (h-12), meeting vertical touch target requirement. Width is
+        flex-distributed but minimum 2px (min-w-[2px]). User can tap any part of vertical bar.
+        Test on real device and adjust min-width if needed.
+      </mitigation>
+    </issue>
+
+    <issue>
+      <title>Date Filter + Category Filter Confusion</title>
+      <severity>low</severity>
+      <description>
+        Users might not understand that density bar tap adds a date filter ON TOP of category filters.
+        No visual feedback showing both filters are active (besides filtered results).
+      </description>
+      <mitigation>
+        "Clear date filter" link provides clear affordance. Density bar visually reflects category
+        filtering (bars change height when categories filtered). Document behavior in manual testing.
+      </mitigation>
+    </issue>
+
+    <issue>
+      <title>Modal Fetch on Every Card Tap</title>
+      <severity>low</severity>
+      <description>
+        ObituaryModal fetches full data on open, even if tapping same card multiple times.
+        No client-side caching of fetched obituary data.
+      </description>
+      <mitigation>
+        This is existing modal behavior, not introduced by mobile view. Enhancement could add
+        client-side cache, but out of scope for this story. Modal fetch is fast enough for UX.
+      </mitigation>
+    </issue>
+  </potential-issues>
+
+  <validation-checklist>
+    <validation-item>
+      <category>functionality</category>
+      <item>Mobile view (&lt; 768px) shows density bar above card list, hides ScatterPlot</item>
+    </validation-item>
+    <validation-item>
+      <category>functionality</category>
+      <item>Desktop view (>= 768px) shows ScatterPlot, hides mobile view</item>
+    </validation-item>
+    <validation-item>
+      <category>functionality</category>
+      <item>Density bars have varying heights based on obituary count per month</item>
+    </validation-item>
+    <validation-item>
+      <category>functionality</category>
+      <item>Year labels display below density bars</item>
+    </validation-item>
+    <validation-item>
+      <category>functionality</category>
+      <item>Tapping density bar filters card list to selected month</item>
+    </validation-item>
+    <validation-item>
+      <category>functionality</category>
+      <item>"Clear date filter" link appears when date filter active</item>
+    </validation-item>
+    <validation-item>
+      <category>functionality</category>
+      <item>Clear link removes date filter, keeps category filters intact</item>
+    </validation-item>
+    <validation-item>
+      <category>functionality</category>
+      <item>Category filters + date filter combine correctly (AND logic)</item>
+    </validation-item>
+    <validation-item>
+      <category>functionality</category>
+      <item>Tapping card opens modal from bottom (side="bottom")</item>
+    </validation-item>
+    <validation-item>
+      <category>functionality</category>
+      <item>Modal "View full page" button navigates to /obituary/[slug]</item>
+    </validation-item>
+    <validation-item>
+      <category>functionality</category>
+      <item>Empty state shows when no obituaries match filters</item>
+    </validation-item>
+    <validation-item>
+      <category>functionality</category>
+      <item>Empty state clear link navigates to / (removes URL params)</item>
+    </validation-item>
+    <validation-item>
+      <category>performance</category>
+      <item>Density calculation uses useMemo (verify dependencies)</item>
+    </validation-item>
+    <validation-item>
+      <category>performance</category>
+      <item>Card list scrolls smoothly at 60fps, no jank</item>
+    </validation-item>
+    <validation-item>
+      <category>performance</category>
+      <item>Filter changes update UI quickly (&lt; 50ms perceived)</item>
+    </validation-item>
+    <validation-item>
+      <category>accessibility</category>
+      <item>Density bar buttons have aria-label with count and period</item>
+    </validation-item>
+    <validation-item>
+      <category>accessibility</category>
+      <item>Cards are keyboard focusable (wrapped in buttons)</item>
+    </validation-item>
+    <validation-item>
+      <category>accessibility</category>
+      <item>Touch targets meet 44px minimum (height verified)</item>
+    </validation-item>
+    <validation-item>
+      <category>accessibility</category>
+      <item>Screen reader announces modal open/close</item>
+    </validation-item>
+    <validation-item>
+      <category>styling</category>
+      <item>CategoryFilter positioned correctly per breakpoint</item>
+    </validation-item>
+    <validation-item>
+      <category>styling</category>
+      <item>Mobile: sticky bottom-0, Desktop: fixed bottom-6 centered</item>
+    </validation-item>
+    <validation-item>
+      <category>styling</category>
+      <item>Density bar background matches design (bg-[--bg-secondary])</item>
+    </validation-item>
+    <validation-item>
+      <category>styling</category>
+      <item>Bars use accent color (bg-[--accent-primary])</item>
+    </validation-item>
+    <validation-item>
+      <category>testing</category>
+      <item>Unit tests pass for DensityBar, MobileCardList, MobileTimeline</item>
+    </validation-item>
+    <validation-item>
+      <category>testing</category>
+      <item>No TypeScript errors (pnpm tsc --noEmit)</item>
+    </validation-item>
+    <validation-item>
+      <category>testing</category>
+      <item>Lint passes (pnpm lint)</item>
+    </validation-item>
+  </validation-checklist>
+
+  <files-to-create-modify>
+    <file action="create">
+      <path>src/components/mobile/mobile-timeline.tsx</path>
+      <description>Container component coordinating DensityBar, MobileCardList, and ObituaryModal</description>
+      <key-responsibilities>
+        - State management: selectedObituary (modal), dateFilter (density bar tap)
+        - Filter logic: combine activeCategories (prop) + dateFilter (state)
+        - Render DensityBar, MobileCardList, ObituaryModal with side="bottom"
+      </key-responsibilities>
+    </file>
+
+    <file action="create">
+      <path>src/components/mobile/density-bar.tsx</path>
+      <description>Visual density indicator showing obituary distribution by month</description>
+      <key-responsibilities>
+        - useMemo density calculation (counts by month, year range, maxCount)
+        - Render vertical bars with dynamic height (count / maxCount * 48px, min 2px)
+        - Tap handlers trigger onPeriodSelect with { start, end } date range
+        - Year labels below bars, "Clear date filter" when activePeriod set
+      </key-responsibilities>
+    </file>
+
+    <file action="create">
+      <path>src/components/mobile/mobile-card-list.tsx</path>
+      <description>Vertical scrollable list of ObituaryCard components</description>
+      <key-responsibilities>
+        - Map obituaries to ObituaryCard, wrap in button for tap handling
+        - Empty state with message + clear filters link (when length === 0)
+        - flex-1 overflow-y-auto container for smooth scrolling
+      </key-responsibilities>
+    </file>
+
+    <file action="modify">
+      <path>src/app/page.tsx</path>
+      <description>Add responsive layout switching (mobile vs desktop)</description>
+      <modifications>
+        - Import MobileTimeline component
+        - Add searchParams parsing: const params = await searchParams; const activeCategories = params.cat?.split(',') || []
+        - Desktop section: &lt;div className="hidden md:flex"&gt; with HomeClient
+        - Mobile section: &lt;div className="md:hidden flex"&gt; with MobileTimeline
+        - CategoryFilter positioned differently per breakpoint
+      </modifications>
+    </file>
+
+    <file action="maybe-modify">
+      <path>src/components/obituary/obituary-card.tsx</path>
+      <description>OPTIONAL: Add compact prop for smaller mobile display</description>
+      <condition>Only if visual testing shows cards too large in mobile list</condition>
+      <modification>
+        Add optional compact?: boolean prop
+        Adjust padding/font-size when compact=true
+      </modification>
+    </file>
+
+    <file action="create">
+      <path>tests/unit/components/mobile/density-bar.test.tsx</path>
+      <description>Unit tests for DensityBar component</description>
+    </file>
+
+    <file action="create">
+      <path>tests/unit/components/mobile/mobile-card-list.test.tsx</path>
+      <description>Unit tests for MobileCardList component</description>
+    </file>
+
+    <file action="create">
+      <path>tests/unit/components/mobile/mobile-timeline.test.tsx</path>
+      <description>Unit tests for MobileTimeline component</description>
+    </file>
+  </files-to-create-modify>
+
+  <next-steps>
+    <step order="1">Create src/components/mobile/ directory</step>
+    <step order="2">Implement MobileTimeline component with state management</step>
+    <step order="3">Implement DensityBar with useMemo density calculation</step>
+    <step order="4">Implement MobileCardList with empty state handling</step>
+    <step order="5">Modify src/app/page.tsx for responsive layout switching</step>
+    <step order="6">Test responsive breakpoints (resize browser 768px boundary)</step>
+    <step order="7">Test density bar filtering (tap bar, verify card list updates)</step>
+    <step order="8">Test category + date filter combination</step>
+    <step order="9">Test modal opening from card tap (side="bottom")</step>
+    <step order="10">Write unit tests for all three mobile components</step>
+    <step order="11">Verify accessibility (ARIA labels, touch targets, keyboard)</step>
+    <step order="12">Run quality checks (TypeScript, lint, tests)</step>
+  </next-steps>
+</story-context>
