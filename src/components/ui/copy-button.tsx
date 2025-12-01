@@ -55,9 +55,9 @@ export function CopyButton({ text, label, className }: CopyButtonProps) {
       )}
     >
       {copied ? (
-        <Check className="w-4 h-4" />
+        <Check className="w-4 h-4" aria-hidden="true" />
       ) : (
-        <Link2 className="w-4 h-4" />
+        <Link2 className="w-4 h-4" aria-hidden="true" />
       )}
       {copied ? 'Copied!' : (label ?? 'Copy link')}
     </button>

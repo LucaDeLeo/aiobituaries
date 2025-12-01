@@ -66,7 +66,7 @@ export function ZoomControls({
         aria-label="Zoom out"
         data-testid="zoom-out-button"
       >
-        <Minus className={iconSize} />
+        <Minus className={iconSize} aria-hidden="true" />
       </Button>
 
       <span
@@ -88,7 +88,7 @@ export function ZoomControls({
         aria-label="Zoom in"
         data-testid="zoom-in-button"
       >
-        <Plus className={iconSize} />
+        <Plus className={iconSize} aria-hidden="true" />
       </Button>
 
       <div className="mx-1 h-4 w-px bg-[--border]" />
@@ -105,7 +105,7 @@ export function ZoomControls({
         aria-label="Reset zoom"
         data-testid="zoom-reset-button"
       >
-        <RotateCcw className={iconSize} />
+        <RotateCcw className={iconSize} aria-hidden="true" />
       </Button>
     </motion.div>
   )

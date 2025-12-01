@@ -68,3 +68,20 @@ export interface TableSortConfig {
   /** Sort direction */
   direction: 'asc' | 'desc'
 }
+
+/**
+ * Result of a WCAG color contrast check.
+ * Used by color-contrast utilities to verify accessibility compliance.
+ */
+export interface ContrastResult {
+  /** Foreground color in hex format */
+  foreground: string
+  /** Background color in hex format */
+  background: string
+  /** Calculated contrast ratio (e.g., 4.5, 7.0) */
+  ratio: number
+  /** True if ratio meets WCAG AA for normal text (>= 4.5:1) */
+  passesAA: boolean
+  /** True if ratio meets WCAG AA for large text (>= 3:1) */
+  passesAALarge: boolean
+}

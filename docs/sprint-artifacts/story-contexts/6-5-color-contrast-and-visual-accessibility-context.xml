@@ -1,0 +1,797 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context XML for Story 6-5: Color Contrast and Visual Accessibility
+  Generated: 2025-12-01
+  Epic: Epic 6 - Accessibility & Quality
+
+  This context document assembles all relevant documentation, code interfaces,
+  and implementation guidance for the dev agent to implement this story.
+-->
+<story-context>
+  <metadata>
+    <story-key>6-5-color-contrast-and-visual-accessibility</story-key>
+    <story-title>Color Contrast and Visual Accessibility</story-title>
+    <epic>Epic 6 - Accessibility & Quality</epic>
+    <status>drafted</status>
+    <priority>High</priority>
+    <generated>2025-12-01</generated>
+  </metadata>
+
+  <story-reference>
+    <file-path>docs/sprint-artifacts/stories/6-5-color-contrast-and-visual-accessibility.md</file-path>
+    <summary>
+      Verify and enhance color contrast compliance for WCAG 2.1 AA standards.
+      Create color contrast utilities, implement high contrast mode support,
+      add prefers-contrast media query support, ensure text resizing support,
+      verify touch target sizing, and audit decorative images for accessibility.
+    </summary>
+    <user-story>
+      As a user with visual impairments, I want sufficient color contrast and
+      visual accessibility features, so that I can read all text and see UI
+      elements clearly regardless of my vision capabilities.
+    </user-story>
+  </story-reference>
+
+  <epic-context>
+    <tech-spec-path>docs/sprint-artifacts/epic-tech-specs/epic-6-tech-spec.md</tech-spec-path>
+    <relevant-sections>
+      <section name="WCAG 2.1 AA Requirements">
+        Principle: Perceivable - Guidelines 1.4 Distinguishable
+        Includes: 1.4.1 Use of Color, 1.4.3 Contrast (Minimum), 1.4.4 Resize Text
+      </section>
+      <section name="Data Models Section 3.1">
+        ContrastResult interface definition already specified in tech spec.
+        Includes: foreground, background, ratio, passesAA, passesAALarge.
+      </section>
+      <section name="Story 6-5 Coverage">
+        FR44: Color contrast meets 4.5:1 minimum ratio
+        FR43: All images have appropriate alt text
+        FR38: Site meets WCAG 2.1 AA compliance (partial)
+      </section>
+    </relevant-sections>
+  </epic-context>
+
+  <documentation-artifacts>
+    <artifact type="architecture">
+      <path>docs/architecture.md</path>
+      <relevance>
+        CSS custom properties defined in globals.css. All colors use CSS variables.
+        Pattern: --bg-primary, --text-primary, --accent-primary, --category-*.
+        Tailwind utilities map to these variables via @theme inline block.
+      </relevance>
+    </artifact>
+
+    <artifact type="prd-requirements">
+      <path>docs/PRD.md</path>
+      <relevance>
+        FR44: "Color contrast meets 4.5:1 minimum ratio" - primary goal
+        FR43: "All images have appropriate alt text" - decorative vs meaningful
+        FR38: "Site meets WCAG 2.1 AA compliance standards"
+      </relevance>
+    </artifact>
+
+    <artifact type="completed-story-learning">
+      <story>6-1-keyboard-navigation-foundation</story>
+      <learning>
+        Focus styles already implemented in globals.css.
+        High contrast mode @media (forced-colors: active) block exists with basic :focus-visible rule.
+        Gold accent (#C9A962) verified for focus rings.
+      </learning>
+    </artifact>
+
+    <artifact type="completed-story-learning">
+      <story>6-3-screen-reader-support</story>
+      <learning>
+        VisuallyHidden component created at src/components/accessibility/visually-hidden.tsx.
+        Pattern for aria-hidden="true" on decorative elements established.
+        Use for sr-only text when needed.
+      </learning>
+    </artifact>
+
+    <artifact type="completed-story-learning">
+      <story>6-4-alternative-table-view</story>
+      <learning>
+        CategoryBadge in ObituaryTable uses getCategoryColor and getCategoryLabel.
+        Color + text label pattern already established (AC-6.5.11 partially satisfied).
+        lucide-react icons pattern: aria-hidden="true" on ArrowUp/ArrowDown icons.
+      </learning>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code-interfaces>
+    <interface name="Deep Archive Theme Colors">
+      <file>src/app/globals.css</file>
+      <description>
+        All color definitions in CSS custom properties. Key colors to verify:
+        - --bg-primary: #0C0C0F (dark background)
+        - --bg-card: #18181F (card background)
+        - --text-primary: #E8E6E3 (body text)
+        - --text-secondary: #A8A5A0 (secondary text)
+        - --text-muted: #6B6860 (muted text)
+        - --accent-primary: #C9A962 (gold accent)
+        - --category-capability: #C9A962 (gold)
+        - --category-market: #7B9E89 (sage)
+        - --category-agi: #9E7B7B (rose)
+        - --category-dismissive: #7B7B9E (lavender)
+      </description>
+      <content><![CDATA[
+:root {
+  /* Deep Archive Theme - Background colors */
+  --bg-primary: #0C0C0F;
+  --bg-secondary: #14141A;
+  --bg-card: #18181F;
+  --bg-tertiary: #1C1C24;
+
+  /* Border */
+  --border: #2A2A35;
+
+  /* Text colors */
+  --text-primary: #E8E6E3;
+  --text-secondary: #A8A5A0;
+  --text-muted: #6B6860;
+
+  /* Accent */
+  --accent-primary: #C9A962;
+
+  /* Category colors (for timeline visualization) */
+  --category-capability: #C9A962;
+  --category-market: #7B9E89;
+  --category-agi: #9E7B7B;
+  --category-dismissive: #7B7B9E;
+}
+      ]]></content>
+    </interface>
+
+    <interface name="Existing Focus Styles">
+      <file>src/app/globals.css</file>
+      <description>
+        Focus styles from Story 6-1. Extend with additional high contrast rules.
+      </description>
+      <content><![CDATA[
+/* Keyboard-only focus indicators using :focus-visible */
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Remove outline for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Interactive element focus states */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* High contrast mode support for Windows */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 3px solid CanvasText;
+  }
+}
+      ]]></content>
+    </interface>
+
+    <interface name="Category Constants">
+      <file>src/lib/constants/categories.ts</file>
+      <description>
+        Category definitions with color values. May need to add accessible text
+        color variants if contrast verification shows need for lightened colors.
+      </description>
+      <content><![CDATA[
+export interface CategoryDefinition {
+  id: Category
+  label: string
+  description: string
+  color: string
+  colorVar: string
+}
+
+export const CATEGORIES: Record<Category, CategoryDefinition> = {
+  capability: {
+    id: 'capability',
+    label: 'Capability Doubt',
+    description: 'Claims AI cannot do specific tasks',
+    color: '#C9A962',
+    colorVar: '--category-capability',
+  },
+  market: {
+    id: 'market',
+    label: 'Market/Bubble',
+    description: 'AI is overhyped or a bubble',
+    color: '#7B9E89',
+    colorVar: '--category-market',
+  },
+  agi: {
+    id: 'agi',
+    label: 'AGI Skepticism',
+    description: 'AGI is impossible or very far away',
+    color: '#9E7B7B',
+    colorVar: '--category-agi',
+  },
+  dismissive: {
+    id: 'dismissive',
+    label: 'Dismissive Framing',
+    description: 'Casual dismissal or mockery of AI',
+    color: '#7B7B9E',
+    colorVar: '--category-dismissive',
+  },
+}
+      ]]></content>
+    </interface>
+
+    <interface name="CategoryPill Component">
+      <file>src/components/filters/category-pill.tsx</file>
+      <description>
+        Category toggle pill. Already has aria-pressed, aria-label, aria-hidden
+        on decorative dot. Verify min-height: 44px for touch target (already present).
+        Color + text label pattern satisfies AC-6.5.11.
+      </description>
+      <content><![CDATA[
+export function CategoryPill({
+  category,
+  isActive,
+  onClick,
+}: CategoryPillProps) {
+  return (
+    <motion.button
+      data-testid={`category-pill-${category.id}`}
+      onClick={onClick}
+      aria-pressed={isActive}
+      aria-label={`Filter by ${category.label}`}
+      className={cn(
+        'flex items-center gap-2 px-3 py-1.5 rounded-full',
+        'text-sm font-medium transition-colors whitespace-nowrap',
+        'min-h-[44px]',
+        'focus-visible:outline-none focus-visible:ring-2 ...'
+      )}
+    >
+      <span
+        className="w-2 h-2 rounded-full flex-shrink-0"
+        style={{ backgroundColor: category.color }}
+        aria-hidden="true"
+      />
+      <span>{category.label}</span>
+    </motion.button>
+  )
+}
+      ]]></content>
+    </interface>
+
+    <interface name="ScatterPoint Component">
+      <file>src/components/visualization/scatter-point.tsx</file>
+      <description>
+        Timeline dot with focus ring. Already has aria-hidden on decorative elements,
+        ARIA labels for screen readers, and focus ring styling.
+      </description>
+      <content><![CDATA[
+// Focus ring visible when focused (AC-6.2.5: 2px gold ring)
+{isFocused && (
+  <circle
+    cx={x}
+    cy={y}
+    r={FOCUS_RING_RADIUS}
+    fill="none"
+    stroke="var(--accent-primary)"
+    strokeWidth={2}
+    strokeDasharray="4 2"
+    className={prefersReducedMotion ? '' : 'animate-pulse'}
+    data-testid="scatter-point-focus-ring"
+  />
+)}
+      ]]></content>
+    </interface>
+
+    <interface name="Accessibility Types">
+      <file>src/types/accessibility.ts</file>
+      <description>
+        Existing accessibility types. ContrastResult interface needs to be added here.
+      </description>
+      <content><![CDATA[
+export type NavigationDirection = 'up' | 'down' | 'left' | 'right' | 'home' | 'end'
+
+export interface RovingFocusState {
+  focusedIndex: number
+  itemCount: number
+  columns?: number
+}
+
+export interface Announcement {
+  id: string
+  message: string
+  politeness: 'polite' | 'assertive' | 'off'
+  delay?: number
+}
+
+export type TimelineViewMode = 'visualization' | 'table'
+
+export interface TableSortConfig {
+  column: 'date' | 'source' | 'category'
+  direction: 'asc' | 'desc'
+}
+
+// TODO: Add ContrastResult interface for Story 6-5
+      ]]></content>
+    </interface>
+
+    <interface name="VisuallyHidden Component">
+      <file>src/components/accessibility/visually-hidden.tsx</file>
+      <description>
+        Screen reader only content component. Use for any sr-only text needed.
+      </description>
+      <content><![CDATA[
+export function VisuallyHidden({
+  children,
+  as: Component = 'span',
+}: VisuallyHiddenProps) {
+  return <Component className="sr-only">{children}</Component>
+}
+      ]]></content>
+    </interface>
+
+    <interface name="Existing a11y Utilities">
+      <file>src/lib/utils/a11y.ts</file>
+      <description>
+        Existing keyboard navigation utilities. Color contrast utilities should
+        be created in a separate file: src/lib/utils/color-contrast.ts
+      </description>
+    </interface>
+
+    <interface name="ObituaryTable CategoryBadge">
+      <file>src/components/obituary/obituary-table.tsx</file>
+      <description>
+        Inline CategoryBadge with aria-hidden on color dot.
+        Pattern: color indicator + text label (satisfies AC-6.5.11).
+      </description>
+      <content><![CDATA[
+function CategoryBadge({ category }: { category: Category }) {
+  const color = getCategoryColor(category)
+  const label = getCategoryLabel(category)
+
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs whitespace-nowrap">
+      <span
+        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+        style={{ backgroundColor: color }}
+        aria-hidden="true"
+      />
+      {label}
+    </span>
+  )
+}
+      ]]></content>
+    </interface>
+
+    <interface name="ZoomControls with lucide-react icons">
+      <file>src/components/visualization/zoom-controls.tsx</file>
+      <description>
+        Example of lucide-react icons without explicit aria-hidden.
+        Verify icons have aria-hidden="true" or meaningful labels.
+      </description>
+      <content><![CDATA[
+import { Plus, Minus, RotateCcw } from 'lucide-react'
+
+// Icons inside buttons with aria-label - buttons provide accessible name
+<Button aria-label="Zoom out">
+  <Minus className={iconSize} />  // Should have aria-hidden="true"
+</Button>
+      ]]></content>
+    </interface>
+  </existing-code-interfaces>
+
+  <development-constraints>
+    <constraint type="wcag-compliance">
+      All text must meet WCAG 2.1 AA contrast requirements:
+      - Normal text: 4.5:1 minimum
+      - Large text (18pt+ or 14pt+ bold): 3:1 minimum
+      - Non-text contrast for UI components: 3:1 minimum
+    </constraint>
+
+    <constraint type="color-not-sole-indicator">
+      WCAG 1.4.1: Color cannot be the only visual means of conveying information.
+      All category indicators must include text labels alongside color dots.
+    </constraint>
+
+    <constraint type="css-variables">
+      Colors are defined as CSS variables in globals.css :root block.
+      Any new color variables should follow the same pattern.
+      For prefers-contrast:more, override CSS variables in media query.
+    </constraint>
+
+    <constraint type="touch-targets">
+      WCAG 2.5.5: Touch targets must be minimum 44x44px.
+      Exception for inline text links (p a, li a, span a).
+    </constraint>
+
+    <constraint type="text-resizing">
+      WCAG 1.4.4: Text must be resizable up to 200% without loss of content.
+      Use rem/em units, avoid fixed heights on text containers.
+    </constraint>
+
+    <constraint type="decorative-images">
+      Decorative images/icons must have aria-hidden="true".
+      Meaningful images must have appropriate alt text.
+      lucide-react icons are decorative when inside labeled buttons.
+    </constraint>
+
+    <constraint type="motion-preference">
+      Note: prefers-reduced-motion is handled in Story 6-6.
+      This story focuses on prefers-contrast preference.
+    </constraint>
+  </development-constraints>
+
+  <dependencies>
+    <dependency type="completed-story">
+      <name>Story 6-1: Keyboard Navigation Foundation</name>
+      <provides>Focus styles in globals.css, high contrast base</provides>
+    </dependency>
+    <dependency type="completed-story">
+      <name>Story 6-3: Screen Reader Support</name>
+      <provides>VisuallyHidden component, aria-hidden patterns</provides>
+    </dependency>
+    <dependency type="completed-story">
+      <name>Story 6-4: Alternative Table View</name>
+      <provides>Category colors in table badges, icon aria-hidden pattern</provides>
+    </dependency>
+    <dependency type="existing-code">
+      <name>categories.ts</name>
+      <provides>Category color definitions</provides>
+    </dependency>
+    <dependency type="existing-code">
+      <name>globals.css</name>
+      <provides>CSS variables and focus styles</provides>
+    </dependency>
+  </dependencies>
+
+  <package-dependencies>
+    <package name="vitest" version="^4.0.14" purpose="Unit testing" />
+    <package name="@testing-library/react" version="^16.3.0" purpose="Component testing" />
+    <package name="lucide-react" version="^0.555.0" purpose="Icons - ensure aria-hidden" />
+    <package name="tailwindcss" version="^4" purpose="Utility classes" />
+  </package-dependencies>
+
+  <testing-context>
+    <test-framework>Vitest</test-framework>
+    <test-location>tests/unit/lib/utils/color-contrast.test.ts</test-location>
+    <existing-tests>
+      <test-file>tests/unit/lib/utils/a11y.test.ts</test-file>
+      <description>Existing a11y utility tests - follow same patterns</description>
+    </existing-tests>
+    <test-requirements>
+      <requirement>Test hexToRgb() with valid and invalid colors</requirement>
+      <requirement>Test getRelativeLuminance() calculations</requirement>
+      <requirement>Test getContrastRatio() with known values</requirement>
+      <requirement>Test checkWCAGAA() passesAA and passesAALarge flags</requirement>
+      <requirement>Test COLOR_CHECKS object has all theme combinations</requirement>
+    </test-requirements>
+  </testing-context>
+
+  <implementation-guidance>
+    <file-to-create>
+      <path>src/lib/utils/color-contrast.ts</path>
+      <description>
+        WCAG contrast calculation utilities. Follow reference implementation
+        from story file. Export: hexToRgb, getRelativeLuminance, getContrastRatio,
+        checkWCAGAA, COLOR_CHECKS.
+      </description>
+    </file-to-create>
+
+    <file-to-modify>
+      <path>src/types/accessibility.ts</path>
+      <description>
+        Add ContrastResult interface:
+        - foreground: string
+        - background: string
+        - ratio: number
+        - passesAA: boolean
+        - passesAALarge: boolean
+      </description>
+    </file-to-modify>
+
+    <file-to-modify>
+      <path>src/lib/constants/categories.ts</path>
+      <description>
+        Verify category colors pass 4.5:1 contrast.
+        If needed, add accessible text color variants (textColor property).
+        Story file suggests lightened variants if needed:
+        - market text: #8AB49A
+        - agi text: #B48A8A
+        - dismissive text: #9090B4
+      </description>
+    </file-to-modify>
+
+    <file-to-modify>
+      <path>src/app/globals.css</path>
+      <description>
+        Extend existing high contrast mode rules. Add:
+        1. @media (forced-colors: active) block extensions:
+           - Border visibility rules
+           - Timeline dot styling with system colors
+           - Category badge/pill styling
+           - Button border visibility
+        2. @media (prefers-contrast: more) block:
+           - Override --text-primary: #FFFFFF
+           - Override --text-secondary: #D0D0D0
+           - Override --text-muted: #A0A0A0
+           - Override --border: #505050
+        3. Text resizing support:
+           - Verify html font-size: 100%
+           - Add overflow-wrap: break-word to containers
+           - Card min-height: fit-content
+        4. Touch target sizing:
+           - min-height: 44px, min-width: 44px on interactive elements
+           - Exception for inline text links
+      </description>
+    </file-to-modify>
+
+    <file-to-create>
+      <path>tests/unit/lib/utils/color-contrast.test.ts</path>
+      <description>
+        Unit tests for color contrast utilities.
+        Follow existing test patterns from a11y.test.ts.
+      </description>
+    </file-to-create>
+
+    <audit-task>
+      <description>
+        Review components using lucide-react icons for aria-hidden="true".
+        Files using lucide-react:
+        - src/components/obituary/obituary-table.tsx (ArrowUp, ArrowDown) - DONE
+        - src/components/visualization/zoom-controls.tsx (Plus, Minus, RotateCcw)
+        - src/components/obituary/obituary-nav.tsx
+        - src/components/obituary/obituary-modal.tsx
+        - src/components/layout/mobile-nav.tsx
+        - src/components/ui/sheet.tsx
+        - src/components/ui/toast.tsx
+        - src/components/ui/copy-button.tsx
+        - src/components/ui/breadcrumb.tsx
+      </description>
+    </audit-task>
+  </implementation-guidance>
+
+  <acceptance-criteria-mapping>
+    <ac id="AC-6.5.1" description="Body text contrast passes">
+      Verify #E8E6E3 on #0C0C0F >= 4.5:1 (expected: 14.5:1)
+    </ac>
+    <ac id="AC-6.5.2" description="Secondary text contrast passes">
+      Verify #A8A5A0 on #0C0C0F >= 4.5:1 (expected: 7.2:1)
+    </ac>
+    <ac id="AC-6.5.3" description="Muted text contrast passes">
+      Verify #6B6860 on #0C0C0F >= 4.5:1 (expected: 4.6:1)
+    </ac>
+    <ac id="AC-6.5.4" description="Accent color contrast passes">
+      Verify #C9A962 on #0C0C0F >= 4.5:1 (expected: 7.8:1)
+    </ac>
+    <ac id="AC-6.5.5" description="Card text contrast passes">
+      Verify #E8E6E3 on #18181F >= 4.5:1 (expected: 12.8:1)
+    </ac>
+    <ac id="AC-6.5.6" description="Category capability color passes">
+      Verify #C9A962 on #0C0C0F >= 4.5:1 (expected: 7.8:1)
+    </ac>
+    <ac id="AC-6.5.7" description="Category market color passes">
+      Verify #7B9E89 on #0C0C0F >= 4.5:1 (expected: 5.8:1)
+    </ac>
+    <ac id="AC-6.5.8" description="Category AGI color passes">
+      Verify #9E7B7B on #0C0C0F >= 4.5:1 (expected: 5.0:1)
+    </ac>
+    <ac id="AC-6.5.9" description="Category dismissive color passes">
+      Verify #7B7B9E on #0C0C0F >= 4.5:1 (expected: 5.0:1)
+    </ac>
+    <ac id="AC-6.5.10" description="Focus indicators visible">
+      Focus ring has 3:1 contrast against adjacent colors
+    </ac>
+    <ac id="AC-6.5.11" description="Colors not sole indicator">
+      Category badges include text labels with color indicators
+    </ac>
+    <ac id="AC-6.5.12" description="High contrast mode works">
+      @media (forced-colors: active) rules implemented
+    </ac>
+    <ac id="AC-6.5.13" description="prefers-contrast supported">
+      @media (prefers-contrast: more) overrides CSS variables
+    </ac>
+    <ac id="AC-6.5.14" description="Text resizable to 200%">
+      Browser text zoom at 200% shows no content loss or overlap
+    </ac>
+    <ac id="AC-6.5.15" description="Touch targets 44px minimum">
+      Interactive elements have min-height/min-width 44px
+    </ac>
+    <ac id="AC-6.5.16" description="Decorative images excluded">
+      Decorative icons have aria-hidden="true"
+    </ac>
+    <ac id="AC-6.5.17" description="Alt text for content images">
+      Meaningful images have appropriate alt text
+    </ac>
+  </acceptance-criteria-mapping>
+
+  <reference-implementations>
+    <implementation name="Color Contrast Utility">
+      <description>From story file - WCAG compliant contrast calculation</description>
+      <code><![CDATA[
+// src/lib/utils/color-contrast.ts
+import type { ContrastResult } from '@/types/accessibility'
+
+/**
+ * Calculate relative luminance of a color.
+ * @see https://www.w3.org/TR/WCAG21/#dfn-relative-luminance
+ */
+export function getRelativeLuminance(r: number, g: number, b: number): number {
+  const [rs, gs, bs] = [r, g, b].map(c => {
+    c = c / 255
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs
+}
+
+/**
+ * Calculate contrast ratio between two colors.
+ * @see https://www.w3.org/TR/WCAG21/#dfn-contrast-ratio
+ */
+export function getContrastRatio(
+  fg: { r: number; g: number; b: number },
+  bg: { r: number; g: number; b: number }
+): number {
+  const l1 = getRelativeLuminance(fg.r, fg.g, fg.b)
+  const l2 = getRelativeLuminance(bg.r, bg.g, bg.b)
+  const lighter = Math.max(l1, l2)
+  const darker = Math.min(l1, l2)
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
+/**
+ * Parse hex color to RGB.
+ */
+export function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  if (!result) throw new Error(`Invalid hex color: ${hex}`)
+  return {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  }
+}
+
+/**
+ * Check WCAG AA compliance for a color combination.
+ */
+export function checkWCAGAA(fgHex: string, bgHex: string): ContrastResult {
+  const fg = hexToRgb(fgHex)
+  const bg = hexToRgb(bgHex)
+  const ratio = getContrastRatio(fg, bg)
+
+  return {
+    foreground: fgHex,
+    background: bgHex,
+    ratio: Math.round(ratio * 100) / 100,
+    passesAA: ratio >= 4.5,
+    passesAALarge: ratio >= 3
+  }
+}
+
+/**
+ * Project Deep Archive theme color verification.
+ */
+export const COLOR_CHECKS = {
+  textOnBg: checkWCAGAA('#E8E6E3', '#0C0C0F'),
+  secondaryOnBg: checkWCAGAA('#A8A5A0', '#0C0C0F'),
+  mutedOnBg: checkWCAGAA('#6B6860', '#0C0C0F'),
+  accentOnBg: checkWCAGAA('#C9A962', '#0C0C0F'),
+  textOnCard: checkWCAGAA('#E8E6E3', '#18181F'),
+  accentOnCard: checkWCAGAA('#C9A962', '#18181F'),
+  capability: checkWCAGAA('#C9A962', '#0C0C0F'),
+  market: checkWCAGAA('#7B9E89', '#0C0C0F'),
+  agi: checkWCAGAA('#9E7B7B', '#0C0C0F'),
+  dismissive: checkWCAGAA('#7B7B9E', '#0C0C0F'),
+} as const
+      ]]></code>
+    </implementation>
+
+    <implementation name="High Contrast Mode CSS">
+      <description>From story file - forced-colors media query</description>
+      <code><![CDATA[
+/* High Contrast Mode Support */
+@media (forced-colors: active) {
+  /* Ensure borders are visible */
+  .border,
+  [class*="border-"] {
+    border-color: CanvasText !important;
+  }
+
+  /* Ensure focus is visible */
+  :focus-visible {
+    outline: 3px solid Highlight !important;
+    outline-offset: 2px;
+  }
+
+  /* Timeline dots */
+  .timeline-dot circle {
+    fill: CanvasText !important;
+    stroke: Canvas !important;
+  }
+
+  .timeline-dot:focus circle,
+  .timeline-dot:hover circle {
+    fill: Highlight !important;
+  }
+
+  /* Category badges */
+  .category-badge,
+  .category-pill {
+    border: 2px solid CanvasText !important;
+    background: Canvas !important;
+    color: CanvasText !important;
+  }
+
+  /* Buttons */
+  button,
+  [role="button"] {
+    border: 2px solid ButtonText !important;
+  }
+
+  button:hover,
+  [role="button"]:hover {
+    background: Highlight !important;
+    color: HighlightText !important;
+  }
+}
+      ]]></code>
+    </implementation>
+
+    <implementation name="prefers-contrast Support">
+      <description>From story file - enhanced contrast mode</description>
+      <code><![CDATA[
+/* Increased contrast mode (user preference) */
+@media (prefers-contrast: more) {
+  :root {
+    --text-primary: #FFFFFF;
+    --text-secondary: #D0D0D0;
+    --text-muted: #A0A0A0;
+    --border: #505050;
+  }
+}
+      ]]></code>
+    </implementation>
+
+    <implementation name="Touch Target Sizing">
+      <description>From story file - minimum 44px touch targets</description>
+      <code><![CDATA[
+/* Touch Target Minimum Size */
+button,
+a,
+[role="button"],
+[tabindex="0"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Exception for inline text links */
+p a,
+li a,
+span a {
+  min-height: auto;
+  min-width: auto;
+}
+      ]]></code>
+    </implementation>
+  </reference-implementations>
+
+  <quality-checklist>
+    <item>Color contrast utility created with WCAG calculation functions</item>
+    <item>ContrastResult type added to accessibility types</item>
+    <item>All text/background combinations verified >= 4.5:1 ratio</item>
+    <item>Category colors pass contrast requirements</item>
+    <item>High contrast mode CSS rules implemented</item>
+    <item>prefers-contrast:more media query support added</item>
+    <item>Text resizing to 200% works without content loss</item>
+    <item>Touch targets minimum 44x44px on interactive elements</item>
+    <item>Decorative images have aria-hidden="true"</item>
+    <item>Unit tests pass for contrast utilities</item>
+    <item>No TypeScript errors</item>
+    <item>Lint passes</item>
+  </quality-checklist>
+</story-context>

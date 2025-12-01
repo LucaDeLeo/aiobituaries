@@ -277,9 +277,155 @@ select:focus-visible {
   border-color: var(--accent-primary);
 }
 
-/* High contrast mode support for Windows */
+/* High contrast mode support for Windows (AC-6.5.12) */
 @media (forced-colors: active) {
   :focus-visible {
-    outline: 3px solid CanvasText;
+    outline: 3px solid Highlight !important;
+    outline-offset: 2px;
   }
+
+  /* Ensure borders are visible */
+  .border,
+  [class*="border-"] {
+    border-color: CanvasText !important;
+  }
+
+  /* Card borders */
+  .card,
+  [data-slot="sheet-content"],
+  [role="dialog"] {
+    border: 2px solid CanvasText !important;
+  }
+
+  /* Timeline dots adapt to system colors */
+  .timeline-dot circle {
+    fill: CanvasText !important;
+    stroke: Canvas !important;
+  }
+
+  .timeline-dot:focus circle,
+  .timeline-dot:hover circle {
+    fill: Highlight !important;
+  }
+
+  /* Category badges - ensure visible borders and text */
+  .category-badge,
+  .category-pill,
+  [data-testid^="category-pill-"] {
+    border: 2px solid CanvasText !important;
+    background: Canvas !important;
+    color: CanvasText !important;
+  }
+
+  /* Buttons - visible borders and hover states */
+  button,
+  [role="button"] {
+    border: 2px solid ButtonText !important;
+  }
+
+  button:hover,
+  [role="button"]:hover {
+    background: Highlight !important;
+    color: HighlightText !important;
+  }
+
+  button:disabled,
+  [role="button"]:disabled {
+    border-color: GrayText !important;
+    color: GrayText !important;
+  }
+
+  /* Links */
+  a {
+    color: LinkText !important;
+  }
+
+  a:visited {
+    color: VisitedText !important;
+  }
+}
+
+/* Increased contrast mode (user preference) - AC-6.5.13 */
+@media (prefers-contrast: more) {
+  :root {
+    --text-primary: #FFFFFF;
+    --text-secondary: #D0D0D0;
+    --text-muted: #A0A0A0;
+    --border: #505050;
+  }
+}
+
+/* ============================================
+   Text Resizing Support (AC-6.5.14)
+   ============================================ */
+
+/* Ensure base font size allows user scaling */
+html {
+  font-size: 100%; /* 16px default, respects user browser settings */
+}
+
+/* Prevent text overflow and ensure wrapping */
+.container,
+main,
+article,
+section {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Cards should expand to fit content */
+.card,
+[class*="Card"],
+[data-slot="sheet-content"] {
+  min-height: fit-content;
+  height: auto;
+}
+
+/* Tables inherit font size for proper scaling */
+table {
+  font-size: inherit;
+}
+
+/* Mobile table sizing */
+@media (max-width: 640px) {
+  table {
+    font-size: 0.875rem;
+  }
+}
+
+/* ============================================
+   Touch Target Minimum Size (AC-6.5.15)
+   ============================================ */
+
+/* Ensure interactive elements meet 44x44px minimum */
+button,
+[role="button"],
+[tabindex="0"]:not(div):not(span):not(section) {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Links need minimum touch target except inline text links */
+a:not(p a):not(li a):not(span a):not(.inline-link) {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Exception for inline text links - they flow with text */
+p a,
+li a,
+span a,
+.inline-link {
+  min-height: auto;
+  min-width: auto;
+  display: inline;
+}
+
+/* Ensure touch target utility class */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
 }
