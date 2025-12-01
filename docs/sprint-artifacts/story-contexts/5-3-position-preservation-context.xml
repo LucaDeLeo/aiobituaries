@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <metadata>
+    <story-key>5-3-position-preservation</story-key>
+    <story-title>Position Preservation</story-title>
+    <epic>Epic 5 - Navigation &amp; Responsive Experience</epic>
+    <generated>2025-11-30</generated>
+    <status>ready-for-dev</status>
+  </metadata>
+
+  <story-reference>
+    <path>docs/sprint-artifacts/stories/5-3-position-preservation.md</path>
+    <description>Full story definition with acceptance criteria, tasks, and technical approach</description>
+  </story-reference>
+
+  <epic-context>
+    <tech-spec-path>docs/sprint-artifacts/epic-tech-specs/epic-5-tech-spec.md</tech-spec-path>
+    <architecture-path>docs/architecture.md</architecture-path>
+    <description>Epic 5 completes navigation flow and responsive experience. Story 5-3 implements timeline position preservation via sessionStorage.</description>
+  </epic-context>
+
+  <documentation-artifacts>
+    <artifact>
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-5-tech-spec.md</path>
+      <type>tech-spec</type>
+      <description>Epic 5 technical specification with useTimelinePosition hook design, sessionStorage schema, and integration patterns</description>
+      <relevant-sections>
+        <section line="506-587">useTimelinePosition hook implementation reference</section>
+        <section line="590-625">ScatterPlot integration snippet showing position save/restore</section>
+        <section line="263-287">TimelinePosition type definition and navigation types</section>
+        <section line="328-343">sessionStorage schema with key, value structure, and 1-hour expiry</section>
+      </relevant-sections>
+    </artifact>
+
+    <artifact>
+      <path>docs/architecture.md</path>
+      <type>architecture</type>
+      <description>Project architecture document with state management patterns and URL vs sessionStorage decisions</description>
+      <relevant-sections>
+        <section line="459-513">State boundaries showing URL state for filters, sessionStorage for ephemeral position state</section>
+        <section line="395-409">URL state pattern with nuqs - filter state approach to follow</section>
+        <section line="1029-1041">ADR-004: URL State with nuqs - explains why position uses sessionStorage not URL</section>
+      </relevant-sections>
+    </artifact>
+
+    <artifact>
+      <path>docs/sprint-artifacts/stories/5-3-position-preservation.md</path>
+      <type>story</type>
+      <description>Story definition with 10 acceptance criteria, 11 tasks, and reference implementation code</description>
+      <relevant-sections>
+        <section line="18-31">Acceptance criteria table with testable conditions</section>
+        <section line="36-153">Technical approach with full useTimelinePosition hook reference implementation</section>
+        <section line="192-282">Task breakdown with time estimates</section>
+        <section line="296-298">Dependencies on completed stories 3-3 (scroll), 3-4 (zoom), 5-1 (modal navigation)</section>
+        <section line="419-447">Learnings from previous stories with relevant patterns</section>
+      </relevant-sections>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code-interfaces>
+    <interface>
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <type>component</type>
+      <description>Main timeline visualization component. Must integrate useTimelinePosition hook to save/restore scroll and zoom state.</description>
+      <relevant-code>
+        <section line="156-160">ViewState interface with scale, translateX, translateY - position to persist</section>
+        <section line="275-283">Motion values for springX (pan) and springScale (zoom) - coordinate with position restoration</section>
+        <section line="281-283">useEffect syncing scaleMotion with viewState.scale - similar pattern needed for position</section>
+        <section line="400-406">clampTranslateX helper function - use when restoring position</section>
+        <section line="549-574">handleWheel with pan/zoom logic - save position after these operations</section>
+      </relevant-code>
+      <integration-notes>
+        - ViewState already has scale, translateX, translateY - map to TimelinePosition scrollX and zoom
+        - translateX represents scroll position in pixels
+        - scale is zoom level (already 0.5-5.0 range per MIN_SCALE/MAX_SCALE)
+        - Restore via setViewState after reading from sessionStorage
+        - Save via useEffect watching viewState changes (debounced 300ms)
+      </integration-notes>
+    </interface>
+
+    <interface>
+      <path>src/lib/hooks/use-zoom.ts</path>
+      <type>hook</type>
+      <description>Zoom state management hook. Position preservation hook should coordinate with but not duplicate zoom functionality.</description>
+      <relevant-code>
+        <section line="17-19">Zoom constants: MIN_SCALE=0.5, MAX_SCALE=5, ZOOM_STEP=1.2</section>
+        <section line="59-61">createClampScale helper for bounds checking</section>
+        <section line="90-94">useZoom accepts viewState and setViewState - same pattern for position</section>
+        <section line="129-136">resetZoom implementation - position hook should clear on reset if needed</section>
+      </relevant-code>
+      <integration-notes>
+        - Do not duplicate zoom logic - position hook just persists the scale value
+        - Respect MIN_SCALE (0.5) and MAX_SCALE (5) when restoring
+        - Consider if resetZoom should also clear position (probably not - user preference)
+      </integration-notes>
+    </interface>
+
+    <interface>
+      <path>src/types/visualization.ts</path>
+      <type>type</type>
+      <description>Visualization types including ViewState. TimelinePosition should be added to navigation.ts not here.</description>
+      <relevant-code>
+        <section line="15-22">ViewState type with scale, translateX, translateY</section>
+      </relevant-code>
+      <integration-notes>
+        - ViewState.translateX maps to TimelinePosition.scrollX
+        - ViewState.scale maps to TimelinePosition.zoom
+        - translateY is not persisted (vertical position resets on load)
+      </integration-notes>
+    </interface>
+
+    <interface>
+      <path>src/types/navigation.ts</path>
+      <type>type</type>
+      <description>Navigation types. TimelinePosition interface should be added here.</description>
+      <relevant-code>
+        <section line="1-26">Full file: AdjacentObituary and ObituaryNavigation interfaces</section>
+      </relevant-code>
+      <integration-notes>
+        Add TimelinePosition interface:
+        - scrollX: number (horizontal scroll position in pixels)
+        - zoom: number (zoom level 0.5 to 5.0)
+        - timestamp: number (Date.now() when saved for expiry logic)
+        Add constants: STORAGE_KEY = 'timeline-position', EXPIRY_MS = 60 * 60 * 1000
+      </integration-notes>
+    </interface>
+
+    <interface>
+      <path>src/lib/hooks/use-filters.ts</path>
+      <type>hook</type>
+      <description>URL-synced filter state hook using nuqs. Pattern reference for hook structure.</description>
+      <relevant-code>
+        <section line="66-98">useFilters hook structure with categories, setCategories, toggleCategory, clearFilters</section>
+      </relevant-code>
+      <integration-notes>
+        - Follow similar hook pattern: return object with state and methods
+        - Unlike filters (URL), position uses sessionStorage (ephemeral)
+        - Filter and position work together: filters in URL, position in sessionStorage
+      </integration-notes>
+    </interface>
+
+    <interface>
+      <path>src/app/obituary/[slug]/page.tsx</path>
+      <type>page</type>
+      <description>Obituary detail page. Need to add "Back to Timeline" link.</description>
+      <relevant-code>
+        <section line="51-60">Current page render with ObituaryDetail, ObituaryContext, ObituaryNav</section>
+        <section line="54">Container div structure - add Back link before or after content</section>
+      </relevant-code>
+      <integration-notes>
+        Add "Back to Timeline" link at top of page (before ObituaryDetail):
+        - Link to "/" (homepage)
+        - Style consistently with other navigation elements
+        - Position will auto-restore via useTimelinePosition hook on homepage
+      </integration-notes>
+    </interface>
+
+    <interface>
+      <path>src/components/obituary/obituary-modal.tsx</path>
+      <type>component</type>
+      <description>Modal component opened from timeline dots. Verify modal close does not reset position.</description>
+      <relevant-code>
+        <section line="93-99">handleClose function with onClose callback and focus restoration</section>
+        <section line="183-195">Action buttons with CopyButton and "View full page" Link</section>
+      </relevant-code>
+      <integration-notes>
+        - Modal close (handleClose) should NOT affect timeline position
+        - Position is stored in sessionStorage, independent of modal state
+        - Modal open/close events do not trigger navigation, so position naturally preserved
+        - Verify by testing: open modal, close via X/escape/outside click, check position unchanged
+      </integration-notes>
+    </interface>
+
+    <interface>
+      <path>src/components/obituary/obituary-nav.tsx</path>
+      <type>component</type>
+      <description>Previous/Next navigation component. Not directly related but shows navigation patterns.</description>
+      <relevant-code>
+        <section line="20-38">useEffect with keyboard navigation (ArrowLeft/ArrowRight)</section>
+        <section line="29-33">window.location.href navigation - position preserved via sessionStorage</section>
+      </relevant-code>
+      <integration-notes>
+        - When navigating to prev/next obituary, position is preserved in sessionStorage
+        - Browser back from obituary page returns to homepage with position restored
+      </integration-notes>
+    </interface>
+  </existing-code-interfaces>
+
+  <development-constraints>
+    <constraint>
+      <type>architecture</type>
+      <description>Position in sessionStorage, filters in URL</description>
+      <details>Per ADR-004, filter state uses URL (shareable) while position state uses sessionStorage (ephemeral, per-session). This ensures shared links show filtered content but start at default position.</details>
+    </constraint>
+
+    <constraint>
+      <type>pattern</type>
+      <description>Client component with 'use client' directive</description>
+      <details>Hook uses React hooks (useState, useEffect, useCallback) and browser API (sessionStorage), so must be a client component.</details>
+    </constraint>
+
+    <constraint>
+      <type>storage</type>
+      <description>sessionStorage key: 'timeline-position'</description>
+      <details>Single key stores JSON-stringified TimelinePosition object. No multiple keys or complex storage structure.</details>
+    </constraint>
+
+    <constraint>
+      <type>expiry</type>
+      <description>Position expires after 1 hour of inactivity</description>
+      <details>Check timestamp on read, not automatic cleanup. If (Date.now() - timestamp) > EXPIRY_MS, return null and remove from storage.</details>
+    </constraint>
+
+    <constraint>
+      <type>performance</type>
+      <description>Debounce saves by 300ms</description>
+      <details>Avoid excessive storage writes during continuous scroll/zoom. Use setTimeout in useEffect with cleanup.</details>
+    </constraint>
+
+    <constraint>
+      <type>error-handling</type>
+      <description>Graceful degradation for storage errors</description>
+      <details>Handle QuotaExceededError and general storage errors without breaking app. Log warnings but continue operation.</details>
+    </constraint>
+
+    <constraint>
+      <type>ssr</type>
+      <description>Safe for server-side rendering</description>
+      <details>sessionStorage access must be in useEffect (client-side only). Initial state should be null until hydration.</details>
+    </constraint>
+
+    <constraint>
+      <type>zoom-bounds</type>
+      <description>Zoom range 0.5 to 5.0</description>
+      <details>When restoring zoom, clamp to MIN_SCALE (0.5) and MAX_SCALE (5) from use-zoom.ts constants.</details>
+    </constraint>
+  </development-constraints>
+
+  <dependencies>
+    <external>
+      <name>sessionStorage</name>
+      <type>browser-api</type>
+      <description>Web Storage API for per-session data persistence</description>
+    </external>
+
+    <internal>
+      <name>React hooks</name>
+      <type>react</type>
+      <modules>useState, useEffect, useCallback</modules>
+      <description>Core React hooks for state management and side effects</description>
+    </internal>
+
+    <story>
+      <key>3-3</key>
+      <title>Horizontal Scroll/Pan</title>
+      <status>completed</status>
+      <description>Provides translateX (scrollX) that needs to be preserved</description>
+    </story>
+
+    <story>
+      <key>3-4</key>
+      <title>Zoom Functionality</title>
+      <status>completed</status>
+      <description>Provides scale (zoom) that needs to be preserved</description>
+    </story>
+
+    <story>
+      <key>5-1</key>
+      <title>Modal to Full Page Transition</title>
+      <status>completed</status>
+      <description>Provides "View full page" navigation that triggers position save/restore flow</description>
+    </story>
+  </dependencies>
+
+  <testing-context>
+    <framework>Vitest</framework>
+    <setup-file>tests/setup.tsx</setup-file>
+    <test-location>tests/unit/lib/hooks/use-timeline-position.test.ts</test-location>
+
+    <patterns>
+      <pattern>
+        <name>Module exports testing</name>
+        <reference>tests/unit/lib/hooks/use-zoom.test.ts</reference>
+        <description>Test module exports and pure helper functions due to React 19 + Vitest hook issues</description>
+      </pattern>
+
+      <pattern>
+        <name>sessionStorage mocking</name>
+        <description>Mock sessionStorage.getItem, setItem, removeItem for isolated testing</description>
+        <example><![CDATA[
+beforeEach(() => {
+  sessionStorage.clear()
+})
+
+it('saves position to sessionStorage', () => {
+  // Call savePosition
+  // Check sessionStorage.getItem('timeline-position')
+})
+        ]]></example>
+      </pattern>
+    </patterns>
+
+    <test-scenarios>
+      <scenario>
+        <name>Empty storage returns null position and wasRestored=false</name>
+        <type>unit</type>
+      </scenario>
+      <scenario>
+        <name>savePosition writes to sessionStorage with timestamp</name>
+        <type>unit</type>
+      </scenario>
+      <scenario>
+        <name>Load position from sessionStorage sets wasRestored=true</name>
+        <type>unit</type>
+      </scenario>
+      <scenario>
+        <name>Expired positions (>1 hour) are ignored and removed</name>
+        <type>unit</type>
+      </scenario>
+      <scenario>
+        <name>clearPosition removes from storage and resets state</name>
+        <type>unit</type>
+      </scenario>
+      <scenario>
+        <name>QuotaExceededError is handled gracefully</name>
+        <type>unit</type>
+      </scenario>
+      <scenario>
+        <name>Invalid JSON in storage is handled gracefully</name>
+        <type>unit</type>
+      </scenario>
+    </test-scenarios>
+  </testing-context>
+
+  <implementation-notes>
+    <note>
+      <type>reference-code</type>
+      <description>Full useTimelinePosition hook implementation is provided in the story file (lines 68-153). Use as starting point.</description>
+    </note>
+
+    <note>
+      <type>integration</type>
+      <description>ScatterPlot integration snippet is provided in story file (lines 156-187). Shows useEffect patterns for restore and debounced save.</description>
+    </note>
+
+    <note>
+      <type>mapping</type>
+      <description>ViewState.translateX maps to TimelinePosition.scrollX; ViewState.scale maps to TimelinePosition.zoom. translateY is not persisted.</description>
+    </note>
+
+    <note>
+      <type>back-link</type>
+      <description>Add "Back to Timeline" link to obituary page. Simple Link to "/" with consistent styling. Position restoration happens automatically via hook.</description>
+    </note>
+
+    <note>
+      <type>modal-behavior</type>
+      <description>Modal close does not affect timeline position by design. Position is in sessionStorage, independent of React component state. Just verify this works.</description>
+    </note>
+
+    <note>
+      <type>scroll-restore</type>
+      <description>Use scrollTo({ behavior: 'instant' }) for immediate positioning on restore, not smooth scroll. This prevents visual jumping.</description>
+    </note>
+  </implementation-notes>
+
+  <files-to-create>
+    <file>
+      <path>src/lib/hooks/use-timeline-position.ts</path>
+      <description>useTimelinePosition hook for sessionStorage persistence</description>
+    </file>
+    <file>
+      <path>tests/unit/lib/hooks/use-timeline-position.test.ts</path>
+      <description>Unit tests for useTimelinePosition hook</description>
+    </file>
+  </files-to-create>
+
+  <files-to-modify>
+    <file>
+      <path>src/types/navigation.ts</path>
+      <description>Add TimelinePosition interface and constants</description>
+    </file>
+    <file>
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>Integrate useTimelinePosition hook for save/restore</description>
+    </file>
+    <file>
+      <path>src/app/obituary/[slug]/page.tsx</path>
+      <description>Add "Back to Timeline" link</description>
+    </file>
+  </files-to-modify>
+</story-context>

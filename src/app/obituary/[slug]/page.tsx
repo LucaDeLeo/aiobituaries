@@ -1,4 +1,6 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 import {
   getObituaryBySlug,
   getObituaryWithNav,
@@ -52,6 +54,14 @@ export default async function ObituaryPage({ params }: PageProps) {
     <>
       <JsonLd obituary={obituary} />
       <div className="max-w-3xl mx-auto px-4 py-12">
+        {/* Back to Timeline link */}
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-sm text-[--text-muted] hover:text-[--text-secondary] transition-colors mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Timeline
+        </Link>
         <ObituaryDetail obituary={obituary} />
         <ObituaryContext context={obituary.context} />
         <ObituaryNav previous={obituary.previous} next={obituary.next} />

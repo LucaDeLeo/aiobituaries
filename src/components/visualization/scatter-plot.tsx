@@ -24,6 +24,7 @@ import { TooltipCard } from './tooltip-card'
 import { ObituaryModal } from '@/components/obituary/obituary-modal'
 import { hashToJitter, getCategoryColor } from '@/lib/utils/scatter-helpers'
 import { useZoom, MAX_SCALE } from '@/lib/hooks/use-zoom'
+import { useTimelinePosition } from '@/lib/hooks/use-timeline-position'
 import { SPRINGS, staggerContainer } from '@/lib/utils/animation'
 import { markPerformance, measurePerformance } from '@/lib/utils/performance'
 import {
@@ -152,6 +153,14 @@ export function ScatterPlotInner({
   height: number
   activeCategories: Category[]
 }) {
+  // Timeline position persistence hook
+  const {
+    position: savedPosition,
+    savePosition,
+    wasRestored,
+    isLoaded: positionLoaded,
+  } = useTimelinePosition()
+
   // ViewState for tracking pan and zoom position
   const [viewState, setViewState] = useState<ViewState>({
     scale: 1,
@@ -281,6 +290,45 @@ export function ScatterPlotInner({
   useEffect(() => {
     scaleMotion.set(viewState.scale)
   }, [viewState.scale, scaleMotion])
+
+  // Track whether position has been restored (to prevent re-restoration)
+  const hasRestoredRef = useRef(false)
+
+  // Restore position from sessionStorage on mount (after position is loaded)
+  // This is a legitimate use of setState in useEffect - syncing React state with
+  // sessionStorage (external system). Only runs once when position is loaded.
+  useEffect(() => {
+    if (positionLoaded && wasRestored && savedPosition && !hasRestoredRef.current) {
+      hasRestoredRef.current = true
+      // Restore position immediately (no animation for instant positioning)
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing with external storage
+      setViewState((prev) => ({
+        ...prev,
+        scale: savedPosition.zoom,
+        translateX: savedPosition.scrollX,
+      }))
+      // Also update motion values for immediate visual update
+      translateXMotion.set(savedPosition.scrollX)
+      scaleMotion.set(savedPosition.zoom)
+    }
+  }, [positionLoaded, wasRestored, savedPosition, translateXMotion, scaleMotion])
+
+  // Save position to sessionStorage on scroll/zoom change (debounced by hook)
+  // Skip initial mount and position restoration to avoid saving default values
+  const isInitialMount = useRef(true)
+  useEffect(() => {
+    // Skip on initial mount
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+    // Skip if we're in the middle of restoring position
+    if (!positionLoaded || (wasRestored && !hasRestoredRef.current)) {
+      return
+    }
+    // Save current position
+    savePosition({ scrollX: viewState.translateX, zoom: viewState.scale })
+  }, [viewState.translateX, viewState.scale, savePosition, positionLoaded, wasRestored])
 
   // Handler for cluster click - zoom to cluster time bounds
   const handleClusterClick = useCallback(
