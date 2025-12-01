@@ -26,7 +26,7 @@ export async function CountDisplay() {
   return (
     <div className="text-center">
       <span
-        className="font-mono text-4xl md:text-5xl lg:text-[4rem] text-[--accent-primary]
+        className="font-mono text-3xl md:text-4xl lg:text-5xl text-[--accent-primary]
                    animate-pulse-glow motion-reduce:animate-none"
       >
         {formattedCount}

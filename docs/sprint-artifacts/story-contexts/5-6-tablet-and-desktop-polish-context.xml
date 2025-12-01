@@ -1,0 +1,970 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context: 5-6-tablet-and-desktop-polish
+  Generated: 2025-12-01
+  Epic: Epic 5 - Navigation & Responsive Experience
+
+  This context file assembles all relevant documentation, code interfaces,
+  development constraints, and testing patterns needed for implementing
+  Story 5-6: Tablet and Desktop Polish.
+-->
+<story-context>
+  <metadata>
+    <story-key>5-6-tablet-and-desktop-polish</story-key>
+    <story-file>docs/sprint-artifacts/stories/5-6-tablet-and-desktop-polish.md</story-file>
+    <epic>Epic 5 - Navigation & Responsive Experience</epic>
+    <epic-tech-spec>docs/sprint-artifacts/epic-tech-specs/epic-5-tech-spec.md</epic-tech-spec>
+    <generated-date>2025-12-01</generated-date>
+    <status>ready-for-dev</status>
+  </metadata>
+
+  <story-summary>
+    <description>
+      Polish the tablet (768-1024px) and desktop (1024px+) experiences to ensure the
+      timeline visualization, typography, and interactive controls are optimized for
+      each breakpoint. Implements responsive breakpoint detection hooks (useBreakpoint,
+      useSupportsHover), touch-optimized controls for tablet (44px minimum touch targets),
+      hover-optimized interactions for desktop, responsive typography and spacing, and
+      adaptive CategoryFilter positioning.
+    </description>
+    <user-story>
+      As a tablet or desktop visitor, I want an optimized timeline experience for
+      larger screens with appropriate touch targets and hover states, so that I can
+      explore the obituary archive with controls that match my device's input method
+      and screen size.
+    </user-story>
+    <key-deliverables>
+      <deliverable>useBreakpoint hook for responsive detection (mobile/tablet/desktop)</deliverable>
+      <deliverable>useSupportsHover hook for input method detection (hover vs touch)</deliverable>
+      <deliverable>Breakpoint type and BREAKPOINTS constant in navigation.ts</deliverable>
+      <deliverable>ScatterPlot touch target adaptations (44px tablet, 14px desktop)</deliverable>
+      <deliverable>Tooltip behavior: hover on desktop, tap on tablet</deliverable>
+      <deliverable>Responsive typography scale (mobile: base, tablet: md, desktop: lg)</deliverable>
+      <deliverable>Responsive spacing scale (p-4/6/8, gap-4/6/8)</deliverable>
+      <deliverable>CategoryFilter adaptive positioning per breakpoint</deliverable>
+      <deliverable>CountDisplay responsive font sizing (2rem/2.5rem/3rem)</deliverable>
+      <deliverable>CSS media queries for hover vs touch devices</deliverable>
+    </key-deliverables>
+  </story-summary>
+
+  <epic-context>
+    <epic-overview>
+      Epic 5 completes the navigation flow and ensures the site works beautifully
+      across all device sizes. Story 5-6 is the final polish story that adapts the
+      full horizontal timeline experience for tablet and desktop breakpoints, building
+      on the mobile hybrid view from Story 5-5.
+    </epic-overview>
+    <breakpoint-strategy>
+      <breakpoint name="mobile" range="&lt; 768px">
+        Mobile Hybrid View with density bar + card list (Story 5-5)
+      </breakpoint>
+      <breakpoint name="tablet" range="768-1023px">
+        Full horizontal ScatterPlot with touch-optimized controls
+        - 44px minimum touch targets
+        - Tap-to-toggle tooltips
+        - Touch swipe panning enabled
+        - Sticky bottom filter bar
+        - 2.5rem count display
+      </breakpoint>
+      <breakpoint name="desktop" range="≥ 1024px">
+        Full horizontal ScatterPlot with hover-optimized controls
+        - 14px visual dots with hover effects
+        - Hover tooltips (instant reveal)
+        - Mouse wheel zoom
+        - Fixed bottom-center filter bar
+        - 3rem count display
+      </breakpoint>
+    </breakpoint-strategy>
+    <dependencies>
+      <dependency status="completed">Epic 5 Stories 5.1-5.5 (Modal transition, prev/next nav, position preservation, breadcrumbs, mobile hybrid view)</dependency>
+      <dependency status="completed">Epic 4 (Category filtering with URL state via nuqs)</dependency>
+      <dependency status="completed">Epic 3 (ScatterPlot timeline visualization)</dependency>
+      <dependency status="completed">Epic 1 (Tailwind CSS setup with responsive breakpoints)</dependency>
+    </dependencies>
+  </epic-context>
+
+  <documentation-artifacts>
+    <artifact>
+      <type>Story File</type>
+      <path>docs/sprint-artifacts/stories/5-6-tablet-and-desktop-polish.md</path>
+      <description>
+        Complete story specification with 12 acceptance criteria covering desktop hover
+        tooltips, tablet touch swipe, 44px touch targets, responsive count display,
+        adaptive filter bar positioning, smooth breakpoint transitions, hover states,
+        tap tooltips, typography scaling, spacing scaling, zoom control adaptations,
+        and no horizontal scroll on mobile.
+
+        Includes detailed technical approach with reference implementation for
+        useBreakpoint, useSupportsHover, ScatterPlot touch adaptations, CategoryFilter
+        responsive positioning, typography/spacing scale systems, and CSS media query
+        enhancements.
+
+        22 tasks covering navigation types, breakpoint hooks, touch target adaptations,
+        responsive typography, spacing, media queries, filter positioning, count scaling,
+        zoom controls, testing across breakpoints, and quality checks.
+      </description>
+      <relevance>Primary requirements and implementation guidance</relevance>
+    </artifact>
+
+    <artifact>
+      <type>Epic Tech Spec</type>
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-5-tech-spec.md</path>
+      <description>
+        Epic 5 technical specification covering all navigation and responsive features.
+
+        Story 5.6 section (pages 980-1164) includes:
+        - useBreakpoint hook implementation with window.innerWidth detection
+        - useSupportsHover hook with CSS media query detection
+        - Homepage layout integration with responsive switching
+        - Tablet-specific adaptations (touch swipe, tap tooltips, 44px targets)
+        - CSS implementation for hover vs touch devices
+        - Breakpoint constants: mobile (max: 767), tablet (768-1023), desktop (min: 1024)
+
+        Testing section includes unit tests for hooks, E2E tests for responsive behavior,
+        visual regression testing, and accessibility testing patterns.
+      </description>
+      <relevance>Technical patterns and responsive design strategy</relevance>
+    </artifact>
+
+    <artifact>
+      <type>Architecture</type>
+      <path>docs/architecture.md</path>
+      <description>
+        Project architecture document defining:
+        - Responsive design strategy (FR34-37) with Tailwind breakpoints
+        - Browser support requirements (modern browsers, touch device support)
+        - Accessibility requirements (WCAG 2.1 AA including 44px touch targets)
+        - Performance targets (Core Web Vitals, 60fps animations)
+        - Component patterns (Server Components default, client for interactivity)
+        - CSS containment and touch-action patterns for smooth interactions
+
+        Establishes mobile-first approach and degradation strategy.
+      </description>
+      <relevance>Architectural constraints and performance requirements</relevance>
+    </artifact>
+
+    <artifact>
+      <type>Product Requirements</type>
+      <path>docs/prd.md</path>
+      <description>
+        PRD covering responsive design requirements (FR34-37):
+        - FR34: Site fully functional on mobile (320px+)
+        - FR35: Site fully functional on tablet (768px+)
+        - FR36: Optimal experience on desktop (1024px+)
+        - FR37: Timeline visualization adapts appropriately per breakpoint
+
+        Also defines accessibility requirements (FR38-44) including keyboard
+        navigation, screen reader support, and WCAG 2.1 AA compliance.
+
+        Performance requirements (FR45-47) include smooth timeline rendering,
+        60fps animations, and Core Web Vitals targets.
+      </description>
+      <relevance>Functional requirements this story satisfies</relevance>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code-interfaces>
+    <interface>
+      <name>navigation.ts types</name>
+      <path>src/types/navigation.ts</path>
+      <description>
+        Currently defines TimelinePosition, AdjacentObituary, and ObituaryNavigation.
+
+        NEEDS ADDITIONS for Story 5-6:
+        - Breakpoint type: 'mobile' | 'tablet' | 'desktop'
+        - BREAKPOINTS constant with pixel boundaries:
+          * mobile: { max: 767 }
+          * tablet: { min: 768, max: 1023 }
+          * desktop: { min: 1024 }
+
+        These types will be used by useBreakpoint hook and throughout responsive components.
+      </description>
+      <usage>Import Breakpoint type and BREAKPOINTS constant in new useBreakpoint hook</usage>
+    </interface>
+
+    <interface>
+      <name>ScatterPlot Component</name>
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>
+        Main timeline visualization component (848 lines). Currently handles:
+        - Pan and zoom state management
+        - Touch gestures (single-finger pan, two-finger pinch)
+        - Mouse interactions (click, drag, wheel zoom)
+        - Position persistence via useTimelinePosition hook
+        - Filter state via activeCategories prop
+        - Tooltip display on hover
+        - Modal opening on click
+
+        Key integration points for Story 5-6:
+        - Line 27: Import useBreakpoint and useSupportsHover hooks
+        - Line 166-169: Add breakpoint and hover detection state
+        - Line 718-742: Modify ScatterPoint rendering for adaptive touch targets
+        - Line 359-380: Enhance handlePointMouseEnter for tap behavior on tablet
+        - Add tap-to-toggle tooltip logic for non-hover devices
+        - Adjust visual dot size vs touch target size based on breakpoint
+
+        Current touch-action CSS (line 671): "none" - may need refinement for tablet swipe
+      </description>
+      <usage>Modify to add breakpoint-aware touch targets and tooltip behavior</usage>
+    </interface>
+
+    <interface>
+      <name>CategoryFilter Component</name>
+      <path>src/components/filters/category-filter.tsx</path>
+      <description>
+        Floating filter bar with category pills. Currently:
+        - Fixed positioning: bottom-6 left-1/2 -translate-x-1/2 (line 59)
+        - Min height 44px for pills (line 80)
+        - Backdrop blur and rounded styling
+        - ARIA labels for accessibility
+
+        NEEDS MODIFICATIONS for Story 5-6:
+        - Import useBreakpoint hook
+        - Calculate position class based on breakpoint:
+          * Desktop: fixed bottom-6 left-1/2 -translate-x-1/2 (current)
+          * Tablet/Mobile: sticky bottom-0 (change)
+        - Adjust touch target sizing:
+          * Tablet: min-h-[44px] px-4 py-3
+          * Desktop: min-h-[36px] px-3 py-2
+        - Ensure horizontal scrollability on all breakpoints
+      </description>
+      <usage>Make positioning and touch targets responsive to breakpoint</usage>
+    </interface>
+
+    <interface>
+      <name>CountDisplay Component</name>
+      <path>src/components/obituary/count-display.tsx</path>
+      <description>
+        Server Component displaying obituary count. Currently:
+        - Responsive sizing: text-4xl md:text-5xl lg:text-[4rem] (line 29)
+        - Already has some responsive scaling built-in
+
+        NEEDS REFINEMENT for Story 5-6 requirements:
+        - Mobile: 2rem (text-3xl equivalent)
+        - Tablet: 2.5rem (text-4xl equivalent)
+        - Desktop: 3rem (current lg:text-[4rem] is too large - change to text-5xl/3rem)
+
+        Current classes are close but need adjustment to match story specs exactly.
+      </description>
+      <usage>Adjust responsive font size classes to match story specifications</usage>
+    </interface>
+
+    <interface>
+      <name>MobileTimeline Component</name>
+      <path>src/components/mobile/mobile-timeline.tsx</path>
+      <description>
+        Mobile hybrid view from Story 5-5 combining DensityBar and MobileCardList.
+        Shows density bar + vertical card list for &lt; 768px breakpoint.
+
+        This component is hidden on tablet/desktop via responsive classes in page.tsx.
+        Story 5-6 ensures clean breakpoint switching between mobile and desktop views.
+
+        Reference for mobile breakpoint handling and touch-optimized patterns.
+      </description>
+      <usage>Reference for mobile touch patterns; ensure clean breakpoint transition</usage>
+    </interface>
+
+    <interface>
+      <name>useFilters Hook</name>
+      <path>src/lib/hooks/use-filters.ts</path>
+      <description>
+        URL-synced filter state using nuqs. Returns:
+        - categories: Category[]
+        - setCategories, toggleCategory, clearFilters
+        - hasActiveFilters, isCategoryActive
+
+        Used by CategoryFilter component. No changes needed for Story 5-6,
+        but important to maintain compatibility when modifying CategoryFilter.
+      </description>
+      <usage>Existing filter state management; maintain API compatibility</usage>
+    </interface>
+
+    <interface>
+      <name>useTimelinePosition Hook</name>
+      <path>src/lib/hooks/use-timeline-position.ts</path>
+      <description>
+        Manages timeline position persistence via sessionStorage. Returns:
+        - position: TimelinePosition | null
+        - savePosition, clearPosition
+        - wasRestored, isLoaded
+
+        Used by ScatterPlot. No changes needed for Story 5-6.
+        Reference for hook patterns (useState, useEffect, useCallback structure).
+      </description>
+      <usage>Reference for hook implementation patterns</usage>
+    </interface>
+
+    <interface>
+      <name>globals.css</name>
+      <path>src/app/globals.css</path>
+      <description>
+        Global CSS with Deep Archive theme colors and Tailwind setup.
+        Uses CSS custom properties for theming.
+
+        NEEDS ADDITIONS for Story 5-6:
+        - Tablet-specific media queries (@media (min-width: 768px) and (max-width: 1023px))
+        - Desktop hover media queries (@media (hover: hover) and (pointer: fine))
+        - Touch device media queries (@media (hover: none))
+        - Touch-action utilities for swipe control
+        - Responsive typography classes
+        - CSS containment for performance
+
+        Reference implementation provided in story file (lines 222-288).
+      </description>
+      <usage>Add responsive media queries and touch-specific styles</usage>
+    </interface>
+  </existing-code-interfaces>
+
+  <development-constraints>
+    <constraint>
+      <category>Breakpoint Boundaries</category>
+      <description>
+        MUST use exact pixel boundaries from Epic 5 spec:
+        - Mobile: &lt; 768px (max: 767)
+        - Tablet: 768-1023px (min: 768, max: 1023)
+        - Desktop: ≥ 1024px (min: 1024)
+
+        These match Tailwind's default breakpoints:
+        - sm: 640px (not used in this story)
+        - md: 768px (tablet start)
+        - lg: 1024px (desktop start)
+
+        Use Tailwind responsive prefixes (md:, lg:) for consistency with framework.
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>Touch Target Sizing (WCAG 2.1 AA)</category>
+      <description>
+        Minimum touch target sizes per WCAG 2.1 AA Level AAA (2.5.5):
+        - Tablet: 44x44px minimum for all interactive elements
+        - Desktop: Can use smaller targets (32-36px) as mouse precision is higher
+
+        Implementation approach:
+        - Visual size stays constant (e.g., 14px dots)
+        - Touch/click target extends via invisible padding or larger hitbox
+        - Use separate circles in SVG: one for touch target, one for visual
+
+        Applies to: timeline dots, filter pills, zoom controls, navigation buttons.
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>Hover vs Touch Detection</category>
+      <description>
+        Use CSS media query for accurate input method detection:
+        - (hover: hover) and (pointer: fine) = desktop with mouse/trackpad
+        - (hover: none) = touch-only device (tablet, phone)
+
+        JavaScript detection via window.matchMedia for dynamic behavior.
+        CSS media queries for styling (hover states, focus indicators).
+
+        Tablet devices with both touch and mouse (e.g., Surface) will report
+        based on last input method used. Handle gracefully.
+
+        DO NOT use user-agent detection or screen width as proxy for input method.
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>Responsive Typography Scale</category>
+      <description>
+        Typography must scale proportionally across breakpoints for readability:
+        - Mobile: Base scale (text-base = 1rem, headings text-lg/xl)
+        - Tablet: Medium scale (text-md, headings text-xl/2xl)
+        - Desktop: Large scale (text-lg, headings text-2xl/3xl)
+
+        Special case - CountDisplay:
+        - Mobile: 2rem (text-3xl)
+        - Tablet: 2.5rem (text-4xl)
+        - Desktop: 3rem (text-5xl)
+
+        Use Tailwind responsive classes: text-base md:text-md lg:text-lg
+        Avoid custom font-size values unless absolutely necessary.
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>Responsive Spacing Scale</category>
+      <description>
+        Spacing (padding, margins, gaps) must scale with viewport:
+        - Mobile: Compact (p-4, gap-4, space-y-3)
+        - Tablet: Medium (p-6, gap-6, space-y-4)
+        - Desktop: Spacious (p-8, gap-8, space-y-6)
+
+        Apply to: container padding, section gaps, card spacing, grid gaps.
+        Use Tailwind responsive prefixes: p-4 md:p-6 lg:p-8
+
+        Maintains visual rhythm and breathing room appropriate to screen size.
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>Cumulative Layout Shift (CLS)</category>
+      <description>
+        Target: CLS &lt; 0.1 during viewport resize and breakpoint transitions.
+
+        Prevent layout shift by:
+        - Reserving space for components before they render
+        - Using CSS containment (contain: layout style paint)
+        - Avoiding late-loading dynamic content without placeholders
+        - Smooth transitions instead of instant snaps
+
+        Test by slowly resizing browser window from 375px to 1440px.
+        Use Chrome DevTools Performance tab to measure CLS.
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>Component Pattern (Client vs Server)</category>
+      <description>
+        Server Components are the default. Only use 'use client' when:
+        - Component uses hooks (useState, useEffect, etc.)
+        - Component handles user interactions (onClick, onHover, etc.)
+        - Component uses browser APIs (window, document, matchMedia, etc.)
+
+        For this story:
+        - useBreakpoint: 'use client' (uses window, useEffect, useState)
+        - useSupportsHover: 'use client' (uses matchMedia, useEffect, useState)
+        - ScatterPlot: already 'use client' (modify existing)
+        - CategoryFilter: already 'use client' (modify existing)
+        - CountDisplay: Server Component (only modify Tailwind classes)
+      </description>
+    </constraint>
+
+    <constraint>
+      <category>Animation Performance</category>
+      <description>
+        All transitions and animations must run at 60fps (16.67ms per frame).
+
+        Use CSS transforms (translate, scale) instead of position/size properties.
+        Leverage Motion/Framer's spring physics for smooth, natural motion.
+        Respect prefers-reduced-motion for accessibility.
+
+        Breakpoint transitions should be CSS-based (media queries) for instant
+        response without JavaScript re-renders.
+      </description>
+    </constraint>
+  </development-constraints>
+
+  <dependencies>
+    <dependency>
+      <name>React 19</name>
+      <version>19.x</version>
+      <usage>Hooks (useState, useEffect, useCallback, useMemo) for breakpoint detection</usage>
+    </dependency>
+
+    <dependency>
+      <name>Next.js 16</name>
+      <version>16.x</version>
+      <usage>App Router, Server Components, responsive image optimization</usage>
+    </dependency>
+
+    <dependency>
+      <name>Tailwind CSS</name>
+      <version>4.x</version>
+      <usage>
+        Responsive breakpoint utilities (md:, lg: prefixes).
+        Default breakpoints: md=768px, lg=1024px match story requirements.
+        Typography and spacing scale utilities.
+      </usage>
+    </dependency>
+
+    <dependency>
+      <name>Motion (Framer Motion)</name>
+      <version>12.9.2</version>
+      <usage>
+        Already used in ScatterPlot and CategoryFilter for animations.
+        Respect prefers-reduced-motion via useReducedMotion hook.
+      </usage>
+    </dependency>
+
+    <dependency>
+      <name>nuqs</name>
+      <version>2.x</version>
+      <usage>
+        URL state management for filters (already integrated).
+        No changes needed for Story 5-6, maintain compatibility.
+      </usage>
+    </dependency>
+  </dependencies>
+
+  <testing-context>
+    <test-framework>
+      <name>Vitest</name>
+      <config>tests/unit/</config>
+      <description>
+        Unit testing framework for React components and utility functions.
+        Already configured with React Testing Library and testing setup.
+      </description>
+    </test-framework>
+
+    <test-patterns>
+      <pattern>
+        <name>Hook Testing Pattern</name>
+        <reference>tests/unit/lib/hooks/use-zoom.test.ts</reference>
+        <description>
+          Test hooks by importing module and testing exported functions.
+          Mock window/browser APIs when needed.
+
+          For useBreakpoint:
+          - Mock window.innerWidth for different viewport sizes
+          - Test that correct breakpoint is returned (mobile/tablet/desktop)
+          - Test that resize listener updates breakpoint
+          - Test cleanup on unmount
+
+          For useSupportsHover:
+          - Mock window.matchMedia for hover detection
+          - Test returns true for hover-capable devices
+          - Test returns false for touch-only devices
+          - Test media query change listener
+        </description>
+      </pattern>
+
+      <pattern>
+        <name>Component Responsive Testing</name>
+        <reference>tests/unit/components/filters/category-filter.test.tsx</reference>
+        <description>
+          Test responsive components by:
+          - Mocking useBreakpoint hook to return specific breakpoints
+          - Asserting correct classes are applied per breakpoint
+          - Testing touch target sizes meet 44px minimum on tablet
+          - Testing positioning classes change appropriately
+
+          Use data-testid attributes for reliable element selection.
+          Check computed styles or className includes expected Tailwind classes.
+        </description>
+      </pattern>
+
+      <pattern>
+        <name>Accessibility Testing</name>
+        <description>
+          For touch targets:
+          - Measure element dimensions (min 44x44px on tablet)
+          - Test keyboard navigation works at all breakpoints
+          - Verify focus indicators visible
+          - Check ARIA labels present and accurate
+
+          For hover vs touch:
+          - Test tooltip appears on hover (desktop)
+          - Test tooltip appears on tap (tablet)
+          - Verify hover styles only apply with (hover: hover) media query
+        </description>
+      </pattern>
+
+      <pattern>
+        <name>E2E Responsive Testing</name>
+        <description>
+          Use Playwright to test across viewports:
+          - Mobile: 375x812 (iPhone 13 Pro)
+          - Tablet: 768x1024 (iPad)
+          - Desktop: 1440x900 (standard laptop)
+
+          Test scenarios:
+          - Viewport switching triggers correct layout
+          - Filter bar repositions appropriately
+          - Count display scales correctly
+          - Touch targets are tappable on tablet
+          - Hover tooltips work on desktop
+          - Smooth transitions between breakpoints (no jank)
+          - No horizontal scroll at any width
+        </description>
+      </pattern>
+    </test-patterns>
+
+    <test-coverage-requirements>
+      <requirement>Unit tests for useBreakpoint hook (all breakpoints, resize, cleanup)</requirement>
+      <requirement>Unit tests for useSupportsHover hook (hover detection, change listener)</requirement>
+      <requirement>Component tests for CategoryFilter responsive positioning</requirement>
+      <requirement>Component tests for ScatterPlot touch target sizing</requirement>
+      <requirement>E2E tests for desktop hover tooltips</requirement>
+      <requirement>E2E tests for tablet tap tooltips</requirement>
+      <requirement>E2E tests for breakpoint transitions (resize 375px to 1440px)</requirement>
+      <requirement>E2E tests for touch target accessibility (44px minimum)</requirement>
+      <requirement>Visual regression tests for each breakpoint (optional but recommended)</requirement>
+    </test-coverage-requirements>
+  </testing-context>
+
+  <implementation-notes>
+    <note priority="critical">
+      <title>Breakpoint Hook Implementation</title>
+      <description>
+        Create useBreakpoint hook first as it's a dependency for most other changes.
+
+        Implementation checklist:
+        1. Create src/lib/hooks/use-breakpoint.ts
+        2. Add 'use client' directive
+        3. Import Breakpoint type and BREAKPOINTS from @/types/navigation
+        4. Implement useBreakpoint:
+           - useState for current breakpoint (default 'desktop' for SSR compatibility)
+           - useEffect to detect and update on window resize
+           - Calculate breakpoint from window.innerWidth
+           - Add/remove resize listener
+           - Return current breakpoint
+        5. Implement useSupportsHover in same file:
+           - useState for hover support (default true)
+           - useEffect to detect with matchMedia
+           - Listen for media query changes
+           - Return boolean
+        6. Export both hooks
+
+        Reference: Epic 5 tech spec lines 986-1037 for exact implementation.
+      </description>
+    </note>
+
+    <note priority="critical">
+      <title>Navigation Types Extension</title>
+      <description>
+        Extend src/types/navigation.ts BEFORE implementing useBreakpoint hook.
+
+        Add to existing file:
+        - Export type Breakpoint = 'mobile' | 'tablet' | 'desktop'
+        - Export const BREAKPOINTS = {
+            mobile: { max: 767 },
+            tablet: { min: 768, max: 1023 },
+            desktop: { min: 1024 }
+          } as const
+
+        These types and constants are used by useBreakpoint hook and referenced
+        throughout responsive components.
+      </description>
+    </note>
+
+    <note priority="high">
+      <title>ScatterPlot Touch Target Strategy</title>
+      <description>
+        Two-circle approach for adaptive touch targets:
+
+        1. Invisible touch target circle (larger on tablet):
+           - Tablet: r={44/2} (22px radius = 44px diameter)
+           - Desktop: r={14/2} (7px radius = 14px diameter)
+           - fill="transparent"
+           - Receives onClick, onMouseEnter, onMouseLeave events
+
+        2. Visual dot circle (always same size):
+           - r={14/2} (7px radius = 14px diameter)
+           - fill={categoryColor}
+           - pointerEvents="none" (events pass through to touch target)
+           - Receives hover transforms
+
+        Calculate touch target size based on useBreakpoint() result.
+        Render invisible circle first, visual circle second for proper z-index.
+
+        Reference: Story file lines 186-218 for implementation pattern.
+      </description>
+    </note>
+
+    <note priority="high">
+      <title>Tooltip Behavior: Hover vs Tap</title>
+      <description>
+        Different tooltip triggers based on input method:
+
+        Desktop (supportsHover = true):
+        - onMouseEnter: show tooltip immediately (existing 300ms debounce OK)
+        - onMouseLeave: hide tooltip immediately
+        - onClick: open modal (existing behavior)
+
+        Tablet (supportsHover = false):
+        - onClick: toggle tooltip (tap once = show, tap again = hide)
+        - Store tooltip state separately from modal state
+        - Tap outside or tap different point closes current tooltip
+        - "View full page" button in tooltip navigates to detail page
+
+        Implementation:
+        - Check supportsHover in handlePointMouseEnter/Leave
+        - Conditionally attach handlers based on hover support
+        - Add tap-toggle logic for touch devices
+        - Existing tooltip component (TooltipCard) works for both modes
+      </description>
+    </note>
+
+    <note priority="medium">
+      <title>CategoryFilter Responsive Positioning</title>
+      <description>
+        Change positioning based on breakpoint:
+
+        Current (desktop only):
+        - fixed bottom-6 left-1/2 -translate-x-1/2
+
+        New (responsive):
+        - Desktop (≥1024px): fixed bottom-6 left-1/2 -translate-x-1/2 (unchanged)
+        - Tablet/Mobile (&lt;1024px): sticky bottom-0
+
+        Implementation:
+        - Import useBreakpoint hook
+        - const breakpoint = useBreakpoint()
+        - const positionClass = breakpoint === 'desktop'
+            ? 'fixed bottom-6 left-1/2 -translate-x-1/2'
+            : 'sticky bottom-0'
+        - Apply to container div with cn(positionClass, className)
+
+        Also adjust pill sizing:
+        - Tablet: min-h-[44px] px-4 py-3
+        - Desktop: min-h-[36px] px-3 py-2
+      </description>
+    </note>
+
+    <note priority="medium">
+      <title>CSS Media Queries for Hover/Touch</title>
+      <description>
+        Add to src/app/globals.css:
+
+        1. Tablet-specific (@media (min-width: 768px) and (max-width: 1023px)):
+           - Larger touch targets (.filter-pill min-height: 44px)
+           - Zoom controls min-width/height: 48px
+           - Typography adjustments (count-display font-size: 2.5rem)
+
+        2. Desktop hover (@media (hover: hover) and (pointer: fine)):
+           - Hover transforms (.timeline-dot:hover scale 1.3)
+           - Navigation link hover effects
+           - Tooltip visibility
+
+        3. Touch devices (@media (hover: none)):
+           - Focus states instead of hover
+           - Disable hover-only features
+           - Touch-friendly focus indicators
+
+        4. Touch-action utilities:
+           - .touch-pan-x { touch-action: pan-x pinch-zoom; }
+           - Prevents browser swipe-to-navigate conflicts
+
+        5. CSS containment for performance:
+           - .responsive-container { contain: layout style paint; }
+
+        Reference: Story file lines 222-288 for complete CSS.
+      </description>
+    </note>
+
+    <note priority="low">
+      <title>CountDisplay Font Size Adjustment</title>
+      <description>
+        Current classes: text-4xl md:text-5xl lg:text-[4rem]
+
+        Story requirements:
+        - Mobile: 2rem (text-3xl)
+        - Tablet: 2.5rem (text-4xl)
+        - Desktop: 3rem (text-5xl)
+
+        New classes: text-3xl md:text-4xl lg:text-5xl
+
+        Simple one-line change in src/components/obituary/count-display.tsx line 29.
+        No other changes needed to this Server Component.
+      </description>
+    </note>
+
+    <note priority="low">
+      <title>Zoom Controls Touch Target Sizing</title>
+      <description>
+        IF zoom controls component exists:
+        - Import useBreakpoint hook
+        - Calculate button size based on breakpoint
+        - Tablet: 48px minimum (w-12 h-12)
+        - Desktop: 32px minimum (w-8 h-8)
+
+        Apply sizing classes conditionally:
+        const buttonSize = breakpoint === 'tablet' ? 'w-12 h-12' : 'w-8 h-8'
+
+        Check if ZoomControls component needs modification or if current
+        size is already acceptable. Tablet touch targets are priority.
+      </description>
+    </note>
+  </implementation-notes>
+
+  <testing-requirements>
+    <unit-tests>
+      <test-file>tests/unit/lib/hooks/use-breakpoint.test.ts</test-file>
+      <test-cases>
+        <test>useBreakpoint returns 'mobile' when window.innerWidth &lt; 768</test>
+        <test>useBreakpoint returns 'tablet' when window.innerWidth 768-1023</test>
+        <test>useBreakpoint returns 'desktop' when window.innerWidth ≥ 1024</test>
+        <test>useBreakpoint updates on window resize</test>
+        <test>useBreakpoint cleans up resize listener on unmount</test>
+        <test>useSupportsHover returns true for devices with hover support</test>
+        <test>useSupportsHover returns false for touch-only devices</test>
+        <test>useSupportsHover updates when media query changes</test>
+        <test>useSupportsHover cleans up listener on unmount</test>
+      </test-cases>
+    </unit-tests>
+
+    <e2e-tests>
+      <test-file>tests/e2e/responsive.spec.ts</test-file>
+      <test-cases>
+        <test>Desktop viewport (1440px) shows full timeline with hover tooltips</test>
+        <test>Tablet viewport (768px) shows timeline with tap tooltips</test>
+        <test>Filter bar position adapts per breakpoint (fixed vs sticky)</test>
+        <test>Count display scales per breakpoint (2rem/2.5rem/3rem)</test>
+        <test>Touch targets meet 44px minimum on tablet</test>
+        <test>No horizontal scroll at any width (320px to 1440px)</test>
+        <test>Smooth transitions when resizing between breakpoints</test>
+        <test>Hover effects only active on desktop</test>
+        <test>Tap tooltips only active on tablet/mobile</test>
+      </test-cases>
+    </e2e-tests>
+
+    <manual-testing>
+      <checklist>
+        <item>Desktop (1440px): full timeline, hover tooltips, fixed filter bar center</item>
+        <item>Tablet (768px): full timeline, tap tooltips, sticky filter bar bottom</item>
+        <item>Mobile (375px): density bar + cards (from Story 5-5)</item>
+        <item>Touch targets 44px minimum on tablet (measure with DevTools)</item>
+        <item>Count display: 2rem mobile, 2.5rem tablet, 3rem desktop</item>
+        <item>Typography scales smoothly across breakpoints</item>
+        <item>Spacing scales smoothly across breakpoints</item>
+        <item>No horizontal scroll at any width</item>
+        <item>Resize transitions are smooth (no jank or layout shift)</item>
+        <item>Hover effects only on desktop (not tablet)</item>
+        <item>Tap tooltips only on tablet (not desktop hover)</item>
+        <item>Test on actual devices: iPad, laptop with trackpad</item>
+      </checklist>
+    </manual-testing>
+  </testing-requirements>
+
+  <acceptance-criteria>
+    <criterion id="AC-5.6.1">
+      <description>Desktop shows full timeline with hover</description>
+      <test>Given I am viewing the homepage on desktop (≥ 1024px), when the page renders, then I see the full horizontal ScatterPlot timeline with hover-enabled tooltips</test>
+    </criterion>
+
+    <criterion id="AC-5.6.2">
+      <description>Tablet shows timeline with touch swipe</description>
+      <test>Given I am viewing the homepage on tablet (768-1023px), when the page renders, then I see the horizontal ScatterPlot timeline with touch swipe enabled for panning</test>
+    </criterion>
+
+    <criterion id="AC-5.6.3">
+      <description>Touch targets minimum 44px</description>
+      <test>Given I am viewing the site on a tablet device, when I interact with timeline dots or filter pills, then all interactive elements have minimum 44px touch target areas</test>
+    </criterion>
+
+    <criterion id="AC-5.6.4">
+      <description>Count display adapts per breakpoint</description>
+      <test>Given I am viewing the homepage on different devices, when the page renders, then the count display font size adjusts appropriately (mobile: 2rem, tablet: 2.5rem, desktop: 3rem)</test>
+    </criterion>
+
+    <criterion id="AC-5.6.5">
+      <description>Filter bar position adapts</description>
+      <test>Given I am viewing the homepage on different devices, when the page renders, then the CategoryFilter bar is positioned appropriately (mobile: sticky bottom, tablet: sticky bottom, desktop: fixed bottom center)</test>
+    </criterion>
+
+    <criterion id="AC-5.6.6">
+      <description>Smooth breakpoint transitions</description>
+      <test>Given I resize the browser window across breakpoints, when the viewport size changes, then layout transitions are smooth with no cumulative layout shift (CLS &lt; 0.1)</test>
+    </criterion>
+
+    <criterion id="AC-5.6.7">
+      <description>Hover states on desktop</description>
+      <test>Given I am viewing the site on desktop with mouse input, when I hover over timeline dots or navigation links, then hover effects activate (scale, color, tooltip)</test>
+    </criterion>
+
+    <criterion id="AC-5.6.8">
+      <description>Tap tooltips on tablet</description>
+      <test>Given I am viewing the timeline on tablet, when I tap a timeline dot, then the tooltip appears (instead of requiring hover)</test>
+    </criterion>
+
+    <criterion id="AC-5.6.9">
+      <description>Typography scales responsively</description>
+      <test>Given I am viewing obituary pages on different devices, when the page renders, then typography scales appropriately for readability (mobile: base, tablet: md, desktop: lg)</test>
+    </criterion>
+
+    <criterion id="AC-5.6.10">
+      <description>Spacing scales with viewport</description>
+      <test>Given I am viewing any page on different devices, when the page renders, then spacing (padding, margins, gaps) scales proportionally with viewport size</test>
+    </criterion>
+
+    <criterion id="AC-5.6.11">
+      <description>Timeline zoom controls adapt</description>
+      <test>Given I am viewing the timeline on tablet, when I interact with zoom controls, then controls have larger touch targets (48px) compared to desktop (32px)</test>
+    </criterion>
+
+    <criterion id="AC-5.6.12">
+      <description>No horizontal scroll on mobile</description>
+      <test>Given I am viewing the site on mobile (&lt; 768px), when any page renders, then no content causes unintended horizontal scrolling</test>
+    </criterion>
+  </acceptance-criteria>
+
+  <fr-coverage>
+    <functional-requirement id="FR35">
+      <description>Site is fully functional on tablet devices (768px+)</description>
+      <satisfaction>Tablet viewport shows full timeline with touch-optimized controls (44px targets, tap tooltips, swipe panning)</satisfaction>
+    </functional-requirement>
+
+    <functional-requirement id="FR36">
+      <description>Site provides optimal experience on desktop (1024px+)</description>
+      <satisfaction>Desktop viewport shows full timeline with hover tooltips, larger typography (3rem count), centered filter bar</satisfaction>
+    </functional-requirement>
+
+    <functional-requirement id="FR37">
+      <description>Timeline visualization adapts appropriately per breakpoint</description>
+      <satisfaction>ScatterPlot behavior adapts: desktop (hover), tablet (tap), mobile (density bar from Story 5-5)</satisfaction>
+    </functional-requirement>
+  </fr-coverage>
+
+  <related-stories>
+    <story status="completed">
+      <key>5-5-mobile-hybrid-view</key>
+      <relevance>
+        Implemented mobile breakpoint (&lt; 768px) with density bar + card list.
+        Story 5-6 builds on this by polishing tablet (768-1023px) and desktop (≥1024px).
+        Clean breakpoint transition between mobile and desktop views is critical.
+      </relevance>
+      <learnings>
+        - Responsive classes pattern: hidden md:flex vs md:hidden flex
+        - Touch-friendly interactions (tap-based, not hover)
+        - Empty states for when no content matches filters
+      </learnings>
+    </story>
+
+    <story status="completed">
+      <key>5-4-breadcrumb-navigation</key>
+      <relevance>
+        Breadcrumb component uses responsive spacing and typography.
+        Ensure consistency with Story 5-6 responsive scale system.
+      </relevance>
+    </story>
+
+    <story status="completed">
+      <key>5-3-position-preservation</key>
+      <relevance>
+        useTimelinePosition hook pattern is reference for implementing useBreakpoint hook.
+        Both use useState, useEffect, and cleanup patterns.
+      </relevance>
+    </story>
+
+    <story status="completed">
+      <key>4-2-category-filter-bar</key>
+      <relevance>
+        CategoryFilter component created in Story 4-2, now needs responsive positioning
+        and touch target sizing in Story 5-6.
+      </relevance>
+    </story>
+
+    <story status="completed">
+      <key>3-4-zoom-functionality</key>
+      <relevance>
+        Zoom controls may need touch target sizing adjustments for tablet.
+        useZoom hook already handles pinch zoom for touch devices.
+      </relevance>
+    </story>
+  </related-stories>
+
+  <validation-checklist>
+    <validation-item>useBreakpoint hook created and working</validation-item>
+    <validation-item>useSupportsHover hook created and working</validation-item>
+    <validation-item>Breakpoint type and constants defined in navigation.ts</validation-item>
+    <validation-item>ScatterPlot touch targets adapt per breakpoint (tablet: 44px, desktop: 14px)</validation-item>
+    <validation-item>Tooltip behavior: hover on desktop, tap on tablet</validation-item>
+    <validation-item>Typography scales responsively (mobile: base, tablet: md, desktop: lg)</validation-item>
+    <validation-item>Spacing scales responsively (p-4/6/8, gap-4/6/8)</validation-item>
+    <validation-item>CategoryFilter positioning adapts per breakpoint</validation-item>
+    <validation-item>Count display scales per breakpoint (2rem, 2.5rem, 3rem)</validation-item>
+    <validation-item>CSS media queries for hover vs touch devices</validation-item>
+    <validation-item>Touch-action CSS for swipe control</validation-item>
+    <validation-item>No horizontal scroll on mobile</validation-item>
+    <validation-item>Smooth breakpoint transitions (CLS &lt; 0.1)</validation-item>
+    <validation-item>Unit tests pass for breakpoint hooks</validation-item>
+    <validation-item>E2E tests pass for responsive behavior</validation-item>
+    <validation-item>Accessibility: 44px touch targets on tablet</validation-item>
+    <validation-item>No TypeScript errors from changes</validation-item>
+    <validation-item>Lint passes for all modified files</validation-item>
+    <validation-item>Manual testing confirms optimal experience on tablet and desktop</validation-item>
+  </validation-checklist>
+</story-context>

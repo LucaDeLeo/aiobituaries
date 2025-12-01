@@ -83,9 +83,10 @@ describe('CountDisplay', () => {
     })
 
     const countElement = screen.getByText('300')
-    expect(countElement.className).toContain('text-4xl')
-    expect(countElement.className).toContain('md:text-5xl')
-    expect(countElement.className).toContain('lg:text-[4rem]')
+    // Updated for Story 5-6: mobile 2rem (text-3xl), tablet 2.5rem (text-4xl), desktop 3rem (text-5xl)
+    expect(countElement.className).toContain('text-3xl')
+    expect(countElement.className).toContain('md:text-4xl')
+    expect(countElement.className).toContain('lg:text-5xl')
   })
 
   it('applies gold accent color class', async () => {

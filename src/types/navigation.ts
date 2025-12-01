@@ -42,3 +42,20 @@ export interface ObituaryNavigation {
   /** Next obituary (newer by date) */
   next: AdjacentObituary | null
 }
+
+/**
+ * Breakpoint enum for responsive logic.
+ */
+export type Breakpoint = 'mobile' | 'tablet' | 'desktop'
+
+/**
+ * Breakpoint pixel boundaries.
+ * - Mobile: < 768px
+ * - Tablet: 768-1023px
+ * - Desktop: >= 1024px
+ */
+export const BREAKPOINTS = {
+  mobile: { max: 767 },
+  tablet: { min: 768, max: 1023 },
+  desktop: { min: 1024 },
+} as const
