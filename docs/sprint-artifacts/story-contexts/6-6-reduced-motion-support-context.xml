@@ -1,0 +1,767 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context: 6-6-reduced-motion-support
+  Generated: 2025-12-01
+  Epic: Epic 6 - Accessibility & Quality
+
+  This context document provides comprehensive implementation guidance
+  for reduced motion support across all animated components.
+-->
+<story-context>
+  <metadata>
+    <story-key>6-6-reduced-motion-support</story-key>
+    <epic>Epic 6 - Accessibility & Quality</epic>
+    <title>Reduced Motion Support</title>
+    <status>ready-for-dev</status>
+    <priority>High</priority>
+    <created>2025-12-01</created>
+  </metadata>
+
+  <story-reference>
+    <file>docs/sprint-artifacts/stories/6-6-reduced-motion-support.md</file>
+    <epic-tech-spec>docs/sprint-artifacts/epic-tech-specs/epic-6-tech-spec.md</epic-tech-spec>
+    <architecture>docs/architecture.md</architecture>
+  </story-reference>
+
+  <summary>
+    Implement comprehensive reduced motion support by leveraging Motion's built-in
+    useReducedMotion hook, extending existing animation.ts utilities, adding CSS
+    @media (prefers-reduced-motion: reduce) rules, and creating a MotionSafe wrapper
+    component. The goal is to respect user preferences (WCAG 2.3.3) while maintaining
+    full functionality. All animated components already import useReducedMotion from
+    motion/react - this story extends the implementation to properly handle the preference.
+  </summary>
+
+  <acceptance-criteria>
+    <criterion id="AC-6.6.1" testable="true">
+      Given prefers-reduced-motion: reduce enabled, when homepage loads,
+      then count display pulsing glow animation is disabled (no animate-pulse-glow)
+    </criterion>
+    <criterion id="AC-6.6.2" testable="true">
+      Given reduced motion enabled, when user hovers over timeline dot,
+      then scale animation is instant (no spring transition)
+    </criterion>
+    <criterion id="AC-6.6.3" testable="true">
+      Given reduced motion enabled, when user pans timeline,
+      then no momentum/inertia effect (instant stop on release)
+    </criterion>
+    <criterion id="AC-6.6.4" testable="true">
+      Given reduced motion enabled, when user zooms timeline,
+      then zoom is instant (no spring physics animation)
+    </criterion>
+    <criterion id="AC-6.6.5" testable="true">
+      Given reduced motion enabled, when user opens obituary modal,
+      then modal appears instantly (no slide-in animation)
+    </criterion>
+    <criterion id="AC-6.6.6" testable="true">
+      Given reduced motion enabled, when timeline first loads,
+      then dots appear instantly without staggered fade-in
+    </criterion>
+    <criterion id="AC-6.6.7" testable="true">
+      Given reduced motion enabled, when tooltip appears on dot hover,
+      then tooltip appears instantly (no fade/scale animation)
+    </criterion>
+    <criterion id="AC-6.6.8" testable="true">
+      Given reduced motion enabled, when state changes occur (filter, focus, hover),
+      then immediate visual feedback is still provided (opacity, color changes)
+    </criterion>
+    <criterion id="AC-6.6.9" testable="true">
+      Given reduced motion enabled, when skip link is activated,
+      then scroll is instant (no smooth behavior)
+    </criterion>
+    <criterion id="AC-6.6.10" testable="true">
+      Given reduced motion enabled, when elements receive focus,
+      then focus ring appears immediately (minimal transition acceptable)
+    </criterion>
+    <criterion id="AC-6.6.11" testable="true">
+      Given user changes system motion preference while page is open,
+      when preference changes, then animations update accordingly without page refresh
+    </criterion>
+    <criterion id="AC-6.6.12" testable="true">
+      Given reduced motion enabled, when all features tested,
+      then every feature works identically (modal open/close, filters, navigation)
+    </criterion>
+  </acceptance-criteria>
+
+  <documentation-artifacts>
+    <artifact type="story" relevance="primary">
+      <path>docs/sprint-artifacts/stories/6-6-reduced-motion-support.md</path>
+      <description>
+        Full story specification with user story, acceptance criteria, technical approach,
+        reference implementations, task breakdown, and test scenarios.
+      </description>
+    </artifact>
+    <artifact type="tech-spec" relevance="primary">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-6-tech-spec.md</path>
+      <description>
+        Epic 6 technical specification covering WCAG 2.1 AA requirements, accessibility
+        patterns, and component specifications. Section 4.6 covers reduced motion patterns.
+      </description>
+    </artifact>
+    <artifact type="architecture" relevance="reference">
+      <path>docs/architecture.md</path>
+      <description>
+        Project architecture document. Defines Motion 12.9.x as animation library,
+        animation presets pattern in src/lib/utils/animation.ts, and 60fps performance targets.
+      </description>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code-interfaces>
+    <!-- Animation Utilities - Primary Extension Target -->
+    <interface type="utility" relevance="primary">
+      <path>src/lib/utils/animation.ts</path>
+      <description>
+        Animation presets and utilities. Already has shouldReduceMotion() function,
+        DURATIONS, SPRINGS constants, tooltipAppear, modalSlideIn, staggerContainer,
+        and staggerItem variants. EXTEND with REDUCED_DURATION constant,
+        getReducedMotionVariants() function, REDUCED_SPRINGS constant, and
+        getScrollBehavior() utility.
+      </description>
+      <current-implementation>
+        <![CDATA[
+// Current exports:
+export const DURATIONS = { fast: 0.15, normal: 0.2, slow: 0.3 }
+export const SPRINGS = {
+  hover: { type: 'spring', stiffness: 300, damping: 20 },
+  zoom: { type: 'spring', stiffness: 300, damping: 30 },
+  pan: { type: 'spring', stiffness: 100, damping: 20 },
+}
+export function shouldReduceMotion(): boolean { ... }
+export function getTransition(key): SPRINGS[key] | { duration: 0 } { ... }
+export const tooltipAppear: Variants = { initial, animate, exit }
+export const modalSlideIn: Variants = { initial, animate, exit }
+export const staggerContainer: Variants = { initial, animate }
+export const staggerItem: Variants = { initial, animate }
+        ]]>
+      </current-implementation>
+      <action>MODIFY - Add reduced motion utilities</action>
+    </interface>
+
+    <!-- ScatterPlot - Already Has useReducedMotion -->
+    <interface type="component" relevance="primary">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>
+        Main timeline visualization. Already imports useReducedMotion from motion/react.
+        Uses prefersReducedMotion for staggerContainer conditional and shouldReduceMotion
+        for various decisions. Uses SPRINGS.pan for momentum. scrollToPoint uses animate()
+        with spring physics. MODIFY to use getScrollBehavior() and disable pan momentum
+        when reduced motion preferred.
+      </description>
+      <key-lines>
+        <![CDATA[
+// Line 10-11: Already imports useReducedMotion
+import { useReducedMotion } from 'motion/react'
+
+// Line 191-192: Already checks preference
+const prefersReducedMotion = useReducedMotion()
+const shouldReduceMotion = prefersReducedMotion ?? false
+
+// Line 861-863: Conditional stagger animation
+variants={shouldReduceMotion ? undefined : staggerContainer}
+initial={shouldReduceMotion ? undefined : "initial"}
+animate={shouldReduceMotion ? undefined : "animate"}
+
+// Line 459-468: scrollToPoint uses animate() with spring - needs conditional
+animate(translateXMotion, clampedX, {
+  type: 'spring',
+  stiffness: SPRINGS.pan.stiffness,
+  damping: SPRINGS.pan.damping,
+  ...
+})
+
+// Line 618-626: Pan momentum - needs to be disabled for reduced motion
+const momentumX = velocityRef.current * 10
+animate(translateXMotion, targetX, { type: 'spring', ... })
+        ]]>
+      </key-lines>
+      <action>MODIFY - Disable pan momentum and use instant scrollToPoint when reduced motion</action>
+    </interface>
+
+    <!-- ScatterPoint - Already Has useReducedMotion -->
+    <interface type="component" relevance="primary">
+      <path>src/components/visualization/scatter-point.tsx</path>
+      <description>
+        Individual data point component. Already imports useReducedMotion and implements
+        reduced motion handling for hover animations. Uses shouldReduceMotionProp for
+        testing override. Current implementation already handles stagger and hover
+        animations conditionally. VERIFY existing implementation is complete.
+      </description>
+      <key-lines>
+        <![CDATA[
+// Line 4: Already imports useReducedMotion
+import { motion, useReducedMotion } from 'motion/react'
+
+// Line 67-68: Checks preference with override for testing
+const reducedMotionPref = useReducedMotion()
+const prefersReducedMotion = shouldReduceMotionProp ?? reducedMotionPref
+
+// Line 167-186: Conditional animations already implemented
+variants={prefersReducedMotion ? undefined : staggerItem}
+initial={prefersReducedMotion ? undefined : { opacity: 0, scale: 0 }}
+animate={prefersReducedMotion ? { opacity } : { opacity, scale: isHovered ? 1.3 : 1 }}
+whileHover={prefersReducedMotion ? undefined : { scale: 1.3 }}
+transition={prefersReducedMotion ? { duration: 0 } : { ... }}
+
+// Line 133: Focus ring pulse animation - needs disable
+className={prefersReducedMotion ? '' : 'animate-pulse'}
+        ]]>
+      </key-lines>
+      <action>VERIFY - Implementation already handles most cases; confirm complete</action>
+    </interface>
+
+    <!-- TooltipCard - Already Has useReducedMotion -->
+    <interface type="component" relevance="primary">
+      <path>src/components/visualization/tooltip-card.tsx</path>
+      <description>
+        Hover tooltip component. Already imports useReducedMotion and implements
+        reduced motion handling. Current implementation conditionally applies
+        tooltipAppear variants. VERIFY existing implementation is complete.
+      </description>
+      <key-lines>
+        <![CDATA[
+// Line 3: Already imports useReducedMotion
+import { motion, useReducedMotion } from 'motion/react'
+
+// Line 35: Checks preference
+const shouldReduceMotion = useReducedMotion()
+
+// Line 71-75: Conditional animation
+variants={shouldReduceMotion ? undefined : tooltipAppear}
+initial={shouldReduceMotion ? undefined : "initial"}
+animate={shouldReduceMotion ? undefined : "animate"}
+exit={shouldReduceMotion ? undefined : "exit"}
+transition={shouldReduceMotion ? { duration: 0 } : { duration: DURATIONS.fast }}
+        ]]>
+      </key-lines>
+      <action>VERIFY - Implementation already handles tooltip animation</action>
+    </interface>
+
+    <!-- ObituaryModal - Already Has useReducedMotion -->
+    <interface type="component" relevance="primary">
+      <path>src/components/obituary/obituary-modal.tsx</path>
+      <description>
+        Modal drawer component using Sheet from shadcn/ui. Already imports useReducedMotion
+        and implements reduced motion handling for modalSlideIn animation. VERIFY existing
+        implementation is complete and sheet component respects preference.
+      </description>
+      <key-lines>
+        <![CDATA[
+// Line 4: Already imports useReducedMotion
+import { motion, useReducedMotion } from 'motion/react'
+
+// Line 64: Checks preference
+const shouldReduceMotion = useReducedMotion()
+
+// Line 148-160: Conditional animation
+variants={shouldReduceMotion ? undefined : modalSlideIn}
+initial={shouldReduceMotion ? undefined : "initial"}
+animate={shouldReduceMotion ? undefined : "animate"}
+exit={shouldReduceMotion ? undefined : "exit"}
+transition={shouldReduceMotion ? { duration: 0 } : { duration: DURATIONS.slow, ease: 'easeOut' }}
+        ]]>
+      </key-lines>
+      <action>VERIFY - Implementation already handles modal slide animation</action>
+    </interface>
+
+    <!-- use-zoom Hook - Already Has useReducedMotion -->
+    <interface type="hook" relevance="primary">
+      <path>src/lib/hooks/use-zoom.ts</path>
+      <description>
+        Zoom state management hook. Already imports useReducedMotion and has
+        getZoomTransition() that returns { duration: 0 } when reduced motion preferred.
+        VERIFY spring physics are disabled and zoom is instant.
+      </description>
+      <key-lines>
+        <![CDATA[
+// Line 12: Already imports useReducedMotion
+import { useReducedMotion } from 'motion/react'
+
+// Line 102-103: Checks preference
+const prefersReducedMotion = useReducedMotion()
+const shouldReduceMotion = prefersReducedMotion ?? false
+
+// Line 111-113: Returns instant transition for reduced motion
+const getZoomTransition = useCallback(() => {
+  return shouldReduceMotion ? { duration: 0 } : SPRINGS.zoom
+}, [shouldReduceMotion])
+        ]]>
+      </key-lines>
+      <action>VERIFY - Implementation already handles zoom transitions</action>
+    </interface>
+
+    <!-- SkipLink - Needs Reduced Motion for Scroll -->
+    <interface type="component" relevance="primary">
+      <path>src/components/accessibility/skip-link.tsx</path>
+      <description>
+        Skip link accessibility component. Currently uses behavior: 'smooth' for
+        scrollIntoView. MODIFY to check reduced motion preference and use 'auto'
+        when reduced motion is preferred (AC-6.6.9).
+      </description>
+      <key-lines>
+        <![CDATA[
+// Line 27-28: Currently always uses smooth scroll
+target.focus()
+target.scrollIntoView({ behavior: 'smooth' })
+        ]]>
+      </key-lines>
+      <action>MODIFY - Add reduced motion check and use behavior: 'auto'</action>
+    </interface>
+
+    <!-- globals.css - Has Basic Reduced Motion Block -->
+    <interface type="styles" relevance="primary">
+      <path>src/app/globals.css</path>
+      <description>
+        Global styles with existing reduced motion media query for .animate-pulse-glow.
+        EXTEND the @media block to cover all CSS animations and transitions per story
+        requirements.
+      </description>
+      <key-lines>
+        <![CDATA[
+// Lines 151-155: Existing reduced motion block
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-glow {
+    animation: none;
+  }
+}
+
+// Lines 198-211: Timeline dot hover transitions - need override
+@media (hover: hover) and (pointer: fine) {
+  .timeline-dot:hover { transform: scale(1.3); }
+  .timeline-dot, .nav-link { transition: transform 0.2s ease-out, color 0.2s ease-out; }
+}
+        ]]>
+      </key-lines>
+      <action>MODIFY - Extend @media (prefers-reduced-motion: reduce) block</action>
+    </interface>
+
+    <!-- CountDisplay - Uses CSS Class for Reduced Motion -->
+    <interface type="component" relevance="secondary">
+      <path>src/components/obituary/count-display.tsx</path>
+      <description>
+        Hero count display. Already uses motion-reduce:animate-none Tailwind class
+        alongside animate-pulse-glow. CSS @media block also handles this. VERIFY both
+        mechanisms work correctly.
+      </description>
+      <key-lines>
+        <![CDATA[
+// Line 39-40: Uses Tailwind motion-reduce variant
+className="... animate-pulse-glow motion-reduce:animate-none"
+        ]]>
+      </key-lines>
+      <action>VERIFY - Both CSS and Tailwind handle reduced motion</action>
+    </interface>
+  </existing-code-interfaces>
+
+  <development-constraints>
+    <constraint type="pattern">
+      Use Motion's useReducedMotion hook from 'motion/react' for runtime preference
+      detection. All animated components already import this hook.
+    </constraint>
+    <constraint type="pattern">
+      Use near-zero duration (0.01ms or { duration: 0 }) rather than 0ms for instant
+      transitions to allow state to register before completing.
+    </constraint>
+    <constraint type="pattern">
+      Preserve essential visual feedback (opacity changes, color changes) even when
+      animations are disabled - only remove motion/movement.
+    </constraint>
+    <constraint type="wcag">
+      WCAG 2.3.3 Animation from Interactions - provide mechanism to disable motion
+      animations that are triggered by interaction (AA requirement).
+    </constraint>
+    <constraint type="architecture">
+      Server Components cannot use hooks - shouldReduceMotion() utility exists for
+      server-safe checking but cannot be reactive. Client Components must use
+      useReducedMotion() hook for reactive updates (AC-6.6.11).
+    </constraint>
+    <constraint type="testing">
+      Use shouldReduceMotionProp override pattern (as in ScatterPoint) for testing
+      reduced motion behavior without modifying system preferences.
+    </constraint>
+  </development-constraints>
+
+  <dependencies>
+    <dependency type="npm" required="existing">
+      <package>motion</package>
+      <version>12.9.x</version>
+      <usage>useReducedMotion hook for reactive preference detection</usage>
+    </dependency>
+    <dependency type="internal" required="existing">
+      <path>src/lib/utils/animation.ts</path>
+      <usage>Base animation utilities to extend</usage>
+    </dependency>
+    <dependency type="story" status="completed">
+      <key>6-1</key>
+      <title>Keyboard Navigation Foundation</title>
+      <relevance>SkipLink component with scroll behavior</relevance>
+    </dependency>
+    <dependency type="story" status="completed">
+      <key>3-8</key>
+      <title>Animation Polish</title>
+      <relevance>animation.ts utilities, Motion integration patterns</relevance>
+    </dependency>
+  </dependencies>
+
+  <testing-context>
+    <framework>Vitest</framework>
+    <test-pattern>tests/unit/ mirrors src/ structure</test-pattern>
+    <existing-tests>
+      <test-file>tests/unit/lib/utils/animation.test.ts</test-file>
+      <test-file>tests/unit/components/visualization/scatter-plot.test.tsx</test-file>
+      <test-file>tests/unit/components/visualization/scatter-point.test.tsx</test-file>
+      <test-file>tests/unit/components/visualization/tooltip-card.test.tsx</test-file>
+      <test-file>tests/unit/components/obituary/obituary-modal.test.tsx</test-file>
+      <test-file>tests/unit/lib/hooks/use-zoom.test.ts</test-file>
+      <test-file>tests/unit/components/accessibility/skip-link.test.tsx</test-file>
+    </existing-tests>
+    <new-tests-required>
+      <test-file>tests/unit/lib/utils/animation-reduced-motion.test.ts</test-file>
+      <test-file>tests/unit/components/accessibility/motion-safe.test.tsx</test-file>
+      <test-file>tests/integration/reduced-motion.test.tsx</test-file>
+    </new-tests-required>
+    <mock-pattern>
+      <![CDATA[
+// Mock useReducedMotion hook for testing
+vi.mock('motion/react', async () => {
+  const actual = await vi.importActual('motion/react')
+  return {
+    ...actual,
+    useReducedMotion: vi.fn(() => true), // or false
+  }
+})
+
+// Or use matchMedia mock
+const matchMediaMock = vi.fn()
+matchMediaMock.mockReturnValue({ matches: true }) // reduced motion
+window.matchMedia = matchMediaMock
+      ]]>
+    </mock-pattern>
+  </testing-context>
+
+  <implementation-notes>
+    <note type="pattern" priority="high">
+      Most components already have useReducedMotion imported and partially implemented.
+      This story is primarily about ensuring complete coverage and adding missing utilities.
+    </note>
+    <note type="pattern" priority="high">
+      The MotionSafe wrapper component is OPTIONAL - existing components handle reduced
+      motion inline. Only create if it simplifies future component development.
+    </note>
+    <note type="verification" priority="medium">
+      Test each animated component individually with Chrome DevTools:
+      Rendering > Emulate CSS media feature prefers-reduced-motion: reduce
+    </note>
+    <note type="css" priority="medium">
+      The globals.css @media block needs extension. Current block only handles
+      .animate-pulse-glow. Add comprehensive rules per story technical approach.
+    </note>
+    <note type="behavior" priority="medium">
+      Pan momentum in ScatterPlot (handlePanEnd) uses spring animation for inertia.
+      This should be disabled when reduced motion is preferred - instant stop on release.
+    </note>
+    <note type="behavior" priority="medium">
+      scrollToPoint in ScatterPlot uses animate() with spring physics. When reduced
+      motion is preferred, this should use instant positioning or getScrollBehavior().
+    </note>
+  </implementation-notes>
+
+  <files-to-create>
+    <file action="create">
+      <path>src/components/accessibility/motion-safe.tsx</path>
+      <description>Optional MotionSafe wrapper component for conditional animations</description>
+    </file>
+    <file action="create">
+      <path>tests/unit/lib/utils/animation-reduced-motion.test.ts</path>
+      <description>Unit tests for new animation reduced motion utilities</description>
+    </file>
+    <file action="create">
+      <path>tests/unit/components/accessibility/motion-safe.test.tsx</path>
+      <description>Unit tests for MotionSafe component (if created)</description>
+    </file>
+    <file action="create">
+      <path>tests/integration/reduced-motion.test.tsx</path>
+      <description>Integration tests for reduced motion behavior across components</description>
+    </file>
+  </files-to-create>
+
+  <files-to-modify>
+    <file action="modify">
+      <path>src/lib/utils/animation.ts</path>
+      <description>Add REDUCED_DURATION, getReducedMotionVariants(), REDUCED_SPRINGS, getScrollBehavior()</description>
+    </file>
+    <file action="modify">
+      <path>src/app/globals.css</path>
+      <description>Extend @media (prefers-reduced-motion: reduce) block</description>
+    </file>
+    <file action="modify">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>Disable pan momentum and update scrollToPoint for reduced motion</description>
+    </file>
+    <file action="modify">
+      <path>src/components/accessibility/skip-link.tsx</path>
+      <description>Add reduced motion check for scroll behavior</description>
+    </file>
+    <file action="verify">
+      <path>src/components/visualization/scatter-point.tsx</path>
+      <description>Verify existing reduced motion implementation is complete</description>
+    </file>
+    <file action="verify">
+      <path>src/components/visualization/tooltip-card.tsx</path>
+      <description>Verify existing reduced motion implementation is complete</description>
+    </file>
+    <file action="verify">
+      <path>src/components/obituary/obituary-modal.tsx</path>
+      <description>Verify existing reduced motion implementation is complete</description>
+    </file>
+    <file action="verify">
+      <path>src/lib/hooks/use-zoom.ts</path>
+      <description>Verify existing reduced motion implementation is complete</description>
+    </file>
+    <file action="verify">
+      <path>src/components/obituary/count-display.tsx</path>
+      <description>Verify CSS and Tailwind reduced motion handling works</description>
+    </file>
+  </files-to-modify>
+
+  <reference-implementations>
+    <implementation name="animation-utilities-extension">
+      <description>New utilities to add to animation.ts</description>
+      <code>
+        <![CDATA[
+// src/lib/utils/animation.ts (additions)
+
+/**
+ * Reduced motion duration - near-instant but not zero
+ * (allows state to register before completing)
+ */
+export const REDUCED_DURATION = 0.01
+
+/**
+ * Get animation variants with reduced motion support.
+ * Returns simplified variants when user prefers reduced motion.
+ */
+export function getReducedMotionVariants(
+  fullVariants: Variants,
+  prefersReducedMotion: boolean
+): Variants {
+  if (!prefersReducedMotion) return fullVariants
+
+  // Create reduced motion version - keep final states, remove animations
+  const reduced: Variants = {}
+  for (const key of Object.keys(fullVariants)) {
+    const variant = fullVariants[key]
+    if (typeof variant === 'object' && variant !== null) {
+      // Keep final state values, remove transitions
+      const { transition, ...state } = variant as Record<string, unknown>
+      reduced[key] = {
+        ...state,
+        transition: { duration: REDUCED_DURATION }
+      }
+    } else {
+      reduced[key] = variant
+    }
+  }
+  return reduced
+}
+
+/**
+ * Reduced motion animation presets.
+ * Used when prefers-reduced-motion: reduce is enabled.
+ */
+export const REDUCED_SPRINGS = {
+  hover: { duration: REDUCED_DURATION },
+  zoom: { duration: REDUCED_DURATION },
+  pan: { duration: REDUCED_DURATION },
+} as const
+
+/**
+ * Get scroll behavior respecting reduced motion preference.
+ */
+export function getScrollBehavior(prefersReducedMotion: boolean): ScrollBehavior {
+  return prefersReducedMotion ? 'auto' : 'smooth'
+}
+        ]]>
+      </code>
+    </implementation>
+
+    <implementation name="globals-css-extension">
+      <description>Extended reduced motion CSS rules</description>
+      <code>
+        <![CDATA[
+/* src/app/globals.css - Replace/extend existing @media block */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Existing: Disable pulse glow */
+  .animate-pulse-glow {
+    animation: none;
+  }
+
+  /* Disable all CSS animations and transitions globally */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable Tailwind animation utilities */
+  .animate-pulse,
+  .animate-spin,
+  .animate-bounce,
+  .animate-ping {
+    animation: none !important;
+  }
+
+  /* Timeline-specific overrides */
+  .timeline-dot {
+    transition: none !important;
+  }
+
+  .timeline-dot:hover,
+  .timeline-dot:focus {
+    /* Keep visual state change, just instant */
+    transform: scale(1.3);
+    transition: none !important;
+  }
+
+  /* Modal/Sheet animations */
+  [data-state="open"],
+  [data-state="closed"] {
+    animation: none !important;
+  }
+
+  /* Tooltip transitions */
+  [role="tooltip"],
+  .tooltip-card {
+    transition: none !important;
+  }
+
+  /* Keep essential color/opacity feedback with minimal duration */
+  .transition-opacity,
+  .transition-colors {
+    transition-duration: 0.01ms !important;
+  }
+}
+        ]]>
+      </code>
+    </implementation>
+
+    <implementation name="skip-link-update">
+      <description>SkipLink with reduced motion scroll behavior</description>
+      <code>
+        <![CDATA[
+// src/components/accessibility/skip-link.tsx
+'use client'
+
+import { useReducedMotion } from 'motion/react'
+import { getScrollBehavior } from '@/lib/utils/animation'
+
+export interface SkipLinkProps {
+  targetId?: string
+  children?: React.ReactNode
+}
+
+export function SkipLink({
+  targetId = 'main-content',
+  children = 'Skip to main content',
+}: SkipLinkProps) {
+  const prefersReducedMotion = useReducedMotion() ?? false
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    const target = document.getElementById(targetId)
+    if (target) {
+      target.focus()
+      target.scrollIntoView({ behavior: getScrollBehavior(prefersReducedMotion) })
+    }
+  }
+
+  return (
+    <a
+      href={`#${targetId}`}
+      onClick={handleClick}
+      className="
+        sr-only focus:not-sr-only
+        focus:fixed focus:top-4 focus:left-4 focus:z-[100]
+        focus:px-4 focus:py-2 focus:rounded-lg
+        focus:bg-[--accent-primary] focus:text-[--bg-primary]
+        focus:font-medium focus:outline-none focus:ring-2 focus:ring-offset-2
+        focus:ring-[--accent-primary]
+      "
+    >
+      {children}
+    </a>
+  )
+}
+        ]]>
+      </code>
+    </implementation>
+
+    <implementation name="scatter-plot-pan-update">
+      <description>Disable pan momentum when reduced motion</description>
+      <code>
+        <![CDATA[
+// In scatter-plot.tsx handlePanEnd callback:
+
+const handlePanEnd = useCallback(() => {
+  if (!isPanningRef.current) return
+  isPanningRef.current = false
+  setIsDragging(false)
+
+  // When reduced motion preferred, stop immediately without momentum
+  if (shouldReduceMotion) {
+    const currentX = translateXMotion.get()
+    setViewState((prev) => ({ ...prev, translateX: currentX }))
+    return
+  }
+
+  // Apply momentum (velocity * 10 for noticeable effect)
+  const momentumX = velocityRef.current * 10
+  const targetX = clampTranslateX(translateXMotion.get() + momentumX)
+
+  animate(translateXMotion, targetX, {
+    type: 'spring',
+    stiffness: SPRINGS.pan.stiffness,
+    damping: SPRINGS.pan.damping,
+    onComplete: () => {
+      setViewState((prev) => ({ ...prev, translateX: targetX }))
+    },
+  })
+}, [clampTranslateX, translateXMotion, shouldReduceMotion])
+        ]]>
+      </code>
+    </implementation>
+  </reference-implementations>
+
+  <manual-testing-checklist>
+    <test-environment>
+      <method>macOS</method>
+      <steps>System Preferences > Accessibility > Display > Reduce motion</steps>
+    </test-environment>
+    <test-environment>
+      <method>Windows</method>
+      <steps>Settings > Ease of Access > Display > Show animations in Windows</steps>
+    </test-environment>
+    <test-environment>
+      <method>Chrome DevTools</method>
+      <steps>Rendering > Emulate CSS media feature prefers-reduced-motion</steps>
+    </test-environment>
+    <checklist-items>
+      <item>Homepage count display: no pulse animation</item>
+      <item>Timeline dots entrance: instant appearance (no stagger)</item>
+      <item>Dot hover: instant scale change (no spring)</item>
+      <item>Tooltip: instant appearance (no fade/scale)</item>
+      <item>Modal open: instant display (no slide)</item>
+      <item>Modal close: instant hide (no slide)</item>
+      <item>Skip link activation: instant scroll (no smooth)</item>
+      <item>Zoom in/out: instant scale change (no spring)</item>
+      <item>Pan timeline: no momentum/inertia on release</item>
+      <item>Focus ring on dots: no pulse animation</item>
+      <item>All features still functional after changes</item>
+      <item>Runtime preference change updates without refresh</item>
+    </checklist-items>
+  </manual-testing-checklist>
+</story-context>

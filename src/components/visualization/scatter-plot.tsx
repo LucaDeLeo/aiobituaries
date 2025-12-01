@@ -612,6 +612,13 @@ export function ScatterPlotInner({
     isPanningRef.current = false
     setIsDragging(false)
 
+    // When reduced motion preferred, stop immediately without momentum (AC-6.6.3)
+    if (shouldReduceMotion) {
+      const currentX = translateXMotion.get()
+      setViewState((prev) => ({ ...prev, translateX: currentX }))
+      return
+    }
+
     // Apply momentum (velocity * 10 for noticeable effect)
     const momentumX = velocityRef.current * 10
     const targetX = clampTranslateX(translateXMotion.get() + momentumX)
@@ -624,7 +631,7 @@ export function ScatterPlotInner({
         setViewState((prev) => ({ ...prev, translateX: targetX }))
       },
     })
-  }, [clampTranslateX, translateXMotion])
+  }, [clampTranslateX, translateXMotion, shouldReduceMotion])
 
   // Mouse event handlers
   const handleMouseDown = useCallback(

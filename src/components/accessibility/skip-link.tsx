@@ -1,5 +1,8 @@
 'use client'
 
+import { useReducedMotion } from 'motion/react'
+import { getScrollBehavior } from '@/lib/utils/animation'
+
 export interface SkipLinkProps {
   /** Target element ID to jump to (default: 'main-content') */
   targetId?: string
@@ -10,6 +13,7 @@ export interface SkipLinkProps {
 /**
  * Skip link component for keyboard accessibility.
  * Appears visually on Tab focus and jumps to main content on activation.
+ * Respects prefers-reduced-motion preference for scroll behavior (AC-6.6.9).
  *
  * @example
  * ```tsx
@@ -20,12 +24,15 @@ export function SkipLink({
   targetId = 'main-content',
   children = 'Skip to main content',
 }: SkipLinkProps) {
+  // Check reduced motion preference for scroll behavior
+  const prefersReducedMotion = useReducedMotion() ?? false
+
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
     const target = document.getElementById(targetId)
     if (target) {
       target.focus()
-      target.scrollIntoView({ behavior: 'smooth' })
+      target.scrollIntoView({ behavior: getScrollBehavior(prefersReducedMotion) })
     }
   }
 

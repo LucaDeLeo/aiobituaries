@@ -20,6 +20,12 @@ export const DURATIONS = {
 } as const
 
 /**
+ * Reduced motion duration - near-instant but not zero
+ * (allows state to register before completing)
+ */
+export const REDUCED_DURATION = 0.01
+
+/**
  * Spring animation presets for Motion/Framer
  * Each preset is tuned for specific interaction types:
  * - hover: Quick, responsive feedback
@@ -111,4 +117,57 @@ export const staggerContainer: Variants = {
 export const staggerItem: Variants = {
   initial: { opacity: 0, scale: 0 },
   animate: { opacity: 0.8, scale: 1 },
+}
+
+/**
+ * Reduced motion animation presets.
+ * Used when prefers-reduced-motion: reduce is enabled.
+ */
+export const REDUCED_SPRINGS = {
+  hover: { duration: REDUCED_DURATION },
+  zoom: { duration: REDUCED_DURATION },
+  pan: { duration: REDUCED_DURATION },
+} as const
+
+/**
+ * Get animation variants with reduced motion support.
+ * Returns simplified variants when user prefers reduced motion.
+ *
+ * @param fullVariants - Original animation variants
+ * @param prefersReducedMotion - Whether user prefers reduced motion
+ * @returns Simplified variants for reduced motion or original variants
+ */
+export function getReducedMotionVariants(
+  fullVariants: Variants,
+  prefersReducedMotion: boolean
+): Variants {
+  if (!prefersReducedMotion) return fullVariants
+
+  // Create reduced motion version - keep final states, remove animations
+  const reduced: Variants = {}
+  for (const key of Object.keys(fullVariants)) {
+    const variant = fullVariants[key]
+    if (typeof variant === 'object' && variant !== null) {
+      // Keep final state values, remove transitions
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { transition: _unusedTransition, ...state } = variant as Record<string, unknown>
+      reduced[key] = {
+        ...state,
+        transition: { duration: REDUCED_DURATION },
+      }
+    } else {
+      reduced[key] = variant
+    }
+  }
+  return reduced
+}
+
+/**
+ * Get scroll behavior respecting reduced motion preference.
+ *
+ * @param prefersReducedMotion - Whether user prefers reduced motion
+ * @returns 'auto' for instant scroll or 'smooth' for animated scroll
+ */
+export function getScrollBehavior(prefersReducedMotion: boolean): ScrollBehavior {
+  return prefersReducedMotion ? 'auto' : 'smooth'
 }

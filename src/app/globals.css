@@ -149,8 +149,57 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Existing: Disable pulse glow */
   .animate-pulse-glow {
     animation: none;
+  }
+
+  /* Disable all CSS animations and transitions globally */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable Tailwind animation utilities */
+  .animate-pulse,
+  .animate-spin,
+  .animate-bounce,
+  .animate-ping {
+    animation: none !important;
+  }
+
+  /* Timeline-specific overrides */
+  .timeline-dot {
+    transition: none !important;
+  }
+
+  .timeline-dot:hover,
+  .timeline-dot:focus {
+    /* Keep visual state change, just instant */
+    transform: scale(1.3);
+    transition: none !important;
+  }
+
+  /* Modal/Sheet animations */
+  [data-state="open"],
+  [data-state="closed"] {
+    animation: none !important;
+  }
+
+  /* Tooltip transitions */
+  [role="tooltip"],
+  .tooltip-card {
+    transition: none !important;
+  }
+
+  /* Keep essential color/opacity feedback with minimal duration */
+  .transition-opacity,
+  .transition-colors {
+    transition-duration: 0.01ms !important;
   }
 }
 

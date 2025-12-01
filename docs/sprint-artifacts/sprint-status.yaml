@@ -94,7 +94,7 @@ development_status:
   6-3-screen-reader-support: done
   6-4-alternative-table-view: done
   6-5-color-contrast-and-visual-accessibility: done
-  6-6-reduced-motion-support: backlog
+  6-6-reduced-motion-support: done
   6-7-wcag-compliance-audit: backlog
   6-8-performance-optimization: backlog
   epic-6-retrospective: optional
