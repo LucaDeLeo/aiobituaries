@@ -1,5 +1,4 @@
 import { getObituaryCount } from '@/lib/sanity/queries'
-import { VisuallyHidden } from '@/components/accessibility/visually-hidden'
 
 /**
  * Hero count display component.
@@ -26,21 +25,13 @@ export async function CountDisplay() {
   const formattedCount = new Intl.NumberFormat('en-US').format(count)
 
   return (
-    <div
-      className="text-center"
-      role="status"
-      aria-label={`${count} AI obituaries documented`}
-    >
-      {/* Screen reader friendly full description */}
-      <VisuallyHidden>{count} AI obituaries documented</VisuallyHidden>
-      {/* Visual presentation (aria-hidden to avoid duplicate announcement) */}
-      <span
-        aria-hidden="true"
-        className="font-mono text-3xl md:text-4xl lg:text-5xl text-[--accent-primary]
-                   animate-pulse-glow motion-reduce:animate-none"
-      >
-        {formattedCount}
-      </span>
+    <div className="text-center">
+      {/* Main h1 heading for the homepage - accessible and visible */}
+      <h1 className="font-mono text-3xl md:text-4xl lg:text-5xl text-[--accent-primary] animate-pulse-glow motion-reduce:animate-none">
+        <span className="sr-only">{count} AI</span>
+        <span aria-hidden="true">{formattedCount}</span>
+        <span className="sr-only"> Obituaries</span>
+      </h1>
       <p aria-hidden="true" className="text-[--text-secondary] mt-2 text-lg">
         obituaries
       </p>

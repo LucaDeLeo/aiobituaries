@@ -62,7 +62,7 @@ describe('CountDisplay', () => {
     expect(screen.getByText('obituaries')).toBeInTheDocument()
   })
 
-  it('applies font-mono class to count', async () => {
+  it('applies font-mono class to heading', async () => {
     mockedGetObituaryCount.mockResolvedValue(200)
 
     const Component = await CountDisplay()
@@ -70,8 +70,9 @@ describe('CountDisplay', () => {
       render(Component)
     })
 
-    const countElement = screen.getByText('200')
-    expect(countElement.className).toContain('font-mono')
+    // Classes are on the h1 heading element
+    const heading = screen.getByRole('heading', { level: 1 })
+    expect(heading.className).toContain('font-mono')
   })
 
   it('applies responsive text sizing classes', async () => {
@@ -82,11 +83,12 @@ describe('CountDisplay', () => {
       render(Component)
     })
 
-    const countElement = screen.getByText('300')
+    // Classes are on the h1 heading element
+    const heading = screen.getByRole('heading', { level: 1 })
     // Updated for Story 5-6: mobile 2rem (text-3xl), tablet 2.5rem (text-4xl), desktop 3rem (text-5xl)
-    expect(countElement.className).toContain('text-3xl')
-    expect(countElement.className).toContain('md:text-4xl')
-    expect(countElement.className).toContain('lg:text-5xl')
+    expect(heading.className).toContain('text-3xl')
+    expect(heading.className).toContain('md:text-4xl')
+    expect(heading.className).toContain('lg:text-5xl')
   })
 
   it('applies gold accent color class', async () => {
@@ -97,8 +99,9 @@ describe('CountDisplay', () => {
       render(Component)
     })
 
-    const countElement = screen.getByText('400')
-    expect(countElement.className).toContain('text-[--accent-primary]')
+    // Classes are on the h1 heading element
+    const heading = screen.getByRole('heading', { level: 1 })
+    expect(heading.className).toContain('text-[--accent-primary]')
   })
 
   it('applies animate-pulse-glow class', async () => {
@@ -109,8 +112,9 @@ describe('CountDisplay', () => {
       render(Component)
     })
 
-    const countElement = screen.getByText('500')
-    expect(countElement.className).toContain('animate-pulse-glow')
+    // Classes are on the h1 heading element
+    const heading = screen.getByRole('heading', { level: 1 })
+    expect(heading.className).toContain('animate-pulse-glow')
   })
 
   it('applies motion-reduce class for accessibility', async () => {
@@ -121,8 +125,9 @@ describe('CountDisplay', () => {
       render(Component)
     })
 
-    const countElement = screen.getByText('600')
-    expect(countElement.className).toContain('motion-reduce:animate-none')
+    // Classes are on the h1 heading element
+    const heading = screen.getByRole('heading', { level: 1 })
+    expect(heading.className).toContain('motion-reduce:animate-none')
   })
 
   it('handles zero count', async () => {

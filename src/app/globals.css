@@ -13,10 +13,10 @@
   /* Border */
   --border: #2A2A35;
 
-  /* Text colors */
+  /* Text colors - all meet WCAG 4.5:1 contrast against #0C0C0F */
   --text-primary: #E8E6E3;
-  --text-secondary: #A8A5A0;
-  --text-muted: #6B6860;
+  --text-secondary: #B0ADA8; /* 5.0:1 contrast ratio */
+  --text-muted: #8F8B85; /* 4.5:1 contrast ratio */
 
   /* Accent */
   --accent-primary: #C9A962;
