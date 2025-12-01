@@ -78,8 +78,8 @@ development_status:
   epic-4-retrospective: optional
 
   # Epic 5: Navigation & Responsive Experience
-  epic-5: backlog
-  5-1-modal-to-full-page-transition: backlog
+  epic-5: contexted
+  5-1-modal-to-full-page-transition: done
   5-2-previous-next-navigation: backlog
   5-3-position-preservation: backlog
   5-4-breadcrumb-navigation: backlog

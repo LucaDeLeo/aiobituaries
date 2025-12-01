@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
 import { ObituaryContext } from '@/components/obituary/obituary-context'
 import { CopyButton } from '@/components/ui/copy-button'
 import { getObituaryBySlug } from '@/lib/sanity/queries'
@@ -12,7 +12,6 @@ import { formatDate } from '@/lib/utils/date'
 import { modalSlideIn, DURATIONS } from '@/lib/utils/animation'
 import { CATEGORY_LABELS } from '@/lib/constants/categories'
 import type { Obituary, ObituarySummary, Category } from '@/types/obituary'
-import { useRouter } from 'next/navigation'
 
 /**
  * Badge color mappings with semi-transparent background and solid text.
@@ -45,7 +44,6 @@ export function ObituaryModal({
   const [obituary, setObituary] = useState<Obituary | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
 
   // Check reduced motion preference
   const shouldReduceMotion = useReducedMotion()
@@ -98,13 +96,6 @@ export function ObituaryModal({
     setTimeout(() => {
       triggerRef?.current?.focus()
     }, 250)
-  }
-
-  // Navigate to full page
-  const handleViewFullPage = () => {
-    if (obituary) {
-      router.push(`/obituary/${obituary.slug}`)
-    }
   }
 
   return (
@@ -189,14 +180,18 @@ export function ObituaryModal({
             )}
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-3 pt-4 border-t border-[var(--border)]">
-              <Button onClick={handleViewFullPage} className="flex-1" variant="default">
-                View full page
-              </Button>
+            <div className="flex justify-between items-center pt-4 border-t border-[var(--border)]">
               <CopyButton
                 text={`${window.location.origin}/obituary/${obituary.slug}`}
                 label="Copy link"
               />
+              <Link
+                href={`/obituary/${obituary.slug}`}
+                className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] bg-[--accent-primary] text-[--bg-primary] rounded-lg font-medium hover:opacity-90 transition-opacity"
+              >
+                View full page
+                <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
           </motion.div>
         )}

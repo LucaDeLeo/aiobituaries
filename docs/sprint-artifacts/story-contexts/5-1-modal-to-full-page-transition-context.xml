@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context: 5-1-modal-to-full-page-transition
+  Generated: 2025-11-30
+  Epic: 5 - Navigation & Responsive Experience
+-->
+<story-context xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <metadata>
+    <story-key>5-1-modal-to-full-page-transition</story-key>
+    <story-title>Modal to Full Page Transition</story-title>
+    <epic-id>5</epic-id>
+    <epic-title>Navigation & Responsive Experience</epic-title>
+    <generated-date>2025-11-30</generated-date>
+    <status>ready-for-dev</status>
+  </metadata>
+
+  <story-reference>
+    <file-path>docs/sprint-artifacts/stories/5-1-modal-to-full-page-transition.md</file-path>
+    <summary>
+      Add a "View full page" button to the ObituaryModal that navigates to the individual obituary page.
+      The button should be styled as a primary action (gold background, dark text) with an arrow icon,
+      positioned in the modal footer alongside the existing Copy Link button.
+    </summary>
+    <functional-requirements>
+      <fr id="FR20">Users can navigate from modal view to full obituary page</fr>
+    </functional-requirements>
+  </story-reference>
+
+  <epic-context>
+    <tech-spec-path>docs/sprint-artifacts/epic-tech-specs/epic-5-tech-spec.md</tech-spec-path>
+    <architecture-path>docs/architecture.md</architecture-path>
+    <epic-summary>
+      Epic 5 completes navigation flow and ensures responsive experience across devices.
+      Story 5-1 bridges the modal preview (Epic 3) with full obituary pages (Epic 2).
+    </epic-summary>
+  </epic-context>
+
+  <documentation-artifacts>
+    <artifact type="tech-spec" relevance="high">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-5-tech-spec.md</path>
+      <description>
+        Epic 5 technical specification with component specs, styling guidelines,
+        and acceptance criteria for the modal transition feature.
+      </description>
+      <key-sections>
+        <section>4.1 Story 5.1: Modal to Full Page Transition</section>
+        <section>2.4 Integration Points (navigation flow diagram)</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="architecture" relevance="medium">
+      <path>docs/architecture.md</path>
+      <description>
+        Project architecture document covering Next.js patterns, component structure,
+        and styling conventions used throughout the codebase.
+      </description>
+      <key-sections>
+        <section>Component Pattern (Server vs Client Components)</section>
+        <section>URL State Pattern with nuqs</section>
+        <section>Animation Presets</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="story" relevance="medium">
+      <path>docs/sprint-artifacts/stories/3-7-click-to-modal.md</path>
+      <description>
+        Story 3-7 created the ObituaryModal component. Contains implementation
+        details and patterns that Story 5-1 will extend.
+      </description>
+    </artifact>
+
+    <artifact type="story" relevance="low">
+      <path>docs/sprint-artifacts/stories/2-8-share-copy-link.md</path>
+      <description>
+        Story 2-8 implemented the CopyButton component that will be positioned
+        alongside the new "View full page" button in the modal footer.
+      </description>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code-interfaces>
+    <interface type="component" primary="true">
+      <path>src/components/obituary/obituary-modal.tsx</path>
+      <description>
+        The ObituaryModal component to be modified. Currently uses Sheet component from shadcn/ui,
+        displays obituary details with claim, source, date, categories, and context.
+        Has CopyButton in action section but no "View full page" navigation.
+      </description>
+      <current-structure>
+        <![CDATA[
+Props Interface:
+- selectedSummary: ObituarySummary | null (used to fetch full obituary)
+- isOpen: boolean
+- onClose: () => void
+- triggerRef?: React.RefObject<HTMLElement | null>
+
+Current Action Section (lines 191-200):
+<div className="flex items-center gap-3 pt-4 border-t border-[var(--border)]">
+  <Button onClick={handleViewFullPage} className="flex-1" variant="default">
+    View full page
+  </Button>
+  <CopyButton
+    text={`${window.location.origin}/obituary/${obituary.slug}`}
+    label="Copy link"
+  />
+</div>
+
+Note: A complete "View full page" button implementation already exists with proper layout,
+using router.push(). Story 5-1 should replace this with a Link component and restyle per tech spec.
+        ]]>
+      </current-structure>
+      <modification-required>true</modification-required>
+    </interface>
+
+    <interface type="component" primary="false">
+      <path>src/components/ui/copy-button.tsx</path>
+      <description>
+        Secondary button component for copying link to clipboard.
+        Will remain in modal footer, positioned to the left of the new primary button.
+      </description>
+      <props>
+        <![CDATA[
+interface CopyButtonProps {
+  text?: string        // Custom text to copy (defaults to current URL)
+  label?: string       // Custom button label (defaults to "Copy link")
+  className?: string
+}
+        ]]>
+      </props>
+    </interface>
+
+    <interface type="component" primary="false">
+      <path>src/components/ui/button.tsx</path>
+      <description>
+        shadcn/ui Button component. Currently used for "View full page" button.
+        May be replaced with Link component styled with same visual properties.
+      </description>
+      <variants>
+        <![CDATA[
+- default: gold background (primary), dark text (primary-foreground)
+- outline: border style with transparent background
+- ghost: no border, hover state only
+        ]]>
+      </variants>
+    </interface>
+
+    <interface type="component" primary="false">
+      <path>src/components/ui/sheet.tsx</path>
+      <description>
+        shadcn/ui Sheet component used for the modal drawer.
+        Supports side prop: "right" | "left" | "top" | "bottom"
+        Currently using side="right" for desktop modal.
+      </description>
+    </interface>
+
+    <interface type="page" primary="false">
+      <path>src/app/obituary/[slug]/page.tsx</path>
+      <description>
+        Target page for navigation. Individual obituary detail page at /obituary/[slug].
+        Server component that fetches and displays full obituary content.
+      </description>
+    </interface>
+
+    <interface type="test" primary="false">
+      <path>tests/unit/components/obituary/obituary-modal.test.tsx</path>
+      <description>
+        Existing test file for ObituaryModal. Uses module export testing pattern
+        due to React 19 + Vitest hook resolution issues. Should be extended with
+        tests for new "View full page" Link component.
+      </description>
+    </interface>
+
+    <interface type="utility" primary="false">
+      <path>src/lib/utils/animation.ts</path>
+      <description>
+        Animation utilities including modalSlideIn variants.
+        Contains DURATIONS and SPRINGS presets used for modal animations.
+      </description>
+    </interface>
+  </existing-code-interfaces>
+
+  <development-constraints>
+    <constraint type="pattern" severity="required">
+      <title>Use Next.js Link Component</title>
+      <description>
+        Navigation to obituary page MUST use next/link Link component for
+        client-side navigation and SPA behavior. The current Button with
+        router.push() should be replaced with a styled Link.
+      </description>
+    </constraint>
+
+    <constraint type="styling" severity="required">
+      <title>Primary Button Styling</title>
+      <description>
+        "View full page" button must have gold background (--accent-primary / #C9A962),
+        dark text (--bg-primary) for contrast, and ArrowRight icon from lucide-react.
+      </description>
+      <reference>
+        <![CDATA[
+CSS Classes (from tech spec):
+className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] bg-[--accent-primary] text-[--bg-primary] rounded-lg font-medium hover:opacity-90 transition-opacity"
+        ]]>
+      </reference>
+    </constraint>
+
+    <constraint type="accessibility" severity="required">
+      <title>Touch Target Size</title>
+      <description>
+        Button must have minimum 44px height for touch accessibility (min-h-[44px]).
+      </description>
+    </constraint>
+
+    <constraint type="layout" severity="required">
+      <title>Footer Layout</title>
+      <description>
+        Modal footer should use flex with justify-between: CopyButton on left,
+        View Full Page Link on right. Both buttons visible and accessible.
+      </description>
+    </constraint>
+
+    <constraint type="architecture" severity="recommended">
+      <title>Server vs Client Components</title>
+      <description>
+        ObituaryModal is already a client component ('use client').
+        Link component works in client components without issue.
+      </description>
+    </constraint>
+  </development-constraints>
+
+  <dependencies>
+    <dependency type="npm-package" installed="true">
+      <name>next</name>
+      <version>16.0.5</version>
+      <usage>Link component from 'next/link'</usage>
+    </dependency>
+
+    <dependency type="npm-package" installed="true">
+      <name>lucide-react</name>
+      <version>0.555.0</version>
+      <usage>ArrowRight icon from lucide-react</usage>
+    </dependency>
+
+    <dependency type="internal-component" exists="true">
+      <name>Sheet</name>
+      <path>src/components/ui/sheet.tsx</path>
+      <usage>Modal drawer component (already in use)</usage>
+    </dependency>
+
+    <dependency type="internal-component" exists="true">
+      <name>CopyButton</name>
+      <path>src/components/ui/copy-button.tsx</path>
+      <usage>Existing copy link button (already in use)</usage>
+    </dependency>
+
+    <dependency type="story" status="completed">
+      <name>Story 3-7: Click to Modal</name>
+      <description>Created ObituaryModal component</description>
+    </dependency>
+
+    <dependency type="story" status="completed">
+      <name>Story 2-3: Individual Obituary Pages</name>
+      <description>/obituary/[slug] route exists</description>
+    </dependency>
+
+    <dependency type="story" status="completed">
+      <name>Story 2-8: Share/Copy Link</name>
+      <description>CopyButton component exists</description>
+    </dependency>
+  </dependencies>
+
+  <testing-context>
+    <framework>Vitest with @testing-library/react</framework>
+    <setup-file>tests/setup.tsx</setup-file>
+
+    <testing-patterns>
+      <pattern name="Module Export Testing">
+        <description>
+          Due to React 19 + Vitest hook resolution issues, existing modal tests
+          verify module exports rather than direct component rendering.
+        </description>
+        <example-file>tests/unit/components/obituary/obituary-modal.test.tsx</example-file>
+      </pattern>
+    </testing-patterns>
+
+    <test-ideas>
+      <test type="unit">
+        <description>Link component renders with correct href based on obituary.slug</description>
+      </test>
+      <test type="unit">
+        <description>"View full page" text is visible when modal is open</description>
+      </test>
+      <test type="unit">
+        <description>Link has ArrowRightIcon (or ArrowRight) child element</description>
+      </test>
+      <test type="unit">
+        <description>Button has min-h-[44px] class for touch target accessibility</description>
+      </test>
+      <test type="unit">
+        <description>Both CopyButton and Link render in footer area</description>
+      </test>
+      <test type="integration">
+        <description>Clicking link triggers navigation (mock router if needed)</description>
+      </test>
+    </test-ideas>
+
+    <test-commands>
+      <![CDATA[
+pnpm test:run                           # Run all tests once
+pnpm test tests/unit/components/obituary/obituary-modal.test.tsx  # Single file
+pnpm tsc --noEmit                       # TypeScript check
+pnpm lint                               # ESLint check
+      ]]>
+    </test-commands>
+  </testing-context>
+
+  <implementation-notes>
+    <note priority="high">
+      <title>Current Implementation Already Exists</title>
+      <description>
+        The obituary-modal.tsx already has a complete "View full page" button with proper layout
+        and footer positioning, using Button component with router.push(). The main change is
+        replacing this with a Link component and ensuring styling matches the tech spec requirements.
+      </description>
+    </note>
+
+    <note priority="high">
+      <title>Link vs Button Approach</title>
+      <description>
+        Tech spec recommends Link component for SPA navigation. The current Button
+        with onClick={handleViewFullPage} using router.push() works but is not
+        optimal. Replace with Link styled as a button for better accessibility
+        and SEO.
+      </description>
+    </note>
+
+    <note priority="medium">
+      <title>Icon Import</title>
+      <description>
+        Import ArrowRight (not ArrowRightIcon) from lucide-react - this is the correct
+        export name for the icon component. Current modal already imports icons from lucide-react.
+      </description>
+    </note>
+
+    <note priority="medium">
+      <title>Button Variant Styling Differences</title>
+      <description>
+        The current Button uses variant="default" which provides gold background with dark text.
+        When replacing with Link, apply same color scheme directly via className since Link
+        doesn't support Button variants. Use: bg-[--accent-primary] text-[--bg-primary]
+        for visual parity (hover:opacity-90 transition for consistency with Button hover states).
+      </description>
+    </note>
+
+    <note priority="medium">
+      <title>Footer Layout Change</title>
+      <description>
+        Current layout uses "flex items-center gap-3" with Button as flex-1.
+        Tech spec specifies "flex justify-between items-center" with CopyButton
+        left and Link right. Adjust layout accordingly.
+      </description>
+    </note>
+
+    <note priority="low">
+      <title>Modal Close Behavior</title>
+      <description>
+        Tech spec mentions modal auto-closes via Sheet behavior during navigation.
+        This is handled automatically by Next.js navigation unmounting the component.
+        No manual onClose needed for navigation case.
+      </description>
+    </note>
+  </implementation-notes>
+
+  <reference-implementation>
+    <description>From Epic 5 Tech Spec Section 4.1</description>
+    <code-snippet language="tsx">
+      <![CDATA[
+// Inside the Sheet content, update the footer section:
+<div className="mt-6 flex justify-between items-center border-t border-[--border] pt-4">
+  {/* Copy Link Button (existing) */}
+  <CopyButton text={`${process.env.NEXT_PUBLIC_SITE_URL || ''}/obituary/${obituary.slug}`} />
+
+  {/* View Full Page Button (new) */}
+  <Link
+    href={`/obituary/${obituary.slug}`}
+    className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] bg-[--accent-primary] text-[--bg-primary] rounded-lg font-medium hover:opacity-90 transition-opacity"
+  >
+    View full page
+    <ArrowRight className="w-4 h-4" />
+  </Link>
+</div>
+      ]]>
+    </code-snippet>
+    <notes>
+      ArrowRight icon should be imported from lucide-react (not ArrowRightIcon).
+    </notes>
+  </reference-implementation>
+
+  <files-to-modify>
+    <file action="modify" priority="1">
+      <path>src/components/obituary/obituary-modal.tsx</path>
+      <changes>
+        - Add import: Link from 'next/link'
+        - Add import: ArrowRight from 'lucide-react' (verify icon name)
+        - Replace Button with Link in action section
+        - Update footer layout to justify-between
+        - Apply tech spec styling classes to Link
+        - Remove handleViewFullPage function (no longer needed)
+      </changes>
+    </file>
+    <file action="modify" priority="2">
+      <path>tests/unit/components/obituary/obituary-modal.test.tsx</path>
+      <changes>
+        - Add tests for Link component rendering
+        - Test href construction with obituary.slug
+        - Test button styling classes
+        - Test accessibility (min-h-[44px])
+      </changes>
+    </file>
+  </files-to-modify>
+
+  <acceptance-criteria-checklist>
+    <criterion id="AC-5.1.1" testable="true">
+      "View full page" button visible at bottom of modal
+    </criterion>
+    <criterion id="AC-5.1.2" testable="true">
+      Button styled with gold background (--accent-primary), dark text, arrow-right icon
+    </criterion>
+    <criterion id="AC-5.1.3" testable="true">
+      Clicking button navigates to /obituary/[slug]
+    </criterion>
+    <criterion id="AC-5.1.4" testable="true">
+      Modal closes during navigation
+    </criterion>
+    <criterion id="AC-5.1.5" testable="true">
+      Focus moves to main content on new page
+    </criterion>
+    <criterion id="AC-5.1.6" testable="true">
+      Both "Copy link" and "View full page" buttons visible in footer
+    </criterion>
+    <criterion id="AC-5.1.7" testable="true">
+      Button has minimum 44px touch target height
+    </criterion>
+  </acceptance-criteria-checklist>
+</story-context>
