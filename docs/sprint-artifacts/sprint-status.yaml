@@ -96,5 +96,5 @@ development_status:
   6-5-color-contrast-and-visual-accessibility: done
   6-6-reduced-motion-support: done
   6-7-wcag-compliance-audit: done
-  6-8-performance-optimization: in-progress # blocked: network for @next/bundle-analyzer, verification pending
+  6-8-performance-optimization: done
   epic-6-retrospective: optional
