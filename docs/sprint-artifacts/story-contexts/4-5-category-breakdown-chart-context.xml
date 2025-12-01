@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context: 4-5-category-breakdown-chart
+  Generated: 2025-11-30
+  Epic: Epic 4 - Category System & Filtering
+
+  This context file provides all necessary information for implementing the CategoryChart component.
+  It includes documentation references, existing code interfaces, patterns, and dependencies.
+-->
+<story-context story-key="4-5-category-breakdown-chart" epic="4">
+
+  <!-- Story Reference -->
+  <story-reference>
+    <path>docs/sprint-artifacts/stories/4-5-category-breakdown-chart.md</path>
+    <status>drafted</status>
+    <priority>High</priority>
+    <description>Create a horizontal bar chart showing distribution of obituaries by category with counts, percentages, and click-to-filter functionality.</description>
+  </story-reference>
+
+  <!-- Epic Context -->
+  <epic-context>
+    <epic-id>4</epic-id>
+    <epic-title>Category System and Filtering</epic-title>
+    <tech-spec-path>docs/sprint-artifacts/epic-tech-specs/epic-4-tech-spec.md</tech-spec-path>
+    <architecture-path>docs/architecture.md</architecture-path>
+    <functional-requirements>
+      <fr id="FR16">System displays category breakdown visualization (chart showing distribution)</fr>
+    </functional-requirements>
+  </epic-context>
+
+  <!-- Documentation Artifacts -->
+  <documentation-artifacts>
+
+    <artifact type="story">
+      <path>docs/sprint-artifacts/stories/4-5-category-breakdown-chart.md</path>
+      <description>Story definition with acceptance criteria, technical approach, tasks, and reference implementation</description>
+      <relevance>Primary story specification with complete implementation guidance including reference code</relevance>
+    </artifact>
+
+    <artifact type="tech-spec">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-4-tech-spec.md</path>
+      <description>Epic 4 tech spec with CategoryChart component specification, data models, and testing patterns</description>
+      <relevance>Section 4.7 contains CategoryChart specification, Section 8 has testing strategy</relevance>
+    </artifact>
+
+    <artifact type="architecture">
+      <path>docs/architecture.md</path>
+      <description>Project architecture including component patterns, animation presets, and testing conventions</description>
+      <relevance>Defines Motion animation patterns, component organization, and testing structure</relevance>
+    </artifact>
+
+  </documentation-artifacts>
+
+  <!-- Existing Code Interfaces -->
+  <existing-code>
+
+    <!-- Category Constants and Types -->
+    <code-file>
+      <path>src/lib/constants/categories.ts</path>
+      <description>Category definitions with colors, labels, and utility functions</description>
+      <key-exports>
+        <export name="CATEGORIES">Record of all 4 category definitions with id, label, description, color, colorVar</export>
+        <export name="CATEGORY_ORDER">Ordered array of categories: capability, market, agi, dismissive</export>
+        <export name="getCategory">Function to get CategoryDefinition by ID</export>
+        <export name="getCategoryColor">Returns hex color for category</export>
+        <export name="getCategoryLabel">Returns human-readable label for category</export>
+      </key-exports>
+      <category-colors>
+        <color id="capability">#C9A962 (gold)</color>
+        <color id="market">#7B9E89 (sage)</color>
+        <color id="agi">#9E7B7B (rose)</color>
+        <color id="dismissive">#7B7B9E (lavender)</color>
+      </category-colors>
+    </code-file>
+
+    <code-file>
+      <path>src/types/obituary.ts</path>
+      <description>Core type definitions for Obituary and Category</description>
+      <key-exports>
+        <export name="Category">Type: 'market' | 'capability' | 'agi' | 'dismissive'</export>
+        <export name="ObituarySummary">Interface with _id, slug, claim, source, date, categories[]</export>
+      </key-exports>
+    </code-file>
+
+    <!-- useFilters Hook -->
+    <code-file>
+      <path>src/lib/hooks/use-filters.ts</path>
+      <description>nuqs-based hook for URL-synced filter state</description>
+      <key-exports>
+        <export name="useFilters">Hook returning FilterState: categories, setCategories, toggleCategory, clearFilters, hasActiveFilters, isCategoryActive</export>
+      </key-exports>
+      <usage-pattern>
+        const { categories, toggleCategory } = useFilters()
+        // categories: Category[] - empty means show all
+        // toggleCategory: (category: Category) => void - toggle on/off
+      </usage-pattern>
+    </code-file>
+
+    <!-- HomeClient Integration Point -->
+    <code-file>
+      <path>src/app/home-client.tsx</path>
+      <description>Client wrapper for homepage that manages filter state</description>
+      <integration-point>CategoryChart will be added here, below the ScatterPlot section</integration-point>
+      <current-implementation>
+<![CDATA[
+'use client'
+
+import { CategoryFilter } from '@/components/filters/category-filter'
+import { ScatterPlot } from '@/components/visualization/scatter-plot'
+import type { ObituarySummary } from '@/types/obituary'
+import { useFilters } from '@/lib/hooks/use-filters'
+
+export interface HomeClientProps {
+  obituaries: ObituarySummary[]
+}
+
+export function HomeClient({ obituaries }: HomeClientProps) {
+  const { categories, toggleCategory, clearFilters } = useFilters()
+
+  return (
+    <>
+      <section className="container mx-auto px-4 py-8">
+        <ScatterPlot data={obituaries} activeCategories={categories} />
+      </section>
+      <CategoryFilter
+        activeCategories={categories}
+        onToggle={toggleCategory}
+        onShowAll={clearFilters}
+      />
+    </>
+  )
+}
+]]>
+      </current-implementation>
+      <obituaries-prop-format>
+        ObituarySummary[] where each item has:
+        - _id: string (Sanity document ID)
+        - slug: string (URL-safe identifier)
+        - claim: string (skepticism claim text)
+        - source: string (publication/person who made claim)
+        - date: string (ISO 8601 format)
+        - categories: Category[] (array of one or more: 'market' | 'capability' | 'agi' | 'dismissive')
+      </obituaries-prop-format>
+      <hook-usage>
+        const { categories, toggleCategory, clearFilters } = useFilters()
+        - categories: Category[] (empty array means show all)
+        - toggleCategory: (category: Category) => void
+        - clearFilters: () => void
+      </hook-usage>
+      <modification-needed>Add CategoryChart section below timeline, pass obituaries, activeCategories={categories}, onCategoryClick={toggleCategory}</modification-needed>
+    </code-file>
+
+    <!-- Existing Visualization Components (patterns to follow) -->
+    <code-file>
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>Main timeline visualization component</description>
+      <pattern-reference>Shows pattern for receiving activeCategories prop and using isPointFiltered function</pattern-reference>
+    </code-file>
+
+    <code-file>
+      <path>src/components/filters/category-filter.tsx</path>
+      <description>Floating filter bar with category pills</description>
+      <pattern-reference>Shows pattern for using CATEGORY_ORDER, getCategory, and handling activeCategories</pattern-reference>
+    </code-file>
+
+    <code-file>
+      <path>src/components/filters/category-pill.tsx</path>
+      <description>Individual category toggle pill</description>
+      <pattern-reference>Shows active/inactive styling pattern with category colors and opacity</pattern-reference>
+    </code-file>
+
+    <!-- Utility Functions -->
+    <code-file>
+      <path>src/lib/utils.ts</path>
+      <description>Class name utility function</description>
+      <key-exports>
+        <export name="cn">Tailwind class name merge utility: cn(...inputs: ClassValue[])</export>
+      </key-exports>
+    </code-file>
+
+    <code-file>
+      <path>src/lib/utils/animation.ts</path>
+      <description>Animation presets and utilities</description>
+      <key-exports>
+        <export name="DURATIONS">Standard duration presets: fast (0.15s), normal (0.2s), slow (0.3s)</export>
+        <export name="SPRINGS">Spring presets: hover, zoom, pan</export>
+        <export name="staggerContainer">Variants for staggered child animations</export>
+      </key-exports>
+    </code-file>
+
+  </existing-code>
+
+  <!-- Development Constraints -->
+  <development-constraints>
+
+    <constraint type="component-structure">
+      <description>Create as client component in visualization directory</description>
+      <path>src/components/visualization/category-chart.tsx</path>
+      <directive>Use 'use client' directive for interactivity and Motion animations</directive>
+    </constraint>
+
+    <constraint type="animation-library">
+      <description>Use Motion (Framer) for animations</description>
+      <import>import { motion } from 'motion/react'</import>
+      <pattern>Stagger bar animations by index with 0.1s delay per bar, 0.5s duration for bar growth</pattern>
+    </constraint>
+
+    <constraint type="styling">
+      <description>Use Tailwind CSS with CSS variables for theme colors</description>
+      <variables>
+        <var name="--text-primary">Primary text color</var>
+        <var name="--text-secondary">Secondary text color (labels in normal state)</var>
+        <var name="--text-muted">Muted text color (count/percentage)</var>
+        <var name="--bg-tertiary">Background for bar track</var>
+      </variables>
+    </constraint>
+
+    <constraint type="active-state-pattern">
+      <description>Active/inactive state logic from Story 4-4</description>
+      <formula>isActive = activeCategories.length === 0 || activeCategories.includes(categoryId)</formula>
+      <opacity>Active: 100% (opacity-100), Inactive: 40% (opacity-40)</opacity>
+    </constraint>
+
+    <constraint type="data-testid">
+      <description>Required test ID attributes</description>
+      <testids>
+        <testid name="category-chart">Container element</testid>
+        <testid name="category-bar-{categoryId}">Each bar button (e.g., category-bar-market)</testid>
+      </testids>
+    </constraint>
+
+    <constraint type="props-interface">
+      <description>Component props interface</description>
+      <interface>
+        interface CategoryChartProps {
+          obituaries: { categories: Category[] }[]
+          activeCategories?: Category[]
+          onCategoryClick?: (category: Category) => void
+        }
+      </interface>
+    </constraint>
+
+    <constraint type="sorting">
+      <description>Bars must be sorted by count descending (highest first)</description>
+      <implementation>Sort CATEGORY_ORDER by counts[b] - counts[a] before rendering</implementation>
+    </constraint>
+
+  </development-constraints>
+
+  <!-- Dependencies -->
+  <dependencies>
+
+    <dependency type="completed-story">
+      <name>Story 4-1 (Category Data Model)</name>
+      <provides>CATEGORY_ORDER, getCategory, category colors and labels</provides>
+    </dependency>
+
+    <dependency type="completed-story">
+      <name>Story 4-2 (Category Filter Bar)</name>
+      <provides>CategoryFilter, CategoryPill patterns for styling and interaction</provides>
+    </dependency>
+
+    <dependency type="completed-story">
+      <name>Story 4-3 (URL State with nuqs)</name>
+      <provides>useFilters hook with toggleCategory function</provides>
+    </dependency>
+
+    <dependency type="completed-story">
+      <name>Story 4-4 (Filter Effect on Timeline)</name>
+      <provides>activeCategories prop pattern, isActive state logic</provides>
+    </dependency>
+
+    <dependency type="package">
+      <name>motion</name>
+      <import>import { motion } from 'motion/react'</import>
+      <usage>Bar width animation, stagger effect, opacity transitions</usage>
+    </dependency>
+
+    <dependency type="package">
+      <name>react</name>
+      <import>import { useMemo } from 'react'</import>
+      <usage>Memoize counts and sortedCategories computations</usage>
+    </dependency>
+
+  </dependencies>
+
+  <!-- Testing Context -->
+  <testing-context>
+
+    <test-file-location>tests/unit/components/visualization/category-chart.test.tsx</test-file-location>
+
+    <testing-framework>Vitest with @testing-library/react</testing-framework>
+
+    <test-scenarios>
+      <scenario id="1">Renders container with data-testid="category-chart"</scenario>
+      <scenario id="2">Renders 4 category bars with data-testid="category-bar-{id}"</scenario>
+      <scenario id="3">Correctly counts single-category obituaries</scenario>
+      <scenario id="4">Correctly counts multi-category obituaries</scenario>
+      <scenario id="5">Handles empty obituaries array (0 counts)</scenario>
+      <scenario id="6">Calculates correct percentages</scenario>
+      <scenario id="7">Bars sorted by count descending (highest first)</scenario>
+      <scenario id="8">Calls onCategoryClick with correct category ID on click</scenario>
+      <scenario id="9">Does not error if onCategoryClick not provided</scenario>
+      <scenario id="10">All bars full opacity when activeCategories is empty</scenario>
+      <scenario id="11">Only matching bars full opacity when filtered</scenario>
+      <scenario id="12">Non-matching bars have opacity-40 class when filtered</scenario>
+    </test-scenarios>
+
+    <mock-data>
+      <single-category-example>
+        const mockObituaries = [
+          { categories: ['market'] },
+          { categories: ['market'] },
+          { categories: ['capability'] },
+          { categories: ['agi'] },
+          { categories: ['dismissive'] },
+        ]
+        // market: 2 (40%), capability: 1 (20%), agi: 1 (20%), dismissive: 1 (20%)
+      </single-category-example>
+      <multi-category-example>
+        const mockObituariesWithMultiple = [
+          { categories: ['market', 'capability'] },
+          { categories: ['market'] },
+          { categories: ['capability', 'agi'] },
+          { categories: ['agi'] },
+          { categories: ['dismissive'] },
+        ]
+        // market: 2 (40%), capability: 2 (40%), agi: 2 (40%), dismissive: 1 (20%)
+        // Note: Counts can exceed total obituaries when items have multiple categories
+      </multi-category-example>
+    </mock-data>
+
+  </testing-context>
+
+  <!-- Implementation Notes -->
+  <implementation-notes>
+
+    <note priority="high">
+      <title>Category Counting Logic</title>
+      <detail>
+        Obituaries can have multiple categories. Count each category separately:
+        - Iterate through obituaries
+        - For each obituary, iterate through its categories array
+        - Increment count for each category found
+        - Total for percentage calculation is obituaries.length (not sum of counts)
+      </detail>
+      <code-excerpt>
+<![CDATA[
+const counts: Record<Category, number> = {
+  capability: 0,
+  market: 0,
+  agi: 0,
+  dismissive: 0,
+}
+
+obituaries.forEach(obit => {
+  obit.categories.forEach(cat => {
+    counts[cat]++
+  })
+})
+
+const percentage = (count: number) =>
+  Math.round((count / obituaries.length) * 100)
+]]>
+      </code-excerpt>
+    </note>
+
+    <note priority="high">
+      <title>Bar Width Calculation</title>
+      <detail>
+        barWidth = (count / maxCount) * 100
+        Use maxCount (not total) as denominator so highest bar is always 100% width.
+        This ensures visual comparison is clear.
+      </detail>
+      <code-excerpt>
+<![CDATA[
+const maxCount = Math.max(...Object.values(counts))
+const barWidth = (count: number) =>
+  maxCount === 0 ? 0 : (count / maxCount) * 100
+]]>
+      </code-excerpt>
+    </note>
+
+    <note priority="medium">
+      <title>Animation Timing</title>
+      <detail>
+        - Container: initial={{ opacity: 0, x: -20 }}, animate={{ opacity: isActive ? 1 : 0.4, x: 0 }}
+        - Bar growth: initial={{ width: 0 }}, animate={{ width: `${barWidth}%` }}
+        - Duration: 0.5s for bar growth
+        - Stagger: delay: index * 0.1 (100ms between each bar)
+      </detail>
+    </note>
+
+    <note priority="medium">
+      <title>Hover State</title>
+      <detail>
+        Use 'group' class on button, 'group-hover:text-[--text-primary]' on label span.
+        Add 'transition-colors' for smooth color change.
+      </detail>
+    </note>
+
+    <note priority="low">
+      <title>HomeClient Integration</title>
+      <detail>
+        Add section after timeline section with:
+        - max-w-md mx-auto px-4 py-8 container styling
+        - h2 heading "Category Breakdown"
+        - CategoryChart component with obituaries, categories, toggleCategory props
+      </detail>
+    </note>
+
+  </implementation-notes>
+
+  <!-- Reference Implementation -->
+  <reference-implementation>
+    <description>Complete reference implementation from story file</description>
+    <code-location>docs/sprint-artifacts/stories/4-5-category-breakdown-chart.md#reference-implementation</code-location>
+    <note>The story file contains a complete reference implementation that should be followed closely</note>
+  </reference-implementation>
+
+  <!-- Files to Create/Modify -->
+  <file-changes>
+    <create>
+      <file>src/components/visualization/category-chart.tsx</file>
+      <description>Category breakdown chart component</description>
+    </create>
+    <create>
+      <file>tests/unit/components/visualization/category-chart.test.tsx</file>
+      <description>Unit tests for chart component</description>
+    </create>
+    <modify>
+      <file>src/app/home-client.tsx</file>
+      <description>Add CategoryChart section below timeline</description>
+    </modify>
+    <modify>
+      <file>docs/sprint-artifacts/sprint-status.yaml</file>
+      <description>Update 4-5 status from drafted to review when complete</description>
+    </modify>
+  </file-changes>
+
+  <!-- Acceptance Criteria Quick Reference -->
+  <acceptance-criteria>
+    <criterion id="AC-4.5.1">Chart displays horizontal bar chart showing all 4 categories</criterion>
+    <criterion id="AC-4.5.2">Each bar uses its category color (#C9A962, #7B9E89, #9E7B7B, #7B7B9E)</criterion>
+    <criterion id="AC-4.5.3">Count and percentage shown for each (e.g., "48 (31%)")</criterion>
+    <criterion id="AC-4.5.4">Bars sorted by count descending (highest first)</criterion>
+    <criterion id="AC-4.5.5">Non-filtered categories appear dimmed (40% opacity) when filters active</criterion>
+    <criterion id="AC-4.5.6">Click toggles filter via onCategoryClick prop</criterion>
+    <criterion id="AC-4.5.7">Hover shows feedback (text color change)</criterion>
+    <criterion id="AC-4.5.8">Bars animate in on load (grow from 0 width)</criterion>
+  </acceptance-criteria>
+
+</story-context>
