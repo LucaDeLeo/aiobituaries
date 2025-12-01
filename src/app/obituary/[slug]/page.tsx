@@ -1,7 +1,12 @@
 import { notFound } from 'next/navigation'
-import { getObituaryBySlug, getAllObituarySlugs } from '@/lib/sanity/queries'
+import {
+  getObituaryBySlug,
+  getObituaryWithNav,
+  getAllObituarySlugs,
+} from '@/lib/sanity/queries'
 import { ObituaryDetail } from '@/components/obituary/obituary-detail'
 import { ObituaryContext } from '@/components/obituary/obituary-context'
+import { ObituaryNav } from '@/components/obituary/obituary-nav'
 import { JsonLd } from '@/components/seo/json-ld'
 import { generateObituaryMetadata } from '@/lib/utils/seo'
 
@@ -32,11 +37,12 @@ export async function generateStaticParams() {
 /**
  * Individual obituary detail page.
  * Displays full obituary content including claim, source, date, and categories.
+ * Includes previous/next navigation at the bottom for sequential browsing.
  * Shows 404 page if slug does not exist.
  */
 export default async function ObituaryPage({ params }: PageProps) {
   const { slug } = await params
-  const obituary = await getObituaryBySlug(slug)
+  const obituary = await getObituaryWithNav(slug)
 
   if (!obituary) {
     notFound()
@@ -48,6 +54,7 @@ export default async function ObituaryPage({ params }: PageProps) {
       <div className="max-w-3xl mx-auto px-4 py-12">
         <ObituaryDetail obituary={obituary} />
         <ObituaryContext context={obituary.context} />
+        <ObituaryNav previous={obituary.previous} next={obituary.next} />
       </div>
     </>
   )

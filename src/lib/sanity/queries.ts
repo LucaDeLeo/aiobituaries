@@ -1,5 +1,6 @@
 import { client } from './client'
 import type { Obituary, ObituarySummary } from '@/types/obituary'
+import type { AdjacentObituary } from '@/types/navigation'
 import { mockObituaries } from '@/data/mock-obituaries'
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
@@ -133,5 +134,137 @@ export async function getObituaryCount(): Promise<number> {
     })
   } catch {
     return mockObituaries.length
+  }
+}
+
+/**
+ * Obituary with navigation data for prev/next links.
+ * Extends Obituary with adjacent obituary references.
+ */
+export interface ObituaryWithNav extends Obituary {
+  previous: AdjacentObituary | null
+  next: AdjacentObituary | null
+}
+
+/**
+ * GROQ query for obituary with previous/next navigation data.
+ * Previous = chronologically older (date < current)
+ * Next = chronologically newer (date > current)
+ */
+export const obituaryWithNavQuery = `
+*[_type == "obituary" && slug.current == $slug][0] {
+  _id,
+  "slug": slug.current,
+  claim,
+  source,
+  sourceUrl,
+  date,
+  categories,
+  context,
+
+  // Previous obituary (older)
+  "previous": *[_type == "obituary" && date < ^.date] | order(date desc) [0] {
+    "slug": slug.current,
+    "claimPreview": claim[0...80] + "...",
+    source,
+    date
+  },
+
+  // Next obituary (newer)
+  "next": *[_type == "obituary" && date > ^.date] | order(date asc) [0] {
+    "slug": slug.current,
+    "claimPreview": claim[0...80] + "...",
+    source,
+    date
+  }
+}
+`
+
+/**
+ * Fetch a single obituary by slug with previous/next navigation data.
+ * Returns null if not found.
+ * Uses ISR with 'obituaries' tag for cache revalidation.
+ */
+export async function getObituaryWithNav(
+  slug: string
+): Promise<ObituaryWithNav | null> {
+  if (shouldUseMock) {
+    // Find the current obituary in mock data
+    const sortedMocks = [...mockObituaries].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    )
+    const currentIndex = sortedMocks.findIndex((entry) => entry.slug === slug)
+
+    if (currentIndex === -1) {
+      return null
+    }
+
+    const current = sortedMocks[currentIndex]
+    const prevObituary = currentIndex > 0 ? sortedMocks[currentIndex - 1] : null
+    const nextObituary =
+      currentIndex < sortedMocks.length - 1
+        ? sortedMocks[currentIndex + 1]
+        : null
+
+    return {
+      ...summaryToObituary(current),
+      previous: prevObituary
+        ? {
+            slug: prevObituary.slug,
+            claimPreview: prevObituary.claim.slice(0, 80) + '...',
+            source: prevObituary.source,
+            date: prevObituary.date,
+          }
+        : null,
+      next: nextObituary
+        ? {
+            slug: nextObituary.slug,
+            claimPreview: nextObituary.claim.slice(0, 80) + '...',
+            source: nextObituary.source,
+            date: nextObituary.date,
+          }
+        : null,
+    }
+  }
+
+  try {
+    return await client.fetch(obituaryWithNavQuery, { slug }, { next: { tags: ['obituaries'] } })
+  } catch {
+    // Fallback to mock data if CMS is unavailable
+    const sortedMocks = [...mockObituaries].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    )
+    const currentIndex = sortedMocks.findIndex((entry) => entry.slug === slug)
+
+    if (currentIndex === -1) {
+      return null
+    }
+
+    const current = sortedMocks[currentIndex]
+    const prevObituary = currentIndex > 0 ? sortedMocks[currentIndex - 1] : null
+    const nextObituary =
+      currentIndex < sortedMocks.length - 1
+        ? sortedMocks[currentIndex + 1]
+        : null
+
+    return {
+      ...summaryToObituary(current),
+      previous: prevObituary
+        ? {
+            slug: prevObituary.slug,
+            claimPreview: prevObituary.claim.slice(0, 80) + '...',
+            source: prevObituary.source,
+            date: prevObituary.date,
+          }
+        : null,
+      next: nextObituary
+        ? {
+            slug: nextObituary.slug,
+            claimPreview: nextObituary.claim.slice(0, 80) + '...',
+            source: nextObituary.source,
+            date: nextObituary.date,
+          }
+        : null,
+    }
   }
 }

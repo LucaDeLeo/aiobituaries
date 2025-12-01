@@ -1,0 +1,880 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context: 5-2-previous-next-navigation
+  Generated: 2025-11-30
+  Epic: 5 - Navigation & Responsive Experience
+-->
+<story-context xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <metadata>
+    <story-key>5-2-previous-next-navigation</story-key>
+    <story-title>Previous/Next Navigation</story-title>
+    <epic-id>5</epic-id>
+    <epic-title>Navigation & Responsive Experience</epic-title>
+    <generated-date>2025-11-30</generated-date>
+    <status>ready-for-dev</status>
+  </metadata>
+
+  <story-reference>
+    <file-path>docs/sprint-artifacts/stories/5-2-previous-next-navigation.md</file-path>
+    <summary>
+      Create an ObituaryNav component that displays Previous/Next navigation links at the bottom
+      of obituary detail pages. The component receives adjacent obituary data from a modified
+      Sanity GROQ query and provides both click and keyboard navigation. Navigation order is
+      chronological by date, with Previous linking to older and Next linking to newer obituaries.
+    </summary>
+    <functional-requirements>
+      <fr id="FR21">Users can navigate between obituaries (previous/next)</fr>
+    </functional-requirements>
+  </story-reference>
+
+  <epic-context>
+    <tech-spec-path>docs/sprint-artifacts/epic-tech-specs/epic-5-tech-spec.md</tech-spec-path>
+    <architecture-path>docs/architecture.md</architecture-path>
+    <epic-summary>
+      Epic 5 completes navigation flow and ensures responsive experience across devices.
+      Story 5-2 adds sequential browsing capability so users can explore obituaries without
+      returning to the timeline, encouraging deeper content discovery.
+    </epic-summary>
+  </epic-context>
+
+  <documentation-artifacts>
+    <artifact type="tech-spec" relevance="high">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-5-tech-spec.md</path>
+      <description>
+        Epic 5 technical specification with detailed ObituaryNav component specs,
+        GROQ query modifications, keyboard navigation implementation, and styling guidelines.
+      </description>
+      <key-sections>
+        <section>4.2 Story 5.2: Previous/Next Navigation - Component specs and visual layout</section>
+        <section>3.1 Navigation Types - AdjacentObituary interface definition</section>
+        <section>3.2 Extended Sanity Query for Navigation - obituaryWithNavQuery GROQ</section>
+        <section>5.1 Sanity GROQ Queries - getObituaryWithNav function</section>
+        <section>7.2 Component Tests - ObituaryNav test examples</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="architecture" relevance="medium">
+      <path>docs/architecture.md</path>
+      <description>
+        Project architecture document covering Next.js patterns, GROQ query patterns,
+        component structure, and testing conventions.
+      </description>
+      <key-sections>
+        <section>Data Fetching Pattern - Server component data fetching</section>
+        <section>API Contracts - Sanity GROQ Queries</section>
+        <section>Testing Patterns - Unit test organization and naming</section>
+        <section>Import Order - Standard import ordering conventions</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="story" relevance="high">
+      <path>docs/sprint-artifacts/stories/5-1-modal-to-full-page-transition.md</path>
+      <description>
+        Story 5-1 completed the modal to full page transition. Contains patterns for Link
+        component usage, gold accent styling, and icon imports from lucide-react.
+      </description>
+    </artifact>
+
+    <artifact type="story" relevance="medium">
+      <path>docs/sprint-artifacts/stories/2-3-individual-obituary-pages.md</path>
+      <description>
+        Story 2-3 created the individual obituary pages at /obituary/[slug].
+        Contains the page structure that will integrate ObituaryNav component.
+      </description>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code-interfaces>
+    <interface type="page" primary="true">
+      <path>src/app/obituary/[slug]/page.tsx</path>
+      <description>
+        Individual obituary detail page that will integrate the ObituaryNav component.
+        Currently uses getObituaryBySlug for data fetching, needs to be updated to
+        use new getObituaryWithNav function for prev/next data.
+      </description>
+      <current-structure>
+        <![CDATA[
+import { notFound } from 'next/navigation'
+import { getObituaryBySlug, getAllObituarySlugs } from '@/lib/sanity/queries'
+import { ObituaryDetail } from '@/components/obituary/obituary-detail'
+import { ObituaryContext } from '@/components/obituary/obituary-context'
+import { JsonLd } from '@/components/seo/json-ld'
+import { generateObituaryMetadata } from '@/lib/utils/seo'
+
+interface PageProps {
+  params: Promise<{ slug: string }>
+}
+
+export default async function ObituaryPage({ params }: PageProps) {
+  const { slug } = await params
+  const obituary = await getObituaryBySlug(slug)
+
+  if (!obituary) {
+    notFound()
+  }
+
+  return (
+    <>
+      <JsonLd obituary={obituary} />
+      <div className="max-w-3xl mx-auto px-4 py-12">
+        <ObituaryDetail obituary={obituary} />
+        <ObituaryContext context={obituary.context} />
+      </div>
+    </>
+  )
+}
+
+// generateMetadata and generateStaticParams also exist
+        ]]>
+      </current-structure>
+      <modification-required>true</modification-required>
+    </interface>
+
+    <interface type="query" primary="true">
+      <path>src/lib/sanity/queries.ts</path>
+      <description>
+        Sanity GROQ queries file. Contains getObituaryBySlug which needs to be extended
+        or a new getObituaryWithNav function created that includes prev/next data.
+      </description>
+      <current-structure>
+        <![CDATA[
+// Existing query function
+export async function getObituaryBySlug(slug: string): Promise<Obituary | null> {
+  // Uses obituaryProjection which has:
+  // _id, slug, claim, source, sourceUrl, date, categories, context
+  // Does NOT include prev/next navigation data
+}
+
+// Projection used:
+const obituaryProjection = `{
+  _id,
+  "slug": slug.current,
+  claim,
+  source,
+  sourceUrl,
+  date,
+  categories,
+  context
+}`
+
+// Mock data fallback exists for development without Sanity connection
+        ]]>
+      </current-structure>
+      <modification-required>true</modification-required>
+    </interface>
+
+    <interface type="component" primary="false">
+      <path>src/components/obituary/obituary-detail.tsx</path>
+      <description>
+        ObituaryDetail component displaying full obituary content. Uses Link from next/link
+        for back navigation, lucide-react icons (ArrowLeft, ExternalLink).
+        Server component - does not use 'use client'.
+      </description>
+      <patterns>
+        <![CDATA[
+// Import pattern:
+import Link from 'next/link'
+import { ExternalLink, ArrowLeft } from 'lucide-react'
+
+// Link styling pattern:
+<Link
+  href="/"
+  className="inline-flex items-center gap-2 text-[--text-secondary]
+             hover:text-[--text-primary] mb-8 transition-colors"
+>
+  <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+  Back to all obituaries
+</Link>
+
+// Category badge colors pattern:
+const BADGE_COLORS: Record<Category, string> = {
+  capability: 'bg-[--category-capability]/20 text-[--category-capability]',
+  market: 'bg-[--category-market]/20 text-[--category-market]',
+  agi: 'bg-[--category-agi]/20 text-[--category-agi]',
+  dismissive: 'bg-[--category-dismissive]/20 text-[--category-dismissive]',
+}
+        ]]>
+      </patterns>
+    </interface>
+
+    <interface type="component" primary="false">
+      <path>src/components/obituary/obituary-modal.tsx</path>
+      <description>
+        ObituaryModal component showing gold accent styling pattern and Link usage
+        from Story 5-1. Contains useEffect pattern for keyboard event handling.
+      </description>
+      <patterns>
+        <![CDATA[
+// 'use client' directive for keyboard handling
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
+
+// Gold button styling pattern (from Story 5-1):
+<Link
+  href={`/obituary/${obituary.slug}`}
+  className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px]
+             bg-[--accent-primary] text-[--bg-primary] rounded-lg
+             font-medium hover:opacity-90 transition-opacity"
+>
+  View full page
+  <ArrowRight className="w-4 h-4" />
+</Link>
+
+// useEffect pattern for async data fetching
+useEffect(() => {
+  let cancelled = false
+  // ... fetch logic with cleanup
+  return () => { cancelled = true }
+}, [dependencies])
+        ]]>
+      </patterns>
+    </interface>
+
+    <interface type="types" primary="false">
+      <path>src/types/obituary.ts</path>
+      <description>
+        Existing obituary type definitions. Story 5-2 will add navigation types
+        in a new src/types/navigation.ts file.
+      </description>
+      <current-types>
+        <![CDATA[
+export type Category = 'market' | 'capability' | 'agi' | 'dismissive'
+
+export interface Obituary {
+  _id: string
+  slug: string
+  claim: string
+  source: string
+  sourceUrl: string
+  date: string  // ISO 8601
+  categories: Category[]
+  context: ContextMetadata
+}
+
+export interface ObituarySummary {
+  _id: string
+  slug: string
+  claim: string
+  source: string
+  date: string
+  categories: Category[]
+}
+        ]]>
+      </current-types>
+    </interface>
+
+    <interface type="test" primary="false">
+      <path>tests/unit/lib/sanity/queries.test.ts</path>
+      <description>
+        Existing test file for Sanity queries. Uses vi.mock pattern for client.
+        Contains test fixtures that can be extended for navigation query tests.
+      </description>
+      <patterns>
+        <![CDATA[
+// Mock pattern:
+vi.mock('@/lib/sanity/client', () => ({
+  client: {
+    fetch: vi.fn(),
+  },
+}))
+
+import { client } from '@/lib/sanity/client'
+
+// Test fixture pattern:
+const mockObituary: Obituary = {
+  _id: 'test-id-1',
+  slug: 'ai-will-never-work',
+  claim: 'AI will never be able to do creative tasks',
+  source: 'Tech Pundit Weekly',
+  sourceUrl: 'https://example.com/article',
+  date: '2023-06-15',
+  categories: ['capability', 'dismissive'] as Category[],
+  context: mockContext,
+}
+
+// Query assertion pattern:
+const fetchCall = vi.mocked(client.fetch).mock.calls[0][0] as string
+expect(fetchCall).toContain('*[_type == "obituary"]')
+        ]]>
+      </patterns>
+    </interface>
+
+    <interface type="test" primary="false">
+      <path>tests/unit/components/obituary/obituary-modal.test.tsx</path>
+      <description>
+        Test file using module export testing pattern due to React 19 + Vitest
+        hook resolution issues. Documents expected behavior through assertions.
+      </description>
+      <patterns>
+        <![CDATA[
+// Module export testing pattern:
+it('exports ObituaryModal component', async () => {
+  const mod = await import('@/components/obituary/obituary-modal')
+  expect(mod.ObituaryModal).toBeDefined()
+  expect(typeof mod.ObituaryModal).toBe('function')
+})
+
+// Icon import verification:
+it('ArrowRight icon is importable from lucide-react', async () => {
+  const { ArrowRight } = await import('lucide-react')
+  expect(ArrowRight).toBeDefined()
+})
+
+// Documentation-style assertions for rendering behavior:
+it('documents Link renders with correct href pattern (AC-5.1.3)', () => {
+  const testSlug = 'ai-will-never-work'
+  const expectedHref = `/obituary/${testSlug}`
+  expect(expectedHref).toBe('/obituary/ai-will-never-work')
+})
+        ]]>
+      </patterns>
+    </interface>
+
+    <interface type="test-setup" primary="false">
+      <path>tests/setup.tsx</path>
+      <description>
+        Vitest test setup file. Imports @testing-library/jest-dom for matchers.
+      </description>
+      <content>
+        <![CDATA[
+import '@testing-library/jest-dom'
+        ]]>
+      </content>
+    </interface>
+  </existing-code-interfaces>
+
+  <development-constraints>
+    <constraint type="pattern" severity="required">
+      <title>Client Component for Keyboard Navigation</title>
+      <description>
+        ObituaryNav MUST be a client component ('use client') because it uses
+        useEffect for keyboard event listeners. The page.tsx remains a server
+        component and passes prev/next data as props.
+      </description>
+    </constraint>
+
+    <constraint type="pattern" severity="required">
+      <title>Use Next.js Link Component</title>
+      <description>
+        Navigation links MUST use next/link Link component for client-side
+        navigation and SPA behavior. Both Previous and Next should be Links.
+      </description>
+    </constraint>
+
+    <constraint type="styling" severity="required">
+      <title>Gold Accent Hover State</title>
+      <description>
+        Links must have gold border on hover using --accent-primary (#C9A962).
+        Pattern: border border-[--border] hover:border-[--accent-primary]
+        Icons should also change color on hover using group-hover pattern.
+      </description>
+    </constraint>
+
+    <constraint type="styling" severity="required">
+      <title>Card-Style Links</title>
+      <description>
+        Both prev/next links should be styled as cards with:
+        - bg-[--bg-card] background
+        - border border-[--border] (changes to gold on hover)
+        - rounded-lg for rounded corners
+        - p-4 padding
+        - flex-1 for equal width
+      </description>
+    </constraint>
+
+    <constraint type="accessibility" severity="required">
+      <title>Navigation Accessibility</title>
+      <description>
+        - nav element with aria-label="Obituary navigation"
+        - Empty placeholders have aria-hidden="true"
+        - Keyboard navigation (ArrowLeft/Right) skips when input focused
+        - Links must be keyboard focusable
+      </description>
+    </constraint>
+
+    <constraint type="architecture" severity="required">
+      <title>GROQ Query Pattern for Adjacent Documents</title>
+      <description>
+        Use ^.date reference in GROQ subquery to compare against parent document:
+        - Previous: *[_type == "obituary" && date &lt; ^.date] | order(date desc) [0]
+        - Next: *[_type == "obituary" && date > ^.date] | order(date asc) [0]
+      </description>
+    </constraint>
+
+    <constraint type="layout" severity="required">
+      <title>Two-Column Flex Layout</title>
+      <description>
+        Navigation uses flex layout with gap-4, both items flex-1 for equal width.
+        When one direction is missing, use empty div as placeholder to maintain layout.
+        Previous on left, Next on right.
+      </description>
+    </constraint>
+
+    <constraint type="testing" severity="recommended">
+      <title>Module Export Testing Pattern</title>
+      <description>
+        Due to React 19 + Vitest hook resolution issues, component tests should
+        verify module exports and document expected behavior through assertions
+        rather than direct render testing with hooks.
+      </description>
+    </constraint>
+  </development-constraints>
+
+  <dependencies>
+    <dependency type="npm-package" installed="true">
+      <name>next</name>
+      <version>16.0.5</version>
+      <usage>Link component from 'next/link'</usage>
+    </dependency>
+
+    <dependency type="npm-package" installed="true">
+      <name>lucide-react</name>
+      <version>0.555.0</version>
+      <usage>ChevronLeft, ChevronRight icons (note: NOT ChevronLeftIcon/ChevronRightIcon)</usage>
+      <note>
+        lucide-react exports icons as ChevronLeft and ChevronRight, not ChevronLeftIcon.
+        Verify import name matches actual export: import { ChevronLeft, ChevronRight } from 'lucide-react'
+      </note>
+    </dependency>
+
+    <dependency type="npm-package" installed="true">
+      <name>react</name>
+      <version>19.2.0</version>
+      <usage>useEffect hook for keyboard event handling</usage>
+    </dependency>
+
+    <dependency type="internal-type" exists="false">
+      <name>AdjacentObituary</name>
+      <path>src/types/navigation.ts</path>
+      <status>needs-creation</status>
+      <definition>
+        <![CDATA[
+interface AdjacentObituary {
+  slug: string
+  claimPreview: string
+  source: string
+  date: string
+}
+        ]]>
+      </definition>
+    </dependency>
+
+    <dependency type="internal-type" exists="false">
+      <name>ObituaryNavigation</name>
+      <path>src/types/navigation.ts</path>
+      <status>needs-creation</status>
+      <definition>
+        <![CDATA[
+interface ObituaryNavigation {
+  previous: AdjacentObituary | null
+  next: AdjacentObituary | null
+}
+        ]]>
+      </definition>
+    </dependency>
+
+    <dependency type="story" status="completed">
+      <name>Story 2-3: Individual Obituary Pages</name>
+      <description>/obituary/[slug] route exists</description>
+    </dependency>
+
+    <dependency type="story" status="completed">
+      <name>Story 5-1: Modal to Full Page Transition</name>
+      <description>Modal can navigate to full page; Link patterns established</description>
+    </dependency>
+  </dependencies>
+
+  <testing-context>
+    <framework>Vitest with @testing-library/react</framework>
+    <setup-file>tests/setup.tsx</setup-file>
+
+    <testing-patterns>
+      <pattern name="Module Export Testing">
+        <description>
+          Due to React 19 + Vitest hook resolution issues, tests verify module
+          exports and document expected behavior through assertions.
+        </description>
+        <example-file>tests/unit/components/obituary/obituary-modal.test.tsx</example-file>
+      </pattern>
+
+      <pattern name="Sanity Query Mocking">
+        <description>
+          Mock @/lib/sanity/client with vi.mock, then verify query strings and
+          return values.
+        </description>
+        <example-file>tests/unit/lib/sanity/queries.test.ts</example-file>
+      </pattern>
+    </testing-patterns>
+
+    <test-ideas>
+      <test type="unit" file="tests/unit/components/obituary/obituary-nav.test.tsx">
+        <description>ObituaryNav exports correctly from module</description>
+      </test>
+      <test type="unit" file="tests/unit/components/obituary/obituary-nav.test.tsx">
+        <description>Previous link has correct href based on previous.slug</description>
+      </test>
+      <test type="unit" file="tests/unit/components/obituary/obituary-nav.test.tsx">
+        <description>Next link has correct href based on next.slug</description>
+      </test>
+      <test type="unit" file="tests/unit/components/obituary/obituary-nav.test.tsx">
+        <description>Source names displayed correctly (previous.source, next.source)</description>
+      </test>
+      <test type="unit" file="tests/unit/components/obituary/obituary-nav.test.tsx">
+        <description>nav element has aria-label="Obituary navigation"</description>
+      </test>
+      <test type="unit" file="tests/unit/components/obituary/obituary-nav.test.tsx">
+        <description>ChevronLeft and ChevronRight icons are importable</description>
+      </test>
+      <test type="unit" file="tests/unit/components/obituary/obituary-nav.test.tsx">
+        <description>Empty placeholders have aria-hidden="true" when prev/next is null</description>
+      </test>
+      <test type="unit" file="tests/unit/lib/sanity/queries.test.ts">
+        <description>obituaryWithNavQuery includes previous subquery</description>
+      </test>
+      <test type="unit" file="tests/unit/lib/sanity/queries.test.ts">
+        <description>obituaryWithNavQuery includes next subquery</description>
+      </test>
+      <test type="unit" file="tests/unit/lib/sanity/queries.test.ts">
+        <description>getObituaryWithNav returns previous when available</description>
+      </test>
+      <test type="unit" file="tests/unit/lib/sanity/queries.test.ts">
+        <description>getObituaryWithNav returns null for missing adjacent</description>
+      </test>
+    </test-ideas>
+
+    <test-commands>
+      <![CDATA[
+pnpm test:run                                                  # Run all tests once
+pnpm vitest tests/unit/components/obituary/obituary-nav.test.tsx  # Single test file
+pnpm vitest tests/unit/lib/sanity/queries.test.ts              # Query tests
+pnpm tsc --noEmit                                              # TypeScript check
+pnpm lint                                                      # ESLint check
+      ]]>
+    </test-commands>
+  </testing-context>
+
+  <implementation-notes>
+    <note priority="high">
+      <title>Icon Import Names</title>
+      <description>
+        lucide-react exports icons as ChevronLeft and ChevronRight (NOT ChevronLeftIcon/ChevronRightIcon).
+        The story markdown incorrectly uses ChevronLeftIcon - use ChevronLeft instead.
+        Verify: import { ChevronLeft, ChevronRight } from 'lucide-react'
+      </description>
+    </note>
+
+    <note priority="high">
+      <title>GROQ Subquery Syntax</title>
+      <description>
+        The prev/next GROQ subqueries use ^.date to reference the parent document's date.
+        This is standard GROQ syntax for referencing parent context in subqueries.
+        Note: XML requires escaping &lt; for less-than comparison.
+      </description>
+    </note>
+
+    <note priority="high">
+      <title>Keyboard Navigation Safety</title>
+      <description>
+        Keyboard handler must check if user is typing in an input or textarea before
+        handling arrow keys. Pattern:
+        if (document.activeElement?.tagName === 'INPUT' ||
+            document.activeElement?.tagName === 'TEXTAREA') return
+      </description>
+    </note>
+
+    <note priority="medium">
+      <title>Navigation Uses window.location.href</title>
+      <description>
+        Tech spec shows keyboard navigation using window.location.href for navigation
+        rather than Next.js router. This works but causes full page reload. Consider
+        using Next.js router.push() for SPA navigation if available via useRouter().
+        However, for simplicity and matching tech spec, window.location.href is acceptable.
+      </description>
+    </note>
+
+    <note priority="medium">
+      <title>ObituaryWithNav Type Extension</title>
+      <description>
+        Create a new type that extends Obituary with navigation:
+        interface ObituaryWithNav extends Obituary {
+          previous: AdjacentObituary | null
+          next: AdjacentObituary | null
+        }
+      </description>
+    </note>
+
+    <note priority="medium">
+      <title>Mock Data Handling</title>
+      <description>
+        The queries.ts file has mock data fallback logic (shouldUseMock).
+        The new getObituaryWithNav function should follow the same pattern,
+        possibly computing prev/next from the mockObituaries array for development.
+      </description>
+    </note>
+
+    <note priority="low">
+      <title>ClaimPreview Truncation</title>
+      <description>
+        GROQ query uses claim[0...80] + "..." for claimPreview. This provides
+        a preview of the claim text. The truncation is done in GROQ, not JS.
+      </description>
+    </note>
+  </implementation-notes>
+
+  <reference-implementation>
+    <description>From Epic 5 Tech Spec Section 4.2 and Story 5-2</description>
+
+    <code-snippet language="typescript" purpose="Navigation Types">
+      <![CDATA[
+// src/types/navigation.ts
+
+/**
+ * Adjacent obituary reference for prev/next navigation.
+ */
+export interface AdjacentObituary {
+  /** Obituary slug */
+  slug: string
+  /** Claim text (truncated for display) */
+  claimPreview: string
+  /** Source name */
+  source: string
+  /** Publication date */
+  date: string
+}
+
+/**
+ * Navigation context for obituary detail pages.
+ */
+export interface ObituaryNavigation {
+  /** Previous obituary (older by date) */
+  previous: AdjacentObituary | null
+  /** Next obituary (newer by date) */
+  next: AdjacentObituary | null
+}
+      ]]>
+    </code-snippet>
+
+    <code-snippet language="groq" purpose="GROQ Query">
+      <![CDATA[
+// Add to src/lib/sanity/queries.ts
+
+export const obituaryWithNavQuery = groq`
+*[_type == "obituary" && slug.current == $slug][0] {
+  _id,
+  "slug": slug.current,
+  claim,
+  source,
+  sourceUrl,
+  date,
+  categories,
+  context,
+
+  // Previous obituary (older)
+  "previous": *[_type == "obituary" && date < ^.date] | order(date desc) [0] {
+    "slug": slug.current,
+    "claimPreview": claim[0...80] + "...",
+    source,
+    date
+  },
+
+  // Next obituary (newer)
+  "next": *[_type == "obituary" && date > ^.date] | order(date asc) [0] {
+    "slug": slug.current,
+    "claimPreview": claim[0...80] + "...",
+    source,
+    date
+  }
+}
+`
+      ]]>
+    </code-snippet>
+
+    <code-snippet language="tsx" purpose="ObituaryNav Component">
+      <![CDATA[
+// src/components/obituary/obituary-nav.tsx
+
+'use client'
+
+import Link from 'next/link'
+import { useEffect } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import type { AdjacentObituary } from '@/types/navigation'
+
+interface ObituaryNavProps {
+  previous: AdjacentObituary | null
+  next: AdjacentObituary | null
+}
+
+export function ObituaryNav({ previous, next }: ObituaryNavProps) {
+  // Keyboard navigation
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      // Skip if typing in an input
+      if (document.activeElement?.tagName === 'INPUT' ||
+          document.activeElement?.tagName === 'TEXTAREA') return
+
+      if (e.key === 'ArrowLeft' && previous) {
+        window.location.href = `/obituary/${previous.slug}`
+      } else if (e.key === 'ArrowRight' && next) {
+        window.location.href = `/obituary/${next.slug}`
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [previous, next])
+
+  return (
+    <nav
+      className="flex justify-between items-stretch gap-4 mt-8 pt-6 border-t border-[--border]"
+      aria-label="Obituary navigation"
+    >
+      {/* Previous */}
+      {previous ? (
+        <Link
+          href={`/obituary/${previous.slug}`}
+          className="group flex-1 flex items-center gap-3 p-4 rounded-lg bg-[--bg-card] border border-[--border] hover:border-[--accent-primary] transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5 text-[--text-muted] group-hover:text-[--accent-primary]" />
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs text-[--text-muted] uppercase tracking-wider">Previous</span>
+            <span className="text-sm text-[--text-secondary] truncate">{previous.source}</span>
+          </div>
+        </Link>
+      ) : (
+        <div className="flex-1" aria-hidden="true" />
+      )}
+
+      {/* Next */}
+      {next ? (
+        <Link
+          href={`/obituary/${next.slug}`}
+          className="group flex-1 flex items-center justify-end gap-3 p-4 rounded-lg bg-[--bg-card] border border-[--border] hover:border-[--accent-primary] transition-colors text-right"
+        >
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs text-[--text-muted] uppercase tracking-wider">Next</span>
+            <span className="text-sm text-[--text-secondary] truncate">{next.source}</span>
+          </div>
+          <ChevronRight className="w-5 h-5 text-[--text-muted] group-hover:text-[--accent-primary]" />
+        </Link>
+      ) : (
+        <div className="flex-1" aria-hidden="true" />
+      )}
+    </nav>
+  )
+}
+      ]]>
+    </code-snippet>
+  </reference-implementation>
+
+  <files-to-create>
+    <file action="create" priority="1">
+      <path>src/types/navigation.ts</path>
+      <description>
+        Navigation type definitions: AdjacentObituary, ObituaryNavigation interfaces.
+      </description>
+    </file>
+
+    <file action="create" priority="2">
+      <path>src/components/obituary/obituary-nav.tsx</path>
+      <description>
+        ObituaryNav component with Previous/Next links and keyboard navigation.
+      </description>
+    </file>
+
+    <file action="create" priority="5">
+      <path>tests/unit/components/obituary/obituary-nav.test.tsx</path>
+      <description>
+        Unit tests for ObituaryNav component following module export testing pattern.
+      </description>
+    </file>
+  </files-to-create>
+
+  <files-to-modify>
+    <file action="modify" priority="3">
+      <path>src/lib/sanity/queries.ts</path>
+      <changes>
+        - Add obituaryWithNavQuery GROQ constant
+        - Add getObituaryWithNav(slug: string) function
+        - Define ObituaryWithNav type (extends Obituary with previous/next)
+        - Handle mock data fallback for development
+      </changes>
+    </file>
+
+    <file action="modify" priority="4">
+      <path>src/app/obituary/[slug]/page.tsx</path>
+      <changes>
+        - Update import to use getObituaryWithNav instead of getObituaryBySlug
+        - Import and render ObituaryNav component
+        - Pass previous and next props from fetched data
+        - Position component at bottom of page content
+      </changes>
+    </file>
+
+    <file action="modify" priority="6">
+      <path>tests/unit/lib/sanity/queries.test.ts</path>
+      <changes>
+        - Add tests for obituaryWithNavQuery
+        - Add tests for getObituaryWithNav function
+        - Test that previous/next data is returned correctly
+        - Test handling of missing adjacent obituaries
+      </changes>
+    </file>
+  </files-to-modify>
+
+  <acceptance-criteria-checklist>
+    <criterion id="AC-5.2.1" testable="true">
+      Previous links to older obituary (chronologically older by date)
+    </criterion>
+    <criterion id="AC-5.2.2" testable="true">
+      Next links to newer obituary (chronologically newer by date)
+    </criterion>
+    <criterion id="AC-5.2.3" testable="true">
+      Missing direction shows empty space (maintains layout, empty div as placeholder)
+    </criterion>
+    <criterion id="AC-5.2.4" testable="true">
+      Keyboard arrow navigation works (ArrowLeft=prev, ArrowRight=next)
+    </criterion>
+    <criterion id="AC-5.2.5" testable="true">
+      Source name shown as label on each link
+    </criterion>
+    <criterion id="AC-5.2.6" testable="true">
+      Hover state with gold accent (border changes to --accent-primary, icon color updates)
+    </criterion>
+    <criterion id="AC-5.2.7" testable="true">
+      Navigation positioned at page bottom (before footer)
+    </criterion>
+    <criterion id="AC-5.2.8" testable="true">
+      Navigation has accessible labels (nav with aria-label, empty divs with aria-hidden)
+    </criterion>
+  </acceptance-criteria-checklist>
+
+  <visual-spec>
+    <![CDATA[
+ObituaryNav Layout:
+
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│  ┌────────────────────────┐  ┌────────────────────────┐    │
+│  │ <  Previous            │  │           Next  >      │    │
+│  │     Gary Marcus        │  │     TechCrunch         │    │
+│  └────────────────────────┘  └────────────────────────┘    │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+
+- Cards equal width (flex-1)
+- Hover: gold border (#C9A962), icon color change to gold
+- Keyboard: Left/Right arrow keys navigate
+- Previous shows ChevronLeft on left side
+- Next shows ChevronRight on right side
+- Both show "Previous"/"Next" label in muted uppercase, source name below
+- Background: --bg-card
+- Border: --border (default), --accent-primary (hover)
+- Gap between cards: gap-4
+- Top border separator: border-t border-[--border]
+    ]]>
+  </visual-spec>
+</story-context>
