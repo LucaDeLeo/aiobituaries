@@ -1,0 +1,509 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <metadata>
+    <story-key>6-1-keyboard-navigation-foundation</story-key>
+    <story-title>Keyboard Navigation Foundation</story-title>
+    <epic-id>epic-6</epic-id>
+    <epic-title>Accessibility &amp; Quality</epic-title>
+    <generated-date>2025-12-01</generated-date>
+    <context-version>1.0</context-version>
+  </metadata>
+
+  <story-reference>
+    <file-path>docs/sprint-artifacts/stories/6-1-keyboard-navigation-foundation.md</file-path>
+    <description>Complete story specification with acceptance criteria, technical approach, tasks, and definition of done</description>
+  </story-reference>
+
+  <epic-context>
+    <epic-tech-spec>
+      <file-path>docs/sprint-artifacts/epic-tech-specs/epic-6-tech-spec.md</file-path>
+      <description>Epic 6 technical specification covering WCAG 2.1 AA compliance, accessibility patterns, keyboard navigation, screen reader support, and performance optimization</description>
+      <key-sections>
+        - Section 1: Epic Overview (WCAG 2.1 AA compliance requirements)
+        - Section 4.1: Story 6-1 Component Specifications (SkipLink, Focus Styles, Focus Trap Hook, Keyboard Handler)
+        - Section 2.2: WCAG 2.1 AA Requirements Overview (Operable principle - keyboard accessible)
+        - Section 2.3: Technology Stack (focus-visible polyfill, React ARIA patterns)
+      </key-sections>
+    </epic-tech-spec>
+    <parent-epic-file>
+      <file-path>docs/epics.md</file-path>
+      <description>High-level epic breakdown showing Epic 6 stories and FR coverage</description>
+    </parent-epic-file>
+  </epic-context>
+
+  <documentation-artifacts>
+    <artifact>
+      <file-path>docs/prd.md</file-path>
+      <description>Product Requirements Document containing FR38 (WCAG 2.1 AA compliance), FR39 (keyboard navigation), and FR44 (color contrast requirements)</description>
+      <relevant-sections>
+        - FR38: Site meets WCAG 2.1 AA compliance standards
+        - FR39: All interactive elements are keyboard navigable
+        - FR44: Color contrast meets 4.5:1 minimum ratio
+      </relevant-sections>
+    </artifact>
+    <artifact>
+      <file-path>docs/architecture.md</file-path>
+      <description>Architecture decisions document covering shadcn/ui component usage, Radix UI accessibility primitives, and focus management patterns</description>
+      <relevant-sections>
+        - shadcn/ui components built on Radix UI with accessibility built-in
+        - Server Components vs Client Components patterns ('use client' directive for interactive components)
+        - Focus management and keyboard interaction patterns
+      </relevant-sections>
+    </artifact>
+    <artifact>
+      <file-path>docs/ux-design-specification.md</file-path>
+      <description>UX design specification with visual accessibility requirements, color tokens, and interaction patterns</description>
+      <relevant-sections>
+        - Color tokens: --accent-primary (gold #C9A962) for focus indicators
+        - Touch target sizes: minimum 44px for accessibility
+        - Focus indicator design: 2px solid outline with 2px offset
+      </relevant-sections>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code-interfaces>
+    <interface>
+      <file-path>src/app/layout.tsx</file-path>
+      <description>Root layout component where SkipLink must be integrated before Header, and main element must receive id="main-content"</description>
+      <usage>
+        - Import SkipLink component
+        - Render SkipLink before Header component
+        - Add id="main-content" to main element
+        - Add tabIndex={-1} to main element (programmatic focus only)
+        - Add className="outline-none" to main element (no visible focus ring)
+      </usage>
+      <current-structure>
+        - NuqsAdapter wrapper for URL state
+        - Header component at top
+        - main element with flex-1 class containing {children}
+        - Footer component at bottom
+        - Toaster component for notifications
+      </current-structure>
+    </interface>
+    <interface>
+      <file-path>src/components/obituary/obituary-modal.tsx</file-path>
+      <description>Modal component using shadcn/ui Sheet that needs focus trap integration for keyboard navigation</description>
+      <usage>
+        - Import useFocusTrap hook
+        - Call useFocusTrap with onEscape callback that calls handleClose
+        - Pass isActive={isOpen} to hook for auto-activation
+        - Apply trapRef to SheetContent component
+        - Focus trap will activate when modal opens, deactivate on close
+        - Escape key will close modal and return focus to trigger element
+      </usage>
+      <current-structure>
+        - Uses Sheet component from shadcn/ui (Radix Dialog primitive)
+        - SheetContent with side="right" (or "bottom" on mobile)
+        - handleClose function that calls onClose and restores focus to triggerRef
+        - Already has triggerRef prop for focus restoration
+        - Uses useReducedMotion from motion/react
+      </current-structure>
+    </interface>
+    <interface>
+      <file-path>src/components/ui/sheet.tsx</file-path>
+      <description>shadcn/ui Sheet component built on @radix-ui/react-dialog with accessibility primitives</description>
+      <usage>
+        - SheetContent is the container element to attach trapRef
+        - SheetPrimitive.Content already forwards ref via React.forwardRef pattern
+        - Apply ref using: &lt;SheetContent ref={trapRef} ...&gt;
+        - Sheet components already have Radix accessibility features (aria-labelledby, role="dialog")
+      </usage>
+      <radix-primitives>
+        - SheetPrimitive.Root = Dialog
+        - SheetPrimitive.Content = DialogContent (supports ref forwarding)
+        - SheetPrimitive.Close = DialogClose
+        - Built-in keyboard handling: Escape closes dialog (can be customized)
+      </radix-primitives>
+    </interface>
+    <interface>
+      <file-path>src/app/globals.css</file-path>
+      <description>Global stylesheet with CSS custom properties, Tailwind config, and utility classes</description>
+      <usage>
+        - Add focus-visible styles after existing media queries (after line 244)
+        - Use :focus-visible for keyboard-only focus indicators
+        - Use :focus:not(:focus-visible) to hide outline for mouse clicks
+        - Add @media (forced-colors: active) for high contrast mode support
+        - Focus styles should use var(--accent-primary) for consistency
+      </usage>
+      <existing-patterns>
+        - CSS custom properties in :root (--accent-primary: #C9A962)
+        - Tailwind @theme inline configuration
+        - @layer base for global styles
+        - Media queries for responsive design (tablet, desktop)
+        - @media (prefers-reduced-motion: reduce) for animation control
+      </existing-patterns>
+    </interface>
+  </existing-code-interfaces>
+
+  <development-constraints>
+    <constraint>
+      <category>WCAG 2.1 AA Compliance</category>
+      <description>All interactive elements must have visible focus indicators with minimum 2px outline and 2px offset, meeting 4.5:1 contrast ratio against background</description>
+      <source>Epic 6 Tech Spec Section 2.2, WCAG 2.1 Success Criterion 2.4.7</source>
+    </constraint>
+    <constraint>
+      <category>Focus Visible Pattern</category>
+      <description>Use :focus-visible pseudo-class to show focus indicators only for keyboard navigation, not mouse clicks. This prevents visual clutter for mouse users while ensuring keyboard accessibility</description>
+      <source>Epic 6 Tech Spec Section 4.1, modern CSS best practices</source>
+    </constraint>
+    <constraint>
+      <category>High Contrast Mode Support</category>
+      <description>Focus indicators must be visible in Windows High Contrast Mode using @media (forced-colors: active) with CanvasText system color (3px outline)</description>
+      <source>Epic 6 Tech Spec Section 4.1, WCAG 2.1 Success Criterion 1.4.11</source>
+    </constraint>
+    <constraint>
+      <category>Client Component Requirement</category>
+      <description>SkipLink, useFocusTrap hook must use 'use client' directive as they require browser APIs (document.getElementById, document.addEventListener, window.matchMedia)</description>
+      <source>Architecture Document - Server Components vs Client Components, Next.js 16 App Router patterns</source>
+    </constraint>
+    <constraint>
+      <category>Focus Trap Pattern</category>
+      <description>Modal focus trap must cycle Tab from last to first element, Shift+Tab from first to last. Must store trigger element reference for focus restoration on close. Must handle Escape key to close modal</description>
+      <source>Epic 6 Tech Spec Section 4.1, ARIA Authoring Practices Guide - Dialog (Modal)</source>
+    </constraint>
+    <constraint>
+      <category>Skip Link Behavior</category>
+      <description>Skip link must be visually hidden (sr-only) until Tab focus, then appear at top-left with high z-index. Must use onClick to manually focus and scroll to target (not just anchor jump)</description>
+      <source>Epic 6 Tech Spec Section 4.1, WCAG 2.1 Success Criterion 2.4.1 Bypass Blocks</source>
+    </constraint>
+    <constraint>
+      <category>Main Content Focus Pattern</category>
+      <description>Main content element must have tabIndex={-1} for programmatic focus only (not in natural tab order). Must have outline-none class to hide focus ring when skip link focuses it</description>
+      <source>Epic 6 Tech Spec Section 4.1, accessibility best practices for skip links</source>
+    </constraint>
+    <constraint>
+      <category>Focusable Element Selection</category>
+      <description>getFocusableElements must use selector: a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable]. Must filter by isFocusable to exclude hidden/aria-hidden elements</description>
+      <source>Epic 6 Tech Spec Section 4.1, standard focusable elements selector</source>
+    </constraint>
+    <constraint>
+      <category>Color Token Usage</category>
+      <description>Focus indicators must use var(--accent-primary) which resolves to #C9A962 gold. This ensures 4.5:1 contrast ratio against --bg-primary (#0C0C0F) background</description>
+      <source>UX Design Specification, globals.css color tokens</source>
+    </constraint>
+    <constraint>
+      <category>TypeScript Strict Mode</category>
+      <description>All functions must have explicit return types, parameters must be typed, no implicit any types allowed. Use React.KeyboardEvent for keyboard event handlers</description>
+      <source>Project tsconfig.json, existing code patterns</source>
+    </constraint>
+  </development-constraints>
+
+  <dependencies>
+    <dependency>
+      <name>@radix-ui/react-dialog</name>
+      <version>^1.1.15</version>
+      <usage>Foundation for shadcn/ui Sheet component used in ObituaryModal. Provides accessible dialog primitives with built-in keyboard handling and ARIA attributes</usage>
+    </dependency>
+    <dependency>
+      <name>motion</name>
+      <version>^12.23.24</version>
+      <usage>Animation library (formerly Framer Motion). Provides useReducedMotion hook for respecting prefers-reduced-motion preference in skip link smooth scroll</usage>
+    </dependency>
+    <dependency>
+      <name>lucide-react</name>
+      <version>^0.555.0</version>
+      <usage>Icon library. May be used for skip link icon or keyboard navigation indicators in future stories</usage>
+    </dependency>
+    <dependency>
+      <name>react</name>
+      <version>19.2.0</version>
+      <usage>React 19 with new hooks API. Use useRef, useCallback, useEffect for focus trap implementation</usage>
+    </dependency>
+  </dependencies>
+
+  <testing-context>
+    <test-framework>
+      <name>Vitest</name>
+      <version>^4.0.14</version>
+      <config-file>vitest.config.ts</config-file>
+      <setup-file>tests/setup.tsx</setup-file>
+      <description>Fast unit test runner with Jest-compatible API</description>
+    </test-framework>
+    <test-library>
+      <name>@testing-library/react</name>
+      <version>^16.3.0</version>
+      <description>React testing utilities with React 19 support. Use for component rendering and user interaction simulation</description>
+    </test-library>
+    <test-library>
+      <name>@testing-library/jest-dom</name>
+      <version>^6.9.1</version>
+      <description>Custom matchers for DOM assertions (toBeVisible, toHaveFocus, toHaveClass, etc.)</description>
+    </test-library>
+    <test-patterns>
+      <pattern>
+        <name>Module Export Testing</name>
+        <description>Due to React 19 + Vitest hook resolution issues, test module exports and pure functions rather than full component rendering</description>
+        <example-file>tests/unit/lib/hooks/use-filters.test.ts</example-file>
+      </pattern>
+      <pattern>
+        <name>Pure Function Testing</name>
+        <description>Extract and test logic as pure functions (e.g., toggle category logic, isFocusable checks)</description>
+        <example-file>tests/unit/lib/hooks/use-filters.test.ts (lines 121-248)</example-file>
+      </pattern>
+      <pattern>
+        <name>Dependency Import Testing</name>
+        <description>Verify external dependencies are importable and have expected API (e.g., nuqs parsers, Motion hooks)</description>
+        <example-file>tests/unit/lib/hooks/use-filters.test.ts (lines 26-56)</example-file>
+      </pattern>
+      <pattern>
+        <name>Integration Documentation Testing</name>
+        <description>Document expected component integration behavior through code review verification comments</description>
+        <example-file>tests/unit/components/obituary/obituary-modal.test.tsx (lines 149-251)</example-file>
+      </pattern>
+    </test-patterns>
+    <test-commands>
+      <command>pnpm test</command>
+      <description>Run tests in watch mode</description>
+      <command>pnpm test:run</command>
+      <description>Run tests once (CI mode)</description>
+      <command>pnpm vitest tests/unit/lib/utils/a11y.test.ts</command>
+      <description>Run single test file</description>
+    </test-commands>
+  </testing-context>
+
+  <implementation-notes>
+    <note>
+      <title>SkipLink Component Strategy</title>
+      <description>SkipLink must be a client component because it uses document.getElementById and smooth scroll. Use sr-only Tailwind utility for screen-reader-only state, then focus:not-sr-only to make it visible on keyboard focus. Position fixed at top-left with high z-index (100) to ensure it's always first focusable element and visible above all content</description>
+    </note>
+    <note>
+      <title>Focus Trap Implementation Pattern</title>
+      <description>useFocusTrap hook returns trapRef to attach to container, plus activate/deactivate functions. Activation: store trigger element, focus first element, add keydown listener. Deactivation: remove listener, restore focus. Use isActiveRef pattern to access current state in event listener (avoids stale closures). Auto-activate/deactivate based on isActive prop via useEffect</description>
+    </note>
+    <note>
+      <title>Global Focus Styles Architecture</title>
+      <description>Add focus styles to globals.css after existing media queries. Use CSS cascade order: (1) base :focus-visible for all elements, (2) :focus:not(:focus-visible) to remove for mouse, (3) specific element types (button, a, input), (4) @media (forced-colors) for high contrast. This ensures consistent behavior across all interactive elements without per-component styling</description>
+    </note>
+    <note>
+      <title>Keyboard Handler Utility Design</title>
+      <description>handleKeyboardNavigation uses switch statement on event.key for all keyboard interactions. Accepts handlers object with optional callbacks for each key. Only calls preventDefault when handler exists (avoids breaking default browser behavior for unhandled keys). This pattern standardizes keyboard handling across all components and makes it easy to add new key handlers</description>
+    </note>
+    <note>
+      <title>Focusable Element Detection</title>
+      <description>isFocusable must check: (1) element is HTMLElement, (2) not hidden or aria-hidden="true", (3) computed style display !== 'none' and visibility !== 'hidden', (4) tabindex not negative, (5) inherently focusable (a, button, input, etc.) or has explicit tabindex. This comprehensive check prevents focus trap from breaking when elements are dynamically hidden</description>
+    </note>
+    <note>
+      <title>ObituaryModal Focus Trap Integration</title>
+      <description>ObituaryModal already has triggerRef prop for focus restoration and handleClose function. Add useFocusTrap call with onEscape: handleClose, isActive: isOpen. Apply trapRef to SheetContent using ref prop. The Sheet component from shadcn/ui forwards refs properly via Radix DialogContent primitive. Focus trap will auto-activate when modal opens and deactivate when it closes</description>
+    </note>
+    <note>
+      <title>Testing Strategy for Accessibility Utils</title>
+      <description>For a11y.ts utilities, test pure functions directly: (1) handleKeyboardNavigation - verify correct handler called for each key and preventDefault behavior, (2) generateId - verify unique IDs with prefix, (3) isFocusable - test with mock DOM elements (visible button, hidden div, disabled input), (4) getFocusableElements - create container with mixed focusable/non-focusable elements and verify correct filtering</description>
+    </note>
+    <note>
+      <title>Focus Trap Hook Testing Approach</title>
+      <description>For useFocusTrap hook, test module exports and document expected behavior through code review comments (following existing test patterns from use-filters.test.ts). Test: (1) hook exports exist, (2) dependencies importable (React hooks), (3) document focus trap logic (Tab wrapping, Escape handling, focus restoration) through behavior documentation tests</description>
+    </note>
+    <note>
+      <title>SkipLink Testing Approach</title>
+      <description>For SkipLink component, test: (1) component exports and imports, (2) Tailwind sr-only utility behavior (element hidden by default), (3) focus:not-sr-only makes element visible, (4) document onClick behavior (preventDefault, getElementById, focus, scrollIntoView), (5) custom targetId and children props work correctly</description>
+    </note>
+    <note>
+      <title>High Contrast Mode Testing</title>
+      <description>Manual testing required for @media (forced-colors: active). On Windows, enable High Contrast Mode in Accessibility settings. Verify 3px CanvasText outline appears on focused elements. Note: Cannot be automated in Vitest as it requires OS-level high contrast mode</description>
+    </note>
+  </implementation-notes>
+
+  <file-creation-checklist>
+    <file action="create" priority="high">
+      <path>src/components/accessibility/skip-link.tsx</path>
+      <description>SkipLink component with sr-only pattern, focus visibility, and smooth scroll to main content</description>
+    </file>
+    <file action="create" priority="high">
+      <path>src/lib/utils/a11y.ts</path>
+      <description>Accessibility utility functions: handleKeyboardNavigation, generateId, isFocusable, getFocusableElements</description>
+    </file>
+    <file action="create" priority="high">
+      <path>src/lib/hooks/use-focus-trap.ts</path>
+      <description>Focus trap hook for modal keyboard containment with Tab wrapping and Escape handling</description>
+    </file>
+    <file action="modify" priority="high">
+      <path>src/app/globals.css</path>
+      <description>Add global focus-visible styles for keyboard navigation with high contrast mode support</description>
+    </file>
+    <file action="modify" priority="high">
+      <path>src/app/layout.tsx</path>
+      <description>Integrate SkipLink component and add main content ID for skip link target</description>
+    </file>
+    <file action="modify" priority="high">
+      <path>src/components/obituary/obituary-modal.tsx</path>
+      <description>Add focus trap hook integration for keyboard navigation in modal</description>
+    </file>
+    <file action="create" priority="medium">
+      <path>tests/unit/components/accessibility/skip-link.test.tsx</path>
+      <description>Unit tests for SkipLink component behavior and props</description>
+    </file>
+    <file action="create" priority="medium">
+      <path>tests/unit/lib/utils/a11y.test.ts</path>
+      <description>Unit tests for accessibility utility functions</description>
+    </file>
+    <file action="create" priority="medium">
+      <path>tests/unit/lib/hooks/use-focus-trap.test.ts</path>
+      <description>Unit tests for focus trap hook exports and behavior documentation</description>
+    </file>
+  </file-creation-checklist>
+
+  <acceptance-criteria-mapping>
+    <criterion id="AC-6.1.1">
+      <description>Skip link appears on Tab</description>
+      <implementation>
+        - SkipLink component rendered before Header in layout.tsx
+        - Uses sr-only class (hidden by default)
+        - Uses focus:not-sr-only class (visible on focus)
+        - Uses focus:fixed focus:top-4 focus:left-4 for positioning
+        - Natural tab order makes it first focusable element
+      </implementation>
+      <test-approach>Manual: Press Tab on page load, verify skip link appears at top-left</test-approach>
+    </criterion>
+    <criterion id="AC-6.1.2">
+      <description>Skip link jumps to main</description>
+      <implementation>
+        - onClick handler calls preventDefault
+        - Gets target element by ID: document.getElementById(targetId)
+        - Calls target.focus() to move keyboard focus
+        - Calls target.scrollIntoView({ behavior: 'smooth' }) for smooth scroll
+        - Main element has id="main-content" matching skip link targetId
+      </implementation>
+      <test-approach>Manual: Focus skip link, press Enter, verify focus moves to main and page scrolls</test-approach>
+    </criterion>
+    <criterion id="AC-6.1.3">
+      <description>Visible focus indicators</description>
+      <implementation>
+        - :focus-visible CSS rule in globals.css
+        - 2px solid outline using var(--accent-primary) gold color
+        - Applies to button, a, [role="button"], [tabindex="0"]
+        - Input elements also get outline + border-color change
+      </implementation>
+      <test-approach>Manual: Tab through page, verify 2px gold outline on all interactive elements</test-approach>
+    </criterion>
+    <criterion id="AC-6.1.4">
+      <description>Focus offset applied</description>
+      <implementation>
+        - outline-offset: 2px in :focus-visible rule
+        - Provides breathing room between element edge and focus indicator
+        - Improves visibility and aesthetics of focus ring
+      </implementation>
+      <test-approach>Manual: Inspect focused element, verify 2px gap between element border and outline</test-approach>
+    </criterion>
+    <criterion id="AC-6.1.5">
+      <description>High contrast mode support</description>
+      <implementation>
+        - @media (forced-colors: active) rule in globals.css
+        - 3px solid CanvasText outline (system color)
+        - Overrides normal focus styles in high contrast mode
+      </implementation>
+      <test-approach>Manual: Enable Windows High Contrast Mode, verify 3px outline visible on focus</test-approach>
+    </criterion>
+    <criterion id="AC-6.1.6">
+      <description>Modal focus trap works</description>
+      <implementation>
+        - useFocusTrap hook in ObituaryModal
+        - Tab on last element wraps to first (handleKeyDown checks activeElement === lastElement)
+        - Shift+Tab on first element wraps to last
+        - trapRef applied to SheetContent container
+        - isActive={isOpen} auto-activates trap when modal opens
+      </implementation>
+      <test-approach>Manual: Open modal, tab through elements, verify focus cycles within modal</test-approach>
+    </criterion>
+    <criterion id="AC-6.1.7">
+      <description>Modal Escape closes</description>
+      <implementation>
+        - useFocusTrap hook with onEscape callback
+        - onEscape calls handleClose (which calls onClose prop)
+        - deactivate function restores focus to triggerElementRef
+        - triggerRef prop already exists in ObituaryModal for focus restoration
+      </implementation>
+      <test-approach>Manual: Open modal, press Escape, verify modal closes and focus returns to trigger button</test-approach>
+    </criterion>
+    <criterion id="AC-6.1.8">
+      <description>Main content focusable</description>
+      <implementation>
+        - Main element has tabIndex={-1} (programmatic focus only, not in tab order)
+        - Main element has className="outline-none" (no visible focus ring)
+        - Skip link can focus it programmatically via target.focus()
+        - Users cannot tab to it naturally (prevents confusion)
+      </implementation>
+      <test-approach>Manual: Use skip link to focus main, verify no visible outline. Tab naturally, verify main is skipped</test-approach>
+    </criterion>
+  </acceptance-criteria-mapping>
+
+  <reference-implementations>
+    <reference>
+      <title>Hook Pattern Reference</title>
+      <file-path>src/lib/hooks/use-filters.ts</file-path>
+      <description>Example of custom hook with useCallback, useMemo, typed return interface. Use similar pattern for useFocusTrap hook structure</description>
+    </reference>
+    <reference>
+      <title>Animation Utilities Reference</title>
+      <file-path>src/lib/utils/animation.ts</file-path>
+      <description>Example of utility file with JSDoc comments, type exports, and Motion/React integration. Use similar documentation style for a11y.ts</description>
+    </reference>
+    <reference>
+      <title>Modal Component Reference</title>
+      <file-path>src/components/obituary/obituary-modal.tsx</file-path>
+      <description>Existing modal implementation showing Sheet usage, useReducedMotion integration, and focus restoration pattern with triggerRef</description>
+    </reference>
+    <reference>
+      <title>Test Pattern Reference</title>
+      <file-path>tests/unit/lib/hooks/use-filters.test.ts</file-path>
+      <description>Example test structure for hooks: module exports testing, dependency verification, pure function testing, and behavior documentation through code review comments</description>
+    </reference>
+    <reference>
+      <title>Component Test Reference</title>
+      <file-path>tests/unit/components/obituary/obituary-modal.test.tsx</file-path>
+      <description>Example component test structure: module exports, animation variants, dependency imports, and integration behavior documentation</description>
+    </reference>
+  </reference-implementations>
+
+  <validation-checklist>
+    <validation-item>
+      <id>VAL-6.1.1</id>
+      <description>All new files compile without TypeScript errors (pnpm tsc --noEmit)</description>
+    </validation-item>
+    <validation-item>
+      <id>VAL-6.1.2</id>
+      <description>ESLint passes with no errors or warnings (pnpm lint)</description>
+    </validation-item>
+    <validation-item>
+      <id>VAL-6.1.3</id>
+      <description>All unit tests pass (pnpm test:run)</description>
+    </validation-item>
+    <validation-item>
+      <id>VAL-6.1.4</id>
+      <description>Skip link appears on Tab and is styled correctly (gold background, dark text, top-left position)</description>
+    </validation-item>
+    <validation-item>
+      <id>VAL-6.1.5</id>
+      <description>Skip link Enter key focuses and scrolls to main content</description>
+    </validation-item>
+    <validation-item>
+      <id>VAL-6.1.6</id>
+      <description>All interactive elements show 2px gold focus indicator on Tab navigation</description>
+    </validation-item>
+    <validation-item>
+      <id>VAL-6.1.7</id>
+      <description>Mouse clicks do not show focus indicator (focus-visible works correctly)</description>
+    </validation-item>
+    <validation-item>
+      <id>VAL-6.1.8</id>
+      <description>Modal focus trap: Tab cycles from last to first element</description>
+    </validation-item>
+    <validation-item>
+      <id>VAL-6.1.9</id>
+      <description>Modal focus trap: Shift+Tab cycles from first to last element</description>
+    </validation-item>
+    <validation-item>
+      <id>VAL-6.1.10</id>
+      <description>Modal Escape key closes modal and returns focus to trigger element</description>
+    </validation-item>
+    <validation-item>
+      <id>VAL-6.1.11</id>
+      <description>High contrast mode shows 3px outline on focused elements (manual test on Windows)</description>
+    </validation-item>
+    <validation-item>
+      <id>VAL-6.1.12</id>
+      <description>Main content has no visible focus indicator when skip link focuses it</description>
+    </validation-item>
+  </validation-checklist>
+
+</story-context>

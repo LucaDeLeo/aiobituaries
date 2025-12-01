@@ -12,6 +12,7 @@ import { getObituaryBySlug } from '@/lib/sanity/queries'
 import { formatDate } from '@/lib/utils/date'
 import { modalSlideIn, DURATIONS } from '@/lib/utils/animation'
 import { CATEGORY_LABELS } from '@/lib/constants/categories'
+import { useFocusTrap } from '@/lib/hooks/use-focus-trap'
 import type { Obituary, ObituarySummary, Category } from '@/types/obituary'
 
 /**
@@ -51,6 +52,21 @@ export function ObituaryModal({
 
   // Check reduced motion preference
   const shouldReduceMotion = useReducedMotion()
+
+  // Restore focus to trigger element when modal closes
+  const handleClose = () => {
+    onClose()
+    // Small delay to allow modal exit animation
+    setTimeout(() => {
+      triggerRef?.current?.focus()
+    }, 250)
+  }
+
+  // Integrate focus trap for keyboard navigation
+  const { trapRef } = useFocusTrap({
+    isActive: isOpen,
+    onEscape: handleClose,
+  })
 
   // Fetch full obituary data when modal opens
   useEffect(() => {
@@ -93,18 +109,10 @@ export function ObituaryModal({
     }
   }, [isOpen, selectedSummary])
 
-  // Restore focus to trigger element when modal closes
-  const handleClose = () => {
-    onClose()
-    // Small delay to allow modal exit animation
-    setTimeout(() => {
-      triggerRef?.current?.focus()
-    }, 250)
-  }
-
   return (
     <Sheet open={isOpen} onOpenChange={handleClose}>
       <SheetContent
+        ref={trapRef as React.RefObject<HTMLDivElement>}
         side={side}
         className={cn(
           'overflow-y-auto p-6',

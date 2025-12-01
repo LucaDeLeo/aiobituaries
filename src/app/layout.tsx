@@ -5,6 +5,7 @@ import "./globals.css";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Toaster } from "@/components/ui/toaster";
+import { SkipLink } from "@/components/accessibility/skip-link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,10 +42,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased`}
       >
+        <SkipLink />
         <NuqsAdapter>
           <div className="flex flex-col min-h-screen">
             <Header />
-            <main className="flex-1">
+            <main id="main-content" tabIndex={-1} className="flex-1 outline-none">
               {children}
             </main>
             <Footer />
