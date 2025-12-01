@@ -1,0 +1,539 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context XML for Story 6-3: Screen Reader Support
+  Generated: 2025-12-01
+  Epic: Epic 6 - Accessibility & Quality
+  Status: drafted -> ready-for-dev
+
+  This context provides all implementation details, code references,
+  and patterns needed for comprehensive screen reader support.
+-->
+<story-context>
+  <metadata>
+    <story-key>6-3-screen-reader-support</story-key>
+    <epic>Epic 6 - Accessibility & Quality</epic>
+    <story-title>Screen Reader Support</story-title>
+    <priority>High</priority>
+    <estimated-effort>4 hours</estimated-effort>
+    <generated>2025-12-01</generated>
+  </metadata>
+
+  <story-reference>
+    <path>docs/sprint-artifacts/stories/6-3-screen-reader-support.md</path>
+    <summary>
+      Implement comprehensive screen reader support by creating LiveRegionProvider
+      for centralized announcements, adding ARIA landmarks to page structure,
+      enhancing ObituaryModal with proper ARIA relationships, creating VisuallyHidden
+      utility component, and ensuring all images have appropriate alt text.
+    </summary>
+  </story-reference>
+
+  <epic-context>
+    <tech-spec-path>docs/sprint-artifacts/epic-tech-specs/epic-6-tech-spec.md</tech-spec-path>
+    <epic-summary>
+      Epic 6 delivers full WCAG 2.1 AA compliance, performance optimization, and
+      quality refinements. This story (6-3) focuses on screen reader accessibility
+      through ARIA landmarks, live regions, and proper labeling patterns.
+    </epic-summary>
+    <related-frs>
+      <fr id="FR41">Screen readers can access all timeline data</fr>
+      <fr id="FR43">All images have appropriate alt text</fr>
+      <fr id="FR38">Site meets WCAG 2.1 AA compliance standards (partial)</fr>
+    </related-frs>
+  </epic-context>
+
+  <dependencies>
+    <completed-stories>
+      <story key="6-1-keyboard-navigation-foundation">
+        Provides global focus styles, a11y utilities (handleKeyboardNavigation,
+        generateId, isFocusable, getFocusableElements), SkipLink component, and
+        useFocusTrap hook. These are foundational for screen reader support.
+      </story>
+      <story key="6-2-timeline-keyboard-access">
+        Provides useRovingFocus hook, ScatterPoint ARIA attributes (title/desc
+        with aria-labelledby/describedby), and live region pattern in ScatterPlot.
+        The existing live region pattern should be extended via LiveRegionProvider.
+      </story>
+    </completed-stories>
+    <external-dependencies>
+      <dependency name="@radix-ui/react-dialog">
+        Used by shadcn/ui Sheet component. Provides built-in accessibility
+        including focus management and aria-modal support.
+      </dependency>
+      <dependency name="Tailwind CSS sr-only">
+        Utility class for screen reader-only content. Already used throughout
+        codebase (5 files currently use it).
+      </dependency>
+    </external-dependencies>
+  </dependencies>
+
+  <acceptance-criteria>
+    <criterion id="AC-6.3.1">
+      Timeline has descriptive label announcing "AI Obituaries timeline, X items"
+    </criterion>
+    <criterion id="AC-6.3.2">
+      Each data point has aria-label with format: "Obituary: [claim preview],
+      Source: [source], Date: [date], Category: [category]"
+    </criterion>
+    <criterion id="AC-6.3.3">
+      Filter changes announced via live region: "Showing X obituaries in [category]"
+      or "Showing all X obituaries"
+    </criterion>
+    <criterion id="AC-6.3.4">
+      Modal announced as dialog with title (source name)
+    </criterion>
+    <criterion id="AC-6.3.5">
+      Modal has aria-labelledby pointing to source/title, aria-describedby
+      pointing to claim preview
+    </criterion>
+    <criterion id="AC-6.3.6">
+      Count display readable: announces "[X] AI obituaries documented"
+    </criterion>
+    <criterion id="AC-6.3.7">
+      Landmarks present: banner (header), main, contentinfo (footer)
+    </criterion>
+    <criterion id="AC-6.3.8">
+      LiveRegionProvider integrated in root layout for dynamic announcements
+    </criterion>
+    <criterion id="AC-6.3.9">
+      VisuallyHidden component available for sr-only content
+    </criterion>
+    <criterion id="AC-6.3.10">
+      Close button has accessible name "Close" via sr-only text
+    </criterion>
+    <criterion id="AC-6.3.11">
+      All images have appropriate alt text (empty for decorative)
+    </criterion>
+  </acceptance-criteria>
+
+  <documentation-artifacts>
+    <artifact type="architecture">
+      <path>docs/architecture.md</path>
+      <relevant-sections>
+        <section name="Accessibility">
+          Keyboard nav (FR40), screen reader (FR41), table view (FR42), focus indicators.
+          ARIA labels: "Obituary: [claim], Date: [date]"
+        </section>
+        <section name="Component Library">
+          shadcn/ui components are built on Radix UI with accessibility primitives.
+          Sheet component uses @radix-ui/react-dialog.
+        </section>
+      </relevant-sections>
+    </artifact>
+
+    <artifact type="tech-spec">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-6-tech-spec.md</path>
+      <relevant-sections>
+        <section name="Section 4.3: Story 6-3 Screen Reader Support">
+          Complete implementation patterns for LiveRegionProvider, VisuallyHidden,
+          ARIA landmarks, and modal ARIA enhancement.
+        </section>
+        <section name="Section 3.1: Accessibility State Types">
+          Type definitions for Announcement interface with id, message,
+          politeness ('polite' | 'assertive'), and delay.
+        </section>
+      </relevant-sections>
+    </artifact>
+
+    <artifact type="story">
+      <path>docs/sprint-artifacts/stories/6-3-screen-reader-support.md</path>
+      <relevant-sections>
+        <section name="Technical Approach">
+          Detailed implementation for LiveRegionProvider, VisuallyHidden,
+          root layout integration, modal ARIA, count display, filter announcements.
+        </section>
+        <section name="Reference Implementation">
+          Complete code samples for all components to be created.
+        </section>
+        <section name="Tasks">
+          13 tasks with detailed subtasks for implementation.
+        </section>
+      </relevant-sections>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code-interfaces>
+    <!-- Files to MODIFY -->
+    <file action="modify">
+      <path>src/app/layout.tsx</path>
+      <description>
+        Root layout that needs LiveRegionProvider wrapper and explicit ARIA landmarks.
+        Currently has SkipLink, Header, main with id="main-content", and Footer.
+      </description>
+      <current-state>
+        Already has lang="en" on html, SkipLink integrated, main with id and tabIndex.
+        Missing: LiveRegionProvider wrapper, explicit role attributes on header/footer.
+      </current-state>
+      <modifications-needed>
+        1. Import and wrap with LiveRegionProvider
+        2. Pass role="banner" to Header (or verify header element used)
+        3. Add role="main" explicitly to main element
+        4. Pass role="contentinfo" to Footer (or verify footer element used)
+      </modifications-needed>
+    </file>
+
+    <file action="modify">
+      <path>src/components/obituary/obituary-modal.tsx</path>
+      <description>
+        Obituary detail modal using Sheet component. Needs ARIA enhancements
+        for screen reader accessibility.
+      </description>
+      <current-state>
+        Uses Sheet/SheetContent/SheetHeader/SheetTitle from shadcn/ui.
+        Has SheetTitle with className="sr-only" but static text "Obituary Details".
+        Uses useFocusTrap hook for focus management.
+        Close button handled by SheetContent (has sr-only "Close" already).
+      </current-state>
+      <modifications-needed>
+        1. Generate dynamic titleId using obituary._id
+        2. Generate dynamic descriptionId using obituary._id
+        3. Add aria-labelledby={titleId} to SheetContent
+        4. Add aria-describedby={descriptionId} to SheetContent
+        5. Update SheetTitle to use id={titleId} and show obituary.source
+        6. Add SheetDescription with id={descriptionId} for claim context
+        7. Verify close button has sr-only "Close" (already present in Sheet)
+        8. Add aria-hidden="true" to decorative icons
+      </modifications-needed>
+    </file>
+
+    <file action="modify">
+      <path>src/components/obituary/count-display.tsx</path>
+      <description>
+        Server component displaying obituary count on homepage.
+        Needs descriptive label for screen readers.
+      </description>
+      <current-state>
+        Displays count with Intl.NumberFormat and separate "obituaries" text.
+        No aria-label or descriptive context for screen readers.
+      </current-state>
+      <modifications-needed>
+        1. Wrap count display in container with aria-label
+        2. Use format like aria-label="47 AI obituaries documented"
+        3. Or use VisuallyHidden component for additional context
+      </modifications-needed>
+    </file>
+
+    <file action="modify">
+      <path>src/components/filters/category-filter.tsx</path>
+      <description>
+        Category filter bar that needs live region announcements on filter changes.
+      </description>
+      <current-state>
+        Has role="group" and aria-label="Category filters".
+        Buttons have aria-pressed attribute.
+        No live region announcements on filter change.
+      </current-state>
+      <modifications-needed>
+        1. Import useLiveRegion hook
+        2. On filter toggle, call announcePolite with filter status
+        3. Format: "Showing X obituaries in [category] category"
+        4. When cleared: "Showing all X obituaries"
+        5. Need to receive obituary count as prop or from context
+      </modifications-needed>
+    </file>
+
+    <file action="modify">
+      <path>src/components/layout/header.tsx</path>
+      <description>
+        Header component that should have banner landmark role.
+      </description>
+      <current-state>
+        Uses semantic header element which has implicit role="banner".
+        No explicit role attribute needed - header element is correct.
+      </current-state>
+      <modifications-needed>
+        None required - semantic header element provides implicit banner role.
+        Verify during testing that screen readers announce as banner.
+      </modifications-needed>
+    </file>
+
+    <file action="modify">
+      <path>src/components/layout/footer.tsx</path>
+      <description>
+        Footer component that should have contentinfo landmark role.
+      </description>
+      <current-state>
+        Uses semantic footer element which has implicit role="contentinfo".
+        No explicit role attribute needed - footer element is correct.
+      </current-state>
+      <modifications-needed>
+        None required - semantic footer element provides implicit contentinfo role.
+        Verify during testing that screen readers announce as contentinfo.
+      </modifications-needed>
+    </file>
+
+    <!-- Files to CREATE -->
+    <file action="create">
+      <path>src/components/accessibility/live-region.tsx</path>
+      <description>
+        LiveRegionProvider context and useLiveRegion hook for centralized
+        screen reader announcements.
+      </description>
+      <implementation-guide>
+        Reference implementation provided in story and tech-spec.
+        Key features:
+        - createContext for LiveRegionContextValue
+        - useLiveRegion hook with error if outside provider
+        - announce(message, politeness) function
+        - announcePolite and announceAssertive convenience functions
+        - Auto-clear timeout (1000ms) to prevent duplicate announcements
+        - Two live regions: polite (role="status") and assertive (role="alert")
+        - Both regions use sr-only class and aria-atomic="true"
+      </implementation-guide>
+    </file>
+
+    <file action="create">
+      <path>src/components/accessibility/visually-hidden.tsx</path>
+      <description>
+        Simple wrapper component for screen reader-only content.
+      </description>
+      <implementation-guide>
+        Simple component using sr-only Tailwind class.
+        Props:
+        - children: React.ReactNode
+        - as: 'span' | 'div' | 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' (default: 'span')
+        Export for use throughout application.
+      </implementation-guide>
+    </file>
+
+    <file action="create">
+      <path>tests/unit/components/accessibility/live-region.test.tsx</path>
+      <description>Unit tests for LiveRegionProvider component.</description>
+      <test-scenarios>
+        - useLiveRegion throws error when used outside provider
+        - announce adds message to polite region by default
+        - announceAssertive adds message to assertive region
+        - Message clears after timeout (1000ms)
+        - Polite region has role="status" and aria-live="polite"
+        - Assertive region has role="alert" and aria-live="assertive"
+        - Both regions have aria-atomic="true"
+      </test-scenarios>
+    </file>
+
+    <file action="create">
+      <path>tests/unit/components/accessibility/visually-hidden.test.tsx</path>
+      <description>Unit tests for VisuallyHidden component.</description>
+      <test-scenarios>
+        - Renders children with sr-only class
+        - Default element is span
+        - as="div" renders div element
+        - as="h2" renders h2 element
+        - Content is in DOM but visually hidden
+      </test-scenarios>
+    </file>
+
+    <file action="create">
+      <path>tests/unit/components/obituary/obituary-modal-a11y.test.tsx</path>
+      <description>Unit tests for ObituaryModal ARIA attributes.</description>
+      <test-scenarios>
+        - SheetContent has aria-labelledby
+        - SheetContent has aria-describedby
+        - SheetContent has aria-modal="true" (from Radix)
+        - SheetContent has role="dialog" (from Radix)
+        - SheetTitle has correct id matching aria-labelledby
+        - SheetDescription exists with correct id
+        - Close button has sr-only "Close" text
+        - Decorative icons have aria-hidden="true"
+      </test-scenarios>
+    </file>
+
+    <!-- Reference files (from previous stories) -->
+    <file action="reference">
+      <path>src/lib/utils/a11y.ts</path>
+      <description>
+        Accessibility utilities from Story 6-1. Contains handleKeyboardNavigation,
+        generateId, isFocusable, and getFocusableElements functions.
+      </description>
+      <relevant-exports>
+        - generateId(prefix): Generate unique IDs for ARIA relationships
+        - getFocusableElements(container): Get all focusable elements
+      </relevant-exports>
+    </file>
+
+    <file action="reference">
+      <path>src/components/accessibility/skip-link.tsx</path>
+      <description>
+        SkipLink component from Story 6-1. Shows pattern for sr-only content
+        that becomes visible on focus.
+      </description>
+    </file>
+
+    <file action="reference">
+      <path>src/lib/hooks/use-focus-trap.ts</path>
+      <description>
+        Focus trap hook from Story 6-1. Already integrated in ObituaryModal.
+        Uses getFocusableElements from a11y.ts.
+      </description>
+    </file>
+
+    <file action="reference">
+      <path>src/lib/hooks/use-roving-focus.ts</path>
+      <description>
+        Roving focus hook from Story 6-2 for keyboard navigation.
+        Used by ScatterPlot for timeline navigation.
+      </description>
+    </file>
+
+    <file action="reference">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>
+        Has existing live region pattern (lines 777-785) that Story 6-2 created.
+        Uses role="status", aria-live="polite", aria-atomic="true".
+        This local pattern should remain; LiveRegionProvider is for global use.
+      </description>
+      <existing-pattern>
+        &lt;div role="status" aria-live="polite" aria-atomic="true" className="sr-only"&gt;
+          {announcement}
+        &lt;/div&gt;
+      </existing-pattern>
+    </file>
+
+    <file action="reference">
+      <path>src/components/ui/sheet.tsx</path>
+      <description>
+        shadcn/ui Sheet component built on @radix-ui/react-dialog.
+        Already has SheetDescription exported. Close button already has
+        sr-only "Close" text (line 77).
+      </description>
+      <exports>
+        Sheet, SheetTrigger, SheetClose, SheetContent, SheetHeader,
+        SheetFooter, SheetTitle, SheetDescription
+      </exports>
+    </file>
+
+    <file action="reference">
+      <path>src/types/accessibility.ts</path>
+      <description>
+        Accessibility type definitions from Story 6-2.
+        Contains NavigationDirection, RovingFocusState, Announcement interface.
+      </description>
+      <relevant-types>
+        Announcement: { id, message, politeness, delay? }
+      </relevant-types>
+    </file>
+  </existing-code-interfaces>
+
+  <development-constraints>
+    <constraint type="architecture">
+      LiveRegionProvider must be a client component ('use client') since it
+      uses useState, useCallback, and useRef.
+    </constraint>
+    <constraint type="architecture">
+      CountDisplay is a Server Component. Cannot use hooks directly.
+      Use static aria-label or import VisuallyHidden (which can be server-compatible).
+    </constraint>
+    <constraint type="pattern">
+      Use sr-only Tailwind class for visually hidden content, consistent with
+      existing codebase pattern (5 files already use it).
+    </constraint>
+    <constraint type="pattern">
+      Modal ARIA: Radix Dialog (used by Sheet) already provides role="dialog"
+      and aria-modal="true". Just need to add aria-labelledby and aria-describedby.
+    </constraint>
+    <constraint type="pattern">
+      Live regions should auto-clear after 1 second to prevent duplicate
+      announcements when content changes rapidly.
+    </constraint>
+    <constraint type="accessibility">
+      Header uses semantic &lt;header&gt; element - implicit role="banner".
+      Footer uses semantic &lt;footer&gt; element - implicit role="contentinfo".
+      No need to add explicit role attributes.
+    </constraint>
+    <constraint type="accessibility">
+      Decorative icons (like X for close, ExternalLink) should have
+      aria-hidden="true" to prevent screen reader announcement.
+    </constraint>
+    <constraint type="testing">
+      Manual VoiceOver/NVDA testing required - automated tests cannot fully
+      verify screen reader behavior.
+    </constraint>
+  </development-constraints>
+
+  <testing-context>
+    <test-framework>Vitest with @testing-library/react</test-framework>
+    <test-location>tests/unit/components/accessibility/</test-location>
+    <existing-test-patterns>
+      <pattern path="tests/unit/components/accessibility/skip-link.test.tsx">
+        Existing test file for SkipLink from Story 6-1. Use as pattern reference.
+      </pattern>
+    </existing-test-patterns>
+    <manual-testing-required>
+      <test>VoiceOver: landmarks (banner, main, contentinfo) announced on navigation</test>
+      <test>VoiceOver: timeline described as "AI Obituaries timeline, X items"</test>
+      <test>VoiceOver: data point focus announces source, date, claim preview, category</test>
+      <test>VoiceOver: Enter on point announces "Opening details for..."</test>
+      <test>VoiceOver: modal announces as dialog with source name title</test>
+      <test>VoiceOver: tab to close button announces "Close"</test>
+      <test>VoiceOver: filter toggle announces filter status change</test>
+      <test>VoiceOver: count display announces "X AI obituaries documented"</test>
+      <test>NVDA: repeat above tests on Windows if available</test>
+      <test>Verify no ARIA errors in browser DevTools accessibility panel</test>
+    </manual-testing-required>
+  </testing-context>
+
+  <implementation-notes>
+    <note priority="high">
+      The Sheet component (line 75-78) already has sr-only "Close" text on the
+      close button. Verify this works and don't duplicate.
+    </note>
+    <note priority="high">
+      ScatterPlot already has a local live region (lines 777-785). Keep this for
+      timeline-specific announcements. LiveRegionProvider is for global/filter announcements.
+    </note>
+    <note priority="medium">
+      CategoryFilter needs obituary count for announcements. Either:
+      1. Pass count as prop from parent
+      2. Create separate filter announcement component that receives count
+      The parent component (likely in page.tsx) has access to obituary data.
+    </note>
+    <note priority="medium">
+      For images audit: grep for &lt;Image and &lt;img tags. Current search shows
+      no explicit image elements in src/ - only icons from lucide-react which
+      should have aria-hidden="true" when decorative.
+    </note>
+    <note priority="low">
+      VisuallyHidden can be a simple functional component without 'use client'
+      since it only renders static content with className.
+    </note>
+  </implementation-notes>
+
+  <quality-checklist>
+    <item>TypeScript check passes: pnpm tsc --noEmit</item>
+    <item>Lint passes: pnpm lint</item>
+    <item>Unit tests pass: pnpm test:run</item>
+    <item>No ARIA errors in browser DevTools accessibility panel</item>
+    <item>VoiceOver announces all landmarks correctly</item>
+    <item>VoiceOver announces modal as dialog with title</item>
+    <item>VoiceOver announces filter changes</item>
+    <item>VoiceOver announces count display descriptively</item>
+    <item>All decorative icons have aria-hidden="true"</item>
+    <item>Close button accessible name is "Close"</item>
+  </quality-checklist>
+
+  <files-summary>
+    <files-to-create>
+      <file>src/components/accessibility/live-region.tsx</file>
+      <file>src/components/accessibility/visually-hidden.tsx</file>
+      <file>tests/unit/components/accessibility/live-region.test.tsx</file>
+      <file>tests/unit/components/accessibility/visually-hidden.test.tsx</file>
+      <file>tests/unit/components/obituary/obituary-modal-a11y.test.tsx</file>
+    </files-to-create>
+    <files-to-modify>
+      <file>src/app/layout.tsx</file>
+      <file>src/components/obituary/obituary-modal.tsx</file>
+      <file>src/components/obituary/count-display.tsx</file>
+      <file>src/components/filters/category-filter.tsx</file>
+    </files-to-modify>
+    <files-to-reference>
+      <file>src/lib/utils/a11y.ts</file>
+      <file>src/components/accessibility/skip-link.tsx</file>
+      <file>src/lib/hooks/use-focus-trap.ts</file>
+      <file>src/lib/hooks/use-roving-focus.ts</file>
+      <file>src/components/visualization/scatter-plot.tsx</file>
+      <file>src/components/ui/sheet.tsx</file>
+      <file>src/types/accessibility.ts</file>
+      <file>src/components/layout/header.tsx</file>
+      <file>src/components/layout/footer.tsx</file>
+    </files-to-reference>
+  </files-summary>
+</story-context>

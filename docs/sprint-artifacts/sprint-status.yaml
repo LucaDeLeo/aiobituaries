@@ -91,7 +91,7 @@ development_status:
   epic-6: contexted
   6-1-keyboard-navigation-foundation: done
   6-2-timeline-keyboard-access: done
-  6-3-screen-reader-support: backlog
+  6-3-screen-reader-support: done
   6-4-alternative-table-view: backlog
   6-5-color-contrast-and-visual-accessibility: backlog
   6-6-reduced-motion-support: backlog

@@ -83,6 +83,8 @@ export function MobileTimeline({ obituaries }: MobileTimelineProps) {
           activeCategories={activeCategories}
           onToggle={toggleCategory}
           onShowAll={clearFilters}
+          totalCount={obituaries.length}
+          filteredCount={filteredObituaries.length}
         />
       </div>
 

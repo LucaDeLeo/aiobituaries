@@ -11,6 +11,7 @@
  * this client component handles interactivity and filter state.
  */
 
+import { useMemo } from 'react'
 import { CategoryFilter } from '@/components/filters/category-filter'
 import { ScatterPlot } from '@/components/visualization/scatter-plot'
 import { CategoryChart } from '@/components/visualization/category-chart'
@@ -28,6 +29,14 @@ export interface HomeClientProps {
  */
 export function HomeClient({ obituaries }: HomeClientProps) {
   const { categories, toggleCategory, clearFilters } = useFilters()
+
+  // Calculate filtered count for accessibility announcements
+  const filteredCount = useMemo(() => {
+    if (categories.length === 0) return obituaries.length
+    return obituaries.filter((obit) =>
+      obit.categories?.some((cat) => categories.includes(cat))
+    ).length
+  }, [obituaries, categories])
 
   return (
     <>
@@ -53,6 +62,8 @@ export function HomeClient({ obituaries }: HomeClientProps) {
         activeCategories={categories}
         onToggle={toggleCategory}
         onShowAll={clearFilters}
+        totalCount={obituaries.length}
+        filteredCount={filteredCount}
       />
     </>
   )

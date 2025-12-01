@@ -5,7 +5,13 @@ import { motion, useReducedMotion } from 'motion/react'
 import { ExternalLink, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet'
 import { ObituaryContext } from '@/components/obituary/obituary-context'
 import { CopyButton } from '@/components/ui/copy-button'
 import { getObituaryBySlug } from '@/lib/sanity/queries'
@@ -49,6 +55,10 @@ export function ObituaryModal({
   const [obituary, setObituary] = useState<Obituary | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Generate unique IDs for ARIA relationships
+  const titleId = obituary ? `modal-title-${obituary._id}` : undefined
+  const descriptionId = obituary ? `modal-desc-${obituary._id}` : undefined
 
   // Check reduced motion preference
   const shouldReduceMotion = useReducedMotion()
@@ -119,6 +129,8 @@ export function ObituaryModal({
           side === 'bottom' ? 'h-[85vh] max-h-[85vh]' : 'w-full sm:max-w-lg'
         )}
         data-testid="obituary-modal"
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
       >
         {isLoading && (
           <div className="flex items-center justify-center h-full">
@@ -149,7 +161,14 @@ export function ObituaryModal({
             className="space-y-6"
           >
             <SheetHeader>
-              <SheetTitle className="sr-only">Obituary Details</SheetTitle>
+              <SheetTitle id={titleId} className="sr-only">
+                {obituary.source}
+              </SheetTitle>
+              <SheetDescription id={descriptionId} className="sr-only">
+                Obituary from {obituary.source} on {formatDate(obituary.date)}:{' '}
+                {obituary.claim.slice(0, 100)}
+                {obituary.claim.length > 100 ? '...' : ''}
+              </SheetDescription>
             </SheetHeader>
 
             {/* Claim */}
@@ -167,7 +186,7 @@ export function ObituaryModal({
                   className="inline-flex items-center gap-1 text-sm font-mono text-[var(--accent-primary)] hover:underline"
                 >
                   {obituary.source}
-                  <ExternalLink className="w-3 h-3" />
+                  <ExternalLink className="w-3 h-3" aria-hidden="true" />
                 </a>
               </div>
 
@@ -205,7 +224,7 @@ export function ObituaryModal({
                 className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] bg-[--accent-primary] text-[--bg-primary] rounded-lg font-medium hover:opacity-90 transition-opacity"
               >
                 View full page
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </Link>
             </div>
           </motion.div>

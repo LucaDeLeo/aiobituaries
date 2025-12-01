@@ -1,10 +1,12 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { motion } from 'motion/react'
-import { CATEGORY_ORDER, getCategory } from '@/lib/constants/categories'
+import { CATEGORY_ORDER, getCategory, CATEGORY_LABELS } from '@/lib/constants/categories'
 import { CategoryPill } from './category-pill'
 import { cn } from '@/lib/utils'
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint'
+import { useLiveRegionOptional } from '@/components/accessibility/live-region'
 import type { Category } from '@/types/obituary'
 
 /**
@@ -19,6 +21,10 @@ export interface CategoryFilterProps {
   onShowAll: () => void
   /** Optional className for container */
   className?: string
+  /** Total count of items (for announcements) */
+  totalCount?: number
+  /** Filtered count of items (for announcements) */
+  filteredCount?: number
 }
 
 /**
@@ -50,9 +56,40 @@ export function CategoryFilter({
   onToggle,
   onShowAll,
   className,
+  totalCount,
+  filteredCount,
 }: CategoryFilterProps) {
   const showingAll = activeCategories.length === 0
   const breakpoint = useBreakpoint()
+  const liveRegion = useLiveRegionOptional()
+  const isInitialMount = useRef(true)
+
+  // Announce filter changes to screen readers
+  useEffect(() => {
+    // Skip announcement on initial mount
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+
+    // Only announce if we have counts and live region available
+    if (!liveRegion || filteredCount === undefined) return
+
+    let message: string
+    if (showingAll) {
+      message = `Showing all ${totalCount ?? filteredCount} obituaries`
+    } else if (activeCategories.length === 1) {
+      const categoryLabel = CATEGORY_LABELS[activeCategories[0]]
+      message = `Showing ${filteredCount} obituaries in ${categoryLabel} category`
+    } else {
+      const categoryLabels = activeCategories
+        .map((cat) => CATEGORY_LABELS[cat])
+        .join(' and ')
+      message = `Showing ${filteredCount} obituaries in ${categoryLabels} categories`
+    }
+
+    liveRegion.announcePolite(message)
+  }, [activeCategories, showingAll, filteredCount, totalCount, liveRegion])
 
   // Position class based on breakpoint
   const positionClass =
