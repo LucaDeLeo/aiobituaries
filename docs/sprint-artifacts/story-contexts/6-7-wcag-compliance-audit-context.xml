@@ -1,0 +1,1111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context: 6-7-wcag-compliance-audit
+  Generated: 2025-12-01
+  Epic: Epic 6 - Accessibility & Quality
+
+  This context document provides comprehensive implementation guidance
+  for WCAG 2.1 AA compliance verification through automated testing,
+  manual validation, and comprehensive audit documentation.
+-->
+<story-context>
+  <metadata>
+    <story-key>6-7-wcag-compliance-audit</story-key>
+    <epic>Epic 6 - Accessibility & Quality</epic>
+    <title>WCAG Compliance Audit</title>
+    <status>ready-for-dev</status>
+    <priority>High</priority>
+    <created>2025-12-01</created>
+  </metadata>
+
+  <story-reference>
+    <file>docs/sprint-artifacts/stories/6-7-wcag-compliance-audit.md</file>
+    <epic-tech-spec>docs/sprint-artifacts/epic-tech-specs/epic-6-tech-spec.md</epic-tech-spec>
+    <architecture>docs/architecture.md</architecture>
+  </story-reference>
+
+  <summary>
+    Implement comprehensive WCAG 2.1 AA compliance verification through automated
+    testing with axe-core/Playwright, manual keyboard navigation verification,
+    screen reader testing documentation, color contrast verification, and systematic
+    WCAG checklist completion. This story validates the effectiveness of all
+    accessibility implementations from Stories 6-1 through 6-6, identifies any
+    remaining issues, fixes critical violations, and establishes a compliance
+    baseline for ongoing monitoring.
+
+    The approach is multi-layered:
+    1. Automated axe-core tests catch 40-60% of issues
+    2. Keyboard navigation tests verify interactive patterns
+    3. Screen reader tests validate AT user experience
+    4. Manual WCAG checklist ensures comprehensive coverage
+
+    All testing infrastructure uses existing Playwright setup. No new test
+    framework needed. Story focuses on verification and documentation, not
+    new feature implementation.
+  </summary>
+
+  <acceptance-criteria>
+    <criterion id="AC-6.7.1" testable="true">
+      Given automated test suite runs, when all pages tested with axe-core,
+      then zero critical/serious violations found
+    </criterion>
+    <criterion id="AC-6.7.2" testable="true">
+      Given manual keyboard testing performed, when all interactive elements tested,
+      then all features accessible via keyboard only
+    </criterion>
+    <criterion id="AC-6.7.3" testable="true">
+      Given manual screen reader testing (VoiceOver/NVDA), when navigating all pages,
+      then content structure logical and announcements clear
+    </criterion>
+    <criterion id="AC-6.7.4" testable="true">
+      Given color contrast verification performed, when all text/UI elements checked,
+      then minimum 4.5:1 ratio for normal text, 3:1 for large text and UI components
+    </criterion>
+    <criterion id="AC-6.7.5" testable="true">
+      Given WCAG 2.1 AA checklist reviewed, when all success criteria evaluated,
+      then all applicable criteria pass or have documented exceptions
+    </criterion>
+    <criterion id="AC-6.7.6" testable="true">
+      Given comprehensive audit complete, when violations categorized by severity,
+      then zero critical or serious violations remain
+    </criterion>
+    <criterion id="AC-6.7.7" testable="true">
+      Given audit findings reviewed, when any minor violations or exceptions exist,
+      then documented with justification and mitigation plan
+    </criterion>
+    <criterion id="AC-6.7.8" testable="true">
+      Given axe-core automated scan on homepage, when testing with WCAG 2.1 AA tags,
+      then zero violations
+    </criterion>
+    <criterion id="AC-6.7.9" testable="true">
+      Given axe-core automated scan on obituary detail page, when testing with WCAG 2.1 AA tags,
+      then zero violations
+    </criterion>
+    <criterion id="AC-6.7.10" testable="true">
+      Given modal opened and axe-core scan run, when testing dialog region,
+      then zero violations
+    </criterion>
+    <criterion id="AC-6.7.11" testable="true">
+      Given table view activated and axe-core scan run, when testing table region,
+      then zero violations
+    </criterion>
+    <criterion id="AC-6.7.12" testable="true">
+      Given all images on site checked, when evaluating alt attributes,
+      then all images have descriptive alt text or role="presentation" for decorative images
+    </criterion>
+  </acceptance-criteria>
+
+  <documentation-artifacts>
+    <artifact type="story" relevance="primary">
+      <path>docs/sprint-artifacts/stories/6-7-wcag-compliance-audit.md</path>
+      <description>
+        Full story specification with user story, 12 acceptance criteria, detailed
+        technical approach with axe-core/Playwright integration, complete reference
+        implementations for all test suites (axe.spec.ts, keyboard.spec.ts,
+        screen-reader.spec.ts), 14-task breakdown with time estimates, comprehensive
+        test scenarios, and files to create/modify list.
+      </description>
+    </artifact>
+
+    <artifact type="tech-spec" relevance="primary">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-6-tech-spec.md</path>
+      <description>
+        Epic 6 technical specification. Section 4.7 covers WCAG compliance audit
+        patterns with complete test implementations, WCAG checklist template organized
+        by Perceivable/Operable/Understandable/Robust principles, manual testing
+        procedures, and compliance documentation structure. Provides reference
+        implementations for axe tests, keyboard tests, and screen reader tests.
+      </description>
+    </artifact>
+
+    <artifact type="architecture" relevance="reference">
+      <path>docs/architecture.md</path>
+      <description>
+        Project architecture document. Defines testing patterns with Vitest for
+        unit tests and Playwright for E2E tests. Specifies test organization
+        structure (tests/unit/, tests/e2e/), naming conventions (*.test.ts for
+        unit, *.spec.ts for E2E), and coverage expectations (80%+ for utils,
+        happy path for E2E).
+      </description>
+    </artifact>
+
+    <artifact type="previous-story" relevance="reference">
+      <path>docs/sprint-artifacts/stories/6-1-keyboard-navigation-foundation.md</path>
+      <description>
+        Story 6-1 implemented global keyboard navigation patterns: SkipLink component,
+        focus trap hook, keyboard handler utilities, and global focus styles.
+        These implementations will be tested by keyboard.spec.ts to verify they
+        work correctly.
+      </description>
+    </artifact>
+
+    <artifact type="previous-story" relevance="reference">
+      <path>docs/sprint-artifacts/stories/6-2-timeline-keyboard-access.md</path>
+      <description>
+        Story 6-2 implemented roving tabindex pattern for ScatterPlot with arrow
+        key navigation (left/right/home/end). useRovingFocus hook manages focus
+        state. These patterns will be tested to ensure timeline is fully keyboard
+        accessible per FR40.
+      </description>
+    </artifact>
+
+    <artifact type="previous-story" relevance="reference">
+      <path>docs/sprint-artifacts/stories/6-3-screen-reader-support.md</path>
+      <description>
+        Story 6-3 implemented ARIA landmarks, labels, live regions, and semantic
+        HTML structure. LiveRegion component for announcements, VisuallyHidden
+        for SR-only content, proper heading hierarchy. Screen reader tests verify
+        implementation effectiveness.
+      </description>
+    </artifact>
+
+    <artifact type="previous-story" relevance="reference">
+      <path>docs/sprint-artifacts/stories/6-4-alternative-table-view.md</path>
+      <description>
+        Story 6-4 implemented ObituaryTable component with proper ARIA grid role,
+        sortable columns with aria-sort, row count in caption, and proper scope
+        attributes. Table accessibility will be verified with axe-core and manual
+        keyboard testing.
+      </description>
+    </artifact>
+
+    <artifact type="previous-story" relevance="reference">
+      <path>docs/sprint-artifacts/stories/6-5-color-contrast-and-visual-accessibility.md</path>
+      <description>
+        Story 6-5 verified all color combinations meet WCAG AA standards using
+        color-contrast.ts utility. All colors pre-verified to meet 4.5:1 (normal text)
+        and 3:1 (large text/UI) ratios. This story references existing verification
+        rather than re-checking.
+      </description>
+    </artifact>
+
+    <artifact type="previous-story" relevance="reference">
+      <path>docs/sprint-artifacts/stories/6-6-reduced-motion-support.md</path>
+      <description>
+        Story 6-6 implemented reduced motion support using Motion's useReducedMotion
+        hook and animation.ts utilities. Manual testing will verify animations
+        respect prefers-reduced-motion preference.
+      </description>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code-interfaces>
+    <!-- Accessibility Components - Testing Targets -->
+    <interface type="component" relevance="primary">
+      <path>src/components/accessibility/skip-link.tsx</path>
+      <description>
+        Skip link component for keyboard accessibility. Appears on Tab focus,
+        jumps to #main-content on activation. Respects reduced motion for scroll
+        behavior. VERIFY with keyboard.spec.ts that Tab shows link, Enter activates,
+        and focus moves to main content.
+      </description>
+      <testing-notes>
+        Test: keyboard.spec.ts - "Skip link works correctly"
+        - Press Tab on page load → skip link visible and focused
+        - Press Enter → main content receives focus
+      </testing-notes>
+      <action>VERIFY - Test in keyboard navigation suite</action>
+    </interface>
+
+    <interface type="component" relevance="primary">
+      <path>src/components/accessibility/live-region.tsx</path>
+      <description>
+        LiveRegionProvider creates polite (role="status") and assertive (role="alert")
+        live regions for screen reader announcements. Used for filter changes,
+        status updates. VERIFY live regions exist and messages announced properly.
+      </description>
+      <testing-notes>
+        Test: screen-reader.spec.ts - "Live regions exist for dynamic updates"
+        - Check aria-live regions present
+        - Verify politeness levels (polite/assertive)
+      </testing-notes>
+      <action>VERIFY - Test in screen reader suite</action>
+    </interface>
+
+    <interface type="component" relevance="primary">
+      <path>src/components/accessibility/visually-hidden.tsx</path>
+      <description>
+        VisuallyHidden component for screen-reader-only content. Uses sr-only
+        Tailwind utility class to hide visually while remaining accessible to AT.
+        VERIFY content announced by screen readers but not visible.
+      </description>
+      <testing-notes>
+        Used throughout for SR-only labels and instructions. Screen reader
+        tests verify proper heading hierarchy and accessible names that rely
+        on SR-only content.
+      </testing-notes>
+      <action>VERIFY - Screen reader testing only</action>
+    </interface>
+
+    <!-- Accessibility Utilities - Testing Helpers -->
+    <interface type="utility" relevance="primary">
+      <path>src/lib/utils/a11y.ts</path>
+      <description>
+        Accessibility utilities: handleKeyboardNavigation() for common key handlers,
+        generateId() for ARIA relationships, isFocusable() to check element focusability,
+        getFocusableElements() to query all focusable elements in container.
+        These utilities power keyboard navigation - verify they work correctly.
+      </description>
+      <current-implementation>
+        <![CDATA[
+export function handleKeyboardNavigation(event, handlers) { ... }
+export function generateId(prefix = 'a11y'): string { ... }
+export function isFocusable(element: Element): boolean { ... }
+export function getFocusableElements(container: HTMLElement): HTMLElement[] { ... }
+        ]]>
+      </current-implementation>
+      <testing-notes>
+        Unit tests already exist at tests/unit/lib/utils/a11y.test.ts.
+        E2E keyboard tests verify these utilities work in real components.
+      </testing-notes>
+      <action>VERIFY - Unit tests exist, E2E tests confirm integration</action>
+    </interface>
+
+    <interface type="utility" relevance="primary">
+      <path>src/lib/utils/color-contrast.ts</path>
+      <description>
+        WCAG color contrast utilities with pre-computed COLOR_CHECKS for all
+        Deep Archive theme combinations. checkWCAGAA() calculates contrast ratios,
+        verifyAllColorsPassAA() confirms all pass. Already verified in Story 6-5.
+        REFERENCE existing verification in compliance documentation.
+      </description>
+      <current-implementation>
+        <![CDATA[
+export const COLOR_CHECKS = {
+  textOnBg: checkWCAGAA('#E8E6E3', '#0C0C0F'),      // ~14.5:1
+  secondaryOnBg: checkWCAGAA('#A8A5A0', '#0C0C0F'), // ~7.2:1
+  mutedOnBg: checkWCAGAA('#6B6860', '#0C0C0F'),     // ~4.6:1
+  accentOnBg: checkWCAGAA('#C9A962', '#0C0C0F'),    // ~7.8:1
+  // ... more combinations
+}
+export function verifyAllColorsPassAA(): boolean { ... }
+        ]]>
+      </current-implementation>
+      <testing-notes>
+        All theme colors already verified in Story 6-5. Reference COLOR_CHECKS
+        in WCAG checklist and compliance report. No new testing required - just
+        document existing verification.
+      </testing-notes>
+      <action>REFERENCE - Document in compliance report</action>
+    </interface>
+
+    <!-- Hooks - Testing Targets -->
+    <interface type="hook" relevance="primary">
+      <path>src/lib/hooks/use-focus-trap.ts</path>
+      <description>
+        Focus trap hook for modal/dialog keyboard navigation. Traps Tab/Shift+Tab
+        within container, handles Escape to close, stores and returns focus to
+        trigger element. Used by ObituaryModal. VERIFY focus trap works correctly
+        in modal tests.
+      </description>
+      <testing-notes>
+        Test: keyboard.spec.ts - "Modal keyboard interaction"
+        - Open modal → first element focused
+        - Tab through → wraps at boundaries
+        - Escape → modal closes, focus returns to trigger
+      </testing-notes>
+      <action>VERIFY - Test in keyboard navigation suite</action>
+    </interface>
+
+    <interface type="hook" relevance="primary">
+      <path>src/lib/hooks/use-roving-focus.ts</path>
+      <description>
+        Roving tabindex hook for grid/list keyboard navigation. Implements WAI-ARIA
+        roving tabindex pattern with arrow keys, Home/End navigation. Used by
+        ScatterPlot for timeline point navigation. VERIFY roving focus works correctly.
+      </description>
+      <testing-notes>
+        Test: keyboard.spec.ts - "Timeline navigation with arrow keys"
+        - Focus first point → tabindex="0"
+        - Arrow keys → focus moves to adjacent points
+        - Home/End → jumps to first/last
+      </testing-notes>
+      <action>VERIFY - Test in keyboard navigation suite</action>
+    </interface>
+
+    <!-- Components - Testing Targets -->
+    <interface type="component" relevance="primary">
+      <path>src/components/obituary/obituary-modal.tsx</path>
+      <description>
+        ObituaryModal component using shadcn Dialog (Radix UI). Should have
+        role="dialog", aria-labelledby, focus trap, Escape to close. VERIFY
+        with axe-core and keyboard tests that modal meets WCAG dialog requirements.
+      </description>
+      <testing-notes>
+        Test: axe.spec.ts - "Modal dialog passes automated checks"
+        - Open modal → run axe on [role="dialog"]
+        - Verify zero violations
+
+        Test: keyboard.spec.ts - "Modal keyboard interaction"
+        - Enter/Space opens → focus trapped
+        - Escape closes → focus returns
+
+        Test: screen-reader.spec.ts - "Modal has accessible name"
+        - Verify aria-label or aria-labelledby present
+      </testing-notes>
+      <action>VERIFY - Test with axe, keyboard, and SR tests</action>
+    </interface>
+
+    <interface type="component" relevance="primary">
+      <path>src/components/obituary/obituary-table.tsx</path>
+      <description>
+        ObituaryTable component with ARIA grid role, sortable columns (aria-sort),
+        caption with row count, proper scope attributes on headers. Alternative
+        to scatter plot visualization for screen reader users. VERIFY table
+        accessibility with axe-core.
+      </description>
+      <testing-notes>
+        Test: axe.spec.ts - "Table view passes automated checks"
+        - Switch to table view → run axe scan
+        - Verify zero violations
+
+        Test: keyboard.spec.ts - "Table view keyboard navigation"
+        - Tab through headers → sort controls accessible
+        - Arrow keys navigate cells (if implemented)
+      </testing-notes>
+      <action>VERIFY - Test with axe and keyboard tests</action>
+    </interface>
+
+    <interface type="component" relevance="primary">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>
+        Main timeline scatter plot visualization. Uses roving tabindex for keyboard
+        navigation, ARIA labels for data points, reduced motion support. VERIFY
+        keyboard accessibility and screen reader announcements work correctly.
+      </description>
+      <testing-notes>
+        Test: keyboard.spec.ts - "Timeline navigation with arrow keys"
+        - Focus data point → arrow keys navigate
+        - Enter → opens modal
+        - Home/End → first/last point
+
+        Test: screen-reader.spec.ts - verify ARIA labels present
+        - Each point has accessible name
+        - Labels include claim, date, category
+      </testing-notes>
+      <action>VERIFY - Test keyboard and SR accessibility</action>
+    </interface>
+
+    <!-- Global Styles - Testing Target -->
+    <interface type="styles" relevance="primary">
+      <path>src/app/globals.css</path>
+      <description>
+        Global CSS with focus styles, reduced motion support, high contrast mode.
+        Contains :focus-visible styles (2px outline, accent color), @media
+        (prefers-reduced-motion: reduce) rules, and @media (forced-colors: active)
+        support. VERIFY focus indicators visible and contrast sufficient.
+      </description>
+      <testing-notes>
+        Manual testing:
+        - Tab through page → all interactive elements have visible focus ring
+        - Focus indicator contrast meets 3:1 ratio (already verified in COLOR_CHECKS)
+
+        Automated testing:
+        - axe-core checks focus-visible implementation
+      </testing-notes>
+      <action>VERIFY - Manual keyboard testing + axe scan</action>
+    </interface>
+  </existing-code-interfaces>
+
+  <testing-context>
+    <test-framework>
+      <name>Playwright</name>
+      <purpose>E2E testing for accessibility audit</purpose>
+      <config-file>playwright.config.ts</config-file>
+      <notes>
+        Playwright not currently configured (file doesn't exist). Story must:
+        1. Install Playwright: pnpm add -D @playwright/test
+        2. Install axe-core integration: pnpm add -D @axe-core/playwright
+        3. Initialize Playwright config: pnpm playwright init
+        4. Create test structure: tests/a11y/
+      </notes>
+    </test-framework>
+
+    <test-framework>
+      <name>Vitest</name>
+      <purpose>Unit testing (existing)</purpose>
+      <config-file>vitest.config.ts</config-file>
+      <notes>
+        Already configured with jsdom environment, React plugin, @/ alias.
+        Unit tests exist for all accessibility utilities. E2E a11y tests use
+        Playwright instead.
+      </notes>
+    </test-framework>
+
+    <existing-test-patterns>
+      <pattern file="tests/unit/lib/utils/a11y.test.ts">
+        Unit tests for accessibility utilities with Vitest. Uses vi.fn() for
+        mocks, describe/it structure, DOM manipulation tests with jsdom.
+        Reference for test structure and expectations.
+      </pattern>
+
+      <pattern file="tests/unit/lib/hooks/use-focus-trap.test.ts">
+        Hook testing with React Testing Library, renderHook, waitFor.
+        Tests focus trap behavior, keyboard events, ref callbacks.
+      </pattern>
+
+      <pattern file="tests/unit/lib/hooks/use-roving-focus.test.ts">
+        Roving focus hook tests with keyboard event simulation, focus
+        management verification, boundary condition testing.
+      </pattern>
+    </existing-test-patterns>
+
+    <test-organization>
+      <directory path="tests/a11y/">
+        Create new directory for accessibility E2E tests. Structure:
+        - axe.spec.ts - Automated axe-core scans
+        - keyboard.spec.ts - Keyboard navigation tests
+        - screen-reader.spec.ts - Screen reader accessibility tests
+      </directory>
+
+      <directory path="docs/sprint-artifacts/">
+        Create compliance documentation:
+        - wcag-compliance-checklist.md - WCAG 2.1 AA checklist
+        - accessibility-audit-report.md - Comprehensive audit report
+      </directory>
+    </test-organization>
+  </testing-context>
+
+  <development-constraints>
+    <constraint type="testing" priority="critical">
+      <description>
+        @axe-core/playwright NOT currently installed. Must install before
+        implementing axe test suite. Command: pnpm add -D @axe-core/playwright
+      </description>
+      <impact>
+        Blocks automated accessibility testing. First task must be dependency
+        installation.
+      </impact>
+    </constraint>
+
+    <constraint type="testing" priority="critical">
+      <description>
+        Playwright NOT currently configured (no playwright.config.ts). Must
+        initialize Playwright before writing E2E tests. May need to install
+        @playwright/test as well.
+      </description>
+      <impact>
+        Blocks all E2E accessibility tests. Installation and config must
+        precede test implementation.
+      </impact>
+    </constraint>
+
+    <constraint type="manual-testing" priority="high">
+      <description>
+        Manual screen reader testing requires macOS (VoiceOver) or Windows (NVDA).
+        Cannot be fully automated. Results must be documented in compliance report.
+      </description>
+      <impact>
+        Some WCAG criteria cannot be verified by automated tests alone. Manual
+        testing procedures and findings must be thoroughly documented.
+      </impact>
+    </constraint>
+
+    <constraint type="wcag-coverage" priority="high">
+      <description>
+        Automated tools (axe-core) detect only 40-60% of accessibility issues.
+        Comprehensive WCAG checklist and manual testing required to ensure full
+        AA compliance coverage.
+      </description>
+      <impact>
+        Cannot rely solely on axe-core results. Must complete full WCAG 2.1 AA
+        checklist with manual verification for criteria not covered by automation.
+      </impact>
+    </constraint>
+
+    <constraint type="implementation" priority="medium">
+      <description>
+        Story focuses on verification, not new features. Previous stories (6-1
+        through 6-6) implemented accessibility features. This story tests them.
+        If critical violations found, must fix before marking story complete.
+      </description>
+      <impact>
+        Unknown scope - may require fixes to existing implementations. Budget
+        60 minutes for critical/serious violation remediation. If extensive
+        fixes needed, may require additional story.
+      </impact>
+    </constraint>
+
+    <constraint type="browser-compatibility" priority="low">
+      <description>
+        Focus on modern browsers (Chrome, Firefox, Safari) for testing. Do not
+        test IE11 or legacy browsers. Playwright defaults to Chromium - sufficient
+        for WCAG compliance verification.
+      </description>
+      <impact>
+        Compliance verified on modern browsers only. Acceptable per project scope.
+      </impact>
+    </constraint>
+  </development-constraints>
+
+  <dependencies>
+    <dependency type="external" status="to-install">
+      <name>@axe-core/playwright</name>
+      <version>4.x</version>
+      <purpose>
+        Automated accessibility testing with axe-core engine integrated into
+        Playwright tests. Supports WCAG 2.0/2.1 Level A/AA/AAA rule sets.
+      </purpose>
+      <installation>pnpm add -D @axe-core/playwright</installation>
+    </dependency>
+
+    <dependency type="external" status="to-install-maybe">
+      <name>@playwright/test</name>
+      <version>1.x</version>
+      <purpose>
+        Playwright test runner for E2E tests. May already be installed - check
+        package.json. If not, install before creating test suite.
+      </purpose>
+      <installation>pnpm add -D @playwright/test</installation>
+    </dependency>
+
+    <dependency type="story" status="completed">
+      <name>Story 6-1: Keyboard Navigation Foundation</name>
+      <provides>
+        SkipLink component, focus trap hook, keyboard utilities, global focus styles
+      </provides>
+      <verification>
+        Test skip link activation, focus trap in modals, keyboard handlers,
+        focus indicator visibility
+      </verification>
+    </dependency>
+
+    <dependency type="story" status="completed">
+      <name>Story 6-2: Timeline Keyboard Access</name>
+      <provides>
+        Roving tabindex for ScatterPlot, arrow key navigation, Home/End shortcuts
+      </provides>
+      <verification>
+        Test timeline point navigation with arrow keys, focus management,
+        roving tabindex implementation
+      </verification>
+    </dependency>
+
+    <dependency type="story" status="completed">
+      <name>Story 6-3: Screen Reader Support</name>
+      <provides>
+        ARIA landmarks, labels, live regions, semantic HTML, heading hierarchy
+      </provides>
+      <verification>
+        Test heading structure, image alt text, link descriptions, form labels,
+        live region announcements, modal accessible names
+      </verification>
+    </dependency>
+
+    <dependency type="story" status="completed">
+      <name>Story 6-4: Alternative Table View</name>
+      <provides>
+        ObituaryTable component with ARIA grid, sortable columns, proper semantics
+      </provides>
+      <verification>
+        Test table with axe-core, verify ARIA attributes, keyboard navigation,
+        caption and scope attributes
+      </verification>
+    </dependency>
+
+    <dependency type="story" status="completed">
+      <name>Story 6-5: Color Contrast and Visual Accessibility</name>
+      <provides>
+        COLOR_CHECKS utility with pre-verified contrast ratios for all theme colors
+      </provides>
+      <verification>
+        Reference existing verification in compliance documentation. All colors
+        already pass WCAG AA (4.5:1 normal, 3:1 large/UI).
+      </verification>
+    </dependency>
+
+    <dependency type="story" status="completed">
+      <name>Story 6-6: Reduced Motion Support</name>
+      <provides>
+        useReducedMotion hook integration, animation.ts utilities, CSS @media rules
+      </provides>
+      <verification>
+        Manual test with prefers-reduced-motion enabled: animations disabled,
+        scroll instant, springs bypassed, full functionality maintained
+      </verification>
+    </dependency>
+  </dependencies>
+
+  <implementation-notes>
+    <note type="test-implementation" priority="high">
+      <title>Axe-Core Test Suite Structure</title>
+      <content>
+        Create tests/a11y/axe.spec.ts with test cases for:
+        1. Homepage (AC-6.7.8) - / route with all components
+        2. Obituary detail (AC-6.7.9) - /obituary/[slug] route
+        3. Modal dialog (AC-6.7.10) - Open modal, scan [role="dialog"]
+        4. Table view (AC-6.7.11) - Toggle table view, scan table
+        5. Category filter - Scan filter component region
+
+        Each test:
+        - Navigate to page/state
+        - Run AxeBuilder with .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        - Assert violations.length === 0
+        - Use .include() for scoped scans (modal, table)
+      </content>
+    </note>
+
+    <note type="test-implementation" priority="high">
+      <title>Keyboard Navigation Test Suite Structure</title>
+      <content>
+        Create tests/a11y/keyboard.spec.ts with test cases for:
+        1. Skip link (AC-6.7.2) - Tab shows, Enter activates, focus moves
+        2. Timeline navigation - Arrow keys, Home/End, roving tabindex
+        3. Modal keyboard - Enter opens, Tab trapped, Escape closes
+        4. All interactive elements - Tab reaches all, no traps
+
+        Use Playwright's keyboard API:
+        - page.keyboard.press('Tab')
+        - page.keyboard.press('Enter')
+        - page.keyboard.press('ArrowRight')
+        - page.locator(...).toBeFocused()
+      </content>
+    </note>
+
+    <note type="test-implementation" priority="high">
+      <title>Screen Reader Test Suite Structure</title>
+      <content>
+        Create tests/a11y/screen-reader.spec.ts with automated checks for:
+        1. Heading hierarchy (AC-6.7.3) - Single h1, no skipped levels
+        2. Image alt text (AC-6.7.12) - All images have alt or role="presentation"
+        3. Link descriptions - No generic "click here" text, accessible names
+        4. Form labels - All inputs have associated labels
+        5. Live regions - aria-live regions exist
+        6. Modal accessible name - aria-label or aria-labelledby present
+
+        Manual SR testing documented in compliance report (not automated).
+      </content>
+    </note>
+
+    <note type="documentation" priority="high">
+      <title>WCAG 2.1 AA Checklist Structure</title>
+      <content>
+        Create docs/sprint-artifacts/wcag-compliance-checklist.md organized by:
+
+        1. Perceivable (1.1-1.4)
+           - 1.1.1 Non-text Content (AC-6.7.12)
+           - 1.3.1 Info and Relationships
+           - 1.4.3 Contrast (Minimum) (AC-6.7.4)
+           - 1.4.11 Non-text Contrast
+           - ...etc
+
+        2. Operable (2.1-2.5)
+           - 2.1.1 Keyboard (AC-6.7.2)
+           - 2.1.2 No Keyboard Trap
+           - 2.4.1 Bypass Blocks (Skip link)
+           - ...etc
+
+        3. Understandable (3.1-3.3)
+           - 3.2.1 On Focus
+           - 3.2.2 On Input
+           - ...etc
+
+        4. Robust (4.1)
+           - 4.1.2 Name, Role, Value
+           - 4.1.3 Status Messages
+           - ...etc
+
+        Each criterion: checkbox, implementation evidence, test reference
+      </content>
+    </note>
+
+    <note type="documentation" priority="high">
+      <title>Accessibility Audit Report Structure</title>
+      <content>
+        Create docs/sprint-artifacts/accessibility-audit-report.md with:
+
+        1. Executive Summary
+           - Overall compliance status (Pass/Fail)
+           - Total violations by severity
+           - Compliance level achieved (WCAG 2.1 AA)
+
+        2. Testing Methodology
+           - Automated testing (axe-core with Playwright)
+           - Manual keyboard testing procedure
+           - Manual screen reader testing (VoiceOver/NVDA)
+           - WCAG checklist evaluation
+
+        3. Automated Test Results
+           - Homepage: violations count, details
+           - Obituary pages: violations count, details
+           - Modal dialog: violations count, details
+           - Table view: violations count, details
+
+        4. Manual Test Results
+           - Keyboard navigation findings
+           - Screen reader experience findings
+           - Color contrast verification (reference Story 6-5)
+
+        5. Violation Details
+           - Critical violations (with fixes)
+           - Serious violations (with fixes)
+           - Moderate violations (with plan)
+           - Minor violations (documented)
+
+        6. Remediation Actions
+           - Issues fixed during audit
+           - Deferred issues with justification
+           - Ongoing monitoring recommendations
+
+        7. Known Limitations
+           - Any partial compliance with mitigation
+           - Browser/AT compatibility notes
+           - Future improvement opportunities
+
+        8. Compliance Baseline
+           - Snapshot of current compliance state
+           - Monitoring procedures for future changes
+      </content>
+    </note>
+
+    <note type="testing-strategy" priority="medium">
+      <title>Test Execution Order</title>
+      <content>
+        Recommended order for efficient testing:
+
+        1. Install dependencies (axe-core, playwright)
+        2. Initialize Playwright config
+        3. Create axe test suite → run immediately
+        4. Document initial violations by severity
+        5. Create keyboard test suite → run
+        6. Create screen reader test suite → run
+        7. Fix critical violations (AC-6.7.6)
+        8. Fix serious violations (AC-6.7.6)
+        9. Re-run all tests to verify fixes
+        10. Perform manual keyboard testing
+        11. Perform manual screen reader testing
+        12. Create WCAG checklist and complete
+        13. Create compliance report with all findings
+        14. Final test run to confirm zero violations
+
+        This order ensures early violation detection and systematic remediation.
+      </content>
+    </note>
+
+    <note type="known-limitation" priority="low">
+      <title>Axe-Core Detection Limitations</title>
+      <content>
+        Axe-core automated testing cannot detect:
+        - Illogical reading order (requires manual SR test)
+        - Quality of alt text (only checks presence)
+        - Screen reader UX quality (announcements, clarity)
+        - Complex interaction patterns (multi-step flows)
+        - Cognitive accessibility (language clarity)
+        - Mobile accessibility specifics
+
+        Manual testing REQUIRED to fully satisfy AC-6.7.2, AC-6.7.3, AC-6.7.5.
+        Document manual test procedures and findings in compliance report.
+      </content>
+    </note>
+
+    <note type="reference-implementation" priority="medium">
+      <title>Reference Implementation Available</title>
+      <content>
+        Epic 6 tech spec (docs/sprint-artifacts/epic-tech-specs/epic-6-tech-spec.md)
+        Section 4.7 contains complete reference implementations for:
+
+        - axe.spec.ts with all test cases
+        - keyboard.spec.ts with navigation tests
+        - screen-reader.spec.ts with SR checks
+
+        Use these as templates, adapting to actual project structure and
+        component implementations. Reference implementations use Playwright
+        best practices and proper axe-core integration patterns.
+      </content>
+    </note>
+  </implementation-notes>
+
+  <test-scenarios>
+    <scenario type="automated-axe" priority="critical">
+      <name>Homepage Accessibility Scan</name>
+      <steps>
+        1. Navigate to homepage (/)
+        2. Wait for page load and hydration
+        3. Run AxeBuilder with WCAG 2.1 AA tags
+        4. Assert zero violations
+      </steps>
+      <expected-result>
+        No critical, serious, moderate, or minor violations reported.
+        AC-6.7.8 satisfied.
+      </expected-result>
+      <test-file>tests/a11y/axe.spec.ts</test-file>
+    </scenario>
+
+    <scenario type="automated-axe" priority="critical">
+      <name>Obituary Detail Page Accessibility Scan</name>
+      <steps>
+        1. Navigate to homepage
+        2. Get first obituary link href
+        3. Navigate to obituary detail page
+        4. Run AxeBuilder with WCAG 2.1 AA tags
+        5. Assert zero violations
+      </steps>
+      <expected-result>
+        No violations on obituary detail page.
+        AC-6.7.9 satisfied.
+      </expected-result>
+      <test-file>tests/a11y/axe.spec.ts</test-file>
+    </scenario>
+
+    <scenario type="automated-axe" priority="critical">
+      <name>Modal Dialog Accessibility Scan</name>
+      <steps>
+        1. Navigate to homepage
+        2. Click first scatter point to open modal
+        3. Wait for modal to be visible
+        4. Run AxeBuilder scoped to [role="dialog"]
+        5. Assert zero violations
+      </steps>
+      <expected-result>
+        Modal dialog passes all WCAG 2.1 AA checks.
+        AC-6.7.10 satisfied.
+      </expected-result>
+      <test-file>tests/a11y/axe.spec.ts</test-file>
+    </scenario>
+
+    <scenario type="automated-axe" priority="critical">
+      <name>Table View Accessibility Scan</name>
+      <steps>
+        1. Navigate to homepage
+        2. Find and click table view toggle button
+        3. Wait for table to render
+        4. Run AxeBuilder with WCAG 2.1 AA tags
+        5. Assert zero violations
+      </steps>
+      <expected-result>
+        Table view with proper ARIA grid, no violations.
+        AC-6.7.11 satisfied.
+      </expected-result>
+      <test-file>tests/a11y/axe.spec.ts</test-file>
+    </scenario>
+
+    <scenario type="keyboard" priority="critical">
+      <name>Skip Link Functionality</name>
+      <steps>
+        1. Navigate to homepage
+        2. Press Tab key
+        3. Verify skip link visible and focused
+        4. Press Enter
+        5. Verify main content receives focus
+      </steps>
+      <expected-result>
+        Skip link appears on first Tab, activates with Enter,
+        focus moves to #main-content. AC-6.7.2 partially satisfied.
+      </expected-result>
+      <test-file>tests/a11y/keyboard.spec.ts</test-file>
+    </scenario>
+
+    <scenario type="keyboard" priority="critical">
+      <name>Timeline Keyboard Navigation</name>
+      <steps>
+        1. Navigate to homepage
+        2. Focus first timeline scatter point
+        3. Press ArrowRight → verify focus moves to next point
+        4. Press ArrowLeft → verify focus moves to previous point
+        5. Press Home → verify focus jumps to first point
+        6. Press End → verify focus jumps to last point
+      </steps>
+      <expected-result>
+        Roving tabindex working, arrow keys navigate timeline.
+        AC-6.7.2 partially satisfied, FR40 verified.
+      </expected-result>
+      <test-file>tests/a11y/keyboard.spec.ts</test-file>
+    </scenario>
+
+    <scenario type="keyboard" priority="critical">
+      <name>Modal Keyboard Interaction</name>
+      <steps>
+        1. Navigate to homepage
+        2. Focus first scatter point
+        3. Press Enter → verify modal opens
+        4. Verify focus trapped in modal (Tab wraps)
+        5. Press Escape → verify modal closes
+        6. Verify focus returns to trigger element
+      </steps>
+      <expected-result>
+        Modal opens with Enter, focus trapped, Escape closes,
+        focus returns. AC-6.7.2 partially satisfied.
+      </expected-result>
+      <test-file>tests/a11y/keyboard.spec.ts</test-file>
+    </scenario>
+
+    <scenario type="screen-reader" priority="high">
+      <name>Heading Hierarchy Validation</name>
+      <steps>
+        1. Navigate to homepage
+        2. Query all h1 elements → verify count === 1
+        3. Get all headings (h1-h6)
+        4. Verify no skipped levels (h1 → h3 is violation)
+        5. Verify logical structure
+      </steps>
+      <expected-result>
+        Single h1, no skipped heading levels, logical hierarchy.
+        AC-6.7.3 partially satisfied.
+      </expected-result>
+      <test-file>tests/a11y/screen-reader.spec.ts</test-file>
+    </scenario>
+
+    <scenario type="screen-reader" priority="high">
+      <name>Image Alt Text Verification</name>
+      <steps>
+        1. Navigate to homepage
+        2. Query all img elements
+        3. For each image:
+           - Verify alt attribute exists OR
+           - Verify role="presentation" for decorative images
+        4. Flag any images without alt or decorative marking
+      </steps>
+      <expected-result>
+        All images have descriptive alt text or are marked decorative.
+        AC-6.7.12 satisfied, FR43 verified.
+      </expected-result>
+      <test-file>tests/a11y/screen-reader.spec.ts</test-file>
+    </scenario>
+
+    <scenario type="screen-reader" priority="high">
+      <name>Link Text Descriptiveness</name>
+      <steps>
+        1. Navigate to homepage
+        2. Query all anchor (a) elements
+        3. For each link:
+           - Verify accessible name (text content, aria-label, or aria-describedby)
+           - Check for generic phrases ("click here", "read more", "link")
+        4. Flag any links with generic or missing accessible names
+      </steps>
+      <expected-result>
+        All links have descriptive, non-generic accessible names.
+        AC-6.7.3 partially satisfied.
+      </expected-result>
+      <test-file>tests/a11y/screen-reader.spec.ts</test-file>
+    </scenario>
+
+    <scenario type="manual-keyboard" priority="high">
+      <name>Comprehensive Keyboard Navigation Test</name>
+      <steps>
+        1. Load homepage with keyboard only (no mouse)
+        2. Tab through ALL interactive elements
+        3. Verify each element:
+           - Receives visible focus indicator
+           - Can be activated with Enter/Space
+           - Responds to expected keys (arrows, etc.)
+        4. Test modal, filters, table view, navigation
+        5. Verify no keyboard traps
+      </steps>
+      <expected-result>
+        Complete keyboard operability, visible focus, no traps.
+        AC-6.7.2 fully satisfied. Document in compliance report.
+      </expected-result>
+      <documentation>accessibility-audit-report.md - Manual Testing section</documentation>
+    </scenario>
+
+    <scenario type="manual-screen-reader" priority="high">
+      <name>VoiceOver/NVDA User Experience Test</name>
+      <steps>
+        1. Enable VoiceOver (macOS) or NVDA (Windows)
+        2. Navigate to homepage
+        3. Verify page title announced
+        4. Navigate by headings → verify structure logical
+        5. Navigate by landmarks → verify regions identified
+        6. Activate filters → verify live region announces changes
+        7. Navigate timeline → verify points have descriptive labels
+        8. Open modal → verify modal opening announced
+        9. Navigate table view → verify table structure clear
+        10. Document confusing or unclear announcements
+      </steps>
+      <expected-result>
+        Logical reading order, clear announcements, no confusion.
+        AC-6.7.3 fully satisfied, FR41 verified. Document findings.
+      </expected-result>
+      <documentation>accessibility-audit-report.md - Manual Testing section</documentation>
+    </scenario>
+
+    <scenario type="manual-contrast" priority="medium">
+      <name>Color Contrast Verification</name>
+      <steps>
+        1. Reference existing COLOR_CHECKS from Story 6-5
+        2. Verify all combinations documented:
+           - textOnBg: 14.5:1 (passes AA)
+           - secondaryOnBg: 7.2:1 (passes AA)
+           - mutedOnBg: 4.6:1 (passes AA)
+           - accentOnBg: 7.8:1 (passes AA)
+           - All category colors: 5.0:1+ (passes AA)
+        3. Spot-check focus indicators: accent on bg (7.8:1)
+        4. Document verification in checklist
+      </steps>
+      <expected-result>
+        All theme colors meet or exceed 4.5:1 (normal text),
+        3:1 (large text/UI). AC-6.7.4 satisfied, FR44 verified.
+      </expected-result>
+      <documentation>wcag-compliance-checklist.md - Criterion 1.4.3</documentation>
+    </scenario>
+  </test-scenarios>
+
+  <files-to-create>
+    <file path="tests/a11y/axe.spec.ts" priority="critical">
+      Automated accessibility tests with axe-core. Five test cases:
+      homepage, obituary detail, modal dialog, table view, category filter.
+      Uses AxeBuilder with WCAG 2.1 AA tags. Asserts zero violations.
+    </file>
+
+    <file path="tests/a11y/keyboard.spec.ts" priority="critical">
+      Keyboard navigation tests. Four test cases: skip link, timeline navigation,
+      modal keyboard interaction, all interactive elements reachable. Uses
+      Playwright keyboard API and focus assertions.
+    </file>
+
+    <file path="tests/a11y/screen-reader.spec.ts" priority="critical">
+      Screen reader accessibility tests. Six automated checks: heading hierarchy,
+      image alt text, link descriptions, form labels, live regions, modal
+      accessible names. Manual SR testing documented separately.
+    </file>
+
+    <file path="docs/sprint-artifacts/wcag-compliance-checklist.md" priority="high">
+      WCAG 2.1 AA compliance checklist organized by principles (Perceivable,
+      Operable, Understandable, Robust). Each success criterion with checkbox,
+      implementation evidence, test reference, and status.
+    </file>
+
+    <file path="docs/sprint-artifacts/accessibility-audit-report.md" priority="high">
+      Comprehensive audit report with executive summary, testing methodology,
+      automated test results, manual test results, violation details,
+      remediation actions, known limitations, and compliance baseline.
+    </file>
+
+    <file path="playwright.config.ts" priority="critical">
+      Playwright configuration if not exists. Basic setup with testDir,
+      use options (baseURL, trace), and project configurations for chromium.
+    </file>
+  </files-to-create>
+
+  <files-to-modify>
+    <file path="package.json" priority="critical">
+      Add devDependencies: @axe-core/playwright and @playwright/test (if needed).
+      May add test script: "test:a11y": "playwright test tests/a11y"
+    </file>
+
+    <file path="README.md" priority="medium">
+      Add accessibility testing section with instructions to run tests,
+      links to compliance documentation, and manual testing procedures.
+    </file>
+  </files-to-modify>
+
+  <quality-assurance>
+    <criterion>All automated tests pass (zero violations) before story completion</criterion>
+    <criterion>Manual keyboard testing completed and documented</criterion>
+    <criterion>Manual screen reader testing completed and documented</criterion>
+    <criterion>WCAG checklist 100% complete with evidence for each criterion</criterion>
+    <criterion>Audit report comprehensive with all sections populated</criterion>
+    <criterion>Zero critical or serious violations remaining (AC-6.7.6)</criterion>
+    <criterion>Any minor violations documented with mitigation plan (AC-6.7.7)</criterion>
+    <criterion>All 12 acceptance criteria satisfied and verifiable</criterion>
+  </quality-assurance>
+
+  <success-metrics>
+    <metric>Axe-core violations: 0 (critical, serious, moderate, minor)</metric>
+    <metric>WCAG 2.1 AA success criteria: 100% pass or documented exception</metric>
+    <metric>Keyboard navigation: 100% operable without mouse</metric>
+    <metric>Screen reader UX: Logical, clear, no confusing announcements</metric>
+    <metric>Color contrast: All combinations ≥ 4.5:1 (normal text), ≥ 3:1 (large/UI)</metric>
+    <metric>Documentation: Checklist and audit report complete and accurate</metric>
+  </success-metrics>
+</story-context>
