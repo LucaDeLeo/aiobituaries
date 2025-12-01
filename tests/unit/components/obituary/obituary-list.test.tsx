@@ -48,7 +48,6 @@ const createMockObituaries = (): ObituarySummary[] => [
 describe('ObituaryList data fetching', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.resetModules()
   })
 
   it('calls getObituaries when component is invoked', async () => {

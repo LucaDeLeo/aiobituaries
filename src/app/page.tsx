@@ -1,9 +1,9 @@
 import { CountDisplay } from "@/components/obituary/count-display";
 import { ObituaryList } from "@/components/obituary/obituary-list";
-import { ScatterPlot } from "@/components/visualization/scatter-plot";
 import { JsonLd } from "@/components/seo/json-ld";
 import { homepageMetadata } from "@/lib/utils/seo";
 import { getObituaries } from "@/lib/sanity/queries";
+import { HomeClient } from "./home-client";
 
 export const metadata = homepageMetadata;
 
@@ -19,10 +19,8 @@ export default async function Home() {
           <CountDisplay />
         </section>
 
-        {/* Timeline Visualization */}
-        <section className="container mx-auto px-4 py-8">
-          <ScatterPlot data={obituaries} />
-        </section>
+        {/* Timeline Visualization and Category Filter */}
+        <HomeClient obituaries={obituaries} />
 
         {/* Obituary List Section */}
         <section className="px-4 pb-24 max-w-7xl mx-auto">

@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context XML
+  Story: 4-3-url-state-with-nuqs
+  Generated: 2025-11-30
+  Purpose: Single source of truth for story implementation
+-->
+<story-context>
+  <story-reference>
+    <key>4-3-url-state-with-nuqs</key>
+    <title>URL State with nuqs</title>
+    <path>docs/sprint-artifacts/stories/4-3-url-state-with-nuqs.md</path>
+    <epic>Epic 4 - Category System and Filtering</epic>
+    <epic-tech-spec>docs/sprint-artifacts/epic-tech-specs/epic-4-tech-spec.md</epic-tech-spec>
+    <status>drafted</status>
+    <priority>High</priority>
+    <user-story>
+      As a visitor, I want filter state saved in the URL, so that I can share filtered views and bookmark them.
+    </user-story>
+  </story-reference>
+
+  <acceptance-criteria>
+    <criterion id="AC-4.3.1">
+      <description>Single category URL update</description>
+      <testable-condition>Given I select "market" category, when URL is checked, then URL shows ?cat=market</testable-condition>
+    </criterion>
+    <criterion id="AC-4.3.2">
+      <description>Multiple categories URL update</description>
+      <testable-condition>Given I select "market" and "agi", when URL is checked, then URL shows ?cat=market,agi (order may vary)</testable-condition>
+    </criterion>
+    <criterion id="AC-4.3.3">
+      <description>Clear filters removes param</description>
+      <testable-condition>Given I click "All" (clear filters), when URL is checked, then cat param is removed from URL</testable-condition>
+    </criterion>
+    <criterion id="AC-4.3.4">
+      <description>Single category preload</description>
+      <testable-condition>Given I visit /?cat=market, when page loads, then market category is pre-selected in filter bar</testable-condition>
+    </criterion>
+    <criterion id="AC-4.3.5">
+      <description>Multiple categories preload</description>
+      <testable-condition>Given I visit /?cat=market,agi, when page loads, then both market and agi are pre-selected</testable-condition>
+    </criterion>
+    <criterion id="AC-4.3.6">
+      <description>Shareable filtered view</description>
+      <testable-condition>Given I share URL with filters, when recipient opens link, then they see same filtered state</testable-condition>
+    </criterion>
+    <criterion id="AC-4.3.7">
+      <description>Shallow URL updates</description>
+      <testable-condition>Given filters change rapidly, when URL updates, then no page reload (shallow updates)</testable-condition>
+    </criterion>
+    <criterion id="AC-4.3.8">
+      <description>Invalid category handling</description>
+      <testable-condition>Given invalid category in URL (?cat=invalid), when page loads, then invalid value ignored, valid categories applied</testable-condition>
+    </criterion>
+  </acceptance-criteria>
+
+  <documentation-artifacts>
+    <artifact type="architecture" relevance="high">
+      <path>docs/architecture.md</path>
+      <description>Architecture document with ADR-004 defining URL State with nuqs pattern. Contains nuqs usage patterns, state boundaries diagram, and URL-synced filter state requirements.</description>
+      <sections>
+        <section>ADR-004: URL State with nuqs - defines filter state persistence in URL params (?cat=market,agi)</section>
+        <section>URL State Pattern - useFilters hook implementation pattern</section>
+        <section>State Boundaries - diagram showing URL state as source of truth for filters</section>
+        <section>Communication Patterns - component-to-component via URL state</section>
+      </sections>
+    </artifact>
+    <artifact type="tech-spec" relevance="critical">
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-4-tech-spec.md</path>
+      <description>Epic 4 technical specification with detailed useFilters hook implementation, NuqsAdapter setup, and URL format specification.</description>
+      <sections>
+        <section>Section 4.3: useFilters Hook - complete implementation reference with nuqs parseAsArrayOf and parseAsStringLiteral</section>
+        <section>Section 4.4: NuqsAdapter Setup - layout.tsx modification pattern</section>
+        <section>Section 5.1: Homepage Integration - HomePageClient wrapper pattern</section>
+        <section>Section 8.1: Unit Tests for useFilters - test patterns with NuqsTestingAdapter</section>
+      </sections>
+    </artifact>
+    <artifact type="story" relevance="critical">
+      <path>docs/sprint-artifacts/stories/4-3-url-state-with-nuqs.md</path>
+      <description>Complete story document with tasks, reference implementation, test scenarios, and learnings from previous stories.</description>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code-interfaces>
+    <interface type="constants" relevance="critical">
+      <path>src/lib/constants/categories.ts</path>
+      <description>Category constants including CATEGORY_ORDER array (required for parseAsStringLiteral validation), isValidCategory type guard, and CategoryDefinition interface.</description>
+      <exports>
+        <export name="CATEGORY_ORDER" type="Category[]">Ordered array of valid category values: ['capability', 'market', 'agi', 'dismissive']. Used with parseAsStringLiteral for type-safe URL parsing.</export>
+        <export name="CATEGORIES" type="Record&lt;Category, CategoryDefinition&gt;">Complete category definitions with id, label, description, color, colorVar.</export>
+        <export name="isValidCategory" type="(value: string) => value is Category">Type guard for validating category strings.</export>
+        <export name="getCategory" type="(id: Category) => CategoryDefinition">Get full category definition by ID.</export>
+      </exports>
+    </interface>
+    <interface type="type-definitions" relevance="critical">
+      <path>src/types/obituary.ts</path>
+      <description>Core type definitions including Category type used throughout filtering system.</description>
+      <exports>
+        <export name="Category" type="type">Union type: 'market' | 'capability' | 'agi' | 'dismissive'</export>
+        <export name="ObituarySummary" type="interface">Lightweight obituary type with categories array for filtering.</export>
+      </exports>
+    </interface>
+    <interface type="component" relevance="critical">
+      <path>src/components/filters/category-filter.tsx</path>
+      <description>CategoryFilter component from Story 4-2. Expects activeCategories, onToggle, onShowAll props. This is the component that will consume useFilters hook output.</description>
+      <props>
+        <prop name="activeCategories" type="Category[]">Active categories from filter state (empty = show all)</prop>
+        <prop name="onToggle" type="(category: Category) => void">Callback to toggle category - maps to toggleCategory from useFilters</prop>
+        <prop name="onShowAll" type="() => void">Callback to clear all filters - maps to clearFilters from useFilters</prop>
+        <prop name="className" type="string" optional="true">Optional className for container</prop>
+      </props>
+      <test-ids>
+        <test-id>category-filter</test-id>
+        <test-id>filter-all-button</test-id>
+        <test-id>category-pill-{category}</test-id>
+      </test-ids>
+    </interface>
+    <interface type="component" relevance="high">
+      <path>src/components/filters/category-pill.tsx</path>
+      <description>Individual category toggle pill used by CategoryFilter. Has proper aria-pressed support for accessibility.</description>
+      <props>
+        <prop name="category" type="CategoryDefinition">Category definition with id, label, color</prop>
+        <prop name="isActive" type="boolean">Whether this category is currently active</prop>
+        <prop name="onClick" type="() => void">Click handler to toggle category</prop>
+      </props>
+    </interface>
+    <interface type="layout" relevance="critical">
+      <path>src/app/layout.tsx</path>
+      <description>Root layout component where NuqsAdapter must be added. Currently has Header, Footer, and Toaster. NuqsAdapter should wrap the flex container inside body.</description>
+      <current-structure>
+        <element>html</element>
+        <element>body with font variables</element>
+        <element>div.flex.flex-col.min-h-screen containing Header, main, Footer</element>
+        <element>Toaster</element>
+      </current-structure>
+      <modification-needed>Add NuqsAdapter from nuqs/adapters/next/app wrapping the flex div</modification-needed>
+    </interface>
+    <interface type="page" relevance="critical">
+      <path>src/app/page.tsx</path>
+      <description>Homepage Server Component that fetches obituaries and renders CountDisplay, ScatterPlot, and ObituaryList. Needs client wrapper (HomePageClient) for useFilters hook since hooks cannot be used in Server Components.</description>
+      <current-state>Server Component - fetches data with getObituaries(), passes to ScatterPlot</current-state>
+      <modification-needed>Create HomePageClient wrapper to use useFilters hook and pass filter state to CategoryFilter and ScatterPlot</modification-needed>
+    </interface>
+    <interface type="component" relevance="high">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>Main visualization component. Currently does not accept activeCategories prop. Will need modification in Story 4-4 to support filtering, but CategoryFilter integration happens in this story.</description>
+      <current-props>
+        <prop name="data" type="ObituarySummary[]">Obituary data to visualize</prop>
+        <prop name="height" type="number" optional="true">Optional fixed height</prop>
+      </current-props>
+      <future-prop note="Story 4-4">activeCategories: Category[] for filter effect on dots</future-prop>
+    </interface>
+    <interface type="hook" relevance="high">
+      <path>src/lib/hooks/use-zoom.ts</path>
+      <description>Existing hook pattern to follow. Uses useCallback, useMemo, and proper TypeScript typing. Shows established patterns for custom hooks in this codebase.</description>
+      <patterns>
+        <pattern>Use 'use client' directive at top</pattern>
+        <pattern>Export interface for return type (e.g., UseZoomReturn)</pattern>
+        <pattern>Export pure helper functions separately for testing</pattern>
+        <pattern>Use useCallback for all callback functions</pattern>
+        <pattern>Use useMemo for derived values</pattern>
+      </patterns>
+    </interface>
+  </existing-code-interfaces>
+
+  <development-constraints>
+    <constraint type="architecture" source="ADR-004">
+      <title>URL as Source of Truth</title>
+      <description>Filter state must be persisted in URL params. URL is the single source of truth for filters, enabling shareability and bookmarking.</description>
+    </constraint>
+    <constraint type="architecture" source="architecture.md">
+      <title>Server/Client Component Split</title>
+      <description>Server Components fetch data, Client Components handle interactivity. Hooks like useFilters require Client Component boundary. Create wrapper component (HomePageClient) for hook usage.</description>
+    </constraint>
+    <constraint type="library" source="nuqs docs">
+      <title>nuqs 2.x API</title>
+      <description>Use nuqs 2.x API: useQueryState with parseAsArrayOf(parseAsStringLiteral(CATEGORY_ORDER)). Requires NuqsAdapter in layout for Next.js App Router.</description>
+    </constraint>
+    <constraint type="pattern" source="tech-spec">
+      <title>URL Format</title>
+      <description>Single category: ?cat=market. Multiple categories: ?cat=market,agi. No filter (show all): no cat param. Invalid values silently ignored.</description>
+    </constraint>
+    <constraint type="pattern" source="tech-spec">
+      <title>Shallow URL Updates</title>
+      <description>URL updates must be shallow (no page reload). Use replace state to avoid history spam on rapid filter changes.</description>
+    </constraint>
+    <constraint type="pattern" source="codebase">
+      <title>Client Component Directive</title>
+      <description>All hooks and components using hooks must have 'use client' directive at top of file.</description>
+    </constraint>
+  </development-constraints>
+
+  <dependencies>
+    <dependency type="npm-package" status="installed">
+      <name>nuqs</name>
+      <version>2.8.1</version>
+      <install-command>Already installed in package.json</install-command>
+      <imports>
+        <import>useQueryState from 'nuqs'</import>
+        <import>parseAsArrayOf from 'nuqs'</import>
+        <import>parseAsStringLiteral from 'nuqs'</import>
+        <import>NuqsAdapter from 'nuqs/adapters/next/app'</import>
+        <import>NuqsTestingAdapter from 'nuqs/adapters/testing' (for tests)</import>
+      </imports>
+    </dependency>
+    <dependency type="story" status="completed">
+      <name>Story 4-1: Category Data Model</name>
+      <provides>CATEGORY_ORDER array, Category type, isValidCategory function</provides>
+    </dependency>
+    <dependency type="story" status="completed">
+      <name>Story 4-2: Category Filter Bar</name>
+      <provides>CategoryFilter component with activeCategories, onToggle, onShowAll props</provides>
+    </dependency>
+    <dependency type="internal" status="available">
+      <name>Category type</name>
+      <path>src/types/obituary.ts</path>
+    </dependency>
+  </dependencies>
+
+  <testing-context>
+    <framework>Vitest</framework>
+    <setup-file>tests/setup.tsx</setup-file>
+    <test-location>tests/unit/lib/hooks/use-filters.test.ts</test-location>
+    <patterns>
+      <pattern type="hook-testing">
+        <description>Use renderHook from @testing-library/react with NuqsTestingAdapter wrapper</description>
+        <example><![CDATA[
+import { renderHook, act } from '@testing-library/react'
+import { NuqsTestingAdapter } from 'nuqs/adapters/testing'
+
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <NuqsTestingAdapter>{children}</NuqsTestingAdapter>
+)
+
+const { result } = renderHook(() => useFilters(), { wrapper })
+        ]]></example>
+      </pattern>
+      <pattern type="module-export-verification">
+        <description>Current test pattern in codebase uses module export verification due to React 19 + Vitest issues. See tests/unit/components/filters/category-filter.test.tsx for example.</description>
+      </pattern>
+    </patterns>
+    <test-scenarios>
+      <scenario>returns empty categories by default</scenario>
+      <scenario>hasActiveFilters is false by default</scenario>
+      <scenario>toggleCategory adds category to array</scenario>
+      <scenario>toggleCategory removes existing category</scenario>
+      <scenario>setCategories updates categories directly</scenario>
+      <scenario>clearFilters sets categories to empty array</scenario>
+      <scenario>hasActiveFilters is true when categories present</scenario>
+      <scenario>isCategoryActive returns true when no filters (show all)</scenario>
+      <scenario>isCategoryActive returns true for active category</scenario>
+      <scenario>isCategoryActive returns false for inactive category</scenario>
+    </test-scenarios>
+    <existing-tests>
+      <test-file>tests/unit/components/filters/category-filter.test.tsx</test-file>
+    </existing-tests>
+  </testing-context>
+
+  <implementation-guidance>
+    <file-to-create>
+      <path>src/lib/hooks/use-filters.ts</path>
+      <description>Custom hook for URL-synced filter state using nuqs</description>
+      <reference-implementation><![CDATA[
+'use client'
+
+import { useQueryState, parseAsArrayOf, parseAsStringLiteral } from 'nuqs'
+import { useCallback, useMemo } from 'react'
+import type { Category } from '@/types/obituary'
+import { CATEGORY_ORDER } from '@/lib/constants/categories'
+
+const categoryParser = parseAsArrayOf(
+  parseAsStringLiteral(CATEGORY_ORDER)
+).withDefault([])
+
+export interface FilterState {
+  categories: Category[]
+  setCategories: (categories: Category[]) => void
+  toggleCategory: (category: Category) => void
+  clearFilters: () => void
+  hasActiveFilters: boolean
+  isCategoryActive: (category: Category) => boolean
+}
+
+export function useFilters(): FilterState {
+  const [categories, setCategories] = useQueryState('cat', categoryParser)
+
+  const toggleCategory = useCallback((category: Category) => {
+    setCategories(prev => {
+      if (prev.includes(category)) {
+        return prev.filter(c => c !== category)
+      }
+      return [...prev, category]
+    })
+  }, [setCategories])
+
+  const clearFilters = useCallback(() => {
+    setCategories([])
+  }, [setCategories])
+
+  const hasActiveFilters = useMemo(() => {
+    return categories.length > 0
+  }, [categories])
+
+  const isCategoryActive = useCallback((category: Category) => {
+    return categories.length === 0 || categories.includes(category)
+  }, [categories])
+
+  return {
+    categories,
+    setCategories,
+    toggleCategory,
+    clearFilters,
+    hasActiveFilters,
+    isCategoryActive,
+  }
+}
+      ]]></reference-implementation>
+    </file-to-create>
+    <file-to-modify>
+      <path>src/app/layout.tsx</path>
+      <description>Add NuqsAdapter provider for URL state management</description>
+      <change>Import NuqsAdapter from 'nuqs/adapters/next/app' and wrap the flex div inside body with NuqsAdapter</change>
+    </file-to-modify>
+    <file-to-create optional="true">
+      <path>src/app/page-client.tsx</path>
+      <description>Client wrapper component for homepage to use useFilters hook. Alternative: make minimal client component wrapper.</description>
+    </file-to-create>
+    <file-to-modify>
+      <path>src/app/page.tsx</path>
+      <description>Wire CategoryFilter to useFilters hook via client wrapper</description>
+    </file-to-modify>
+    <file-to-create>
+      <path>tests/unit/lib/hooks/use-filters.test.ts</path>
+      <description>Unit tests for useFilters hook using NuqsTestingAdapter</description>
+    </file-to-create>
+  </implementation-guidance>
+
+  <quality-checks>
+    <check type="typescript">pnpm tsc --noEmit</check>
+    <check type="lint">pnpm lint</check>
+    <check type="unit-tests">pnpm test tests/unit/lib/hooks/use-filters.test.ts</check>
+    <check type="full-tests">pnpm test:run</check>
+  </quality-checks>
+
+  <learnings-from-previous-stories>
+    <learning source="Story 4-2">
+      <title>CategoryFilter Props Interface</title>
+      <content>CategoryFilter expects activeCategories, onToggle, onShowAll props. State is managed by parent component and passed via props (controlled component pattern).</content>
+    </learning>
+    <learning source="Story 4-1">
+      <title>CATEGORY_ORDER for Validation</title>
+      <content>CATEGORY_ORDER array is the definitive list of valid category values. Use with parseAsStringLiteral for type-safe URL parsing that automatically rejects invalid values.</content>
+    </learning>
+    <learning source="Story 3-7">
+      <title>Client Component Pattern</title>
+      <content>Hooks require 'use client' directive. Use useCallback for memoization of callbacks, useMemo for derived state.</content>
+    </learning>
+    <learning source="Epic 4 Tech Spec">
+      <title>nuqs Configuration</title>
+      <content>Use parseAsArrayOf with parseAsStringLiteral for type-safe array parsing. URL format is ?cat=market,agi for comma-separated categories. NuqsAdapter is required in layout.tsx for Next.js App Router.</content>
+    </learning>
+  </learnings-from-previous-stories>
+
+  <fr-coverage>
+    <fr id="FR18">
+      <requirement>System persists filter state in URL for shareability</requirement>
+      <how-satisfied>useFilters hook uses nuqs to sync category filters with URL query params (?cat=market,agi); NuqsAdapter enables URL state across app; shallow updates prevent page reloads; invalid params handled gracefully; shareable URLs preserve filter state</how-satisfied>
+    </fr>
+  </fr-coverage>
+</story-context>
