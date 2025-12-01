@@ -32,7 +32,7 @@ export function HomeClient({ obituaries }: HomeClientProps) {
     <>
       {/* Timeline Visualization */}
       <section className="container mx-auto px-4 py-8">
-        <ScatterPlot data={obituaries} />
+        <ScatterPlot data={obituaries} activeCategories={categories} />
       </section>
 
       {/* Category Filter Bar */}

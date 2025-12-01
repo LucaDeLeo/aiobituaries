@@ -15,7 +15,7 @@ import { AxisBottom } from '@visx/axis'
 import { GridColumns } from '@visx/grid'
 import { Group } from '@visx/group'
 import { timeFormat } from 'd3-time-format'
-import type { ObituarySummary } from '@/types/obituary'
+import type { ObituarySummary, Category } from '@/types/obituary'
 import type { ViewState, PointCluster, TooltipData } from '@/types/visualization'
 import { ScatterPoint } from './scatter-point'
 import { ZoomControls } from './zoom-controls'
@@ -36,6 +36,8 @@ import {
 export interface ScatterPlotProps {
   data: ObituarySummary[]
   height?: number
+  /** Active category filters - empty array shows all (no filtering) */
+  activeCategories?: Category[]
 }
 
 const MARGIN = { top: 20, right: 20, bottom: 40, left: 20 }
@@ -143,10 +145,12 @@ export function ScatterPlotInner({
   data,
   width,
   height,
+  activeCategories = [],
 }: {
   data: ObituarySummary[]
   width: number
   height: number
+  activeCategories: Category[]
 }) {
   // ViewState for tracking pan and zoom position
   const [viewState, setViewState] = useState<ViewState>({
@@ -242,6 +246,16 @@ export function ScatterPlotInner({
 
     return computeClusters(positionedPoints, DEFAULT_CLUSTER_CONFIG, viewState.scale)
   }, [data, xScale, yScale, viewState.scale])
+
+  // Determine if a point should be filtered-in (visible at full opacity)
+  // Empty activeCategories = show all; otherwise match any category (OR logic)
+  const isPointFiltered = useCallback(
+    (obituary: ObituarySummary): boolean => {
+      if (activeCategories.length === 0) return true
+      return obituary.categories.some((cat) => activeCategories.includes(cat))
+    },
+    [activeCategories]
+  )
 
   // Use zoom hook with reduced motion support (must be before useSpring that uses getZoomTransition)
   const {
@@ -668,6 +682,7 @@ export function ScatterPlotInner({
                     x={xPos}
                     y={yPos}
                     color={color}
+                    isFiltered={isPointFiltered(obituary)}
                     isClustered={isClustered}
                     isHovered={hoveredId === obituary._id}
                     onMouseEnter={() => handlePointMouseEnter(obituary, xPos, yPos)}
@@ -729,7 +744,7 @@ export function ScatterPlotInner({
   )
 }
 
-export function ScatterPlot({ data, height }: ScatterPlotProps) {
+export function ScatterPlot({ data, height, activeCategories = [] }: ScatterPlotProps) {
   return (
     <div
       className="w-full min-h-[300px] md:min-h-[400px]"
@@ -742,6 +757,7 @@ export function ScatterPlot({ data, height }: ScatterPlotProps) {
             data={data}
             width={width}
             height={height || Math.max(parentHeight, 300)}
+            activeCategories={activeCategories}
           />
         )}
       </ParentSize>
@@ -764,4 +780,20 @@ export function calculateEdgeGradientVisibility(
     showLeft: translateX < panBounds.max,
     showRight: translateX > panBounds.min,
   }
+}
+
+/**
+ * Pure function for filter logic - exported for testing
+ * Returns true if obituary should be filtered-in (visible), false if filtered-out (faded)
+ * @param obituaryCategories - Categories from the obituary
+ * @param activeCategories - Active filter categories (empty = show all)
+ */
+export function isObituaryFiltered(
+  obituaryCategories: Category[],
+  activeCategories: Category[]
+): boolean {
+  // Empty activeCategories = show all
+  if (activeCategories.length === 0) return true
+  // Match if any category matches (OR logic)
+  return obituaryCategories.some((cat) => activeCategories.includes(cat))
 }

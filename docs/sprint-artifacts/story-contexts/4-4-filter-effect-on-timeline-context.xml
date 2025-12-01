@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context XML for 4-4-filter-effect-on-timeline
+  Generated: 2025-11-30
+  Status: drafted -> ready-for-dev
+-->
+<story-context>
+  <metadata>
+    <story-key>4-4-filter-effect-on-timeline</story-key>
+    <epic>Epic 4 - Category System &amp; Filtering</epic>
+    <story-title>Filter Effect on Timeline</story-title>
+    <priority>High</priority>
+    <generated-at>2025-11-30</generated-at>
+  </metadata>
+
+  <story-reference>
+    <file-path>docs/sprint-artifacts/stories/4-4-filter-effect-on-timeline.md</file-path>
+    <description>Full story definition with acceptance criteria and tasks</description>
+  </story-reference>
+
+  <epic-context>
+    <tech-spec-path>docs/sprint-artifacts/epic-tech-specs/epic-4-tech-spec.md</tech-spec-path>
+    <epic-description>Epic 4 implements the category system and filtering functionality that enables users to explore obituaries by type and share filtered views.</epic-description>
+    <related-stories>
+      <story key="4-1" status="done">Category Data Model - provides Category type and constants</story>
+      <story key="4-2" status="done">Category Filter Bar - provides CategoryFilter component</story>
+      <story key="4-3" status="done">URL State with nuqs - provides useFilters hook</story>
+      <story key="4-5" status="backlog">Category Breakdown Chart - will use same filter state</story>
+    </related-stories>
+    <functional-requirements>
+      <fr id="FR17">Filtered view updates timeline and list displays in real-time</fr>
+    </functional-requirements>
+  </epic-context>
+
+  <documentation-artifacts>
+    <artifact>
+      <path>docs/architecture.md</path>
+      <relevance>Architecture decisions for URL state (ADR-004), client-side filtering, interaction states</relevance>
+      <key-sections>
+        <section>Novel Pattern: Contextual Scatter Plot - Interaction States table</section>
+        <section>URL State Pattern with nuqs</section>
+        <section>Animation Presets</section>
+      </key-sections>
+    </artifact>
+    <artifact>
+      <path>docs/sprint-artifacts/epic-tech-specs/epic-4-tech-spec.md</path>
+      <relevance>Detailed technical specification for filter integration with ScatterPlot and ScatterPoint</relevance>
+      <key-sections>
+        <section>Section 4.5: ScatterPlot Filter Integration</section>
+        <section>Section 4.6: ScatterPoint Filter State</section>
+        <section>Section 8: Testing Strategy</section>
+      </key-sections>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code-interfaces>
+    <!-- Primary files to modify -->
+    <interface type="component" action="modify">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <description>Main scatter plot visualization - needs activeCategories prop added to ScatterPlotProps and ScatterPlotInner</description>
+      <current-props>
+        <prop name="data" type="ObituarySummary[]">Obituary data array</prop>
+        <prop name="height" type="number?" default="auto">Chart height</prop>
+      </current-props>
+      <required-changes>
+        <change>Add activeCategories?: Category[] to ScatterPlotProps interface (line 36-39)</change>
+        <change>Pass activeCategories to ScatterPlotInner via ParentSize render</change>
+        <change>Add isPointFiltered function using useCallback</change>
+        <change>Pass isFiltered={isPointFiltered(obituary)} to each ScatterPoint (around line 665)</change>
+      </required-changes>
+      <imports-to-add>Category type from @/types/obituary</imports-to-add>
+    </interface>
+
+    <interface type="component" action="modify">
+      <path>src/components/visualization/scatter-point.tsx</path>
+      <description>Individual data point component - already has isFiltered prop with visual handling</description>
+      <current-props>
+        <prop name="isFiltered" type="boolean" default="true">Controls opacity (0.8 vs 0.2), pointer-events (auto vs none), cursor (pointer vs default)</prop>
+      </current-props>
+      <required-changes>
+        <change>Update opacity transition duration from 0.15 to 0.2 (200ms) on line 86</change>
+      </required-changes>
+      <existing-behavior>
+        <code-snippet location="line 48">const opacity = isFiltered ? (isHovered ? 1 : 0.8) : 0.2</code-snippet>
+        <code-snippet location="line 67-68">cursor: isFiltered ? 'pointer' : 'default', pointerEvents: isFiltered ? 'auto' : 'none'</code-snippet>
+      </existing-behavior>
+    </interface>
+
+    <interface type="component" action="modify">
+      <path>src/app/home-client.tsx</path>
+      <description>Client wrapper for homepage - needs to pass categories to ScatterPlot</description>
+      <current-state>
+        <code-snippet>Uses useFilters() hook, passes categories to CategoryFilter</code-snippet>
+        <code-snippet>ScatterPlot receives only data={obituaries} prop</code-snippet>
+      </current-state>
+      <required-changes>
+        <change>Add activeCategories={categories} prop to ScatterPlot (line 35)</change>
+      </required-changes>
+    </interface>
+
+    <!-- Supporting files (read-only reference) -->
+    <interface type="hook" action="reference">
+      <path>src/lib/hooks/use-filters.ts</path>
+      <description>nuqs-based hook for URL-synced filter state - already complete from Story 4-3</description>
+      <exports>
+        <export name="useFilters" returns="FilterState">Main hook returning categories, toggleCategory, clearFilters</export>
+        <export name="FilterState" type="interface">Type for filter state</export>
+      </exports>
+      <usage-example>const { categories, toggleCategory, clearFilters } = useFilters()</usage-example>
+    </interface>
+
+    <interface type="constants" action="reference">
+      <path>src/lib/constants/categories.ts</path>
+      <description>Category definitions and utilities - provides Category type validation</description>
+      <exports>
+        <export name="CATEGORIES">Record&lt;Category, CategoryDefinition&gt;</export>
+        <export name="CATEGORY_ORDER">Category[] in display order</export>
+      </exports>
+    </interface>
+
+    <interface type="types" action="reference">
+      <path>src/types/obituary.ts</path>
+      <description>Core type definitions including Category union type</description>
+      <exports>
+        <export name="Category" type="type">'market' | 'capability' | 'agi' | 'dismissive'</export>
+        <export name="ObituarySummary" type="interface">Lightweight obituary type with categories: Category[]</export>
+      </exports>
+    </interface>
+
+    <interface type="animation" action="reference">
+      <path>src/lib/utils/animation.ts</path>
+      <description>Animation presets and durations</description>
+      <relevant-constants>
+        <constant name="DURATIONS.fast">0.15 - current opacity transition</constant>
+        <constant name="DURATIONS.normal">0.2 - target opacity transition (200ms)</constant>
+      </relevant-constants>
+    </interface>
+  </existing-code-interfaces>
+
+  <development-constraints>
+    <constraint type="architecture">
+      <description>Client-Side Filtering</description>
+      <details>Filter client-side for instant response (no server round-trip). Dataset is small (&lt; 500 obituaries expected).</details>
+    </constraint>
+    <constraint type="architecture">
+      <description>Spatial Context Preservation</description>
+      <details>Keep faded dots visible to preserve timeline context. Dot positions must NOT change during filtering.</details>
+    </constraint>
+    <constraint type="visual">
+      <description>Filter Visual States</description>
+      <details>
+        - Filtered-in: opacity 0.8 (0.2 for faded), glow effect active, pointer-events: auto
+        - Filtered-out: opacity 0.2, no glow, pointer-events: none
+        - 200ms ease-in-out transition for filter changes
+      </details>
+    </constraint>
+    <constraint type="interaction">
+      <description>Filter Logic</description>
+      <details>
+        - Empty activeCategories = show all (all points filtered-in)
+        - Match = OR logic (any category match means filtered-in)
+        - Multi-category obituaries match if ANY category matches activeCategories
+      </details>
+    </constraint>
+    <constraint type="accessibility">
+      <description>Reduced Motion Support</description>
+      <details>Transitions disabled when prefersReducedMotion is true (already implemented in ScatterPoint)</details>
+    </constraint>
+  </development-constraints>
+
+  <dependencies>
+    <internal-dependencies>
+      <dependency>
+        <name>Category type</name>
+        <from>@/types/obituary</from>
+        <usage>Type for activeCategories prop</usage>
+      </dependency>
+      <dependency>
+        <name>useFilters hook</name>
+        <from>@/lib/hooks/use-filters</from>
+        <usage>Provides categories array to pass to ScatterPlot</usage>
+      </dependency>
+      <dependency>
+        <name>ObituarySummary.categories</name>
+        <from>@/types/obituary</from>
+        <usage>Each obituary has categories array to check against activeCategories</usage>
+      </dependency>
+    </internal-dependencies>
+    <external-dependencies>
+      <dependency>
+        <name>motion/react</name>
+        <version>12.9.2</version>
+        <usage>Animation transitions for opacity changes</usage>
+      </dependency>
+    </external-dependencies>
+  </dependencies>
+
+  <testing-context>
+    <test-framework>Vitest + Testing Library</test-framework>
+    <existing-tests>
+      <test-file>
+        <path>tests/unit/components/visualization/scatter-plot.test.tsx</path>
+        <status>Module export tests only (React 19 + Vitest hook issues)</status>
+        <additions-needed>Add tests for activeCategories prop acceptance</additions-needed>
+      </test-file>
+      <test-file>
+        <path>tests/unit/components/visualization/scatter-point.test.tsx</path>
+        <status>Module export tests only</status>
+        <additions-needed>Add tests for isFiltered visual states and transition duration</additions-needed>
+      </test-file>
+    </existing-tests>
+    <test-scenarios>
+      <scenario id="1">Empty activeCategories returns isFiltered=true for all points</scenario>
+      <scenario id="2">Single activeCategory filters correctly</scenario>
+      <scenario id="3">Multiple activeCategories filter correctly (OR logic)</scenario>
+      <scenario id="4">Obituary with multiple categories matches if ANY matches</scenario>
+      <scenario id="5">isFiltered=true results in opacity 0.8</scenario>
+      <scenario id="6">isFiltered=false results in opacity 0.2</scenario>
+      <scenario id="7">isFiltered=false sets pointerEvents to 'none'</scenario>
+      <scenario id="8">Transition duration is 0.2 (200ms)</scenario>
+    </test-scenarios>
+  </testing-context>
+
+  <implementation-notes>
+    <note priority="high">
+      <title>isFiltered Prop Already Exists</title>
+      <details>ScatterPoint already has isFiltered prop with proper opacity (0.8/0.2), pointer-events (auto/none), and cursor (pointer/default) handling. Only the transition duration needs updating.</details>
+    </note>
+    <note priority="high">
+      <title>Filter Logic Pattern</title>
+      <details>
+        Use useCallback for isPointFiltered:
+        ```tsx
+        const isPointFiltered = useCallback((obituary: ObituarySummary) => {
+          if (activeCategories.length === 0) return true
+          return obituary.categories.some(cat => activeCategories.includes(cat))
+        }, [activeCategories])
+        ```
+      </details>
+    </note>
+    <note priority="medium">
+      <title>Transition Duration Update</title>
+      <details>In scatter-point.tsx line 86, change { duration: 0.15 } to { duration: 0.2 } for 200ms transition per AC-4.4.6</details>
+    </note>
+    <note priority="medium">
+      <title>Props Threading</title>
+      <details>activeCategories must flow: HomeClient -> ScatterPlot -> ScatterPlotInner -> isPointFiltered() -> ScatterPoint</details>
+    </note>
+  </implementation-notes>
+
+  <acceptance-criteria-summary>
+    <criterion id="AC-4.4.1">Non-matching dots fade to 20% opacity</criterion>
+    <criterion id="AC-4.4.2">Matching dots remain at 80% opacity with glow</criterion>
+    <criterion id="AC-4.4.3">Filtered-out dots are non-hoverable</criterion>
+    <criterion id="AC-4.4.4">Filtered-out dots are non-clickable</criterion>
+    <criterion id="AC-4.4.5">Matching dots have normal hover behavior (tooltip, scale)</criterion>
+    <criterion id="AC-4.4.6">200ms opacity transition</criterion>
+    <criterion id="AC-4.4.7">Clear filters restores all dots to normal</criterion>
+    <criterion id="AC-4.4.8">Spatial context preserved (dot positions unchanged)</criterion>
+  </acceptance-criteria-summary>
+
+  <files-to-modify>
+    <file action="modify">
+      <path>src/components/visualization/scatter-plot.tsx</path>
+      <changes>Add activeCategories prop, implement isPointFiltered function, pass isFiltered to ScatterPoint</changes>
+      <estimated-effort>30 min</estimated-effort>
+    </file>
+    <file action="modify">
+      <path>src/components/visualization/scatter-point.tsx</path>
+      <changes>Update opacity transition duration from 0.15 to 0.2</changes>
+      <estimated-effort>5 min</estimated-effort>
+    </file>
+    <file action="modify">
+      <path>src/app/home-client.tsx</path>
+      <changes>Add activeCategories={categories} prop to ScatterPlot</changes>
+      <estimated-effort>5 min</estimated-effort>
+    </file>
+    <file action="modify">
+      <path>tests/unit/components/visualization/scatter-plot.test.tsx</path>
+      <changes>Add filter logic tests</changes>
+      <estimated-effort>30 min</estimated-effort>
+    </file>
+    <file action="modify">
+      <path>tests/unit/components/visualization/scatter-point.test.tsx</path>
+      <changes>Add transition duration test, isFiltered visual state tests</changes>
+      <estimated-effort>20 min</estimated-effort>
+    </file>
+    <file action="modify">
+      <path>docs/sprint-artifacts/sprint-status.yaml</path>
+      <changes>Update 4-4-filter-effect-on-timeline: drafted -> ready-for-dev</changes>
+      <estimated-effort>1 min</estimated-effort>
+    </file>
+  </files-to-modify>
+
+  <definition-of-done>
+    <item>ScatterPlotProps includes activeCategories?: Category[]</item>
+    <item>ScatterPlotInner receives and uses activeCategories</item>
+    <item>Filter logic correctly determines isFiltered for each point</item>
+    <item>ScatterPoint receives isFiltered prop based on category match</item>
+    <item>HomeClient passes categories from useFilters to ScatterPlot</item>
+    <item>Non-matching dots fade to 20% opacity</item>
+    <item>Matching dots remain at 80% opacity with glow</item>
+    <item>Filtered-out dots are non-interactive (no hover, no click)</item>
+    <item>Filtered-in dots work normally (tooltip, modal)</item>
+    <item>Transition animation is 200ms ease-in-out</item>
+    <item>Dot positions unchanged during filtering</item>
+    <item>All button restores all dots to normal state</item>
+    <item>Unit tests pass for filter logic</item>
+    <item>No TypeScript errors</item>
+    <item>Lint passes (pnpm lint)</item>
+  </definition-of-done>
+</story-context>

@@ -83,7 +83,8 @@ export function ScatterPoint({
         prefersReducedMotion
           ? { duration: 0 }
           : {
-              opacity: { duration: 0.15 },
+              // 200ms per AC-4.4.6 for filter transitions
+              opacity: { duration: 0.2 },
               scale: { type: 'spring', stiffness: 300, damping: 20 },
             }
       }
