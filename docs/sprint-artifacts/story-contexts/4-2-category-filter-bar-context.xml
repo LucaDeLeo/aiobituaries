@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context XML for Story 4-2: Category Filter Bar
+  Generated: 2025-11-30
+  Purpose: Single source of truth for story implementation
+-->
+<story-context version="1.0">
+  <metadata>
+    <story-key>4-2-category-filter-bar</story-key>
+    <story-title>Category Filter Bar</story-title>
+    <epic>Epic 4 - Category System &amp; Filtering</epic>
+    <status>drafted</status>
+    <generated>2025-11-30</generated>
+  </metadata>
+
+  <story-reference>
+    <file>docs/sprint-artifacts/stories/4-2-category-filter-bar.md</file>
+    <user-story>As a visitor, I want to filter obituaries by category, so that I can focus on specific types of skepticism.</user-story>
+    <acceptance-criteria-count>10</acceptance-criteria-count>
+    <task-count>9</task-count>
+  </story-reference>
+
+  <epic-context>
+    <tech-spec>docs/sprint-artifacts/epic-tech-specs/epic-4-tech-spec.md</tech-spec>
+    <epic-description>Epic 4 implements the category system and filtering functionality that enables users to explore obituaries by type and share filtered views.</epic-description>
+    <functional-requirements>
+      <fr id="FR15">Users can filter obituaries by one or more categories</fr>
+    </functional-requirements>
+    <sequence>Story 2 of 5 in Epic 4</sequence>
+    <dependencies>
+      <dependency type="required">Story 4-1 (Category Data Model) - COMPLETE</dependency>
+    </dependencies>
+  </epic-context>
+
+  <documentation-artifacts>
+    <artifact type="architecture" relevance="high">
+      <file>docs/architecture.md</file>
+      <description>Core architecture decisions including Motion animation patterns, component communication patterns, and testing strategy.</description>
+      <key-sections>
+        <section>Animation Presets - SPRINGS, fadeIn, scaleOnHover patterns</section>
+        <section>Component Pattern - 'use client' directive for interactive components</section>
+        <section>Testing Patterns - Vitest unit tests with module export verification</section>
+        <section>Naming Conventions - PascalCase components, kebab-case files</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="tech-spec" relevance="high">
+      <file>docs/sprint-artifacts/epic-tech-specs/epic-4-tech-spec.md</file>
+      <description>Detailed component specifications for CategoryFilter and CategoryPill including props, visual design, and implementation code.</description>
+      <key-sections>
+        <section>Section 4.1 - CategoryFilter component spec with full props interface</section>
+        <section>Section 4.2 - CategoryPill component spec with animation details</section>
+        <section>Section 8.2 - Component test patterns</section>
+      </key-sections>
+    </artifact>
+
+    <artifact type="story" relevance="high">
+      <file>docs/sprint-artifacts/stories/4-2-category-filter-bar.md</file>
+      <description>Complete story with acceptance criteria, tasks, and reference implementation code.</description>
+      <key-sections>
+        <section>Reference Implementation - Complete TSX code for both components</section>
+        <section>Tasks 1-9 - Detailed implementation checklist</section>
+        <section>Test Scenarios - Unit and integration test requirements</section>
+      </key-sections>
+    </artifact>
+  </documentation-artifacts>
+
+  <existing-code-interfaces>
+    <interface type="constant" relevance="critical">
+      <file>src/lib/constants/categories.ts</file>
+      <description>Category data model implemented in Story 4-1. Provides CATEGORIES, CATEGORY_ORDER, getCategory, CategoryDefinition.</description>
+      <exports>
+        <export name="CATEGORIES" type="Record&lt;Category, CategoryDefinition&gt;">Complete category definitions with id, label, description, color, colorVar</export>
+        <export name="CATEGORY_ORDER" type="Category[]">Ordered array: ['capability', 'market', 'agi', 'dismissive']</export>
+        <export name="getCategory" type="(id: Category) => CategoryDefinition">Returns full category definition by ID</export>
+        <export name="CategoryDefinition" type="interface">Type with id, label, description, color, colorVar properties</export>
+        <export name="getCategoryColor" type="(id: Category) => string">Returns hex color string</export>
+        <export name="getCategoryLabel" type="(id: Category) => string">Returns human-readable label</export>
+        <export name="isValidCategory" type="(value: string) => value is Category">Type guard for category validation</export>
+      </exports>
+    </interface>
+
+    <interface type="utility" relevance="critical">
+      <file>src/lib/utils.ts</file>
+      <description>Class name utility using clsx and tailwind-merge.</description>
+      <exports>
+        <export name="cn" type="(...inputs: ClassValue[]) => string">Merges Tailwind classes with proper precedence</export>
+      </exports>
+    </interface>
+
+    <interface type="animation" relevance="high">
+      <file>src/lib/utils/animation.ts</file>
+      <description>Shared animation presets for consistent motion behavior.</description>
+      <exports>
+        <export name="DURATIONS" type="object">fast: 0.15, normal: 0.2, slow: 0.3</export>
+        <export name="SPRINGS" type="object">hover, zoom, pan spring configurations</export>
+        <export name="shouldReduceMotion" type="() => boolean">Checks prefers-reduced-motion</export>
+        <export name="tooltipAppear" type="Variants">Fade-in with scale animation</export>
+        <export name="modalSlideIn" type="Variants">Slide from right animation</export>
+      </exports>
+    </interface>
+
+    <interface type="type" relevance="high">
+      <file>src/types/obituary.ts</file>
+      <description>Core type definitions for obituary data including Category type.</description>
+      <exports>
+        <export name="Category" type="type">Union type: 'market' | 'capability' | 'agi' | 'dismissive'</export>
+        <export name="Obituary" type="interface">Full obituary with context metadata</export>
+        <export name="ObituarySummary" type="interface">Lightweight obituary for list views</export>
+      </exports>
+    </interface>
+
+    <interface type="component" relevance="medium">
+      <file>src/components/ui/button.tsx</file>
+      <description>shadcn/ui Button component with variants. Use as reference for focus ring patterns.</description>
+      <patterns>
+        <pattern>Focus styles: focus-visible:ring-[3px] focus-visible:ring-ring/50</pattern>
+        <pattern>Variant props using class-variance-authority (cva)</pattern>
+        <pattern>cn utility for class merging</pattern>
+      </patterns>
+    </interface>
+
+    <interface type="component" relevance="high">
+      <file>src/components/visualization/scatter-point.tsx</file>
+      <description>Reference for motion.button implementation with whileHover, whileTap animations and reduced motion support.</description>
+      <patterns>
+        <pattern>motion/react import: import { motion, useReducedMotion } from 'motion/react'</pattern>
+        <pattern>Reduced motion handling with useReducedMotion hook</pattern>
+        <pattern>Spring transition: { type: 'spring', stiffness: 300, damping: 20 }</pattern>
+        <pattern>whileHover and animate patterns for interactive elements</pattern>
+        <pattern>aria-label for accessibility</pattern>
+      </patterns>
+    </interface>
+
+    <interface type="styles" relevance="high">
+      <file>src/app/globals.css</file>
+      <description>CSS variables for Deep Archive theme including category colors and background colors.</description>
+      <variables>
+        <var name="--bg-primary">#0C0C0F</var>
+        <var name="--bg-secondary">#14141A</var>
+        <var name="--bg-tertiary">#1C1C24</var>
+        <var name="--border">#2A2A35</var>
+        <var name="--text-primary">#E8E6E3</var>
+        <var name="--text-secondary">#A8A5A0</var>
+        <var name="--accent-primary">#C9A962</var>
+        <var name="--category-capability">#C9A962</var>
+        <var name="--category-market">#7B9E89</var>
+        <var name="--category-agi">#9E7B7B</var>
+        <var name="--category-dismissive">#7B7B9E</var>
+      </variables>
+      <note>NOTE: scrollbar-hide utility does NOT exist - must be added in Task 3</note>
+    </interface>
+
+    <interface type="hook" relevance="medium">
+      <file>src/lib/hooks/use-zoom.ts</file>
+      <description>Reference for hook patterns: 'use client' directive, useCallback, useReducedMotion usage.</description>
+      <patterns>
+        <pattern>Hook file starts with 'use client'</pattern>
+        <pattern>useCallback for memoized functions</pattern>
+        <pattern>useReducedMotion from motion/react</pattern>
+        <pattern>Export interface for return type</pattern>
+      </patterns>
+    </interface>
+  </existing-code-interfaces>
+
+  <development-constraints>
+    <constraint type="testing" priority="high">
+      <description>Tests use module export verification pattern due to React 19 + Vitest hook issues</description>
+      <reference>tests/unit/components/visualization/scatter-point.test.tsx</reference>
+      <pattern>Import module and verify exports exist rather than rendering components directly</pattern>
+    </constraint>
+
+    <constraint type="accessibility" priority="high">
+      <description>Minimum 44px touch targets, aria-pressed on toggles, keyboard navigation</description>
+      <requirements>
+        <req>All pills must have min-h-[44px] for touch accessibility</req>
+        <req>aria-pressed attribute on toggle buttons</req>
+        <req>aria-label for screen reader context</req>
+        <req>Focus visible ring using focus-visible: classes</req>
+        <req>Keyboard navigation with Tab, Enter, Space</req>
+      </requirements>
+    </constraint>
+
+    <constraint type="animation" priority="medium">
+      <description>Use motion/react for animations, respect reduced motion preference</description>
+      <requirements>
+        <req>whileHover={{ scale: 1.02 }} for hover feedback</req>
+        <req>whileTap={{ scale: 0.98 }} for press feedback</req>
+        <req>Entrance animation: initial={{ y: 20, opacity: 0 }}, animate={{ y: 0, opacity: 1 }}</req>
+        <req>Transition delay: 0.3s for entrance</req>
+      </requirements>
+    </constraint>
+
+    <constraint type="styling" priority="high">
+      <description>Use CSS variables from Deep Archive theme, Tailwind arbitrary values</description>
+      <patterns>
+        <pattern>Background: bg-[--bg-secondary]/80 with backdrop-blur-md</pattern>
+        <pattern>Border: border border-[--border] rounded-full</pattern>
+        <pattern>Active state: backgroundColor style using ${category.color}20 (20% opacity)</pattern>
+        <pattern>Text colors: text-[--text-primary], text-[--text-secondary]</pattern>
+      </patterns>
+    </constraint>
+
+    <constraint type="data-testid" priority="critical">
+      <description>Required data-testid attributes for testing</description>
+      <requirements>
+        <req>data-testid="category-filter" on main container</req>
+        <req>data-testid="filter-all-button" on All button</req>
+        <req>data-testid="category-pill-{category}" on each pill (e.g., category-pill-market)</req>
+      </requirements>
+    </constraint>
+
+    <constraint type="component-structure" priority="high">
+      <description>Create filters directory and barrel export</description>
+      <structure>
+        <dir>src/components/filters/</dir>
+        <file>src/components/filters/category-filter.tsx</file>
+        <file>src/components/filters/category-pill.tsx</file>
+        <file>src/components/filters/index.ts (barrel export)</file>
+      </structure>
+    </constraint>
+  </development-constraints>
+
+  <dependencies>
+    <dependency type="package" status="installed">
+      <name>motion</name>
+      <version>12.9.2</version>
+      <usage>Animation for hover, tap, entrance effects</usage>
+      <import>import { motion } from 'motion/react'</import>
+    </dependency>
+
+    <dependency type="package" status="installed">
+      <name>clsx</name>
+      <usage>Used by cn utility</usage>
+    </dependency>
+
+    <dependency type="package" status="installed">
+      <name>tailwind-merge</name>
+      <usage>Used by cn utility</usage>
+    </dependency>
+
+    <dependency type="internal" status="complete">
+      <name>Story 4-1 (Category Data Model)</name>
+      <provides>CATEGORIES, CATEGORY_ORDER, getCategory, CategoryDefinition</provides>
+    </dependency>
+  </dependencies>
+
+  <testing-context>
+    <framework>Vitest</framework>
+    <test-files-to-create>
+      <file>tests/unit/components/filters/category-pill.test.tsx</file>
+      <file>tests/unit/components/filters/category-filter.test.tsx</file>
+    </test-files-to-create>
+
+    <test-patterns>
+      <pattern name="module-export-verification">
+        <description>Verify component exports and dependencies are importable</description>
+        <example>
+const module = await import('@/components/filters/category-filter')
+expect(module.CategoryFilter).toBeDefined()
+expect(typeof module.CategoryFilter).toBe('function')
+        </example>
+      </pattern>
+
+      <pattern name="motion-dependency">
+        <description>Verify motion/react integration</description>
+        <example>
+const { motion } = await import('motion/react')
+expect(motion.button).toBeDefined()
+        </example>
+      </pattern>
+    </test-patterns>
+
+    <test-scenarios>
+      <scenario component="CategoryPill">
+        <test>Exports successfully as function</test>
+        <test>Can import CategoryDefinition type</test>
+        <test>motion/react motion.button is available</test>
+      </scenario>
+
+      <scenario component="CategoryFilter">
+        <test>Exports successfully as function</test>
+        <test>Can import CATEGORY_ORDER from constants</test>
+        <test>Can import getCategory from constants</test>
+        <test>Can import CategoryPill component</test>
+      </scenario>
+    </test-scenarios>
+
+    <reference-tests>
+      <file>tests/unit/lib/constants/categories.test.ts</file>
+      <file>tests/unit/components/visualization/scatter-point.test.tsx</file>
+    </reference-tests>
+  </testing-context>
+
+  <implementation-notes>
+    <note priority="critical">
+      <title>scrollbar-hide utility missing</title>
+      <description>The scrollbar-hide CSS class does not exist in globals.css. Task 3 must add this utility for mobile horizontal scroll.</description>
+      <css-to-add>
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+      </css-to-add>
+    </note>
+
+    <note priority="high">
+      <title>Component is controlled</title>
+      <description>CategoryFilter receives state via props (controlled component pattern). Parent manages activeCategories state.</description>
+    </note>
+
+    <note priority="high">
+      <title>Active state uses inline style</title>
+      <description>Active pill background uses inline style for dynamic category color: style={{ backgroundColor: isActive ? `${category.color}20` : 'transparent' }}</description>
+    </note>
+
+    <note priority="medium">
+      <title>Focus ring pattern</title>
+      <description>Use focus-visible classes matching Button component pattern: focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--accent-primary] focus-visible:ring-offset-2</description>
+    </note>
+
+    <note priority="medium">
+      <title>showingAll derived state</title>
+      <description>const showingAll = activeCategories.length === 0 - used to determine All button active state</description>
+    </note>
+  </implementation-notes>
+
+  <files-to-create>
+    <file action="create">
+      <path>src/components/filters/category-pill.tsx</path>
+      <description>Individual category toggle pill with dot, label, and animations</description>
+    </file>
+    <file action="create">
+      <path>src/components/filters/category-filter.tsx</path>
+      <description>Floating filter bar container with All button and category pills</description>
+    </file>
+    <file action="create">
+      <path>src/components/filters/index.ts</path>
+      <description>Barrel export for CategoryFilter, CategoryPill, and their prop types</description>
+    </file>
+    <file action="create">
+      <path>tests/unit/components/filters/category-pill.test.tsx</path>
+      <description>Unit tests for CategoryPill component exports and dependencies</description>
+    </file>
+    <file action="create">
+      <path>tests/unit/components/filters/category-filter.test.tsx</path>
+      <description>Unit tests for CategoryFilter component exports and integration</description>
+    </file>
+  </files-to-create>
+
+  <files-to-modify>
+    <file action="modify">
+      <path>src/app/globals.css</path>
+      <description>Add scrollbar-hide utility class for mobile horizontal scroll</description>
+    </file>
+  </files-to-modify>
+
+  <validation-checklist>
+    <item>CategoryPill component created with correct data-testid pattern</item>
+    <item>CategoryFilter component created with correct data-testid pattern</item>
+    <item>Barrel export in src/components/filters/index.ts</item>
+    <item>scrollbar-hide CSS utility added to globals.css</item>
+    <item>All pills have min-h-[44px] for touch targets</item>
+    <item>aria-pressed attribute on all toggle buttons</item>
+    <item>motion/react animations for hover, tap, entrance</item>
+    <item>Uses CATEGORY_ORDER for consistent pill ordering</item>
+    <item>Uses getCategory to get CategoryDefinition</item>
+    <item>Active state shows category color at 20% opacity</item>
+    <item>Inactive state shows transparent background</item>
+    <item>Focus visible ring on all interactive elements</item>
+    <item>Unit tests pass for both components</item>
+    <item>TypeScript compiles without errors</item>
+    <item>Lint passes</item>
+  </validation-checklist>
+</story-context>
