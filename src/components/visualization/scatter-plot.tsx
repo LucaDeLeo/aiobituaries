@@ -33,6 +33,7 @@ import {
   shouldShowClusters,
   DEFAULT_CLUSTER_CONFIG,
 } from '@/lib/utils/clustering'
+import { useRovingFocus } from '@/lib/hooks/use-roving-focus'
 
 export interface ScatterPlotProps {
   data: ObituarySummary[]
@@ -201,6 +202,10 @@ export function ScatterPlotInner({
   const [isModalOpen, setIsModalOpen] = useState(false)
   const clickedPointRef = useRef<HTMLElement | null>(null)
 
+  // Keyboard accessibility state (AC-6.2.6)
+  const [announcement, setAnnouncement] = useState('')
+  const timelineContainerRef = useRef<HTMLDivElement>(null)
+
   // Compute inner dimensions
   const innerWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
   const innerHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
@@ -265,6 +270,27 @@ export function ScatterPlotInner({
     },
     [activeCategories]
   )
+
+  // Sort data by date for consistent chronological navigation order (AC-6.2.2)
+  const sortedData = useMemo(
+    () => [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    [data]
+  )
+
+  // Filter visible data for keyboard navigation - skips filtered points (AC-6.2.9)
+  // Also exclude clustered points from keyboard navigation
+  const visibleData = useMemo(
+    () =>
+      sortedData.filter((ob) => {
+        const matchesFilter = isPointFiltered(ob)
+        const isClustered = isPointClustered(ob._id, clusters) && shouldShowClusters(viewState.scale)
+        return matchesFilter && !isClustered
+      }),
+    [sortedData, isPointFiltered, clusters, viewState.scale]
+  )
+
+  // Create refs for scatter points
+  const pointRefs = useRef<(SVGGElement | null)[]>([])
 
   // Use zoom hook with reduced motion support (must be before useSpring that uses getZoomTransition)
   const {
@@ -410,6 +436,101 @@ export function ScatterPlotInner({
       setSelectedSummary(null)
     }, 300)
   }, [])
+
+  // Scroll to point helper - pans timeline to show focused point (AC-6.2.10)
+  const scrollToPoint = useCallback(
+    (index: number) => {
+      const obituary = visibleData[index]
+      if (!obituary) return
+
+      const xPos = xScale(new Date(obituary.date))
+      const scaledXPos = xPos * viewState.scale + viewState.translateX
+
+      // Check if point is outside visible bounds (with some padding)
+      const padding = 100
+      if (scaledXPos < padding || scaledXPos > innerWidth - padding) {
+        // Calculate new translateX to center the point
+        const targetTranslateX = innerWidth / 2 - xPos * viewState.scale
+        const clampedX = Math.max(
+          -(xScale(new Date(sortedData[sortedData.length - 1].date)) * viewState.scale - innerWidth + 50),
+          Math.min(50, targetTranslateX)
+        )
+
+        // Animate the pan
+        animate(translateXMotion, clampedX, {
+          type: 'spring',
+          stiffness: SPRINGS.pan.stiffness,
+          damping: SPRINGS.pan.damping,
+          onComplete: () => {
+            setViewState((prev) => ({ ...prev, translateX: clampedX }))
+          },
+        })
+      }
+    },
+    [visibleData, xScale, viewState.scale, viewState.translateX, innerWidth, sortedData, translateXMotion, setViewState]
+  )
+
+  // Roving focus hook for keyboard navigation
+  const {
+    focusedIndex,
+    getTabIndex,
+    handleKeyDown: rovingHandleKeyDown,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Reserved for future use
+    setFocusedIndex: _setFocusedIndex,
+    getItemRef,
+    resetFocus,
+  } = useRovingFocus({
+    itemCount: visibleData.length,
+    onFocusChange: scrollToPoint,
+    initialIndex: 0,
+    wrap: true,
+  })
+
+  // Handle Enter/Space to open modal (AC-6.2.3)
+  const handlePointKeyDown = useCallback(
+    (event: React.KeyboardEvent, index: number, obituary: ObituarySummary) => {
+      // First handle roving focus navigation
+      rovingHandleKeyDown(event, index)
+
+      // Then handle activation keys
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault()
+        const element = pointRefs.current[index]
+        if (element) {
+          handlePointClick(obituary, element as unknown as HTMLElement)
+          setAnnouncement(`Opening details for ${obituary.source}`)
+        }
+      }
+
+      // Handle Escape to exit roving focus (AC-6.2.8)
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        // Reset focus and move focus to timeline container
+        resetFocus()
+        timelineContainerRef.current?.focus()
+        setAnnouncement('Exited timeline navigation')
+      }
+    },
+    [rovingHandleKeyDown, handlePointClick, resetFocus]
+  )
+
+  // Handle focus change announcements (AC-6.2.6)
+  const handlePointFocus = useCallback(
+    (index: number, obituary: ObituarySummary) => {
+      const position = index + 1
+      const total = visibleData.length
+      const formattedDate = new Date(obituary.date).toLocaleDateString('en-US', {
+        month: 'long',
+        year: 'numeric',
+      })
+      const claimPreview = obituary.claim.slice(0, 100) + (obituary.claim.length > 100 ? '...' : '')
+
+      setAnnouncement(
+        `${position} of ${total}. ${obituary.source}. ${formattedDate}. ${claimPreview}`
+      )
+    },
+    [visibleData.length]
+  )
 
   // Cleanup tooltip timeout on unmount
   useEffect(() => {
@@ -645,9 +766,32 @@ export function ScatterPlotInner({
 
   return (
     <div
+      ref={timelineContainerRef}
       className="relative"
       style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+      role="application"
+      aria-label="Timeline visualization. Use arrow keys to navigate between obituaries."
+      tabIndex={-1}
     >
+      {/* Live region for screen reader announcements (AC-6.2.6) */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        data-testid="timeline-live-region"
+      >
+        {announcement}
+      </div>
+
+      {/* Navigation instructions (AC-6.2.7) */}
+      <div className="sr-only" id="timeline-instructions">
+        Press left and right arrow keys to navigate between obituaries.
+        Press Enter or Space to view details.
+        Press Home to go to first obituary, End to go to last.
+        Press Escape to exit timeline navigation.
+      </div>
+
       <EdgeGradients
         showLeft={showLeftGradient}
         showRight={showRightGradient}
@@ -658,8 +802,9 @@ export function ScatterPlotInner({
         width={width}
         height={height}
         data-testid="scatter-plot"
-        role="img"
-        aria-label={`Interactive timeline of ${data.length} AI obituaries`}
+        role="group"
+        aria-label={`Timeline showing ${visibleData.length} obituaries`}
+        aria-describedby="timeline-instructions"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -709,8 +854,10 @@ export function ScatterPlotInner({
               transformOrigin: `${MARGIN.left}px ${MARGIN.top}px`,
             }}
           >
-            {/* Data Points with staggered entrance animation */}
+            {/* Data Points with staggered entrance animation (role="list" for keyboard nav) */}
             <motion.g
+              role="list"
+              aria-label="Obituary data points"
               variants={shouldReduceMotion ? undefined : staggerContainer}
               initial={shouldReduceMotion ? undefined : "initial"}
               animate={shouldReduceMotion ? undefined : "animate"}
@@ -723,9 +870,14 @@ export function ScatterPlotInner({
                   isPointClustered(obituary._id, clusters) &&
                   shouldShowClusters(viewState.scale)
 
+                // Find index in visibleData for keyboard navigation
+                const visibleIndex = visibleData.findIndex((ob) => ob._id === obituary._id)
+                const isKeyboardNavigable = visibleIndex !== -1
+
                 return (
                   <ScatterPoint
                     key={obituary._id}
+                    ref={isKeyboardNavigable ? getItemRef(visibleIndex) : undefined}
                     obituary={obituary}
                     x={xPos}
                     y={yPos}
@@ -737,6 +889,19 @@ export function ScatterPlotInner({
                     onMouseLeave={handlePointMouseLeave}
                     onClick={(element) => handlePointClick(obituary, element)}
                     shouldReduceMotion={shouldReduceMotion}
+                    // Keyboard navigation props (AC-6.2.1 through AC-6.2.5)
+                    tabIndex={isKeyboardNavigable ? getTabIndex(visibleIndex) : -1}
+                    isFocused={isKeyboardNavigable && visibleIndex === focusedIndex}
+                    onKeyDown={
+                      isKeyboardNavigable
+                        ? (e) => handlePointKeyDown(e, visibleIndex, obituary)
+                        : undefined
+                    }
+                    onFocus={
+                      isKeyboardNavigable
+                        ? () => handlePointFocus(visibleIndex, obituary)
+                        : undefined
+                    }
                   />
                 )
               })}

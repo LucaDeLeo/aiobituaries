@@ -1,0 +1,525 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context: 6-2-timeline-keyboard-access
+  Generated: 2025-12-01
+  Purpose: Implementation context for Timeline Keyboard Access story
+-->
+<story-context>
+  <metadata>
+    <story-key>6-2-timeline-keyboard-access</story-key>
+    <epic>Epic 6 - Accessibility &amp; Quality</epic>
+    <title>Timeline Keyboard Access</title>
+    <status>backlog</status>
+    <priority>High</priority>
+    <sequence>2 of 8 in Epic 6</sequence>
+    <functional-requirements>
+      <fr id="FR40" primary="true">Timeline is fully keyboard accessible</fr>
+      <fr id="FR41" partial="true">Screen readers can access all timeline data</fr>
+      <fr id="FR39" continued="true">All interactive elements are keyboard navigable</fr>
+    </functional-requirements>
+  </metadata>
+
+  <story-requirements>
+    <user-story>
+      <as-a>keyboard-only user</as-a>
+      <i-want>to navigate timeline data points using arrow keys and activate them with Enter/Space</i-want>
+      <so-that>I can explore the obituary timeline without requiring a mouse</so-that>
+    </user-story>
+
+    <acceptance-criteria>
+      <criterion id="AC-6.2.1" testable="Given page with timeline, when user tabs to timeline container, then focus enters timeline and first visible point receives focus">
+        Tab enters timeline - first visible point receives focus
+      </criterion>
+      <criterion id="AC-6.2.2" testable="Given point focused in timeline, when user presses Arrow Left/Right, then focus moves to previous/next point in chronological order">
+        Arrow Left/Right navigation between points chronologically
+      </criterion>
+      <criterion id="AC-6.2.3" testable="Given point focused, when user presses Enter or Space, then obituary modal opens with that point's details">
+        Enter/Space activates point to open modal
+      </criterion>
+      <criterion id="AC-6.2.4" testable="Given point focused, when user presses Home, then focus moves to first point; when user presses End, then focus moves to last point">
+        Home/End jump to timeline boundaries
+      </criterion>
+      <criterion id="AC-6.2.5" testable="Given point focused, when focus is on a point, then 2px gold ring visible around point and point scales to 1.25x">
+        Visual focus indicator - 2px gold ring + 1.25x scale
+      </criterion>
+      <criterion id="AC-6.2.6" testable="Given point focused, when focus changes to a point, then screen reader announces position (e.g., '3 of 47'), source, date, and claim preview">
+        Screen reader announcement with position, source, date, claim
+      </criterion>
+      <criterion id="AC-6.2.7" testable="Given timeline region, when screen reader encounters timeline, then navigation instructions are accessible via aria-describedby">
+        Instructions available via aria-describedby
+      </criterion>
+      <criterion id="AC-6.2.8" testable="Given point focused within timeline, when user presses Escape, then focus returns to timeline container (exits roving focus)">
+        Escape exits roving focus mode
+      </criterion>
+      <criterion id="AC-6.2.9" testable="Given category filter active, when user navigates with arrows, then filtered (grayed out) points are skipped and only visible points receive focus">
+        Filtered points skipped during navigation
+      </criterion>
+      <criterion id="AC-6.2.10" testable="Given point focused, when focus moves to a point outside visible area, then timeline pans to center the focused point">
+        Focused point scrolls into view
+      </criterion>
+    </acceptance-criteria>
+  </story-requirements>
+
+  <technical-specifications>
+    <files-to-create>
+      <file path="src/types/accessibility.ts" action="create">
+        <purpose>Accessibility type definitions including NavigationDirection, RovingFocusState, Announcement</purpose>
+        <content-requirements>
+          <type name="NavigationDirection">'up' | 'down' | 'left' | 'right' | 'home' | 'end'</type>
+          <interface name="RovingFocusState">focusedIndex, itemCount, columns?</interface>
+          <interface name="Announcement">id, message, politeness, delay?</interface>
+        </content-requirements>
+      </file>
+      <file path="src/lib/hooks/use-roving-focus.ts" action="create">
+        <purpose>Roving tabindex hook for grid/list keyboard navigation</purpose>
+        <content-requirements>
+          <interface name="UseRovingFocusOptions">itemCount, columns?, onFocusChange?, initialIndex?, wrap?</interface>
+          <interface name="UseRovingFocusReturn">focusedIndex, getTabIndex, handleKeyDown, setFocusedIndex, getItemRef</interface>
+          <behavior>Manages focus across items with arrow key navigation, Home/End support, optional wrapping</behavior>
+        </content-requirements>
+      </file>
+      <file path="tests/unit/lib/hooks/use-roving-focus.test.ts" action="create">
+        <purpose>Unit tests for useRovingFocus hook</purpose>
+      </file>
+      <file path="tests/unit/components/visualization/scatter-plot-keyboard.test.tsx" action="create">
+        <purpose>Integration tests for timeline keyboard navigation</purpose>
+      </file>
+    </files-to-create>
+
+    <files-to-modify>
+      <file path="src/components/visualization/scatter-plot.tsx" action="modify">
+        <changes>
+          <change>Add role="application" to container div</change>
+          <change>Add aria-label with usage instructions</change>
+          <change>Add hidden instructions div with id="timeline-instructions"</change>
+          <change>Add aria-describedby="timeline-instructions" to SVG</change>
+          <change>Add role="list" aria-label to data points group</change>
+          <change>Import and integrate useRovingFocus hook</change>
+          <change>Add sortedData useMemo to sort obituaries by date</change>
+          <change>Add visibleData useMemo to filter by active categories</change>
+          <change>Add announcement state for live region</change>
+          <change>Create scrollToPoint helper function</change>
+          <change>Pass keyboard props to ScatterPoint (tabIndex, isFocused, onKeyDown, onFocus)</change>
+          <change>Handle Enter/Space to call onPointSelect and open modal</change>
+        </changes>
+      </file>
+      <file path="src/components/visualization/scatter-point.tsx" action="modify">
+        <changes>
+          <change>Import forwardRef from React</change>
+          <change>Convert component to use forwardRef for SVGGElement</change>
+          <change>Add new props: tabIndex, isFocused, onKeyDown, onFocus</change>
+          <change>Add role="listitem" to group element</change>
+          <change>Add aria-labelledby pointing to title element</change>
+          <change>Add aria-describedby pointing to desc element</change>
+          <change>Add SVG title element with source/date</change>
+          <change>Add SVG desc element with claim preview and categories</change>
+          <change>Conditionally show focus ring when isFocused (dashed gold circle)</change>
+          <change>Conditionally scale point when isFocused (1.25x)</change>
+        </changes>
+      </file>
+      <file path="tests/unit/components/visualization/scatter-point.test.tsx" action="modify">
+        <changes>
+          <change>Add tests for forwardRef functionality</change>
+          <change>Add tests for role="listitem"</change>
+          <change>Add tests for tabIndex prop</change>
+          <change>Add tests for aria-labelledby and aria-describedby</change>
+          <change>Add tests for title and desc elements</change>
+          <change>Add tests for focus ring visibility</change>
+        </changes>
+      </file>
+    </files-to-modify>
+
+    <implementation-pattern name="Roving Tabindex">
+      <description>Standard WAI-ARIA pattern for keyboard navigation in composite widgets</description>
+      <behavior>
+        <item>Container is single Tab stop</item>
+        <item>Arrow keys move focus between items</item>
+        <item>Only focused item has tabIndex=0, others have tabIndex=-1</item>
+        <item>Focus follows DOM order or logical order (chronological for timeline)</item>
+      </behavior>
+      <reference>https://www.w3.org/WAI/ARIA/apg/patterns/grid/</reference>
+    </implementation-pattern>
+  </technical-specifications>
+
+  <existing-code>
+    <file path="src/components/visualization/scatter-plot.tsx">
+      <description>Main timeline visualization component - 847 lines</description>
+      <key-elements>
+        <element name="ScatterPlotProps">data: ObituarySummary[], height?, activeCategories?: Category[]</element>
+        <element name="ScatterPlotInner">Core component with viewState, pan/zoom handlers</element>
+        <element name="viewState">{ scale, translateX, translateY }</element>
+        <element name="isPointFiltered">Callback determining if obituary matches active filters</element>
+        <element name="handlePointClick">Opens modal with obituary, stores clicked element ref</element>
+        <element name="handleModalClose">Closes modal with animation delay</element>
+        <element name="translateXMotion">Motion value for smooth pan animation</element>
+        <element name="springScale">Spring-animated zoom scale</element>
+      </key-elements>
+      <integration-points>
+        <point>Pass keyboard props to ScatterPoint in map() at line 727</point>
+        <point>Add live region for announcements near SVG at line 656</point>
+        <point>Add instructions div before SVG</point>
+        <point>Integrate useRovingFocus with visibleData.length</point>
+      </integration-points>
+      <current-aria>role="img" aria-label on SVG (line 662)</current-aria>
+    </file>
+
+    <file path="src/components/visualization/scatter-point.tsx">
+      <description>Individual timeline data point - 119 lines</description>
+      <key-elements>
+        <element name="ScatterPointProps">obituary, x, y, color, isFiltered?, isHovered?, isClustered?, onMouseEnter?, onMouseLeave?, onClick?, shouldReduceMotion?</element>
+        <element name="POINT_RADIUS">7 (14px diameter visual)</element>
+        <element name="TABLET_TOUCH_RADIUS">22 (44px touch target)</element>
+        <element name="circleRef">useRef for touch target circle</element>
+      </key-elements>
+      <current-aria>role="img" aria-label on touch target circle (line 80-81)</current-aria>
+      <modification-needs>
+        <need>Convert to forwardRef for parent ref registration</need>
+        <need>Add tabIndex, isFocused, onKeyDown, onFocus props</need>
+        <need>Change role to "listitem"</need>
+        <need>Add SVG title and desc elements</need>
+        <need>Add focus ring circle when isFocused</need>
+      </modification-needs>
+    </file>
+
+    <file path="src/lib/hooks/use-focus-trap.ts">
+      <description>Focus trap hook for modal keyboard navigation - 130 lines</description>
+      <key-elements>
+        <element name="useFocusTrap">Hook with onEscape, isActive options</element>
+        <element name="trapRef">Ref to attach to container</element>
+        <element name="triggerElementRef">Stores element to restore focus on close</element>
+        <element name="activate/deactivate">Manual control methods</element>
+      </key-elements>
+      <pattern-to-follow>Similar structure for useRovingFocus - state management, ref tracking, keyboard handlers</pattern-to-follow>
+    </file>
+
+    <file path="src/lib/utils/a11y.ts">
+      <description>Accessibility utility functions - 193 lines</description>
+      <key-elements>
+        <element name="handleKeyboardNavigation">Keyboard event handler with callbacks for all standard keys</element>
+        <element name="generateId">Unique ID generator for ARIA relationships</element>
+        <element name="isFocusable">Check if element can receive keyboard focus</element>
+        <element name="getFocusableElements">Get all focusable elements in container</element>
+      </key-elements>
+      <usage-in-story>Can optionally use handleKeyboardNavigation pattern in useRovingFocus if simpler</usage-in-story>
+    </file>
+
+    <file path="src/components/obituary/obituary-modal.tsx">
+      <description>Modal component with focus trap integration - 216 lines</description>
+      <key-elements>
+        <element name="useFocusTrap">Integration at line 66-69</element>
+        <element name="handleClose">Restores focus to triggerRef after close</element>
+        <element name="triggerRef">Optional ref for focus restoration</element>
+      </key-elements>
+      <pattern-to-follow>Focus restoration pattern - store trigger element, restore on close</pattern-to-follow>
+    </file>
+
+    <file path="src/types/obituary.ts">
+      <description>Core obituary type definitions - 51 lines</description>
+      <key-types>
+        <type name="Category">'market' | 'capability' | 'agi' | 'dismissive'</type>
+        <type name="Obituary">Full obituary with _id, slug, claim, source, sourceUrl, date, categories, context</type>
+        <type name="ObituarySummary">Lightweight version without context and sourceUrl</type>
+      </key-types>
+    </file>
+
+    <file path="src/types/visualization.ts">
+      <description>Visualization type definitions - 75 lines</description>
+      <key-types>
+        <type name="ViewState">{ scale, translateX, translateY }</type>
+        <type name="PointCluster">Cluster grouping for overlapping points</type>
+        <type name="TooltipData">{ obituary, x, y }</type>
+      </key-types>
+    </file>
+  </existing-code>
+
+  <interfaces>
+    <interface name="UseRovingFocusOptions" file="src/lib/hooks/use-roving-focus.ts">
+      <property name="itemCount" type="number" required="true">Total number of navigable items</property>
+      <property name="columns" type="number" required="false">Grid columns for 2D navigation</property>
+      <property name="onFocusChange" type="(index: number) => void" required="false">Callback when focus changes</property>
+      <property name="initialIndex" type="number" required="false" default="0">Initial focused index</property>
+      <property name="wrap" type="boolean" required="false" default="true">Wrap around at boundaries</property>
+    </interface>
+
+    <interface name="UseRovingFocusReturn" file="src/lib/hooks/use-roving-focus.ts">
+      <property name="focusedIndex" type="number">Currently focused index</property>
+      <property name="getTabIndex" type="(index: number) => 0 | -1">Returns tabIndex for item</property>
+      <property name="handleKeyDown" type="(event: React.KeyboardEvent, itemIndex: number) => void">Keyboard handler</property>
+      <property name="setFocusedIndex" type="(index: number) => void">Manual focus control</property>
+      <property name="getItemRef" type="(index: number) => (el: HTMLElement | null) => void">Ref callback for items</property>
+    </interface>
+
+    <interface name="ScatterPointProps" file="src/components/visualization/scatter-point.tsx" action="extend">
+      <existing-props>obituary, x, y, color, isFiltered?, isHovered?, isClustered?, onMouseEnter?, onMouseLeave?, onClick?, shouldReduceMotion?</existing-props>
+      <new-props>
+        <property name="tabIndex" type="0 | -1" required="true">Tab index from roving focus</property>
+        <property name="isFocused" type="boolean" required="true">Whether point has keyboard focus</property>
+        <property name="onKeyDown" type="(e: React.KeyboardEvent) => void" required="true">Keyboard handler</property>
+        <property name="onFocus" type="() => void" required="true">Focus handler for announcements</property>
+      </new-props>
+    </interface>
+
+    <interface name="NavigationDirection" file="src/types/accessibility.ts">
+      <type>'up' | 'down' | 'left' | 'right' | 'home' | 'end'</type>
+    </interface>
+  </interfaces>
+
+  <implementation-patterns>
+    <pattern name="Roving Focus Hook Pattern">
+      <description>Standard roving tabindex implementation</description>
+      <code-reference file="epic-6-tech-spec.md" section="4.2">
+        Full implementation provided in tech spec Section 4.2
+      </code-reference>
+      <key-aspects>
+        <aspect>useState for focusedIndex</aspect>
+        <aspect>useRef for itemRefs array</aspect>
+        <aspect>getTabIndex callback returning 0 or -1</aspect>
+        <aspect>moveFocus function handling all directions</aspect>
+        <aspect>handleKeyDown with switch for arrow keys, Home, End</aspect>
+        <aspect>getItemRef callback for ref registration</aspect>
+        <aspect>Call onFocusChange and focus element on change</aspect>
+      </key-aspects>
+    </pattern>
+
+    <pattern name="SVG Accessibility Pattern">
+      <description>Making SVG elements accessible to screen readers</description>
+      <elements>
+        <element name="title">Short accessible name (source + date)</element>
+        <element name="desc">Extended description (claim preview + categories)</element>
+        <element name="aria-labelledby">Points to title element ID</element>
+        <element name="aria-describedby">Points to desc element ID</element>
+        <element name="role">Use "listitem" for individual points, "list" for container</element>
+      </elements>
+    </pattern>
+
+    <pattern name="Live Region Announcement Pattern">
+      <description>Screen reader announcements on focus change</description>
+      <implementation>
+        <step>Add div with role="status" aria-live="polite" aria-atomic="true" className="sr-only"</step>
+        <step>useState for announcement text</step>
+        <step>Update announcement in onFocus callback</step>
+        <step>Format: "X of Y. Source. Month Year. Claim preview..."</step>
+      </implementation>
+    </pattern>
+
+    <pattern name="Scroll Into View Pattern">
+      <description>Pan timeline to show focused point</description>
+      <implementation>
+        <step>In onFocusChange callback, get point position</step>
+        <step>Calculate if point is outside current viewport</step>
+        <step>If outside, calculate pan offset to center point</step>
+        <step>Update translateXMotion with smooth animation</step>
+      </implementation>
+    </pattern>
+
+    <pattern name="Focus Ring SVG Pattern">
+      <description>Visual focus indicator for SVG points</description>
+      <implementation>
+        <step>Add conditional circle element when isFocused</step>
+        <step>Use radius 14 (larger than point radius 7-10)</step>
+        <step>fill="none" stroke="var(--accent-primary)"</step>
+        <step>strokeWidth={2} strokeDasharray="4 2"</step>
+        <step>Add animate-pulse class for visibility</step>
+      </implementation>
+    </pattern>
+  </implementation-patterns>
+
+  <dependencies>
+    <internal-dependencies>
+      <dependency name="Story 6-1 (Keyboard Navigation Foundation)" status="completed">
+        Provides: Global focus styles, useFocusTrap hook, a11y utilities
+      </dependency>
+      <dependency name="Epic 3 Story 3-2 (Timeline Data Points)" status="completed">
+        Provides: ScatterPoint component structure
+      </dependency>
+      <dependency name="Epic 3 Story 3-7 (Click to Modal)" status="completed">
+        Provides: ObituaryModal with onPointSelect pattern, triggerRef focus restoration
+      </dependency>
+      <dependency name="Epic 4 Story 4-4 (Filter Effect)" status="completed">
+        Provides: activeCategories filter state integration
+      </dependency>
+    </internal-dependencies>
+
+    <external-dependencies>
+      <dependency name="react" version="19.2.0">forwardRef, useState, useCallback, useRef, useEffect, useMemo</dependency>
+      <dependency name="motion/react" version="12.23.24">motion components, useReducedMotion</dependency>
+    </external-dependencies>
+
+    <files-created-by-story>
+      <file>src/types/accessibility.ts - NavigationDirection and related types</file>
+      <file>src/lib/hooks/use-roving-focus.ts - Roving tabindex hook</file>
+      <file>tests/unit/lib/hooks/use-roving-focus.test.ts - Hook unit tests</file>
+      <file>tests/unit/components/visualization/scatter-plot-keyboard.test.tsx - Integration tests</file>
+    </files-created-by-story>
+  </dependencies>
+
+  <test-patterns>
+    <unit-test-suite file="tests/unit/lib/hooks/use-roving-focus.test.ts">
+      <test-cases>
+        <case>Hook returns expected API (focusedIndex, getTabIndex, handleKeyDown, setFocusedIndex, getItemRef)</case>
+        <case>getTabIndex returns 0 for focused index, -1 for others</case>
+        <case>ArrowRight moves focus to next item</case>
+        <case>ArrowLeft moves focus to previous item</case>
+        <case>Home moves focus to first item</case>
+        <case>End moves focus to last item</case>
+        <case>wrap=true wraps from last to first on ArrowRight</case>
+        <case>wrap=true wraps from first to last on ArrowLeft</case>
+        <case>wrap=false stops at boundaries</case>
+        <case>onFocusChange callback called when focus changes</case>
+        <case>setFocusedIndex updates focused index manually</case>
+      </test-cases>
+      <test-pattern>Follow use-focus-trap.test.ts pattern - document expected behavior</test-pattern>
+    </unit-test-suite>
+
+    <component-test-suite file="tests/unit/components/visualization/scatter-point.test.tsx">
+      <test-cases>
+        <case>Component accepts ref via forwardRef</case>
+        <case>Renders with role="listitem"</case>
+        <case>tabIndex prop applied correctly</case>
+        <case>aria-labelledby points to title element</case>
+        <case>aria-describedby points to desc element</case>
+        <case>title element contains source and date</case>
+        <case>desc element contains claim and categories</case>
+        <case>Focus ring visible when isFocused=true</case>
+        <case>Focus ring hidden when isFocused=false</case>
+        <case>Point scales up when isFocused</case>
+      </test-cases>
+    </component-test-suite>
+
+    <integration-test-suite file="tests/unit/components/visualization/scatter-plot-keyboard.test.tsx">
+      <test-cases>
+        <case>Tab focuses first point in timeline</case>
+        <case>ArrowRight moves to next point</case>
+        <case>ArrowLeft moves to previous point</case>
+        <case>Enter opens modal with correct obituary</case>
+        <case>Space opens modal with correct obituary</case>
+        <case>Home focuses first point</case>
+        <case>End focuses last point</case>
+        <case>Live region updates on focus change</case>
+        <case>Filtered points are skipped during navigation</case>
+      </test-cases>
+    </integration-test-suite>
+
+    <existing-test-patterns>
+      <pattern file="tests/unit/lib/utils/a11y.test.ts">
+        Structure: describe blocks for each function, vi.fn() for mocks, vi.mock for handlers
+      </pattern>
+      <pattern file="tests/unit/lib/hooks/use-focus-trap.test.ts">
+        Structure: Module export tests, dependency tests, expected behavior documentation
+      </pattern>
+    </existing-test-patterns>
+  </test-patterns>
+
+  <css-variables>
+    <variable name="--accent-primary">Gold accent color for focus indicators</variable>
+    <variable name="--text-primary">Primary text color</variable>
+    <variable name="--text-secondary">Secondary text color</variable>
+    <variable name="--bg-primary">Primary background color</variable>
+    <variable name="--bg-secondary">Secondary background color</variable>
+    <variable name="--border">Border color</variable>
+  </css-variables>
+
+  <focus-styles file="src/app/globals.css">
+    <existing-styles>
+      :focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+      :focus:not(:focus-visible) { outline: none; }
+      High contrast mode support: @media (forced-colors: active) { :focus-visible { outline: 3px solid CanvasText; } }
+    </existing-styles>
+    <note>SVG elements need custom focus ring since CSS outline doesn't work on SVG - use additional circle element</note>
+  </focus-styles>
+
+  <learnings-from-previous-stories>
+    <learning source="Story 6-1">
+      a11y.ts utilities handleKeyboardNavigation and getFocusableElements available - consider using handleKeyboardNavigation pattern in handleKeyDown if simpler
+    </learning>
+    <learning source="Story 6-1">
+      Global :focus-visible styles apply; ScatterPoint needs custom SVG focus ring since outline doesn't work on SVG elements
+    </learning>
+    <learning source="Story 6-1">
+      useFocusTrap pattern - store trigger element for focus return; similar pattern needed for modal trigger from timeline
+    </learning>
+    <learning source="Story 6-1">
+      Test strategy - module export tests work well; follow same pattern for useRovingFocus
+    </learning>
+    <learning source="Story 3-7">
+      onPointSelect callback - ScatterPlot has onPointSelect prop that opens modal; wire Enter/Space to this
+    </learning>
+    <learning source="Story 3-7">
+      ObituaryModal - Modal handles its own focus trap via useFocusTrap from Story 6-1
+    </learning>
+    <learning source="Story 3-7">
+      Selected obituary state - Parent component manages selectedSummary state; ScatterPlotInner manages this internally
+    </learning>
+    <learning source="Story 3-2">
+      ScatterPoint structure - Currently uses simple function component; needs forwardRef conversion
+    </learning>
+    <learning source="Story 3-2">
+      Position calculation - x/y props passed down; focus ring positioned relative to point center
+    </learning>
+  </learnings-from-previous-stories>
+
+  <implementation-notes>
+    <note priority="high">
+      ScatterPlot manages modal internally via handlePointClick - keyboard Enter/Space should call same handler
+    </note>
+    <note priority="high">
+      Sort obituaries by date BEFORE filtering for consistent chronological navigation order
+    </note>
+    <note priority="high">
+      visibleData should exclude filtered points - keyboard nav skips grayed-out points per AC-6.2.9
+    </note>
+    <note priority="medium">
+      Focus restoration: Modal already handles focus restoration via triggerRef - ensure clickedPointRef is passed correctly
+    </note>
+    <note priority="medium">
+      scrollToPoint helper should use existing translateXMotion and animate function for smooth panning
+    </note>
+    <note priority="medium">
+      Consider useReducedMotion for focus ring animation (animate-pulse may need to respect preference)
+    </note>
+    <note priority="low">
+      role="application" on container enables arrow key capture - standard pattern for complex widgets
+    </note>
+  </implementation-notes>
+
+  <definition-of-done>
+    <item>useRovingFocus hook created and functional</item>
+    <item>NavigationDirection and related types defined in src/types/accessibility.ts</item>
+    <item>ScatterPlot has role="application" and aria-label</item>
+    <item>Timeline instructions available via aria-describedby</item>
+    <item>ScatterPoint uses forwardRef and accepts focus props</item>
+    <item>ScatterPoint has role="listitem", title, and desc elements</item>
+    <item>Tab focuses first visible timeline point</item>
+    <item>Arrow Left/Right navigates chronologically</item>
+    <item>Enter/Space opens obituary modal</item>
+    <item>Home/End jump to first/last point</item>
+    <item>Focus indicator (2px gold ring + scale) visible on focused point</item>
+    <item>Live region announces position, source, date, claim on focus</item>
+    <item>Filtered points skipped during keyboard navigation</item>
+    <item>Timeline pans to show focused point</item>
+    <item>Escape key exits roving focus mode</item>
+    <item>Unit tests pass for useRovingFocus hook</item>
+    <item>Unit tests pass for ScatterPoint accessibility</item>
+    <item>Integration tests pass for timeline keyboard navigation</item>
+    <item>VoiceOver/NVDA testing confirms screen reader compatibility</item>
+    <item>No TypeScript errors</item>
+    <item>Lint passes</item>
+  </definition-of-done>
+
+  <manual-testing-checklist>
+    <test>Tab into timeline focuses first point</test>
+    <test>2px gold focus ring visible around focused point</test>
+    <test>Focused point scales up visibly</test>
+    <test>Right arrow moves to next point</test>
+    <test>Left arrow moves to previous point</test>
+    <test>Home jumps to first point</test>
+    <test>End jumps to last point</test>
+    <test>Enter opens modal</test>
+    <test>Space opens modal</test>
+    <test>Modal close returns focus to point</test>
+    <test>Category filter applied - filtered points skipped</test>
+    <test>VoiceOver announces: "1 of 47. Source Name. Month Year. Claim preview..."</test>
+    <test>Point at edge - timeline pans on focus</test>
+    <test>Escape returns to timeline container level</test>
+  </manual-testing-checklist>
+</story-context>

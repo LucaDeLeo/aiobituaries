@@ -12,7 +12,8 @@ describe('ScatterPoint module exports', () => {
       '@/components/visualization/scatter-point'
     )
     expect(scatterPointModule.ScatterPoint).toBeDefined()
-    expect(typeof scatterPointModule.ScatterPoint).toBe('function')
+    // forwardRef components are objects with $$typeof Symbol
+    expect(typeof scatterPointModule.ScatterPoint).toBe('object')
   })
 
   it('exports ScatterPointProps type (via component existence)', async () => {
@@ -24,11 +25,13 @@ describe('ScatterPoint module exports', () => {
 })
 
 describe('ScatterPoint behavior contracts', () => {
-  it('component should be a valid function', async () => {
+  it('component should be a valid forwardRef component', async () => {
     const { ScatterPoint } = await import(
       '@/components/visualization/scatter-point'
     )
-    expect(typeof ScatterPoint).toBe('function')
+    // forwardRef components are objects with $$typeof Symbol
+    expect(typeof ScatterPoint).toBe('object')
+    expect(ScatterPoint).toBeDefined()
   })
 
   it('scatter-helpers exports are available for integration', async () => {
@@ -94,8 +97,9 @@ describe('ScatterPoint isFiltered prop behavior (AC-4.4.1 through AC-4.4.5)', ()
     const { ScatterPoint } = await import(
       '@/components/visualization/scatter-point'
     )
-    // Verify component is a function that accepts props
-    expect(typeof ScatterPoint).toBe('function')
+    // Verify component is a forwardRef object that accepts props
+    expect(typeof ScatterPoint).toBe('object')
+    expect(ScatterPoint).toBeDefined()
   })
 
   it('documents isFiltered=true expected behavior (AC-4.4.2, AC-4.4.5)', () => {
