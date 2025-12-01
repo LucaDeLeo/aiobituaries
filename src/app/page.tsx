@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { CountDisplay } from "@/components/obituary/count-display";
 import { ObituaryList } from "@/components/obituary/obituary-list";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -20,7 +21,9 @@ export default async function Home() {
         </section>
 
         {/* Timeline Visualization and Category Filter */}
-        <HomeClient obituaries={obituaries} />
+        <Suspense fallback={null}>
+          <HomeClient obituaries={obituaries} />
+        </Suspense>
 
         {/* Obituary List Section */}
         <section className="px-4 pb-24 max-w-7xl mx-auto">
