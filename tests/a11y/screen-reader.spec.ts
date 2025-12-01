@@ -199,7 +199,7 @@ test.describe('Screen Reader Accessibility', () => {
     await page.waitForLoadState('networkidle')
 
     // Find and click first scatter point to open modal
-    const scatterPoint = page.locator('[data-obituary-id]').first()
+    const scatterPoint = page.locator('[data-testid="scatter-point-group"]').first()
 
     const count = await scatterPoint.count()
     if (count === 0) {

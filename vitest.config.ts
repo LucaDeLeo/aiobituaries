@@ -8,7 +8,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./tests/setup.tsx'],
-    exclude: ['**/node_modules/**', '**/tests/a11y/**'],
+    // Exclude Playwright E2E tests from Vitest (they use @playwright/test, not vitest)
+    exclude: ['**/node_modules/**', '**/tests/a11y/**', '**/tests/performance/**'],
   },
   resolve: {
     alias: {

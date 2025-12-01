@@ -41,7 +41,7 @@ test.describe('Keyboard Navigation', () => {
     await page.waitForLoadState('networkidle')
 
     // Find timeline scatter points
-    const timelinePoints = page.locator('[data-obituary-id]')
+    const timelinePoints = page.locator('[data-testid="scatter-point-group"]')
 
     const count = await timelinePoints.count()
     if (count === 0) {
@@ -90,7 +90,7 @@ test.describe('Keyboard Navigation', () => {
     await page.waitForLoadState('networkidle')
 
     // Find first scatter point
-    const firstPoint = page.locator('[data-obituary-id]').first()
+    const firstPoint = page.locator('[data-testid="scatter-point-group"]').first()
 
     const count = await firstPoint.count()
     if (count === 0) {

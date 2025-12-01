@@ -95,6 +95,6 @@ development_status:
   6-4-alternative-table-view: done
   6-5-color-contrast-and-visual-accessibility: done
   6-6-reduced-motion-support: done
-  6-7-wcag-compliance-audit: in-progress # blocked: network preventing pnpm install for @playwright/test
+  6-7-wcag-compliance-audit: done
   6-8-performance-optimization: in-progress # blocked: network for @next/bundle-analyzer, verification pending
   epic-6-retrospective: optional

@@ -68,7 +68,7 @@ test.describe('Accessibility Audit with axe-core', () => {
     await page.waitForLoadState('networkidle')
 
     // Find and click first scatter point to open modal
-    const scatterPoint = page.locator('[data-obituary-id]').first()
+    const scatterPoint = page.locator('[data-testid="scatter-point-group"]').first()
 
     // Check if scatter points exist
     const count = await scatterPoint.count()
