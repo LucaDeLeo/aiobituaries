@@ -91,8 +91,10 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
     // Touch target size based on breakpoint
     const touchRadius = breakpoint === 'tablet' ? TABLET_TOUCH_RADIUS : POINT_RADIUS
 
-    const opacity = isFiltered ? (isHovered || isFocused ? 1 : 0.8) : 0.2
-    const glowIntensity = isHovered || isFocused ? 6 : 4
+    const opacity = isFiltered ? (isHovered || isFocused ? 1 : 0.85) : 0.2
+    // More dramatic glow effect
+    const glowIntensity = isHovered || isFocused ? 12 : 6
+    const outerGlowIntensity = isHovered || isFocused ? 20 : 10
 
     // Use larger radius when focused (AC-6.2.5: 1.25x scale)
     const currentRadius = isFocused ? FOCUSED_POINT_RADIUS : POINT_RADIUS
@@ -170,6 +172,27 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
           onClick={handleClick}
         />
 
+        {/* Outer glow ring (subtle atmospheric effect) */}
+        {isFiltered && (
+          <motion.circle
+            cx={x}
+            cy={y}
+            r={currentRadius + 4}
+            fill="none"
+            stroke={color}
+            strokeWidth={1}
+            style={{
+              opacity: isHovered || isFocused ? 0.4 : 0.15,
+              pointerEvents: 'none',
+            }}
+            animate={{
+              opacity: isHovered || isFocused ? 0.4 : 0.15,
+              r: isHovered || isFocused ? currentRadius + 6 : currentRadius + 4,
+            }}
+            transition={{ duration: 0.3 }}
+          />
+        )}
+
         {/* Visual dot (scales up when focused per AC-6.2.5) */}
         <motion.circle
           data-testid="scatter-point"
@@ -178,7 +201,7 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
           r={currentRadius}
           fill={color}
           style={{
-            filter: `drop-shadow(0 0 ${glowIntensity}px ${color})`,
+            filter: `drop-shadow(0 0 ${glowIntensity}px ${color}) drop-shadow(0 0 ${outerGlowIntensity}px ${color}40)`,
             pointerEvents: 'none',
             willChange: prefersReducedMotion ? 'auto' : 'transform, opacity',
           }}

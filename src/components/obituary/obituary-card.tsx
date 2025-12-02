@@ -25,6 +25,8 @@ function truncateClaim(claim: string, maxLength = 150): string {
  * Server Component that displays a summary of an obituary with
  * truncated claim, source, date, and category indicator.
  * Links to the individual obituary detail page.
+ *
+ * Features dramatic lift effect with layered shadows on hover.
  */
 export function ObituaryCard({ obituary }: ObituaryCardProps) {
   // Defensive: handle empty categories array
@@ -37,30 +39,43 @@ export function ObituaryCard({ obituary }: ObituaryCardProps) {
     <Link
       href={`/obituary/${obituary.slug}`}
       className={cn(
-        'block p-6 rounded-xl',
+        'group relative block p-6 rounded-xl',
         'bg-[--bg-card] border border-[--border]',
-        'hover:-translate-y-0.5 hover:shadow-lg',
-        'transition-all duration-200',
+        // Dramatic lift and shadow on hover
+        'shadow-lg shadow-black/20',
+        'hover:-translate-y-1 hover:shadow-xl hover:shadow-[--accent-primary]/10',
+        'hover:border-[--accent-primary]/40',
+        'transition-all duration-300 ease-out',
         'focus-visible:outline-none focus-visible:ring-2',
         'focus-visible:ring-[--ring] focus-visible:ring-offset-2',
         'focus-visible:ring-offset-[--bg-primary]'
       )}
     >
-      <div className="flex items-center gap-2 mb-3">
-        <span
-          className={cn('w-2 h-2 rounded-full', categoryColorClass)}
-          aria-hidden="true"
-        />
-        <span className="text-sm text-[--text-muted]">
-          {format(new Date(obituary.date), 'MMM d, yyyy')}
-        </span>
+      {/* Subtle glow on hover */}
+      <div className="absolute -inset-px rounded-xl bg-[--accent-primary]/0 group-hover:bg-[--accent-primary]/5 transition-colors duration-300 pointer-events-none" />
+
+      <div className="relative">
+        <div className="flex items-center gap-2 mb-3">
+          {/* Category dot with subtle glow */}
+          <span
+            className={cn(
+              'w-2.5 h-2.5 rounded-full shadow-sm',
+              categoryColorClass,
+              'group-hover:shadow-md group-hover:shadow-current/30 transition-shadow'
+            )}
+            aria-hidden="true"
+          />
+          <span className="text-sm text-[--text-muted] font-mono">
+            {format(new Date(obituary.date), 'MMM d, yyyy')}
+          </span>
+        </div>
+        <p className="font-serif italic text-[--text-primary] mb-3 leading-relaxed text-lg">
+          &ldquo;{truncateClaim(obituary.claim)}&rdquo;
+        </p>
+        <p className="text-sm text-[--text-secondary] group-hover:text-[--accent-primary] transition-colors">
+          {obituary.source}
+        </p>
       </div>
-      <p className="font-serif italic text-[--text-primary] mb-3 leading-relaxed">
-        &ldquo;{truncateClaim(obituary.claim)}&rdquo;
-      </p>
-      <p className="text-sm text-[--text-secondary]">
-        {obituary.source}
-      </p>
     </Link>
   )
 }

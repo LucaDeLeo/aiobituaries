@@ -59,10 +59,11 @@ describe('CountDisplay', () => {
       render(Component)
     })
 
-    expect(screen.getByText('obituaries')).toBeInTheDocument()
+    // Label is now capitalized in the editorial design
+    expect(screen.getByText('Obituaries')).toBeInTheDocument()
   })
 
-  it('applies font-mono class to heading', async () => {
+  it('applies font-mono class to number span', async () => {
     mockedGetObituaryCount.mockResolvedValue(200)
 
     const Component = await CountDisplay()
@@ -70,9 +71,9 @@ describe('CountDisplay', () => {
       render(Component)
     })
 
-    // Classes are on the h1 heading element
-    const heading = screen.getByRole('heading', { level: 1 })
-    expect(heading.className).toContain('font-mono')
+    // Classes are on the number span inside h1 (not on h1 itself)
+    const numberSpan = screen.getByText('200')
+    expect(numberSpan.className).toContain('font-mono')
   })
 
   it('applies responsive text sizing classes', async () => {
@@ -83,12 +84,11 @@ describe('CountDisplay', () => {
       render(Component)
     })
 
-    // Classes are on the h1 heading element
-    const heading = screen.getByRole('heading', { level: 1 })
-    // Updated for Story 5-6: mobile 2rem (text-3xl), tablet 2.5rem (text-4xl), desktop 3rem (text-5xl)
-    expect(heading.className).toContain('text-3xl')
-    expect(heading.className).toContain('md:text-4xl')
-    expect(heading.className).toContain('lg:text-5xl')
+    // Classes are on the number span inside h1
+    const numberSpan = screen.getByText('300')
+    // Updated for dramatic hero design: massive sizes
+    expect(numberSpan.className).toContain('text-7xl')
+    expect(numberSpan.className).toContain('md:text-9xl')
   })
 
   it('applies gold accent color class', async () => {
@@ -99,9 +99,9 @@ describe('CountDisplay', () => {
       render(Component)
     })
 
-    // Classes are on the h1 heading element
-    const heading = screen.getByRole('heading', { level: 1 })
-    expect(heading.className).toContain('text-[--accent-primary]')
+    // Classes are on the number span inside h1
+    const numberSpan = screen.getByText('400')
+    expect(numberSpan.className).toContain('text-[--accent-primary]')
   })
 
   it('applies animate-pulse-glow class', async () => {
@@ -112,9 +112,9 @@ describe('CountDisplay', () => {
       render(Component)
     })
 
-    // Classes are on the h1 heading element
-    const heading = screen.getByRole('heading', { level: 1 })
-    expect(heading.className).toContain('animate-pulse-glow')
+    // Classes are on the number span inside h1
+    const numberSpan = screen.getByText('500')
+    expect(numberSpan.className).toContain('animate-pulse-glow')
   })
 
   it('applies motion-reduce class for accessibility', async () => {
@@ -125,9 +125,9 @@ describe('CountDisplay', () => {
       render(Component)
     })
 
-    // Classes are on the h1 heading element
-    const heading = screen.getByRole('heading', { level: 1 })
-    expect(heading.className).toContain('motion-reduce:animate-none')
+    // Classes are on the number span inside h1
+    const numberSpan = screen.getByText('600')
+    expect(numberSpan.className).toContain('motion-reduce:animate-none')
   })
 
   it('handles zero count', async () => {
@@ -150,7 +150,7 @@ describe('CountDisplay', () => {
     })
 
     expect(screen.getByText('0')).toBeInTheDocument()
-    expect(screen.getByText('obituaries')).toBeInTheDocument()
+    expect(screen.getByText('Obituaries')).toBeInTheDocument()
   })
 
   it('applies secondary text color to label', async () => {
@@ -161,7 +161,7 @@ describe('CountDisplay', () => {
       render(Component)
     })
 
-    const labelElement = screen.getByText('obituaries')
+    const labelElement = screen.getByText('Obituaries')
     expect(labelElement.className).toContain('text-[--text-secondary]')
   })
 

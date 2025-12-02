@@ -70,9 +70,10 @@ export function MobileCardList({
             type="button"
             onClick={() => onSelect(obituary)}
             className={cn(
-              'w-full text-left p-4 rounded-lg',
+              'w-full text-left p-4 rounded-lg relative group',
               'bg-[--bg-card] border border-[--border]',
-              'active:scale-[0.98] transition-transform',
+              'shadow-md shadow-black/10',
+              'active:scale-[0.98] active:shadow-sm transition-all duration-200',
               'focus-visible:outline-none focus-visible:ring-2',
               'focus-visible:ring-[--ring] focus-visible:ring-offset-2',
               'focus-visible:ring-offset-[--bg-primary]'

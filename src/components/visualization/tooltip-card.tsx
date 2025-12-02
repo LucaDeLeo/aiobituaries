@@ -83,13 +83,29 @@ export function TooltipCard({ obituary, x, y, containerBounds }: TooltipCardProp
       }}
       className="pointer-events-none"
     >
-      <div className="bg-[var(--bg-tertiary)] border border-[var(--accent-primary)] rounded-lg p-3 shadow-lg">
-        <p className="text-sm text-[var(--text-primary)] font-serif leading-snug mb-2">
-          &quot;{truncatedClaim}&quot;
-        </p>
-        <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
-          <span className="font-mono">Source: {obituary.source}</span>
-          <span className="font-mono">{formatDate(obituary.date)}</span>
+      {/* Outer glow layer */}
+      <div className="absolute -inset-1 bg-[var(--accent-primary)]/10 rounded-xl blur-sm" />
+
+      {/* Main card with layered borders */}
+      <div className="relative">
+        {/* Decorative outer border */}
+        <div className="absolute -inset-0.5 border border-[var(--accent-primary)]/20 rounded-xl" />
+
+        {/* Main card */}
+        <div className="relative bg-[var(--bg-tertiary)] border-2 border-[var(--accent-primary)] rounded-lg p-4 shadow-xl shadow-[var(--accent-primary)]/10">
+          {/* Corner flourishes */}
+          <div className="absolute top-1 left-1 w-2 h-2 border-t border-l border-[var(--accent-primary)]/40" />
+          <div className="absolute top-1 right-1 w-2 h-2 border-t border-r border-[var(--accent-primary)]/40" />
+          <div className="absolute bottom-1 left-1 w-2 h-2 border-b border-l border-[var(--accent-primary)]/40" />
+          <div className="absolute bottom-1 right-1 w-2 h-2 border-b border-r border-[var(--accent-primary)]/40" />
+
+          <p className="text-sm text-[var(--text-primary)] font-serif italic leading-snug mb-3">
+            &ldquo;{truncatedClaim}&rdquo;
+          </p>
+          <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] pt-2 border-t border-[var(--border)]">
+            <span className="font-mono truncate max-w-[140px]">{obituary.source}</span>
+            <span className="font-mono text-[var(--text-muted)]">{formatDate(obituary.date)}</span>
+          </div>
         </div>
       </div>
     </motion.div>

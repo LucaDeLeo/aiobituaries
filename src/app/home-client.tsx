@@ -18,6 +18,8 @@ import { useMemo } from 'react'
 import { CategoryFilter } from '@/components/filters/category-filter'
 import { ScatterPlot } from '@/components/visualization/scatter-plot'
 import { CategoryChart } from '@/components/visualization/category-chart'
+import { BackgroundChartLegend } from '@/components/visualization/background-chart'
+import { allMetrics } from '@/data/ai-metrics'
 import {
   TableViewToggle,
   useViewModeStorage,
@@ -72,7 +74,12 @@ export function HomeClient({ obituaries }: HomeClientProps) {
         {/* During SSR or before hydration, show timeline only */}
         {/* After hydration, show based on user preference */}
         {!isHydrated || mode === 'visualization' ? (
-          <ScatterPlot data={obituaries} activeCategories={categories} />
+          <>
+            <ScatterPlot data={obituaries} activeCategories={categories} />
+            <div className="mt-3 flex justify-center">
+              <BackgroundChartLegend metrics={allMetrics} />
+            </div>
+          </>
         ) : (
           <ObituaryTable
             obituaries={obituaries}

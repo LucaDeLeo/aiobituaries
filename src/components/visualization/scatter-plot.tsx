@@ -34,6 +34,8 @@ import {
   DEFAULT_CLUSTER_CONFIG,
 } from '@/lib/utils/clustering'
 import { useRovingFocus } from '@/lib/hooks/use-roving-focus'
+import { BackgroundChart } from './background-chart'
+import { allMetrics, trainingComputeFrontier, getNormalizedMetricAtDate } from '@/data/ai-metrics'
 
 export interface ScatterPlotProps {
   data: ObituarySummary[]
@@ -247,13 +249,24 @@ export function ScatterPlotInner({
   }, [innerHeight])
 
   // Memoize point positions for performance (AC-6.8.5)
+  // Y position is based on training compute metric at the obituary date + jitter for spread
   const pointPositions = useMemo(() => {
-    return data.map((obituary) => ({
-      obituary,
-      x: xScale(new Date(obituary.date)) ?? 0,
-      y: yScale(hashToJitter(obituary._id)) ?? 0,
-      color: getCategoryColor(obituary.categories),
-    }))
+    return data.map((obituary) => {
+      const obituaryDate = new Date(obituary.date)
+      // Get normalized metric value (0-1) for this date
+      const metricY = getNormalizedMetricAtDate(trainingComputeFrontier, obituaryDate)
+      // Add jitter around the metric line (±0.15 normalized units)
+      const jitter = (hashToJitter(obituary._id) - 0.5) * 0.3
+      // Clamp to 0-1 range
+      const finalY = Math.max(0.05, Math.min(0.95, metricY + jitter))
+
+      return {
+        obituary,
+        x: xScale(obituaryDate) ?? 0,
+        y: yScale(finalY) ?? 0,
+        color: getCategoryColor(obituary.categories),
+      }
+    })
   }, [data, xScale, yScale])
 
   // Compute clusters based on current positions and zoom level
@@ -854,6 +867,14 @@ export function ScatterPlotInner({
             stroke="var(--border)"
             strokeOpacity={0.3}
             strokeDasharray="2,2"
+          />
+
+          {/* Background metric lines showing AI progress */}
+          <BackgroundChart
+            metrics={allMetrics}
+            xScale={xScale}
+            yScale={yScale}
+            innerHeight={innerHeight}
           />
 
           {/* X-axis (time) with dynamic tick granularity */}
