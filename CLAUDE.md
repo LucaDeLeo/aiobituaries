@@ -11,17 +11,17 @@ Stack: Next.js 16 (App Router), React 19, Tailwind CSS v4, Sanity CMS, Visx, sha
 ## Commands
 
 ```bash
-pnpm dev          # Start dev server
-pnpm build        # Production build
-pnpm lint         # Run ESLint
-pnpm test         # Run Vitest in watch mode
-pnpm test:run     # Run tests once
-pnpm test:coverage # Run tests with coverage
+bun dev           # Start dev server (Turbopack)
+bun run build     # Production build
+bun run lint      # Run ESLint
+bun test          # Run Vitest in watch mode
+bun test:run      # Run tests once
+bun test:coverage # Run tests with coverage
 ```
 
 Run a single test file:
 ```bash
-pnpm vitest tests/unit/lib/sanity/queries.test.ts
+bun vitest tests/unit/lib/sanity/queries.test.ts
 ```
 
 ## Architecture
@@ -72,7 +72,7 @@ To update metrics data:
 ```bash
 # 1. Download fresh CSVs from epoch.ai to epoch_data/
 # 2. Regenerate TypeScript data:
-node scripts/parse-epoch-data.mjs
+bun scripts/parse-epoch-data.mjs
 ```
 
 ## Environment Variables

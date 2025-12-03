@@ -97,10 +97,12 @@ continuous_config:
 
 Each sub-agent has defined inputs and outputs. **Always use explicit file paths.**
 
-### bmm-epic-context-builder
+### Claude Sub-Agents (via Task tool)
+
+#### bmm-epic-context-builder
 
 **Purpose:** Generate tech spec from PRD and architecture
-**Model:** `opus`
+**Tool:** Task (Claude opus)
 
 ```yaml
 Input:
@@ -117,31 +119,10 @@ Output (JSON in response):
   story_count: number       # Number of stories in epic
 ```
 
-### bmm-epic-context-validator
-
-**Purpose:** Validate tech spec completeness
-**Model:** `sonnet`
-
-```yaml
-Input:
-  epic_id: "3"
-  tech_spec_path: "docs/sprint-artifacts/epic-tech-specs/epic-3-tech-spec.md"
-
-Output (JSON):
-  overall_status: "PASS" | "FAIL"
-  score: 0-100
-  issues:
-    critical: string[]
-    high: string[]
-    medium: string[]
-    low: string[]
-  recommendations: string[]
-```
-
-### bmm-story-creator
+#### bmm-story-creator
 
 **Purpose:** Create story file from epic
-**Model:** `opus`
+**Tool:** Task (Claude opus)
 
 ```yaml
 Input:
@@ -159,10 +140,10 @@ Output (JSON):
   fr_coverage: string[]      # e.g., ["FR11", "FR12", "FR13"]
 ```
 
-### bmm-story-context-builder
+#### bmm-story-context-builder
 
 **Purpose:** Gather context for story implementation
-**Model:** `opus`
+**Tool:** Task (Claude opus)
 
 ```yaml
 Input:
@@ -179,31 +160,10 @@ Output (JSON):
   warnings: string[]
 ```
 
-### bmm-story-context-validator
-
-**Purpose:** Validate story context completeness
-**Model:** `sonnet`
-
-```yaml
-Input:
-  story_key: "3-5-local-processing-pipeline"
-  context_file_path: "docs/sprint-artifacts/story-contexts/3-5-local-processing-pipeline-context.xml"
-
-Output (JSON):
-  overall_status: "PASS" | "FAIL"
-  score: 0-100
-  issues:
-    critical: string[]
-    high: string[]
-    medium: string[]
-    low: string[]
-  recommendations: string[]
-```
-
-### bmm-story-implementer
+#### bmm-story-implementer
 
 **Purpose:** Implement story with tests
-**Model:** `opus`
+**Tool:** Task (Claude opus)
 
 ```yaml
 Input:
@@ -219,41 +179,116 @@ Output (JSON):
   implementation_summary: string
 ```
 
-### bmm-story-reviewer
+### Codex Sub-Agents (via Bash tool)
 
-**Purpose:** Senior developer code review
-**Model:** `opus`
+These validators/reviewers use OpenAI Codex CLI with saved prompts in `~/.codex/prompts/`.
+
+#### bmm-epic-context-validator
+
+**Purpose:** Validate tech spec completeness
+**Tool:** Bash (Codex CLI)
+**Prompt:** `/prompts:bmm-epic-context-validator`
 
 ```yaml
-Input:
-  story_key: "3-5-local-processing-pipeline"
-  story_file_path: "docs/sprint-artifacts/stories/3-5-local-processing-pipeline.md"
-  files_modified: string[]
-  test_results: string        # Output from test run
+Input (as arguments):
+  EPIC_ID: "3"
 
-Output (JSON):
+Output (JSON via --output-schema):
+  overall_status: "PASS" | "FAIL"
+  score: 0-100
+  issues:
+    critical: string[]
+    high: string[]
+    medium: string[]
+    low: string[]
+  ready_for_story_creation: boolean
+```
+
+**Invocation:**
+```bash
+export CODEX_QUIET_MODE=1
+codex exec --full-auto --skip-git-repo-check \
+  --output-schema '{"type":"object","properties":{"overall_status":{"type":"string"},"score":{"type":"number"},"issues":{"type":"object","properties":{"critical":{"type":"array","items":{"type":"string"}},"high":{"type":"array","items":{"type":"string"}},"medium":{"type":"array","items":{"type":"string"}},"low":{"type":"array","items":{"type":"string"}}}},"ready_for_story_creation":{"type":"boolean"}},"required":["overall_status","score","issues"]}' \
+  '/prompts:bmm-epic-context-validator EPIC_ID="{epic_id}"' 2>&1
+```
+
+#### bmm-story-context-validator
+
+**Purpose:** Validate story context completeness
+**Tool:** Bash (Codex CLI)
+**Prompt:** `/prompts:bmm-story-context-validator`
+
+```yaml
+Input (as arguments):
+  STORY_KEY: "3-5-local-processing-pipeline"
+
+Output (JSON via --output-schema):
+  overall_status: "PASS" | "FAIL"
+  score: 0-100
+  issues:
+    critical: string[]
+    high: string[]
+    medium: string[]
+    low: string[]
+  ready_for_development: boolean
+```
+
+**Invocation:**
+```bash
+export CODEX_QUIET_MODE=1
+codex exec --full-auto --skip-git-repo-check \
+  --output-schema '{"type":"object","properties":{"overall_status":{"type":"string"},"score":{"type":"number"},"issues":{"type":"object","properties":{"critical":{"type":"array","items":{"type":"string"}},"high":{"type":"array","items":{"type":"string"}},"medium":{"type":"array","items":{"type":"string"}},"low":{"type":"array","items":{"type":"string"}}}},"ready_for_development":{"type":"boolean"}},"required":["overall_status","score","issues"]}' \
+  '/prompts:bmm-story-context-validator STORY_KEY="{story_key}"' 2>&1
+```
+
+#### bmm-story-reviewer
+
+**Purpose:** Senior developer code review
+**Tool:** Bash (Codex CLI)
+**Prompt:** `/prompts:bmm-story-reviewer`
+
+```yaml
+Input (as arguments):
+  STORY_KEY: "3-5-local-processing-pipeline"
+
+Output (JSON via --output-schema):
   outcome: "APPROVED" | "APPROVED_WITH_IMPROVEMENTS" | "CHANGES_REQUESTED" | "BLOCKED"
   issues:
     critical: string[]
     high: string[]
     medium: string[]
+    low: string[]
   blocker_reason: string | null  # Only if BLOCKED
   summary: string
 ```
 
+**Invocation:**
+```bash
+export CODEX_QUIET_MODE=1
+codex exec --full-auto --skip-git-repo-check \
+  --output-schema '{"type":"object","properties":{"outcome":{"type":"string","enum":["APPROVED","APPROVED_WITH_IMPROVEMENTS","CHANGES_REQUESTED","BLOCKED"]},"issues":{"type":"object","properties":{"critical":{"type":"array","items":{"type":"string"}},"high":{"type":"array","items":{"type":"string"}},"medium":{"type":"array","items":{"type":"string"}},"low":{"type":"array","items":{"type":"string"}}}},"blocker_reason":{"type":"string","nullable":true},"summary":{"type":"string"}},"required":["outcome","issues","summary"]}' \
+  '/prompts:bmm-story-reviewer STORY_KEY="{story_key}"' 2>&1
+```
+
 ---
 
-## Model Selection
+## Tool Selection
 
-| Sub-Agent | Model | Rationale |
-|-----------|-------|-----------|
-| bmm-epic-context-builder | opus | Complex architecture reasoning |
-| bmm-epic-context-validator | sonnet | Checklist validation |
-| bmm-story-creator | opus | Template filling |
-| bmm-story-context-builder | opus | File discovery |
-| bmm-story-context-validator | sonnet | Checklist validation |
-| bmm-story-implementer | opus | Complex code generation |
-| bmm-story-reviewer | opus | Nuanced code review |
+| Sub-Agent | Tool | Rationale |
+|-----------|------|-----------|
+| bmm-epic-context-builder | Claude (Task) | Complex architecture reasoning, creative synthesis |
+| bmm-epic-context-validator | Codex (Bash) | Structured checklist validation, adversarial review |
+| bmm-story-creator | Claude (Task) | Creative story breakdown from requirements |
+| bmm-story-context-builder | Claude (Task) | Codebase exploration, context synthesis |
+| bmm-story-context-validator | Codex (Bash) | Completeness checking, adversarial validation |
+| bmm-story-implementer | Claude (Task) | Complex code generation with full reasoning |
+| bmm-story-reviewer | Codex (Bash) | Adversarial code review (different "eyes" on code) |
+
+**Why split Claude/Codex?**
+- **Claude creates, Codex validates** - avoids self-approval bias
+- Validators/reviewers are checklist-driven - good fit for Codex structured output
+- Different system reviewing code catches different issues
+- Codex runs sandboxed (--full-auto) - appropriate for read-only analysis
 
 ---
 
@@ -350,16 +385,18 @@ IF status == "backlog":
 
     IF failed → Return {outcome: "failed", phase: "epic-context", reason: "..."}
 
-    # Validate epic context with fix loop
+    # Validate epic context with fix loop (using Codex)
     FOR attempt IN 1..max_validation_attempts:
-        Task tool:
-          subagent_type: "bmm-epic-context-validator"
-          model: "sonnet"
+        Bash tool:
+          command: |
+            export CODEX_QUIET_MODE=1
+            codex exec --full-auto --skip-git-repo-check \
+              --output-schema '{"type":"object","properties":{"overall_status":{"type":"string"},"score":{"type":"number"},"issues":{"type":"object","properties":{"critical":{"type":"array","items":{"type":"string"}},"high":{"type":"array","items":{"type":"string"}},"medium":{"type":"array","items":{"type":"string"}},"low":{"type":"array","items":{"type":"string"}}}},"ready_for_story_creation":{"type":"boolean"}},"required":["overall_status","score","issues"]}' \
+              '/prompts:bmm-epic-context-validator EPIC_ID="{epic_id}"' 2>&1
           description: "Validate epic {epic_id} tech spec (attempt {attempt})"
-          prompt: |
-            Validate tech spec for Epic {epic_id}.
-            Tech spec: docs/sprint-artifacts/epic-tech-specs/epic-{epic_id}-tech-spec.md
-            Return JSON: {"overall_status": "PASS|FAIL", "score": N, "issues": {"critical": [...], "high": [...], "medium": [...], "low": [...]}}
+          timeout: 300000
+
+        Parse JSON from Codex output
 
         IF no issues at all:
             BREAK (validation passed)
@@ -456,18 +493,17 @@ Save checkpoint: `{story_key, phase: "context", data: {context_file_path}}`
 
 ```markdown
 FOR attempt IN 1..max_validation_attempts:
-    # VALIDATE
-    Task tool:
-      subagent_type: "bmm-story-context-validator"
-      model: "sonnet"
+    # VALIDATE (using Codex)
+    Bash tool:
+      command: |
+        export CODEX_QUIET_MODE=1
+        codex exec --full-auto --skip-git-repo-check \
+          --output-schema '{"type":"object","properties":{"overall_status":{"type":"string"},"score":{"type":"number"},"issues":{"type":"object","properties":{"critical":{"type":"array","items":{"type":"string"}},"high":{"type":"array","items":{"type":"string"}},"medium":{"type":"array","items":{"type":"string"}},"low":{"type":"array","items":{"type":"string"}}}},"ready_for_development":{"type":"boolean"}},"required":["overall_status","score","issues"]}' \
+          '/prompts:bmm-story-context-validator STORY_KEY="{story_key}"' 2>&1
       description: "Validate context for {story_key} (attempt {attempt})"
-      prompt: |
-        Validate story context for {story_key}.
+      timeout: 300000
 
-        Context file: {context_file_path}
-        Story file: docs/sprint-artifacts/stories/{story_key}.md
-
-        Return JSON: {"overall_status": "PASS|FAIL", "score": N, "issues": {"critical": [...], "high": [...], "medium": [...], "low": [...]}, "recommendations": [...]}
+    Parse JSON from Codex output
 
     IF no issues at all:
         BREAK (validation passed, move on)
@@ -586,19 +622,17 @@ FOR cycle IN 1..max_review_cycles:
 
     Save checkpoint: {story_key, phase: "verify"}
 
-    # REVIEW
-    Task tool:
-      subagent_type: "bmm-story-reviewer"
-      model: "opus"
+    # REVIEW (using Codex)
+    Bash tool:
+      command: |
+        export CODEX_QUIET_MODE=1
+        codex exec --full-auto --skip-git-repo-check \
+          --output-schema '{"type":"object","properties":{"outcome":{"type":"string","enum":["APPROVED","APPROVED_WITH_IMPROVEMENTS","CHANGES_REQUESTED","BLOCKED"]},"issues":{"type":"object","properties":{"critical":{"type":"array","items":{"type":"string"}},"high":{"type":"array","items":{"type":"string"}},"medium":{"type":"array","items":{"type":"string"}},"low":{"type":"array","items":{"type":"string"}}}},"blocker_reason":{"type":"string","nullable":true},"summary":{"type":"string"}},"required":["outcome","issues","summary"]}' \
+          '/prompts:bmm-story-reviewer STORY_KEY="{story_key}"' 2>&1
       description: "Review {story_key} (cycle {cycle})"
-      prompt: |
-        Review implementation of story {story_key}.
+      timeout: 300000
 
-        Story: docs/sprint-artifacts/stories/{story_key}.md
-        Files modified: {files_modified}
-        Test results: {test_output}
-
-        Return JSON: {"outcome": "...", "issues": {"critical": [...], "high": [...], "medium": [...], "low": [...]}, "summary": "..."}
+    Parse JSON from Codex output
 
     Update sprint-status: {story_key} → "review"
     OUTPUT: "📋 Status: {story_key} → review"
@@ -928,7 +962,7 @@ IF checkpoint exists:
 │ PHASE: Context Validation (attempt 1/3)
 └─────────────────────────────────────────────────────────────────────────────────
   🔬 Validating context completeness...
-     Agent: bmm-story-context-validator (sonnet)
+     Tool: Codex CLI (/prompts:bmm-story-context-validator)
 
      Issues Found:
        • 0 critical
@@ -937,7 +971,7 @@ IF checkpoint exists:
        • 2 low: "Missing optional helper utils", "Could add more code samples"
 
   🔧 Only enhancements found - fixing without re-validation...
-     Agent: bmm-story-context-builder (opus)
+     Agent: bmm-story-context-builder (Claude opus)
      Fixing: 1 medium + 2 low issues
   ✅ DONE - All enhancements applied, moving on
 
@@ -976,7 +1010,7 @@ IF checkpoint exists:
 │ PHASE: Code Review (cycle 1/3)
 └─────────────────────────────────────────────────────────────────────────────────
   👀 Reviewing implementation...
-     Agent: bmm-story-reviewer (opus)
+     Tool: Codex CLI (/prompts:bmm-story-reviewer)
      Checking: AC coverage, code quality, test coverage
 
      Issues Found:
@@ -986,7 +1020,7 @@ IF checkpoint exists:
        • 1 low: "Consider adding JSDoc to exported function"
 
   🔧 Only enhancements found - fixing without re-review...
-     Agent: bmm-story-implementer (opus)
+     Agent: bmm-story-implementer (Claude opus)
      Fixing: 1 medium + 1 low issues
   ✅ DONE - All enhancements applied
 
@@ -1149,7 +1183,7 @@ IF checkpoint exists:
 │ PHASE: Code Review (cycle 1/3)
 └─────────────────────────────────────────────────────────────────────────────────
   👀 Reviewing implementation...
-     Agent: bmm-story-reviewer (opus)
+     Tool: Codex CLI (/prompts:bmm-story-reviewer)
 
      Issues Found:
        • 0 critical
@@ -1158,7 +1192,7 @@ IF checkpoint exists:
        • 1 low: "Inconsistent naming"
 
   🔧 Only enhancements found - fixing without re-review...
-     Agent: bmm-story-implementer (opus)
+     Agent: bmm-story-implementer (Claude opus)
      Fixing: 2 medium + 1 low issues
   ✅ DONE - All enhancements applied
 
@@ -1183,7 +1217,7 @@ IF checkpoint exists:
 │ PHASE: Code Review (cycle 1/3)
 └─────────────────────────────────────────────────────────────────────────────────
   👀 Reviewing implementation...
-     Agent: bmm-story-reviewer (opus)
+     Tool: Codex CLI (/prompts:bmm-story-reviewer)
 
      Issues Found:
        • 0 critical
@@ -1192,7 +1226,7 @@ IF checkpoint exists:
        • 1 low: "Inconsistent naming"
 
   ⚠️  High issues found - fixing then RE-REVIEWING...
-     Agent: bmm-story-implementer (opus)
+     Agent: bmm-story-implementer (Claude opus)
      Fixing: 1 high + 1 medium + 1 low issues
   ✅ DONE - All issues addressed
 
@@ -1211,7 +1245,7 @@ IF checkpoint exists:
 │ PHASE: Code Review (cycle 2/3)
 └─────────────────────────────────────────────────────────────────────────────────
   👀 Re-reviewing after high-priority fixes...
-     Agent: bmm-story-reviewer (opus)
+     Tool: Codex CLI (/prompts:bmm-story-reviewer)
 
      Issues Found:
        • 0 critical
@@ -1256,12 +1290,22 @@ Read tool: file_path: "docs/sprint-artifacts/sprint-status.yaml"
 # Run bash command
 Bash tool: command: "git status", description: "Check git status"
 
-# Invoke sub-agent
+# Invoke Claude sub-agent (for creation/implementation)
 Task tool:
   subagent_type: "bmm-story-implementer"
   model: "opus"
   description: "Implement story 3-5-example"
   prompt: "..."
+
+# Invoke Codex sub-agent (for validation/review)
+Bash tool:
+  command: |
+    export CODEX_QUIET_MODE=1
+    codex exec --full-auto --skip-git-repo-check \
+      --output-schema '{...}' \
+      '/prompts:bmm-story-reviewer STORY_KEY="3-5-example"' 2>&1
+  description: "Review story 3-5-example"
+  timeout: 300000
 ```
 
 ### Status Flow
@@ -1271,6 +1315,16 @@ backlog → drafted → ready-for-dev → in-progress → review → done
                                          ↑            │
                                          └────────────┘ (if changes requested)
 ```
+
+### Codex Prompts
+
+Located in `~/.codex/prompts/`:
+
+| Prompt | Purpose |
+|--------|---------|
+| `bmm-epic-context-validator.md` | Validate epic tech spec completeness |
+| `bmm-story-context-validator.md` | Validate story context XML completeness |
+| `bmm-story-reviewer.md` | Senior developer code review |
 
 ### File Locations
 
