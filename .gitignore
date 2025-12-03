@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# Epoch AI raw data (download from epoch.ai/data)
+/epoch_data/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
