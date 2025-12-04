@@ -18,9 +18,8 @@ export function truncate(str: string, maxLength: number): string {
  * Includes title, description, Open Graph, and Twitter Card meta tags.
  */
 export function generateObituaryMetadata(obituary: Obituary): Metadata {
-  // Title: truncated claim + site name, max 60 chars total
-  const titlePrefix = truncate(obituary.claim, 60 - SITE_NAME.length - 3)
-  const title = `${titlePrefix} - ${SITE_NAME}`
+  // Title: truncated claim (layout template adds " | AI Obituaries")
+  const title = truncate(obituary.claim, 45)
 
   // Description: source + claim context, max 155 chars
   const description = truncate(
@@ -65,7 +64,7 @@ export function generateObituaryMetadata(obituary: Obituary): Metadata {
  * Provides SEO-optimized title, description, and social sharing tags.
  */
 export const homepageMetadata: Metadata = {
-  title: 'AI Obituaries - Documenting AI Skepticism',
+  title: 'Documenting AI Skepticism',
   description: 'A data-driven archive of every time critics declared AI dead, overhyped, or a bubble. Documented predictions with full context.',
   openGraph: {
     title: 'AI Obituaries - Documenting AI Skepticism',

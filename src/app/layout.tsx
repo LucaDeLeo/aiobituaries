@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://aiobituaries.com'),
   title: {
     default: "AI Obituaries",
-    template: "%s",
+    template: "%s | AI Obituaries",
   },
   description: "A memorial to the ever-dying predictions of AI doom",
 };
