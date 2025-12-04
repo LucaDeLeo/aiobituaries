@@ -6,7 +6,7 @@
  * - Modal opens within 300ms
  */
 
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../support/merged-fixtures'
 
 test.describe('Timeline Scroll Performance (AC-6.8.5)', () => {
   test('Timeline maintains 55+ fps during scroll with 200+ points', async ({ page }) => {

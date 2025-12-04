@@ -9,7 +9,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./tests/setup.tsx'],
     // Exclude Playwright E2E tests from Vitest (they use @playwright/test, not vitest)
-    exclude: ['**/node_modules/**', '**/tests/a11y/**', '**/tests/performance/**'],
+    exclude: ['**/node_modules/**', '**/tests/a11y/**', '**/tests/e2e/**', '**/tests/performance/**'],
   },
   resolve: {
     alias: {

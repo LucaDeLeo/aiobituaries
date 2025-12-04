@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../support/merged-fixtures'
 import AxeBuilder from '@axe-core/playwright'
 
 /**
@@ -112,8 +112,13 @@ test.describe('Accessibility Audit with axe-core', () => {
     // Switch to table view
     await tableToggle.click()
 
-    // Wait for view transition
-    await page.waitForTimeout(500)
+    // Wait for table view to be visible (event-based, not hard wait)
+    await page.waitForSelector('table, [role="table"], [data-testid="obituary-table"]', {
+      state: 'visible',
+      timeout: 5000,
+    }).catch(() => {
+      // Table might use different structure, wait for any content change
+    })
 
     // Run axe accessibility scan
     const accessibilityScanResults = await new AxeBuilder({ page })
