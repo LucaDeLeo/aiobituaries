@@ -129,15 +129,11 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
         style={{ cursor: isFiltered ? 'pointer' : 'default' }}
       >
         {/* Screen reader accessible name */}
-        <title id={pointId}>
-          {obituary.source} - {formattedDate}
-        </title>
+        <title id={pointId}>{`${obituary.source} - ${formattedDate}`}</title>
 
         {/* Screen reader extended description */}
         <desc id={descriptionId}>
-          {obituary.claim.slice(0, 150)}
-          {obituary.claim.length > 150 ? '...' : ''}. Category:{' '}
-          {obituary.categories.join(', ')}
+          {`${obituary.claim.slice(0, 150)}${obituary.claim.length > 150 ? '...' : ''}. Category: ${obituary.categories.join(', ')}`}
         </desc>
 
         {/* Focus ring - visible when focused (AC-6.2.5: 2px gold ring) */}
