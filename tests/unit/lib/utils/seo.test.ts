@@ -42,10 +42,10 @@ describe('generateObituaryMetadata', () => {
     context: {}
   }
 
-  it('generates title with claim and site name', () => {
+  it('generates title with claim (layout template adds site name)', () => {
     const metadata = generateObituaryMetadata(mockObituary)
     expect(metadata.title).toContain('AI will never be able to write code')
-    expect(metadata.title).toContain('AI Obituaries')
+    // Note: "AI Obituaries" suffix is added by layout.tsx template
   })
 
   it('generates description with source and claim', () => {
@@ -119,8 +119,9 @@ describe('generateObituaryMetadata', () => {
 })
 
 describe('homepageMetadata', () => {
-  it('has title with site name', () => {
-    expect(homepageMetadata.title).toContain('AI Obituaries')
+  it('has title (layout template adds site name)', () => {
+    expect(homepageMetadata.title).toBe('Documenting AI Skepticism')
+    // Note: "AI Obituaries" suffix is added by layout.tsx template
   })
 
   it('has description', () => {
