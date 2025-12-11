@@ -146,7 +146,7 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
             stroke="var(--accent-primary)"
             strokeWidth={2}
             strokeDasharray="4 2"
-            className={prefersReducedMotion ? '' : 'animate-pulse'}
+            className={prefersReducedMotion ? '' : 'animate-focus-ring'}
             data-testid="scatter-point-focus-ring"
           />
         )}
@@ -169,8 +169,10 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
         />
 
         {/* Outer glow ring (subtle atmospheric effect) */}
+        {/* suppressHydrationWarning: Framer Motion renders initial opacity differently on SSR vs client */}
         {isFiltered && (
           <motion.circle
+            suppressHydrationWarning
             cx={x}
             cy={y}
             r={currentRadius + 4}
@@ -178,8 +180,11 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
             stroke={color}
             strokeWidth={1}
             style={{
-              opacity: isHovered || isFocused ? 0.4 : 0.15,
               pointerEvents: 'none',
+            }}
+            initial={{
+              opacity: 0.15,
+              r: currentRadius + 4,
             }}
             animate={{
               opacity: isHovered || isFocused ? 0.4 : 0.15,
@@ -190,7 +195,9 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
         )}
 
         {/* Visual dot (scales up when focused per AC-6.2.5) */}
+        {/* suppressHydrationWarning: Framer Motion renders initial props differently on SSR vs client */}
         <motion.circle
+          suppressHydrationWarning
           data-testid="scatter-point"
           cx={x}
           cy={y}

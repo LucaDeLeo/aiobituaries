@@ -4,10 +4,12 @@
  * DensityBar Component
  *
  * Shows distribution of obituaries over time as a horizontal bar chart.
- * Each bar represents a month, with height proportional to count.
+ * Uses adaptive granularity: yearly for historical data, monthly for recent.
  * Tapping a bar filters the card list to that time period.
  *
  * Story 5-5: Mobile Hybrid View
+ * Performance: Optimized to reduce DOM elements by using yearly granularity
+ * for data before MONTHLY_THRESHOLD_YEAR.
  */
 
 import { useMemo } from 'react'
@@ -30,19 +32,31 @@ export interface DensityBarProps {
   activePeriod: DateRange | null
 }
 
+// Years before this use yearly granularity, years >= this use monthly
+const MONTHLY_THRESHOLD_YEAR = 2010
+
+interface DensityItem {
+  key: string
+  year: number
+  monthNum: number | null // null for yearly bars
+  count: number
+  isYearly: boolean
+}
+
 export function DensityBar({
   obituaries,
   activeCategories,
   onPeriodSelect,
   activePeriod,
 }: DensityBarProps) {
-  // Calculate density by month with memoization
+  // Calculate density with adaptive granularity for performance
   const { density, years, maxCount } = useMemo(() => {
-    const counts: Record<string, number> = {}
+    // Count by both month and year for flexible aggregation
+    const monthlyCounts: Record<string, number> = {}
+    const yearlyCounts: Record<number, number> = {}
 
-    // Apply category filter and count by month
+    // Apply category filter and count
     obituaries.forEach((ob) => {
-      // Skip if category filter is active and doesn't match
       if (
         activeCategories.length > 0 &&
         !ob.categories.some((c) => activeCategories.includes(c))
@@ -51,11 +65,14 @@ export function DensityBar({
       }
 
       const date = new Date(ob.date)
-      const key = `${date.getFullYear()}-${date.getMonth()}`
-      counts[key] = (counts[key] || 0) + 1
+      const year = date.getFullYear()
+      const monthKey = `${year}-${date.getMonth()}`
+
+      monthlyCounts[monthKey] = (monthlyCounts[monthKey] || 0) + 1
+      yearlyCounts[year] = (yearlyCounts[year] || 0) + 1
     })
 
-    // Get year range from all obituaries
+    // Get year range
     const dates = obituaries.map((ob) => new Date(ob.date))
     if (dates.length === 0) {
       return { density: [], years: [], maxCount: 1 }
@@ -65,30 +82,82 @@ export function DensityBar({
     const maxYear = Math.max(...dates.map((d) => d.getFullYear()))
     const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i)
 
-    // Build density array (12 months per year)
-    const density: { month: string; year: number; monthNum: number; count: number }[] = []
+    // Build density array with adaptive granularity
+    const density: DensityItem[] = []
+
     years.forEach((year) => {
-      for (let month = 0; month < 12; month++) {
-        const key = `${year}-${month}`
+      if (year < MONTHLY_THRESHOLD_YEAR) {
+        // Yearly granularity for historical data (reduces DOM elements)
         density.push({
-          month: key,
+          key: `year-${year}`,
           year,
-          monthNum: month,
-          count: counts[key] || 0,
+          monthNum: null,
+          count: yearlyCounts[year] || 0,
+          isYearly: true,
         })
+      } else {
+        // Monthly granularity for recent data (more precision)
+        for (let month = 0; month < 12; month++) {
+          const monthKey = `${year}-${month}`
+          density.push({
+            key: monthKey,
+            year,
+            monthNum: month,
+            count: monthlyCounts[monthKey] || 0,
+            isYearly: false,
+          })
+        }
       }
     })
 
-    const maxCount = Math.max(...Object.values(counts), 1)
+    // Max count for scaling (use monthly max for consistency)
+    const allCounts = Object.values(monthlyCounts)
+    const maxCount = allCounts.length > 0 ? Math.max(...allCounts, 1) : 1
 
     return { density, years, maxCount }
   }, [obituaries, activeCategories])
 
   // Check if a bar is in the active period
-  const isBarActive = (year: number, monthNum: number): boolean => {
+  const isBarActive = (item: DensityItem): boolean => {
     if (!activePeriod) return false
-    const barDate = new Date(year, monthNum, 15)
-    return barDate >= activePeriod.start && barDate <= activePeriod.end
+    if (item.isYearly) {
+      // For yearly bars, check if any part of the year overlaps
+      const yearStart = new Date(item.year, 0, 1)
+      const yearEnd = new Date(item.year, 11, 31)
+      return yearStart <= activePeriod.end && yearEnd >= activePeriod.start
+    } else {
+      const barDate = new Date(item.year, item.monthNum!, 15)
+      return barDate >= activePeriod.start && barDate <= activePeriod.end
+    }
+  }
+
+  // Get date range for a bar click
+  const getBarDateRange = (item: DensityItem): DateRange => {
+    if (item.isYearly) {
+      return {
+        start: new Date(item.year, 0, 1),
+        end: new Date(item.year, 11, 31),
+      }
+    } else {
+      return {
+        start: new Date(item.year, item.monthNum!, 1),
+        end: new Date(item.year, item.monthNum! + 1, 0), // Last day of month
+      }
+    }
+  }
+
+  // Get label for accessibility
+  const getBarLabel = (item: DensityItem): string => {
+    if (item.isYearly) {
+      return `${item.count} obituaries in ${item.year}. Tap to filter.`
+    } else {
+      const monthDate = new Date(item.year, item.monthNum!)
+      const monthName = monthDate.toLocaleDateString('en-US', {
+        month: 'short',
+        year: 'numeric',
+      })
+      return `${item.count} obituaries in ${monthName}. Tap to filter.`
+    }
   }
 
   if (density.length === 0) {
@@ -97,51 +166,50 @@ export function DensityBar({
 
   return (
     <div className="px-4 py-3 bg-[--bg-secondary] border-b border-[--border]">
-      {/* Density Bars */}
+      {/* Density Bars - CSS containment for performance */}
       <div
         className="flex items-end gap-[2px] h-12 mb-2"
         role="group"
         aria-label="Obituary distribution over time"
+        style={{ contain: 'layout style paint' }}
       >
-        {density.map(({ month, year, monthNum, count }) => {
-          const height = count > 0 ? Math.max(4, (count / maxCount) * 48) : 2
-          const monthDate = new Date(year, monthNum)
-          const monthName = monthDate.toLocaleDateString('en-US', {
-            month: 'short',
-            year: 'numeric',
-          })
-          const isActive = isBarActive(year, monthNum)
+        {density.map((item) => {
+          // Scale height: yearly bars use year count, monthly use month count
+          const scaleFactor = item.isYearly ? 4 : 1 // Yearly bars represent ~12 months of potential data
+          const normalizedCount = item.isYearly ? item.count / scaleFactor : item.count
+          const height = normalizedCount > 0 ? Math.max(4, (normalizedCount / maxCount) * 48) : 2
+          const isActive = isBarActive(item)
 
           return (
             <button
-              key={month}
+              key={item.key}
               type="button"
               className={cn(
                 'flex-1 min-w-[2px] rounded-t transition-colors',
-                count > 0
+                item.count > 0
                   ? isActive
                     ? 'bg-[--accent-primary]'
                     : 'bg-[--accent-primary]/60 hover:bg-[--accent-primary]/80'
-                  : 'bg-[--border]'
+                  : 'bg-[--border]',
+                // Yearly bars are slightly wider for visual distinction
+                item.isYearly && 'min-w-[4px]'
               )}
               style={{ height: `${height}px` }}
-              onClick={() => {
-                const start = new Date(year, monthNum, 1)
-                const end = new Date(year, monthNum + 1, 0) // Last day of month
-                onPeriodSelect({ start, end })
-              }}
-              aria-label={`${count} obituaries in ${monthName}. Tap to filter.`}
+              onClick={() => onPeriodSelect(getBarDateRange(item))}
+              aria-label={getBarLabel(item)}
               aria-pressed={isActive}
             />
           )
         })}
       </div>
 
-      {/* Year Labels */}
+      {/* Year Labels - show subset for readability */}
       <div className="flex justify-between text-xs text-[--text-muted]">
-        {years.map((year) => (
-          <span key={year}>{year}</span>
-        ))}
+        {years
+          .filter((_, i) => i === 0 || i === years.length - 1 || (years.length > 10 && i % Math.ceil(years.length / 5) === 0))
+          .map((year) => (
+            <span key={year}>{year}</span>
+          ))}
       </div>
 
       {/* Active period indicator */}

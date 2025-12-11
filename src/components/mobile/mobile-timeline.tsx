@@ -11,7 +11,15 @@
  */
 
 import { useState, useMemo } from 'react'
-import { DensityBar, type DateRange } from './density-bar'
+import dynamic from 'next/dynamic'
+import type { DateRange } from './density-bar'
+
+// Dynamic import with ssr: false prevents hydration mismatch
+// DensityBar uses adaptive granularity that must be consistent client-side
+const DensityBar = dynamic(() => import('./density-bar').then((mod) => mod.DensityBar), {
+  ssr: false,
+  loading: () => <div className="h-[88px] bg-[--bg-secondary] border-b border-[--border]" />,
+})
 import { MobileCardList } from './mobile-card-list'
 import { ObituaryModal } from '@/components/obituary/obituary-modal'
 import { CategoryFilter } from '@/components/filters/category-filter'

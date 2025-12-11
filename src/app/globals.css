@@ -173,23 +173,24 @@ body::after {
   }
 }
 
-/* Pulsing glow animation for count display - more dramatic */
+/* Pulsing glow animation for count display - GPU composited via filter */
 @keyframes pulse-glow {
   0%, 100% {
-    text-shadow:
-      0 0 20px rgba(201, 169, 98, 0.4),
-      0 0 40px rgba(201, 169, 98, 0.2);
+    filter:
+      drop-shadow(0 0 20px rgba(201, 169, 98, 0.4))
+      drop-shadow(0 0 40px rgba(201, 169, 98, 0.2));
   }
   50% {
-    text-shadow:
-      0 0 30px rgba(201, 169, 98, 0.7),
-      0 0 60px rgba(201, 169, 98, 0.4),
-      0 0 100px rgba(201, 169, 98, 0.2);
+    filter:
+      drop-shadow(0 0 30px rgba(201, 169, 98, 0.7))
+      drop-shadow(0 0 60px rgba(201, 169, 98, 0.4))
+      drop-shadow(0 0 100px rgba(201, 169, 98, 0.2));
   }
 }
 
 .animate-pulse-glow {
   animation: pulse-glow 4s ease-in-out infinite;
+  will-change: filter; /* Hint GPU compositing */
 }
 
 /* Point glow effect for scatter plot */
@@ -204,6 +205,21 @@ body::after {
 
 .animate-point-glow {
   animation: point-glow 3s ease-in-out infinite;
+}
+
+/* Focus ring pulse for SVG - GPU composited via opacity only */
+@keyframes focus-ring-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.animate-focus-ring {
+  animation: focus-ring-pulse 2s ease-in-out infinite;
+  will-change: opacity;
 }
 
 /* Staggered entrance animation */
@@ -229,9 +245,10 @@ body::after {
 .animate-fade-up-delay-5 { animation-delay: 0.5s; opacity: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  /* Disable pulse and point glow */
+  /* Disable pulse, point glow, and focus ring animations */
   .animate-pulse-glow,
-  .animate-point-glow {
+  .animate-point-glow,
+  .animate-focus-ring {
     animation: none;
   }
 

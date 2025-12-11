@@ -146,7 +146,7 @@ describe('ScatterPoint Visual Focus Indicator (AC-6.2.5)', () => {
       stroke: 'var(--accent-primary)', // Gold accent color
       strokeWidth: 2,
       strokeDasharray: '4 2', // Dashed for visibility
-      className: 'animate-pulse', // Animation (respects reduced motion)
+      className: 'animate-focus-ring', // Animation (respects reduced motion)
       testId: 'scatter-point-focus-ring',
     }
 
@@ -197,11 +197,11 @@ describe('ScatterPoint Reduced Motion Support', () => {
    * Focus ring animation respects user's reduced motion preference.
    */
   it('documents reduced motion handling for focus ring', () => {
-    // IMPLEMENTATION: animate-pulse class conditionally applied
+    // IMPLEMENTATION: animate-focus-ring class conditionally applied
     const reducedMotion = {
-      normalMode: 'className="animate-pulse"',
+      normalMode: 'className="animate-focus-ring"',
       reducedMode: 'className=""',
-      implementation: 'className={prefersReducedMotion ? "" : "animate-pulse"}',
+      implementation: 'className={prefersReducedMotion ? "" : "animate-focus-ring"}',
     }
 
     expect(reducedMotion).toBeDefined()
