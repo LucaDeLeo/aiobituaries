@@ -111,7 +111,7 @@ development_status:
 
   # Epic TSR-2: Y-Axis Log Scale
   epic-tsr-2: contexted
-  tsr-2-1-scale-utilities: backlog
+  tsr-2-1-scale-utilities: done
   tsr-2-2-ai-metrics-helpers: backlog
   tsr-2-3-scatter-plot-y-axis: backlog
   tsr-2-4-y-axis-labels-grid: backlog
