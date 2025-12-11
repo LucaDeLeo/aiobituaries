@@ -11,7 +11,7 @@ import {
 } from 'motion/react'
 import { ParentSize } from '@visx/responsive'
 import { cn } from '@/lib/utils'
-import { scaleTime, scaleLinear } from '@visx/scale'
+import { scaleTime } from '@visx/scale'
 import { AxisBottom } from '@visx/axis'
 import { GridColumns } from '@visx/grid'
 import { Group } from '@visx/group'
@@ -36,7 +36,9 @@ import {
 } from '@/lib/utils/clustering'
 import { useRovingFocus } from '@/lib/hooks/use-roving-focus'
 import { BackgroundChart } from './background-chart'
-import { allMetrics, trainingComputeFrontier, getNormalizedMetricAtDate } from '@/data/ai-metrics'
+import { allMetrics, trainingComputeFrontier, getActualFlopAtDate, getUnifiedDomain } from '@/data/ai-metrics'
+import { createLogYScale, type LogScale } from '@/lib/utils/scales'
+import type { MetricType } from '@/types/metrics'
 
 export interface ScatterPlotProps {
   data: ObituarySummary[]
@@ -45,9 +47,13 @@ export interface ScatterPlotProps {
   activeCategories?: Category[]
   /** Fill parent container height (for grid layout). Parent must have explicit height. */
   fillContainer?: boolean
+  /** Enabled metrics for Y-axis domain calculation. Defaults to ['compute']. */
+  enabledMetrics?: MetricType[]
+  /** Year range for Y-axis domain [startYear, endYear]. Defaults to [2010, 2025]. */
+  dateRange?: [number, number]
 }
 
-const MARGIN = { top: 20, right: 20, bottom: 40, left: 20 }
+const MARGIN = { top: 20, right: 20, bottom: 40, left: 72 }
 
 // Edge gradient overlay component
 function EdgeGradients({
@@ -153,11 +159,15 @@ export function ScatterPlotInner({
   width,
   height,
   activeCategories = [],
+  enabledMetrics = ['compute'],
+  dateRange = [2010, 2025],
 }: {
   data: ObituarySummary[]
   width: number
   height: number
   activeCategories: Category[]
+  enabledMetrics?: MetricType[]
+  dateRange?: [number, number]
 }) {
   // Timeline position persistence hook
   const {
@@ -244,29 +254,29 @@ export function ScatterPlotInner({
     return scale
   }, [data, innerWidth])
 
-  const yScale = useMemo(() => {
-    return scaleLinear({
-      domain: [0, 1],
-      range: [innerHeight, 0],
-    })
-  }, [innerHeight])
+  const yScale = useMemo((): LogScale => {
+    const domain = getUnifiedDomain(enabledMetrics, dateRange[0], dateRange[1])
+    return createLogYScale(innerHeight, domain)
+  }, [innerHeight, enabledMetrics, dateRange])
 
   // Memoize point positions for performance (AC-6.8.5)
-  // Y position is based on training compute metric at the obituary date + jitter for spread
+  // Y position is based on training compute FLOP at the obituary date + log-space jitter
   const pointPositions = useMemo(() => {
     return data.map((obituary) => {
       const obituaryDate = new Date(obituary.date)
-      // Get normalized metric value (0-1) for this date
-      const metricY = getNormalizedMetricAtDate(trainingComputeFrontier, obituaryDate)
-      // Add jitter around the metric line (±0.15 normalized units)
-      const jitter = (hashToJitter(obituary._id) - 0.5) * 0.3
-      // Clamp to 0-1 range
-      const finalY = Math.max(0.05, Math.min(0.95, metricY + jitter))
+
+      // Get actual FLOP value at this date
+      const baseFlop = getActualFlopAtDate(trainingComputeFrontier, obituaryDate)
+
+      // Jitter in log-space: +/- 0.3 orders of magnitude
+      // hashToJitter returns 0-1, center to -0.5 to 0.5, scale to +/-0.3
+      const jitterExp = (hashToJitter(obituary._id) - 0.5) * 0.6
+      const jitteredFlop = baseFlop * Math.pow(10, jitterExp)
 
       return {
         obituary,
         x: xScale(obituaryDate) ?? 0,
-        y: yScale(finalY) ?? 0,
+        y: yScale(jitteredFlop) ?? 0,
         color: getCategoryColor(obituary.categories),
       }
     })
@@ -1007,7 +1017,14 @@ export function ScatterPlotInner({
   )
 }
 
-export function ScatterPlot({ data, height, activeCategories = [], fillContainer }: ScatterPlotProps) {
+export function ScatterPlot({
+  data,
+  height,
+  activeCategories = [],
+  fillContainer,
+  enabledMetrics,
+  dateRange,
+}: ScatterPlotProps) {
   return (
     <div
       className={cn(
@@ -1024,6 +1041,8 @@ export function ScatterPlot({ data, height, activeCategories = [], fillContainer
             width={width}
             height={height || Math.max(parentHeight, 300)}
             activeCategories={activeCategories}
+            enabledMetrics={enabledMetrics}
+            dateRange={dateRange}
           />
         )}
       </ParentSize>

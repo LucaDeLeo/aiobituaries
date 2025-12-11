@@ -113,7 +113,7 @@ development_status:
   epic-tsr-2: contexted
   tsr-2-1-scale-utilities: done
   tsr-2-2-ai-metrics-helpers: done
-  tsr-2-3-scatter-plot-y-axis: backlog
+  tsr-2-3-scatter-plot-y-axis: done
   tsr-2-4-y-axis-labels-grid: backlog
   epic-tsr-2-retrospective: optional
 
