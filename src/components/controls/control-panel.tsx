@@ -3,6 +3,7 @@
 import type { Category } from '@/types/obituary'
 import type { MetricType } from '@/types/metrics'
 import { CollapsibleSection } from './collapsible-section'
+import { MetricsToggle } from './metrics-toggle'
 import { cn } from '@/lib/utils'
 
 // Re-export for consumers that import from control-panel
@@ -43,6 +44,8 @@ const variantStyles = {
 }
 
 export function ControlPanel({
+  enabledMetrics,
+  onMetricsChange,
   stats,
   variant = 'sidebar',
 }: ControlPanelProps) {
@@ -59,10 +62,10 @@ export function ControlPanel({
       {/* Collapsible sections */}
       <div className="flex-1 overflow-y-auto">
         <CollapsibleSection title="Background Metrics" defaultOpen>
-          {/* TODO: MetricsToggle - Story 3.2 */}
-          <p className="text-sm text-muted-foreground">
-            Toggle compute, MMLU, and ECI trend lines
-          </p>
+          <MetricsToggle
+            enabledMetrics={enabledMetrics}
+            onMetricsChange={onMetricsChange}
+          />
         </CollapsibleSection>
 
         <CollapsibleSection title="Time Range" defaultOpen>

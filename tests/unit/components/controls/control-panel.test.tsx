@@ -105,10 +105,13 @@ describe('ControlPanel collapsible sections', () => {
 })
 
 describe('ControlPanel placeholder content', () => {
-  it('has placeholder text for Background Metrics', async () => {
+  it('renders MetricsToggle in Background Metrics section', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
-    expect(screen.getByText(/Toggle compute, MMLU, and ECI trend lines/)).toBeInTheDocument()
+    // MetricsToggle is now rendered instead of placeholder text
+    expect(screen.getByText('Training Compute')).toBeInTheDocument()
+    expect(screen.getByText('MMLU Score')).toBeInTheDocument()
+    expect(screen.getByText('Epoch Capability Index')).toBeInTheDocument()
   })
 
   it('has placeholder text for Time Range', async () => {
