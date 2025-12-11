@@ -39,11 +39,11 @@ stories_processed:
     outcome: "success"
     commit: "d58946a"
     completed_at: "2025-12-11T23:45:00Z"
+  - story_key: "tsr-3-5-assemble-control-panel"
+    outcome: "success"
+    commit: "e3d5505"
+    completed_at: "2025-12-12T00:24:00Z"
 
-checkpoint:
-  story_key: "tsr-3-5-assemble-control-panel"
-  phase: "validate"
-  saved_at: "2025-12-11T23:50:00Z"
-  data:
-    story_file_path: "docs/sprint-artifacts/stories/tsr-3-5-assemble-control-panel.md"
-    validation_cycles: 0
+checkpoint: null
+
+epic_completed: "tsr-3"

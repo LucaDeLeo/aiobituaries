@@ -3,9 +3,12 @@ import { LinePath, AreaClosed } from '@visx/shape'
 import { curveMonotoneX } from '@visx/curve'
 import { scaleLinear } from '@visx/scale'
 import type { AIMetricSeries } from '@/data/ai-metrics'
+import type { MetricType } from '@/types/metrics'
 
 export interface BackgroundChartProps {
   metrics: AIMetricSeries[]
+  /** Which metrics are currently enabled (controls opacity for smooth transitions) */
+  enabledMetrics: MetricType[]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   xScale: any
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,9 +19,11 @@ export interface BackgroundChartProps {
 /**
  * Renders background line charts showing AI progress metrics.
  * Each metric is normalized to 0-1 and rendered as a subtle area + line.
+ * Supports smooth fade transitions when metrics are toggled on/off.
  */
 export function BackgroundChart({
   metrics,
+  enabledMetrics,
   xScale,
   yScale,
   innerHeight,
@@ -43,8 +48,11 @@ export function BackgroundChart({
   }, [metrics])
 
   return (
-    <g className="background-chart" opacity={0.6}>
+    <g className="background-chart">
       {normalizedMetrics.map((metric) => {
+        // Check if this metric is enabled for visibility
+        const isEnabled = enabledMetrics.includes(metric.id as MetricType)
+
         // Filter data to only include points within the x-axis domain
         const [domainStart, domainEnd] = xScale.domain()
         const visibleData = metric.normalizedData.filter(
@@ -63,7 +71,14 @@ export function BackgroundChart({
         })
 
         return (
-          <g key={metric.id}>
+          <g
+            key={metric.id}
+            data-metric-id={metric.id}
+            style={{
+              opacity: isEnabled ? 0.6 : 0,
+              transition: 'opacity 200ms ease-in-out',
+            }}
+          >
             {/* Gradient area fill */}
             <defs>
               <linearGradient

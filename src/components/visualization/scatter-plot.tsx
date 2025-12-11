@@ -270,6 +270,7 @@ export function ScatterPlotInner({
     return getVisibleTickValues(domain)
   }, [yScale])
 
+
   // Memoize point positions for performance (AC-6.8.5)
   // Y position is based on training compute FLOP at the obituary date + log-space jitter
   const pointPositions = useMemo(() => {
@@ -907,6 +908,7 @@ export function ScatterPlotInner({
           {/* Background metric lines showing AI progress */}
           <BackgroundChart
             metrics={allMetrics}
+            enabledMetrics={enabledMetrics}
             xScale={xScale}
             yScale={yScale}
             innerHeight={innerHeight}
