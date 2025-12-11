@@ -123,7 +123,7 @@ development_status:
   tsr-3-2-metrics-toggle: done
   tsr-3-3-date-range-slider: done
   tsr-3-4-category-checkboxes: done
-  tsr-3-5-assemble-control-panel: backlog
+  tsr-3-5-assemble-control-panel: done
   epic-tsr-3-retrospective: optional
 
   # Epic TSR-4: Background Chart Updates

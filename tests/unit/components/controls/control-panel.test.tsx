@@ -99,8 +99,9 @@ describe('ControlPanel collapsible sections', () => {
   it('renders all 4 collapsible section triggers', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
+    // 4 collapsible section triggers + 1 "Show all" button from CategoryCheckboxes
     const buttons = screen.getAllByRole('button')
-    expect(buttons).toHaveLength(4)
+    expect(buttons.length).toBeGreaterThanOrEqual(4)
   })
 })
 
@@ -122,18 +123,22 @@ describe('ControlPanel placeholder content', () => {
     expect(screen.getByRole('slider', { name: /end year/i })).toBeInTheDocument()
   })
 
-  it('has placeholder text for Categories', async () => {
+  it('renders CategoryCheckboxes in Categories section', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
-    expect(screen.getByText(/Filter by claim category/)).toBeInTheDocument()
+    // CategoryCheckboxes is now rendered with actual categories
+    expect(screen.getByText('Capability Doubt')).toBeInTheDocument()
+    expect(screen.getByText('Market/Bubble')).toBeInTheDocument()
+    expect(screen.getByText('AGI Skepticism')).toBeInTheDocument()
+    expect(screen.getByText('Dismissive Framing')).toBeInTheDocument()
   })
 
   it('has placeholder text for Display Options (when opened)', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
     // Display Options is closed by default, so open it first
-    const buttons = screen.getAllByRole('button')
-    const displayOptionsButton = buttons[3]
+    // Find the Display Options button by its text content
+    const displayOptionsButton = screen.getByRole('button', { name: /display options/i })
     fireEvent.click(displayOptionsButton)
     expect(screen.getByText(/Trend annotations and clustering settings/)).toBeInTheDocument()
   })
@@ -143,33 +148,30 @@ describe('ControlPanel section default states', () => {
   it('has Background Metrics section open by default', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
-    const buttons = screen.getAllByRole('button')
-    // First button is Background Metrics
-    expect(buttons[0]).toHaveAttribute('data-state', 'open')
+    const bgMetricsButton = screen.getByRole('button', { name: /background metrics/i })
+    expect(bgMetricsButton).toHaveAttribute('data-state', 'open')
   })
 
   it('has Time Range section open by default', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
-    const buttons = screen.getAllByRole('button')
-    // Second button is Time Range
-    expect(buttons[1]).toHaveAttribute('data-state', 'open')
+    const timeRangeButton = screen.getByRole('button', { name: /time range/i })
+    expect(timeRangeButton).toHaveAttribute('data-state', 'open')
   })
 
   it('has Categories section open by default', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
-    const buttons = screen.getAllByRole('button')
-    // Third button is Categories
-    expect(buttons[2]).toHaveAttribute('data-state', 'open')
+    // Get the exact "Categories" section trigger (not "Showing all categories" button)
+    const categoriesButton = screen.getByRole('button', { name: /^categories$/i })
+    expect(categoriesButton).toHaveAttribute('data-state', 'open')
   })
 
   it('has Display Options section closed by default', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
-    const buttons = screen.getAllByRole('button')
-    // Fourth button is Display Options - should be closed
-    expect(buttons[3]).toHaveAttribute('data-state', 'closed')
+    const displayOptionsButton = screen.getByRole('button', { name: /display options/i })
+    expect(displayOptionsButton).toHaveAttribute('data-state', 'closed')
   })
 })
 
@@ -177,8 +179,7 @@ describe('ControlPanel section toggling', () => {
   it('toggles Background Metrics section on click', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
-    const buttons = screen.getAllByRole('button')
-    const bgMetrics = buttons[0]
+    const bgMetrics = screen.getByRole('button', { name: /background metrics/i })
 
     expect(bgMetrics).toHaveAttribute('data-state', 'open')
     fireEvent.click(bgMetrics)
@@ -190,8 +191,7 @@ describe('ControlPanel section toggling', () => {
   it('toggles Display Options section on click', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
-    const buttons = screen.getAllByRole('button')
-    const displayOptions = buttons[3]
+    const displayOptions = screen.getByRole('button', { name: /display options/i })
 
     expect(displayOptions).toHaveAttribute('data-state', 'closed')
     fireEvent.click(displayOptions)

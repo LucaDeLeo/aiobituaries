@@ -6,8 +6,9 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { homepageMetadata } from "@/lib/utils/seo";
 import { getObituaries } from "@/lib/sanity/queries";
 import { HomeClient } from "./home-client";
+import { HomePageClient } from "./home-page-client";
 import { MobileTimeline } from "@/components/mobile/mobile-timeline";
-import { ControlPanelWrapper, ControlSheet } from "@/components/controls";
+import { ControlSheet } from "@/components/controls";
 
 export const metadata = homepageMetadata;
 
@@ -47,7 +48,7 @@ export default async function Home() {
         <ControlSheet totalCount={obituaries.length} />
       </div>
 
-      {/* Desktop (>=1024px): New grid layout */}
+      {/* Desktop (>=1024px): New grid layout with HomePageClient orchestrating state */}
       <div className="hidden lg:block">
         <main className="flex flex-col min-h-screen">
           {/* Compact header with count - uses separate async Server Component */}
@@ -55,19 +56,11 @@ export default async function Home() {
             <CountDisplayCompact />
           </header>
 
-          {/* Grid: Chart + Sidebar */}
+          {/* Grid: Chart + Sidebar - HomePageClient handles state coordination */}
           <div className="grid grid-cols-[1fr_320px] flex-1 min-h-[500px] gap-0">
-            <section className="relative overflow-hidden h-full">
-              <Suspense fallback={null}>
-                <HomeClient obituaries={obituaries} variant="hero" />
-              </Suspense>
-            </section>
-            <aside className="border-l border-border overflow-y-auto bg-secondary" aria-label="Controls panel">
-              <ControlPanelWrapper
-                totalCount={obituaries.length}
-                variant="sidebar"
-              />
-            </aside>
+            <Suspense fallback={null}>
+              <HomePageClient obituaries={obituaries} />
+            </Suspense>
           </div>
         </main>
       </div>

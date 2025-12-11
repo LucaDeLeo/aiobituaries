@@ -1,52 +1,61 @@
 'use client'
 
-import { ControlPanel, type MetricType, type DisplayOptions } from './control-panel'
-import type { Category } from '@/types/obituary'
+import { ControlPanel, type DisplayOptions } from './control-panel'
+import { useVisualizationState } from '@/lib/hooks/use-visualization-state'
 
 interface ControlPanelWrapperProps {
   /** Total count of obituaries */
   totalCount: number
+  /** Visible count after filtering (optional - falls back to totalCount if not provided) */
+  visibleCount?: number
   /** Layout variant */
   variant?: 'sidebar' | 'sheet' | 'drawer'
 }
 
 /**
- * Client-side wrapper for ControlPanel that manages state.
+ * Client-side wrapper for ControlPanel that manages URL state.
+ * Connects useVisualizationState hook to ControlPanel props.
  *
- * This wrapper exists because page.tsx is a Server Component and cannot
- * pass event handler functions to Client Components. All state management
- * is handled here with placeholder values until Story 3.1 wires up URL state.
+ * When used from HomePageClient (desktop), visibleCount is calculated
+ * by the parent and passed down. When used from ControlSheet (tablet/mobile),
+ * visibleCount falls back to totalCount since the parent doesn't have
+ * access to filtered data (nuqs ensures URL sync between instances).
  */
 export function ControlPanelWrapper({
   totalCount,
+  visibleCount,
   variant = 'sidebar',
 }: ControlPanelWrapperProps) {
-  // Placeholder state - will be replaced with URL state in Story 3.1
-  const enabledMetrics: MetricType[] = ['compute']
-  const selectedCategories: Category[] = []
-  const dateRange: [number, number] = [2010, 2025]
+  const {
+    metrics,
+    setMetrics,
+    categories,
+    setCategories,
+    dateRange,
+    setDateRange,
+  } = useVisualizationState()
+
+  // Placeholder for future display options (Story 3.X)
   const displayOptions: DisplayOptions = {
     showTrendAnnotations: true,
     enableClustering: false,
   }
-
-  // No-op handlers - will be replaced with actual handlers in Story 3.1
-  const handleMetricsChange = () => {}
-  const handleCategoriesChange = () => {}
-  const handleDateRangeChange = () => {}
   const handleDisplayOptionsChange = () => {}
 
   return (
     <ControlPanel
-      enabledMetrics={enabledMetrics}
-      onMetricsChange={handleMetricsChange}
-      selectedCategories={selectedCategories}
-      onCategoriesChange={handleCategoriesChange}
+      enabledMetrics={metrics}
+      onMetricsChange={setMetrics}
+      selectedCategories={categories}
+      onCategoriesChange={setCategories}
       dateRange={dateRange}
-      onDateRangeChange={handleDateRangeChange}
+      onDateRangeChange={setDateRange}
       displayOptions={displayOptions}
       onDisplayOptionsChange={handleDisplayOptionsChange}
-      stats={{ total: totalCount, visible: totalCount }}
+      stats={{
+        total: totalCount,
+        visible: visibleCount ?? totalCount,
+      }}
       variant={variant}
     />
   )

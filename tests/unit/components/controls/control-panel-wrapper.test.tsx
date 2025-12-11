@@ -2,10 +2,23 @@
  * ControlPanelWrapper Component Tests
  *
  * Tests for Story TSR-1.2: ControlPanel Shell Component
- * Tests the wrapper component that handles state for Server Component integration.
+ * Updated for Story TSR-3.5: Tests wrapper with URL state wiring.
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
+
+// Mock useVisualizationState hook
+vi.mock('@/lib/hooks/use-visualization-state', () => ({
+  useVisualizationState: vi.fn(() => ({
+    metrics: ['compute'],
+    setMetrics: vi.fn(),
+    categories: [],
+    setCategories: vi.fn(),
+    dateRange: [2010, 2025] as [number, number],
+    setDateRange: vi.fn(),
+    isPending: false,
+  })),
+}))
 
 describe('ControlPanelWrapper module exports', () => {
   it('exports ControlPanelWrapper component', async () => {
@@ -16,6 +29,10 @@ describe('ControlPanelWrapper module exports', () => {
 })
 
 describe('ControlPanelWrapper rendering', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('renders ControlPanel with totalCount in stats', async () => {
     const { ControlPanelWrapper } = await import('@/components/controls')
     render(<ControlPanelWrapper totalCount={42} />)
@@ -61,5 +78,11 @@ describe('ControlPanelWrapper rendering', () => {
     const { ControlPanelWrapper } = await import('@/components/controls')
     render(<ControlPanelWrapper totalCount={0} />)
     expect(screen.getByText('Showing 0 of 0')).toBeInTheDocument()
+  })
+
+  it('uses visibleCount when provided', async () => {
+    const { ControlPanelWrapper } = await import('@/components/controls')
+    render(<ControlPanelWrapper totalCount={100} visibleCount={42} />)
+    expect(screen.getByText('Showing 42 of 100')).toBeInTheDocument()
   })
 })

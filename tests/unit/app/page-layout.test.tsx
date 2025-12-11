@@ -124,6 +124,41 @@ vi.mock('@/components/controls', () => ({
   },
 }))
 
+// Mock HomePageClient to avoid useVisualizationState/nuqs issues
+vi.mock('@/app/home-page-client', () => ({
+  HomePageClient: function MockHomePageClient({
+    obituaries,
+  }: {
+    obituaries: unknown[]
+  }) {
+    // Render the same structure as the real component for layout tests
+    return React.createElement(
+      React.Fragment,
+      null,
+      // Chart section
+      React.createElement(
+        'section',
+        { className: 'relative overflow-hidden h-full' },
+        React.createElement(
+          'div',
+          { 'data-testid': 'home-client', 'data-variant': 'hero' },
+          `HomeClient (hero)`
+        )
+      ),
+      // Sidebar
+      React.createElement(
+        'aside',
+        { className: 'border-l border-border overflow-y-auto bg-secondary', 'aria-label': 'Controls panel' },
+        React.createElement(
+          'div',
+          { 'data-testid': 'control-panel-wrapper', 'data-count': (obituaries as unknown[])?.length ?? 0 },
+          'ControlPanelWrapper'
+        )
+      )
+    )
+  },
+}))
+
 // Import after all mocks
 import Home from '@/app/page'
 

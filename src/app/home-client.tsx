@@ -12,6 +12,9 @@
  *
  * Also supports alternative table view for accessibility (Story 6-4).
  * Table view toggle is hidden on mobile (desktop/tablet only).
+ *
+ * Hero variant: Accepts external state props from parent (HomePageClient)
+ * for single-source-of-truth URL state management.
  */
 
 import { useMemo } from 'react'
@@ -26,7 +29,8 @@ import {
 } from '@/components/obituary/table-view-toggle'
 import { ObituaryTable } from '@/components/obituary/obituary-table'
 import { useLiveRegionOptional } from '@/components/accessibility/live-region'
-import type { ObituarySummary } from '@/types/obituary'
+import type { ObituarySummary, Category } from '@/types/obituary'
+import type { MetricType } from '@/types/metrics'
 import { useFilters } from '@/lib/hooks/use-filters'
 
 export interface HomeClientProps {
@@ -34,16 +38,35 @@ export interface HomeClientProps {
   obituaries: ObituarySummary[]
   /** Layout variant: 'default' for existing, 'hero' for new grid layout */
   variant?: 'default' | 'hero'
+  /** Enabled metrics for Y-axis domain calculation (hero variant only) */
+  enabledMetrics?: MetricType[]
+  /** Year range for Y-axis domain [startYear, endYear] (hero variant only) */
+  dateRange?: [number, number]
+  /** Active category filters from parent (hero variant only) */
+  activeCategories?: Category[]
 }
 
 /**
  * Client-side portion of the homepage.
  * Manages filter state and passes it to visualization components.
  */
-export function HomeClient({ obituaries, variant = 'default' }: HomeClientProps) {
-  const { categories, toggleCategory, clearFilters } = useFilters()
+export function HomeClient({
+  obituaries,
+  variant = 'default',
+  enabledMetrics,
+  dateRange,
+  activeCategories: externalCategories,
+}: HomeClientProps) {
+  // For default variant, use internal useFilters (backward compat)
+  // For hero variant, use external state if provided
+  const { categories: internalCategories, toggleCategory, clearFilters } = useFilters()
   const { mode, setMode, isHydrated } = useViewModeStorage()
   const liveRegion = useLiveRegionOptional()
+
+  // Determine which categories to use based on variant and props
+  const categories = variant === 'hero' && externalCategories !== undefined
+    ? externalCategories
+    : internalCategories
 
   // Calculate filtered count for accessibility announcements
   const filteredCount = useMemo(() => {
@@ -71,6 +94,8 @@ export function HomeClient({ obituaries, variant = 'default' }: HomeClientProps)
           <ScatterPlot
             data={obituaries}
             activeCategories={categories}
+            enabledMetrics={enabledMetrics}
+            dateRange={dateRange}
             fillContainer
           />
         ) : (

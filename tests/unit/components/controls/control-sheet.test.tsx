@@ -19,6 +19,19 @@ vi.mock('@/lib/hooks/use-media-query', () => ({
   },
 }))
 
+// Mock useVisualizationState hook (used by ControlPanelWrapper)
+vi.mock('@/lib/hooks/use-visualization-state', () => ({
+  useVisualizationState: vi.fn(() => ({
+    metrics: ['compute'],
+    setMetrics: vi.fn(),
+    categories: [],
+    setCategories: vi.fn(),
+    dateRange: [2010, 2025] as [number, number],
+    setDateRange: vi.fn(),
+    isPending: false,
+  })),
+}))
+
 describe('ControlSheet module exports', () => {
   it('exports ControlSheet component', async () => {
     const mod = await import('@/components/controls')
