@@ -129,7 +129,7 @@ development_status:
   # Epic TSR-4: Background Chart Updates
   epic-tsr-4: contexted
   tsr-4-1-metric-toggles-support: done
-  tsr-4-2-log-scale-adaptation: backlog
+  tsr-4-2-log-scale-adaptation: done
   epic-tsr-4-retrospective: optional
 
   # Epic TSR-5: Polish & Mobile

@@ -1,12 +1,13 @@
 /**
- * BackgroundChart Toggle Tests (Story TSR-4-1)
+ * BackgroundChart Toggle Tests (Story TSR-4-1, TSR-4-2)
  *
- * Tests for metric toggle functionality in BackgroundChart component.
- * Verifies filtering, empty state handling, transitions, and colors.
+ * Tests for metric toggle functionality and log scale adaptation in BackgroundChart component.
+ * Verifies filtering, empty state handling, transitions, colors, and log scale positioning.
  */
 import { describe, it, expect } from 'vitest'
 import { render } from '@testing-library/react'
-import { scaleTime, scaleLinear } from '@visx/scale'
+import { scaleTime } from '@visx/scale'
+import { createLogYScale, logToFlop } from '@/lib/utils/scales'
 import type { MetricType } from '@/types/metrics'
 
 describe('BackgroundChart module exports', () => {
@@ -31,13 +32,11 @@ describe('BackgroundChart metric visibility (AC-1, AC-2)', () => {
       range: [0, 800],
     })
 
-  const createMockYScale = () =>
-    scaleLinear({
-      domain: [0, 1],
-      range: [400, 0],
-    })
+  // Use actual log scale for proper testing (TSR-4-2)
+  const createMockLogYScale = () =>
+    createLogYScale(400, [1e17, 1e27])
 
-  it('renders enabled metric with opacity 0.6 (AC-1)', async () => {
+  it('renders enabled compute metric with opacity 0.6 (AC-1)', async () => {
     const { BackgroundChart } = await import('@/components/visualization/background-chart')
     const { allMetrics } = await import('@/data/ai-metrics')
 
@@ -47,7 +46,7 @@ describe('BackgroundChart metric visibility (AC-1, AC-2)', () => {
           metrics={allMetrics}
           enabledMetrics={['compute']}
           xScale={createMockXScale()}
-          yScale={createMockYScale()}
+          yScale={createMockLogYScale()}
           innerHeight={400}
         />
       </svg>
@@ -69,7 +68,7 @@ describe('BackgroundChart metric visibility (AC-1, AC-2)', () => {
           metrics={allMetrics}
           enabledMetrics={['compute']}
           xScale={createMockXScale()}
-          yScale={createMockYScale()}
+          yScale={createMockLogYScale()}
           innerHeight={400}
         />
       </svg>
@@ -83,7 +82,7 @@ describe('BackgroundChart metric visibility (AC-1, AC-2)', () => {
     expect(eciGroup?.getAttribute('style')).toContain('opacity: 0')
   })
 
-  it('renders multiple enabled metrics visible (AC-2)', async () => {
+  it('renders multiple enabled metrics with differentiated opacity (AC-2)', async () => {
     const { BackgroundChart } = await import('@/components/visualization/background-chart')
     const { allMetrics } = await import('@/data/ai-metrics')
 
@@ -93,23 +92,23 @@ describe('BackgroundChart metric visibility (AC-1, AC-2)', () => {
           metrics={allMetrics}
           enabledMetrics={['compute', 'mmlu']}
           xScale={createMockXScale()}
-          yScale={createMockYScale()}
+          yScale={createMockLogYScale()}
           innerHeight={400}
         />
       </svg>
     )
 
-    // Both compute and mmlu should be visible
+    // Compute (FLOP metric) uses 0.6 opacity, MMLU (overlay) uses 0.3
     const computeGroup = container.querySelector('[data-metric-id="compute"]')
     const mmluGroup = container.querySelector('[data-metric-id="mmlu"]')
     const eciGroup = container.querySelector('[data-metric-id="eci"]')
 
     expect(computeGroup?.getAttribute('style')).toContain('opacity: 0.6')
-    expect(mmluGroup?.getAttribute('style')).toContain('opacity: 0.6')
+    expect(mmluGroup?.getAttribute('style')).toContain('opacity: 0.3')
     expect(eciGroup?.getAttribute('style')).toContain('opacity: 0')
   })
 
-  it('renders all three metrics visible when all enabled', async () => {
+  it('renders all three metrics with differentiated opacity when all enabled', async () => {
     const { BackgroundChart } = await import('@/components/visualization/background-chart')
     const { allMetrics } = await import('@/data/ai-metrics')
 
@@ -119,20 +118,20 @@ describe('BackgroundChart metric visibility (AC-1, AC-2)', () => {
           metrics={allMetrics}
           enabledMetrics={['compute', 'mmlu', 'eci']}
           xScale={createMockXScale()}
-          yScale={createMockYScale()}
+          yScale={createMockLogYScale()}
           innerHeight={400}
         />
       </svg>
     )
 
-    // All should be visible
+    // Compute uses 0.6, overlay metrics (mmlu, eci) use 0.3
     const computeGroup = container.querySelector('[data-metric-id="compute"]')
     const mmluGroup = container.querySelector('[data-metric-id="mmlu"]')
     const eciGroup = container.querySelector('[data-metric-id="eci"]')
 
     expect(computeGroup?.getAttribute('style')).toContain('opacity: 0.6')
-    expect(mmluGroup?.getAttribute('style')).toContain('opacity: 0.6')
-    expect(eciGroup?.getAttribute('style')).toContain('opacity: 0.6')
+    expect(mmluGroup?.getAttribute('style')).toContain('opacity: 0.3')
+    expect(eciGroup?.getAttribute('style')).toContain('opacity: 0.3')
   })
 })
 
@@ -143,11 +142,8 @@ describe('BackgroundChart empty state (AC-3)', () => {
       range: [0, 800],
     })
 
-  const createMockYScale = () =>
-    scaleLinear({
-      domain: [0, 1],
-      range: [400, 0],
-    })
+  const createMockLogYScale = () =>
+    createLogYScale(400, [1e17, 1e27])
 
   it('hides all metrics when enabledMetrics is empty (AC-3)', async () => {
     const { BackgroundChart } = await import('@/components/visualization/background-chart')
@@ -159,7 +155,7 @@ describe('BackgroundChart empty state (AC-3)', () => {
           metrics={allMetrics}
           enabledMetrics={[]}
           xScale={createMockXScale()}
-          yScale={createMockYScale()}
+          yScale={createMockLogYScale()}
           innerHeight={400}
         />
       </svg>
@@ -183,11 +179,8 @@ describe('BackgroundChart metric colors (AC-5)', () => {
       range: [0, 800],
     })
 
-  const createMockYScale = () =>
-    scaleLinear({
-      domain: [0, 1],
-      range: [400, 0],
-    })
+  const createMockLogYScale = () =>
+    createLogYScale(400, [1e17, 1e27])
 
   it('uses correct color for compute metric (AC-5)', async () => {
     const { BackgroundChart } = await import('@/components/visualization/background-chart')
@@ -199,7 +192,7 @@ describe('BackgroundChart metric colors (AC-5)', () => {
           metrics={allMetrics}
           enabledMetrics={['compute']}
           xScale={createMockXScale()}
-          yScale={createMockYScale()}
+          yScale={createMockLogYScale()}
           innerHeight={400}
         />
       </svg>
@@ -222,7 +215,7 @@ describe('BackgroundChart metric colors (AC-5)', () => {
           metrics={allMetrics}
           enabledMetrics={['mmlu']}
           xScale={createMockXScale()}
-          yScale={createMockYScale()}
+          yScale={createMockLogYScale()}
           innerHeight={400}
         />
       </svg>
@@ -244,7 +237,7 @@ describe('BackgroundChart metric colors (AC-5)', () => {
           metrics={allMetrics}
           enabledMetrics={['eci']}
           xScale={createMockXScale()}
-          yScale={createMockYScale()}
+          yScale={createMockLogYScale()}
           innerHeight={400}
         />
       </svg>
@@ -264,11 +257,8 @@ describe('BackgroundChart transitions (AC-4)', () => {
       range: [0, 800],
     })
 
-  const createMockYScale = () =>
-    scaleLinear({
-      domain: [0, 1],
-      range: [400, 0],
-    })
+  const createMockLogYScale = () =>
+    createLogYScale(400, [1e17, 1e27])
 
   it('applies transition style to metric groups (AC-4)', async () => {
     const { BackgroundChart } = await import('@/components/visualization/background-chart')
@@ -280,7 +270,7 @@ describe('BackgroundChart transitions (AC-4)', () => {
           metrics={allMetrics}
           enabledMetrics={['compute']}
           xScale={createMockXScale()}
-          yScale={createMockYScale()}
+          yScale={createMockLogYScale()}
           innerHeight={400}
         />
       </svg>
@@ -307,7 +297,7 @@ describe('BackgroundChart transitions (AC-4)', () => {
           metrics={allMetrics}
           enabledMetrics={['compute']}
           xScale={createMockXScale()}
-          yScale={createMockYScale()}
+          yScale={createMockLogYScale()}
           innerHeight={400}
         />
       </svg>
@@ -342,5 +332,285 @@ describe('Default metrics state (AC-6)', () => {
     const filtered = allMetrics.filter((m) => defaultEnabled.includes(m.id as MetricType))
     expect(filtered).toHaveLength(1)
     expect(filtered[0].id).toBe('compute')
+  })
+})
+
+// =============================================================================
+// TSR-4-2: Log Scale Adaptation Tests
+// =============================================================================
+
+describe('BackgroundChart - Log Scale Adaptation (TSR-4-2)', () => {
+  const createMockXScale = () =>
+    scaleTime({
+      domain: [new Date('2010-01-01'), new Date('2025-01-01')],
+      range: [0, 800],
+    })
+
+  const createMockLogYScale = () =>
+    createLogYScale(400, [1e17, 1e27])
+
+  describe('Training Compute positioning (AC-1)', () => {
+    it('positions compute line using actual FLOP values', async () => {
+      const { BackgroundChart } = await import('@/components/visualization/background-chart')
+      const { trainingComputeFrontier } = await import('@/data/ai-metrics')
+
+      const logYScale = createMockLogYScale()
+      const { container } = render(
+        <svg>
+          <BackgroundChart
+            metrics={[trainingComputeFrontier]}
+            enabledMetrics={['compute']}
+            xScale={createMockXScale()}
+            yScale={logYScale}
+            innerHeight={400}
+          />
+        </svg>
+      )
+
+      // LinePath should exist and use transformed coordinates
+      const linePath = container.querySelector('path[stroke="rgb(118, 185, 0)"]')
+      expect(linePath).toBeInTheDocument()
+
+      // Path should have valid d attribute (coordinates in log space)
+      const pathD = linePath?.getAttribute('d')
+      expect(pathD).toBeTruthy()
+      expect(pathD).toContain('M') // Valid path
+    })
+
+    it('uses logToFlop for Y coordinate calculation', () => {
+      // Test that data point at log10=25 (1e25 FLOP) maps correctly
+      const testValue = 25 // log10 FLOP
+      const expectedFlop = logToFlop(testValue)
+      expect(expectedFlop).toBe(1e25)
+    })
+  })
+
+  describe('Non-FLOP metrics render as overlay (AC-2)', () => {
+    it('renders MMLU with reduced opacity (0.3)', async () => {
+      const { BackgroundChart } = await import('@/components/visualization/background-chart')
+      const { mmluFrontier } = await import('@/data/ai-metrics')
+
+      const { container } = render(
+        <svg>
+          <BackgroundChart
+            metrics={[mmluFrontier]}
+            enabledMetrics={['mmlu']}
+            xScale={createMockXScale()}
+            yScale={createMockLogYScale()}
+            innerHeight={400}
+          />
+        </svg>
+      )
+
+      const metricGroup = container.querySelector('[data-metric-id="mmlu"]')
+      expect(metricGroup?.getAttribute('style')).toContain('opacity: 0.3')
+    })
+
+    it('renders ECI with reduced opacity (0.3)', async () => {
+      const { BackgroundChart } = await import('@/components/visualization/background-chart')
+      const { eciFrontier } = await import('@/data/ai-metrics')
+
+      const { container } = render(
+        <svg>
+          <BackgroundChart
+            metrics={[eciFrontier]}
+            enabledMetrics={['eci']}
+            xScale={createMockXScale()}
+            yScale={createMockLogYScale()}
+            innerHeight={400}
+          />
+        </svg>
+      )
+
+      const metricGroup = container.querySelector('[data-metric-id="eci"]')
+      expect(metricGroup?.getAttribute('style')).toContain('opacity: 0.3')
+    })
+
+    it('renders non-compute metrics with reduced strokeOpacity', async () => {
+      const { BackgroundChart } = await import('@/components/visualization/background-chart')
+      const { mmluFrontier } = await import('@/data/ai-metrics')
+
+      const { container } = render(
+        <svg>
+          <BackgroundChart
+            metrics={[mmluFrontier]}
+            enabledMetrics={['mmlu']}
+            xScale={createMockXScale()}
+            yScale={createMockLogYScale()}
+            innerHeight={400}
+          />
+        </svg>
+      )
+
+      const mmluGroup = container.querySelector('[data-metric-id="mmlu"]')
+      const linePath = mmluGroup?.querySelector('path[stroke]')
+      // Non-compute uses strokeOpacity 0.5 vs 0.8 for compute
+      expect(linePath?.getAttribute('stroke-opacity')).toBe('0.5')
+    })
+
+    it('renders compute metric with full strokeOpacity', async () => {
+      const { BackgroundChart } = await import('@/components/visualization/background-chart')
+      const { trainingComputeFrontier } = await import('@/data/ai-metrics')
+
+      const { container } = render(
+        <svg>
+          <BackgroundChart
+            metrics={[trainingComputeFrontier]}
+            enabledMetrics={['compute']}
+            xScale={createMockXScale()}
+            yScale={createMockLogYScale()}
+            innerHeight={400}
+          />
+        </svg>
+      )
+
+      const computeGroup = container.querySelector('[data-metric-id="compute"]')
+      const linePath = computeGroup?.querySelector('path[stroke]')
+      // Compute uses full strokeOpacity 0.8
+      expect(linePath?.getAttribute('stroke-opacity')).toBe('0.8')
+    })
+  })
+
+  describe('Date range filtering (AC-3)', () => {
+    it('filters data points outside xScale domain', async () => {
+      const { BackgroundChart } = await import('@/components/visualization/background-chart')
+      const { trainingComputeFrontier } = await import('@/data/ai-metrics')
+
+      // Create xScale with narrow domain (2020-2023)
+      const narrowXScale = scaleTime({
+        domain: [new Date('2020-01-01'), new Date('2023-12-31')],
+        range: [0, 800],
+      })
+
+      const { container } = render(
+        <svg>
+          <BackgroundChart
+            metrics={[trainingComputeFrontier]}
+            enabledMetrics={['compute']}
+            xScale={narrowXScale}
+            yScale={createMockLogYScale()}
+            innerHeight={400}
+          />
+        </svg>
+      )
+
+      // Should render (training compute has data in 2020-2023)
+      const linePath = container.querySelector('path[stroke="rgb(118, 185, 0)"]')
+      expect(linePath).toBeInTheDocument()
+    })
+
+    it('returns null when no data in date range', async () => {
+      const { BackgroundChart } = await import('@/components/visualization/background-chart')
+      const { trainingComputeFrontier } = await import('@/data/ai-metrics')
+
+      // Create xScale with future domain (no data exists)
+      const futureXScale = scaleTime({
+        domain: [new Date('2030-01-01'), new Date('2035-12-31')],
+        range: [0, 800],
+      })
+
+      const { container } = render(
+        <svg>
+          <BackgroundChart
+            metrics={[trainingComputeFrontier]}
+            enabledMetrics={['compute']}
+            xScale={futureXScale}
+            yScale={createMockLogYScale()}
+            innerHeight={400}
+          />
+        </svg>
+      )
+
+      // No line should render (no data points in range)
+      const linePath = container.querySelector('path[stroke]')
+      expect(linePath).not.toBeInTheDocument()
+    })
+  })
+
+  describe('AreaClosed integration (AC-5)', () => {
+    it('renders area fill with log scale for compute', async () => {
+      const { BackgroundChart } = await import('@/components/visualization/background-chart')
+      const { trainingComputeFrontier } = await import('@/data/ai-metrics')
+
+      const { container } = render(
+        <svg>
+          <BackgroundChart
+            metrics={[trainingComputeFrontier]}
+            enabledMetrics={['compute']}
+            xScale={createMockXScale()}
+            yScale={createMockLogYScale()}
+            innerHeight={400}
+          />
+        </svg>
+      )
+
+      // AreaClosed creates a filled path with gradient
+      const areaPath = container.querySelector('path[fill^="url(#area-gradient"]')
+      expect(areaPath).toBeInTheDocument()
+    })
+
+    it('renders area fill for non-compute metrics', async () => {
+      const { BackgroundChart } = await import('@/components/visualization/background-chart')
+      const { mmluFrontier } = await import('@/data/ai-metrics')
+
+      const { container } = render(
+        <svg>
+          <BackgroundChart
+            metrics={[mmluFrontier]}
+            enabledMetrics={['mmlu']}
+            xScale={createMockXScale()}
+            yScale={createMockLogYScale()}
+            innerHeight={400}
+          />
+        </svg>
+      )
+
+      const areaPath = container.querySelector('path[fill^="url(#area-gradient-mmlu"]')
+      expect(areaPath).toBeInTheDocument()
+    })
+  })
+
+  describe('Transition maintained (AC-4)', () => {
+    it('maintains 200ms opacity transition for compute metrics', async () => {
+      const { BackgroundChart } = await import('@/components/visualization/background-chart')
+      const { trainingComputeFrontier } = await import('@/data/ai-metrics')
+
+      const { container } = render(
+        <svg>
+          <BackgroundChart
+            metrics={[trainingComputeFrontier]}
+            enabledMetrics={['compute']}
+            xScale={createMockXScale()}
+            yScale={createMockLogYScale()}
+            innerHeight={400}
+          />
+        </svg>
+      )
+
+      const metricGroup = container.querySelector('[data-metric-id="compute"]')
+      const style = metricGroup?.getAttribute('style')
+      expect(style).toContain('transition: opacity 200ms ease-in-out')
+    })
+
+    it('maintains 200ms opacity transition for overlay metrics', async () => {
+      const { BackgroundChart } = await import('@/components/visualization/background-chart')
+      const { mmluFrontier } = await import('@/data/ai-metrics')
+
+      const { container } = render(
+        <svg>
+          <BackgroundChart
+            metrics={[mmluFrontier]}
+            enabledMetrics={['mmlu']}
+            xScale={createMockXScale()}
+            yScale={createMockLogYScale()}
+            innerHeight={400}
+          />
+        </svg>
+      )
+
+      const metricGroup = container.querySelector('[data-metric-id="mmlu"]')
+      const style = metricGroup?.getAttribute('style')
+      expect(style).toContain('transition: opacity 200ms ease-in-out')
+    })
   })
 })
