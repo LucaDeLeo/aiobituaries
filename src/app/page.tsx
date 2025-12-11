@@ -7,6 +7,7 @@ import { homepageMetadata } from "@/lib/utils/seo";
 import { getObituaries } from "@/lib/sanity/queries";
 import { HomeClient } from "./home-client";
 import { MobileTimeline } from "@/components/mobile/mobile-timeline";
+import { ControlPanelWrapper } from "@/components/controls";
 
 export const metadata = homepageMetadata;
 
@@ -59,7 +60,10 @@ export default async function Home() {
               </Suspense>
             </section>
             <aside className="border-l border-border overflow-y-auto bg-secondary" aria-label="Controls panel">
-              {/* ControlPanel - populated in Story TSR-1.2 */}
+              <ControlPanelWrapper
+                totalCount={obituaries.length}
+                variant="sidebar"
+              />
             </aside>
           </div>
         </main>
