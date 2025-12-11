@@ -609,3 +609,12 @@ span a,
 .animate-collapsible-up {
   animation: collapsible-up 0.2s ease-out;
 }
+
+/* ============================================
+   Safe Area Padding (Story TSR-1.3)
+   ============================================ */
+
+/* Safe area padding for bottom sheet on notched devices (iPhone X+) */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}

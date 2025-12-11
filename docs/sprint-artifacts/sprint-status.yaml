@@ -106,7 +106,7 @@ development_status:
   epic-tsr-1: contexted
   tsr-1-1-css-grid-page-layout: done
   tsr-1-2-control-panel-shell: done
-  tsr-1-3-responsive-control-surfaces: backlog
+  tsr-1-3-responsive-control-surfaces: done
   epic-tsr-1-retrospective: optional
 
   # Epic TSR-2: Y-Axis Log Scale

@@ -96,6 +96,34 @@ vi.mock('@/components/seo/json-ld', () => ({
   },
 }))
 
+// Mock ControlPanelWrapper to avoid useMediaQuery/matchMedia issues
+vi.mock('@/components/controls', () => ({
+  ControlPanelWrapper: function MockControlPanelWrapper({
+    totalCount,
+    variant,
+  }: {
+    totalCount: number
+    variant?: string
+  }) {
+    return React.createElement(
+      'div',
+      { 'data-testid': 'control-panel-wrapper', 'data-variant': variant, 'data-count': totalCount },
+      'ControlPanelWrapper'
+    )
+  },
+  ControlSheet: function MockControlSheet({
+    totalCount,
+  }: {
+    totalCount: number
+  }) {
+    return React.createElement(
+      'div',
+      { 'data-testid': 'control-sheet', 'data-count': totalCount },
+      'ControlSheet'
+    )
+  },
+}))
+
 // Import after all mocks
 import Home from '@/app/page'
 

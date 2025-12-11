@@ -7,7 +7,7 @@ import { homepageMetadata } from "@/lib/utils/seo";
 import { getObituaries } from "@/lib/sanity/queries";
 import { HomeClient } from "./home-client";
 import { MobileTimeline } from "@/components/mobile/mobile-timeline";
-import { ControlPanelWrapper } from "@/components/controls";
+import { ControlPanelWrapper, ControlSheet } from "@/components/controls";
 
 export const metadata = homepageMetadata;
 
@@ -42,6 +42,9 @@ export default async function Home() {
             </Suspense>
           </div>
         </main>
+
+        {/* Control sheet for tablet/mobile - renders FAB + sheet */}
+        <ControlSheet totalCount={obituaries.length} />
       </div>
 
       {/* Desktop (>=1024px): New grid layout */}
