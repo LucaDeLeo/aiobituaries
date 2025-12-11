@@ -1,10 +1,12 @@
 'use client'
 
 import type { Category } from '@/types/obituary'
+import type { MetricType } from '@/types/metrics'
 import { CollapsibleSection } from './collapsible-section'
 import { cn } from '@/lib/utils'
 
-export type MetricType = 'compute' | 'mmlu' | 'eci'
+// Re-export for consumers that import from control-panel
+export type { MetricType }
 
 export interface DisplayOptions {
   showTrendAnnotations: boolean
