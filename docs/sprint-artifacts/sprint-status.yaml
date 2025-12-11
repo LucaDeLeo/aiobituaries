@@ -114,7 +114,7 @@ development_status:
   tsr-2-1-scale-utilities: done
   tsr-2-2-ai-metrics-helpers: done
   tsr-2-3-scatter-plot-y-axis: done
-  tsr-2-4-y-axis-labels-grid: backlog
+  tsr-2-4-y-axis-labels-grid: done
   epic-tsr-2-retrospective: optional
 
   # Epic TSR-3: Control Panel Implementation

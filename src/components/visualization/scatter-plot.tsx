@@ -12,8 +12,8 @@ import {
 import { ParentSize } from '@visx/responsive'
 import { cn } from '@/lib/utils'
 import { scaleTime } from '@visx/scale'
-import { AxisBottom } from '@visx/axis'
-import { GridColumns } from '@visx/grid'
+import { AxisBottom, AxisLeft } from '@visx/axis'
+import { GridColumns, GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
 import { timeFormat } from 'd3-time-format'
 import type { ObituarySummary, Category } from '@/types/obituary'
@@ -37,7 +37,12 @@ import {
 import { useRovingFocus } from '@/lib/hooks/use-roving-focus'
 import { BackgroundChart } from './background-chart'
 import { allMetrics, trainingComputeFrontier, getActualFlopAtDate, getUnifiedDomain } from '@/data/ai-metrics'
-import { createLogYScale, type LogScale } from '@/lib/utils/scales'
+import {
+  createLogYScale,
+  type LogScale,
+  formatFlopTick,
+  getVisibleTickValues,
+} from '@/lib/utils/scales'
 import type { MetricType } from '@/types/metrics'
 
 export interface ScatterPlotProps {
@@ -258,6 +263,12 @@ export function ScatterPlotInner({
     const domain = getUnifiedDomain(enabledMetrics, dateRange[0], dateRange[1])
     return createLogYScale(innerHeight, domain)
   }, [innerHeight, enabledMetrics, dateRange])
+
+  // Compute visible tick values for Y-axis (only ticks within domain)
+  const visibleTickValues = useMemo(() => {
+    const domain = yScale.domain() as [number, number]
+    return getVisibleTickValues(domain)
+  }, [yScale])
 
   // Memoize point positions for performance (AC-6.8.5)
   // Y position is based on training compute FLOP at the obituary date + log-space jitter
@@ -873,7 +884,7 @@ export function ScatterPlotInner({
         <rect width={width} height={height} fill="var(--bg-secondary)" />
 
         <Group left={MARGIN.left} top={MARGIN.top}>
-          {/* Grid lines at year intervals */}
+          {/* Vertical grid lines at year intervals */}
           <GridColumns
             scale={xScale}
             height={innerHeight}
@@ -882,6 +893,17 @@ export function ScatterPlotInner({
             strokeDasharray="2,2"
           />
 
+          {/* Horizontal grid lines at FLOP tick values - renders behind data */}
+          <g data-testid="y-grid">
+            <GridRows
+              scale={yScale}
+              width={innerWidth}
+              tickValues={visibleTickValues}
+              stroke="var(--border)"
+              strokeOpacity={0.3}
+            />
+          </g>
+
           {/* Background metric lines showing AI progress */}
           <BackgroundChart
             metrics={allMetrics}
@@ -889,6 +911,25 @@ export function ScatterPlotInner({
             yScale={yScale}
             innerHeight={innerHeight}
           />
+
+          {/* Y-axis (FLOP scale) */}
+          <g data-testid="y-axis">
+            <AxisLeft
+              scale={yScale}
+              tickValues={visibleTickValues}
+              tickFormat={(value) => formatFlopTick(value as number)}
+              stroke="var(--border)"
+              tickStroke="var(--border)"
+              tickLabelProps={() => ({
+                fill: 'var(--text-secondary)',
+                fontSize: 11,
+                fontFamily: 'var(--font-mono, monospace)',
+                textAnchor: 'end' as const,
+                dx: -8,
+                dy: 4,
+              })}
+            />
+          </g>
 
           {/* X-axis (time) with dynamic tick granularity */}
           <AxisBottom
@@ -910,6 +951,7 @@ export function ScatterPlotInner({
 
           {/* Panning and zooming content group - apply both translateX and scale transforms */}
           <motion.g
+            data-testid="pan-zoom-group"
             style={{
               x: springX,
               scale: springScale,
