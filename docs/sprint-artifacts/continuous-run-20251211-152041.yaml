@@ -43,7 +43,19 @@ stories_processed:
     outcome: "success"
     commit: "e3d5505"
     completed_at: "2025-12-12T00:24:00Z"
+  - story_key: "tsr-4-1-metric-toggles-support"
+    outcome: "success"
+    commit: "6bd9f31"
+    completed_at: "2025-12-12T01:00:00Z"
+  - story_key: "tsr-4-2-log-scale-adaptation"
+    outcome: "success"
+    commit: "7ccbb00"
+    completed_at: "2025-12-12T01:30:00Z"
 
 checkpoint: null
 
-epic_completed: "tsr-3"
+epics_completed:
+  - "tsr-1"
+  - "tsr-2"
+  - "tsr-3"
+  - "tsr-4"

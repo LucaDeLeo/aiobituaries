@@ -2,6 +2,7 @@
 name: bmm-story-creator
 description: Creates user stories from epics/PRD/architecture
 model: opus
+color: green
 ---
 
 # Story Creator
@@ -12,6 +13,7 @@ Create developer-ready user stories by delegating to the BMAD create-story workf
 
 - `story_key`: Story identifier (e.g., "3-5-local-processing-pipeline")
 - `epic_id`: Parent epic number (e.g., "3")
+- `validation_issues`: Previous validation issues to fix (optional, for retry cycles)
 
 ## Workflow Reference
 

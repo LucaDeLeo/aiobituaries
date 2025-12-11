@@ -2,6 +2,7 @@
 name: bmm-story-reviewer
 description: Performs senior developer code review on completed stories
 model: opus
+color: magenta
 ---
 
 # Story Reviewer

@@ -133,7 +133,7 @@ describe('ControlSheet mobile mode (side="bottom")', () => {
     })
   })
 
-  it('renders sheet with rounded-t-xl for rounded top corners', async () => {
+  it('renders sheet with rounded-t-2xl for rounded top corners', async () => {
     const { ControlSheet } = await import('@/components/controls')
     render(<ControlSheet totalCount={100} />)
 
@@ -142,11 +142,12 @@ describe('ControlSheet mobile mode (side="bottom")', () => {
 
     await waitFor(() => {
       const sheetContent = document.querySelector('[data-slot="sheet-content"]')
-      expect(sheetContent?.className).toContain('rounded-t-xl')
+      // Story TSR-5-1: Enhanced rounded corners with 2xl
+      expect(sheetContent?.className).toContain('rounded-t-2xl')
     })
   })
 
-  it('renders sheet with pb-safe for safe area padding', async () => {
+  it('renders sheet with safe area bottom padding for notched devices', async () => {
     const { ControlSheet } = await import('@/components/controls')
     render(<ControlSheet totalCount={100} />)
 
@@ -155,7 +156,8 @@ describe('ControlSheet mobile mode (side="bottom")', () => {
 
     await waitFor(() => {
       const sheetContent = document.querySelector('[data-slot="sheet-content"]')
-      expect(sheetContent?.className).toContain('pb-safe')
+      // Story TSR-5-1: Uses CSS env() for safe area with 16px fallback
+      expect(sheetContent?.className).toContain('pb-[env(safe-area-inset-bottom,16px)]')
     })
   })
 
@@ -302,7 +304,7 @@ describe('ControlSheet accessibility', () => {
     mockIsMobile = false
   })
 
-  it('has sr-only on SheetTitle for screen readers', async () => {
+  it('has sr-only on SheetHeader for screen readers', async () => {
     const { ControlSheet } = await import('@/components/controls')
     render(<ControlSheet totalCount={100} />)
 
@@ -311,7 +313,8 @@ describe('ControlSheet accessibility', () => {
 
     await waitFor(() => {
       const title = screen.getByText('Visualization Controls')
-      expect(title.className).toContain('sr-only')
+      // SheetHeader (parent) has sr-only, not the title itself
+      expect(title.parentElement?.className).toContain('sr-only')
     })
   })
 

@@ -25,10 +25,16 @@ export interface ControlSheetProps {
  * Responsive control sheet for tablet and mobile.
  *
  * - Tablet (768-1023px): Sheet from right, 320px wide
- * - Mobile (<768px): Sheet from bottom, 80vh max height
+ * - Mobile (<768px): Sheet from bottom, 80vh max height with enhanced UX
  *
  * Uses SINGLE Sheet with dynamic `side` prop based on viewport.
  * FAB is positioned outside Sheet to avoid dual-trigger issues.
+ *
+ * Mobile enhancements (Story TSR-5-1):
+ * - Larger drag handle with 44px+ tap target for accessibility
+ * - Safe area bottom padding for notched devices (iPhone X+)
+ * - Scrollable content area with overscroll containment
+ * - Rounded top corners for polished appearance
  *
  * IMPORTANT: Do NOT use two Sheet instances with shared state.
  * Sheet portals render to document.body - both would animate when opened.
@@ -55,30 +61,40 @@ export function ControlSheet({ totalCount, open, onOpenChange }: ControlSheetPro
           side={sheetSide}
           className={cn(
             'p-0 flex flex-col',
-            isMobile
-              ? 'h-[80vh] max-h-[80vh] rounded-t-xl pb-safe'
-              : 'w-[320px]'
+            isMobile && [
+              'h-[80vh] max-h-[80vh]',
+              'rounded-t-2xl', // Polished rounded corners
+              'pb-[env(safe-area-inset-bottom,16px)]', // Safe area for notched devices
+            ],
+            !isMobile && 'w-[320px]'
           )}
         >
-          {/* SheetHeader visible, only SheetTitle/Description are sr-only for a11y */}
-          <SheetHeader className="p-4 pb-0">
-            <SheetTitle className="sr-only">Visualization Controls</SheetTitle>
-            <SheetDescription className="sr-only">
+          {/* SheetHeader - sr-only for a11y, not visually rendered */}
+          <SheetHeader className="sr-only">
+            <SheetTitle>Visualization Controls</SheetTitle>
+            <SheetDescription>
               Filter and configure visualization options
             </SheetDescription>
           </SheetHeader>
 
-          {/* Drag handle indicator - mobile only */}
+          {/* Enhanced drag handle - mobile only */}
+          {/* 44px+ tap target area with visual handle centered inside */}
           {isMobile && (
-            <div className="flex justify-center pt-1 pb-2">
+            <div
+              className="flex justify-center items-center min-h-[44px] py-2 cursor-grab active:cursor-grabbing"
+              aria-hidden="true"
+            >
               <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" />
             </div>
           )}
 
-          <ControlPanelWrapper
-            totalCount={totalCount}
-            variant={panelVariant}
-          />
+          {/* Scrollable content area with overscroll containment */}
+          <div className="flex-1 overflow-y-auto overscroll-contain">
+            <ControlPanelWrapper
+              totalCount={totalCount}
+              variant={panelVariant}
+            />
+          </div>
         </SheetContent>
       </Sheet>
     </>

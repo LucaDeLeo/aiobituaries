@@ -42,7 +42,8 @@ All agents invoked via Task tool with appropriate `subagent_type`.
 
 | Agent | Purpose | Key Inputs | Returns (JSON) |
 |-------|---------|------------|----------------|
-| bmm-story-creator | Create story with context | story_key, epic_id | `{story_file_path, title, ac_count, status}` |
+| bmm-story-creator | Create story with context | story_key, epic_id, validation_issues? | `{story_file_path, title, ac_count, status}` |
+| bmm-story-validator | Validate and improve story | story_key, story_file_path | `{validation_result, issues_found, issues_fixed, status}` |
 | bmm-story-implementer | Write code + tests | story_key, story_file_path, feedback? | `{files_modified, files_created, test_files}` |
 | bmm-story-reviewer | Code review | story_key, story_file_path | `{outcome, issues, summary}` |
 
@@ -52,9 +53,19 @@ All agents invoked via Task tool with appropriate `subagent_type`.
 - Stories: `docs/sprint-artifacts/stories/{story_key}.md`
 - Tracking: `docs/sprint-artifacts/continuous-run-{timestamp}.yaml`
 
-## Validation Heuristics
+## Story Validation Heuristics
 
-When a reviewer returns issues:
+When the validator returns issues after story creation:
+
+- **No issues / low only** → Proceed to implementation
+- **Medium or higher** → Call bmm-story-creator to fix specific issues, then revalidate (max 3 cycles)
+- **Repeated same failure** → Likely systemic, halt with diagnosis
+
+**Critical:** ALL validation issues must be resolved before proceeding to implementation.
+
+## Code Review Heuristics
+
+When a reviewer returns issues after implementation:
 
 - **No issues / low only** → Proceed (APPROVED)
 - **Medium only** → Auto-fix once, proceed (APPROVED_WITH_IMPROVEMENTS)
@@ -82,9 +93,13 @@ Sort: ready-for-dev > in-progress > review > drafted > backlog
 
 For each story, extract epic_id from story_key (e.g., "3-5-foo" → epic "3").
 
-**Story Creation:** If story status is "backlog" or "drafted":
-1. → bmm-story-creator | Create story with embedded context
-2. Update sprint-status: {story_key} → "ready-for-dev"
+**Story Creation + Validation Loop** (max 3 cycles): If story status is "backlog" or "drafted":
+1. → bmm-story-creator | Create story with embedded context (or fix issues if retry)
+2. → bmm-story-validator | Validate story quality
+3. Apply story validation heuristics:
+   - If no issues or low only → break loop, proceed
+   - If medium or higher → pass issues to bmm-story-creator, loop back to step 1
+4. Update sprint-status: {story_key} → "ready-for-dev"
 
 **Implementation + Review Loop** (max 3 cycles):
 1. → bmm-story-implementer | Implement (pass feedback if retry)
@@ -135,7 +150,7 @@ Save after each phase to tracking file:
 ```yaml
 checkpoint:
   story_key: "3-5-local-processing"
-  phase: "create"  # create | implement | verify | review
+  phase: "create"  # create | validate | implement | verify | review
   saved_at: "2025-12-06T10:30:00Z"
   data:
     story_file_path: "..."
@@ -153,7 +168,14 @@ Found 2 pending stories:
 
 Story 1/2: 3-5-local-processing
   → bmm-story-creator | Create story with context for 3-5
-    Result: 3-5-local-processing.md, 4 ACs, status: ready-for-dev
+    Result: 3-5-local-processing.md, 4 ACs
+  → bmm-story-validator | Validate story (cycle 1)
+    Result: 2 medium issues (missing arch constraints, wrong lib version)
+  → bmm-story-creator | Fix validation issues
+    Result: updated story with fixes
+  → bmm-story-validator | Validate story (cycle 2)
+    Result: PASSED, no medium+ issues
+  Status: 3-5-local-processing → ready-for-dev
 
   → bmm-story-implementer | Implement (cycle 1)
   Verification: typecheck OK, tests OK, lint OK

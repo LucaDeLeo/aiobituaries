@@ -112,7 +112,7 @@ development_status:
   # Epic TSR-2: Y-Axis Log Scale
   epic-tsr-2: contexted
   tsr-2-1-scale-utilities: done
-  tsr-2-2-ai-metrics-helpers: done
+  tsr-2-2-ai-metrics-helpers: done  # Completed in previous session
   tsr-2-3-scatter-plot-y-axis: done
   tsr-2-4-y-axis-labels-grid: done
   epic-tsr-2-retrospective: optional
@@ -134,7 +134,7 @@ development_status:
 
   # Epic TSR-5: Polish & Mobile
   epic-tsr-5: contexted
-  tsr-5-1-mobile-bottom-sheet: backlog
+  tsr-5-1-mobile-bottom-sheet: review
   tsr-5-2-performance-optimizations: backlog
   tsr-5-3-tooltip-enhancement: backlog
   tsr-5-4-zoom-controls-position: backlog

@@ -59,11 +59,12 @@ describe('ControlTrigger FAB styling', () => {
     expect(button.className).toContain('fixed')
   })
 
-  it('is positioned in bottom-right corner', async () => {
+  it('is positioned in bottom-right corner with safe area support', async () => {
     const { ControlTrigger } = await import('@/components/controls')
     render(<ControlTrigger />)
     const button = screen.getByRole('button')
-    expect(button.className).toContain('bottom-6')
+    // Story TSR-5-1: Uses safe area calc for bottom position on notched devices
+    expect(button.className).toContain('bottom-[max(1.5rem,calc(env(safe-area-inset-bottom)+0.5rem))]')
     expect(button.className).toContain('right-6')
   })
 

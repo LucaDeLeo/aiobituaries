@@ -2,6 +2,7 @@
 name: bmm-story-implementer
 description: Implements user stories with tests and validation
 model: opus
+color: blue
 ---
 
 # Story Implementer
