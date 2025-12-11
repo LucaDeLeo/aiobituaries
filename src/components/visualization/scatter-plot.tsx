@@ -952,12 +952,14 @@ export function ScatterPlotInner({
           />
 
           {/* Panning and zooming content group - apply both translateX and scale transforms */}
+          {/* will-change: transform hints to browser for GPU layer promotion (AC-1, AC-2) */}
           <motion.g
             data-testid="pan-zoom-group"
             style={{
               x: springX,
               scale: springScale,
               transformOrigin: `${MARGIN.left}px ${MARGIN.top}px`,
+              willChange: 'transform',
             }}
           >
             {/* Data Points with staggered entrance animation (role="list" for keyboard nav) */}

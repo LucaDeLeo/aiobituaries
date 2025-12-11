@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, memo } from 'react'
 import { LinePath, AreaClosed } from '@visx/shape'
 import { curveMonotoneX } from '@visx/curve'
 import { scaleLinear } from '@visx/scale'
@@ -26,12 +26,55 @@ interface TransformedDataPoint {
 }
 
 /**
+ * Custom comparison function for React.memo to prevent unnecessary re-renders.
+ * BackgroundChart only needs to re-render when:
+ * - Metrics data changes (new data loaded)
+ * - Enabled metrics toggle (show/hide lines)
+ * - Scale domains change (date range or metric range)
+ * - Chart dimensions change
+ *
+ * Does NOT need to re-render during pan/zoom since lines transform with CSS.
+ */
+function arePropsEqual(
+  prev: BackgroundChartProps,
+  next: BackgroundChartProps
+): boolean {
+  // Quick dimension check
+  if (prev.innerHeight !== next.innerHeight) return false
+
+  // Enabled metrics array comparison
+  if (prev.enabledMetrics.length !== next.enabledMetrics.length) return false
+  if (!prev.enabledMetrics.every((m, i) => m === next.enabledMetrics[i])) return false
+
+  // Scale domain comparison (not reference equality)
+  // X-scale domain is Date objects - compare timestamps
+  const prevXDomain = prev.xScale.domain()
+  const nextXDomain = next.xScale.domain()
+  if (prevXDomain[0].getTime() !== nextXDomain[0].getTime()) return false
+  if (prevXDomain[1].getTime() !== nextXDomain[1].getTime()) return false
+
+  // Y-scale domain comparison
+  const prevYDomain = prev.yScale.domain()
+  const nextYDomain = next.yScale.domain()
+  if (prevYDomain[0] !== nextYDomain[0]) return false
+  if (prevYDomain[1] !== nextYDomain[1]) return false
+
+  // Metrics array reference check (data rarely changes)
+  // Only compare references since AIMetricSeries[] is static data
+  if (prev.metrics !== next.metrics) return false
+
+  return true
+}
+
+/**
  * Renders background line charts showing AI progress metrics.
  * Training Compute uses actual FLOP values on the log Y-scale.
  * MMLU and ECI render as normalized overlays with reduced opacity.
  * Supports smooth fade transitions when metrics are toggled on/off.
+ *
+ * Memoized to prevent re-renders during pan/zoom operations.
  */
-export function BackgroundChart({
+function BackgroundChartComponent({
   metrics,
   enabledMetrics,
   xScale,
@@ -169,6 +212,13 @@ export function BackgroundChart({
     </g>
   )
 }
+
+/**
+ * Memoized BackgroundChart component.
+ * Prevents re-renders during pan/zoom when only viewState changes.
+ * Only re-renders when scale domains, enabled metrics, or dimensions change.
+ */
+export const BackgroundChart = memo(BackgroundChartComponent, arePropsEqual)
 
 /**
  * Legend for background metrics

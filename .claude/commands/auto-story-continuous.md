@@ -1,3 +1,4 @@
+
 ---
 description: 'Continuous autonomous story execution with checkpoint/resume support'
 ---
@@ -57,8 +58,11 @@ All agents invoked via Task tool with appropriate `subagent_type`.
 
 When the validator returns issues after story creation:
 
-- **No issues / low only** → Proceed to implementation
-- **Medium or higher** → Call bmm-story-creator to fix specific issues, then revalidate (max 3 cycles)
+**ALWAYS fix ALL issues**, regardless of severity. Then:
+
+- **No issues** → Proceed to implementation
+- **Low issues only** → Fix issues, then **proceed without revalidation** (minor cosmetic fixes)
+- **Medium or higher** → Fix issues, then **revalidate** (max 3 cycles) to confirm substantive fixes
 - **Repeated same failure** → Likely systemic, halt with diagnosis
 
 **Critical:** ALL validation issues must be resolved before proceeding to implementation.
@@ -67,9 +71,11 @@ When the validator returns issues after story creation:
 
 When a reviewer returns issues after implementation:
 
-- **No issues / low only** → Proceed (APPROVED)
-- **Medium only** → Auto-fix once, proceed (APPROVED_WITH_IMPROVEMENTS)
-- **High/critical** → Fix with implementer, re-review (max 3 cycles)
+**ALWAYS fix ALL issues**, regardless of severity. Then:
+
+- **No issues** → Proceed (APPROVED)
+- **Low issues only** → Fix issues, then **proceed without re-review** (minor cosmetic fixes)
+- **Medium or higher** → Fix issues, then **re-review** (max 3 cycles) to confirm substantive fixes
 - **Repeated same failure** → Likely systemic, halt with diagnosis
 
 ## Workflow

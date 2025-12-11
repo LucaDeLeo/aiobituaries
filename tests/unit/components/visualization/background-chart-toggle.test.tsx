@@ -14,7 +14,8 @@ describe('BackgroundChart module exports', () => {
   it('exports BackgroundChart component', async () => {
     const chartModule = await import('@/components/visualization/background-chart')
     expect(chartModule.BackgroundChart).toBeDefined()
-    expect(typeof chartModule.BackgroundChart).toBe('function')
+    // React.memo wraps components - can be function or object (memoized component)
+    expect(['function', 'object'].includes(typeof chartModule.BackgroundChart)).toBe(true)
   })
 
   it('exports BackgroundChartLegend component', async () => {

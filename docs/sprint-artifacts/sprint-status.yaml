@@ -134,8 +134,8 @@ development_status:
 
   # Epic TSR-5: Polish & Mobile
   epic-tsr-5: contexted
-  tsr-5-1-mobile-bottom-sheet: review
-  tsr-5-2-performance-optimizations: backlog
+  tsr-5-1-mobile-bottom-sheet: done
+  tsr-5-2-performance-optimizations: review
   tsr-5-3-tooltip-enhancement: backlog
   tsr-5-4-zoom-controls-position: backlog
   epic-tsr-5-retrospective: optional
