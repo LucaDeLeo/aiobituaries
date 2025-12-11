@@ -5,6 +5,7 @@ import type { MetricType } from '@/types/metrics'
 import { CollapsibleSection } from './collapsible-section'
 import { MetricsToggle } from './metrics-toggle'
 import { DateRangeSlider } from './date-range-slider'
+import { CategoryCheckboxes } from './category-checkboxes'
 import { cn } from '@/lib/utils'
 
 // Re-export for consumers that import from control-panel
@@ -47,6 +48,8 @@ const variantStyles = {
 export function ControlPanel({
   enabledMetrics,
   onMetricsChange,
+  selectedCategories,
+  onCategoriesChange,
   dateRange,
   onDateRangeChange,
   stats,
@@ -79,10 +82,10 @@ export function ControlPanel({
         </CollapsibleSection>
 
         <CollapsibleSection title="Categories" defaultOpen>
-          {/* TODO: CategoryCheckboxes - Story 3.4 */}
-          <p className="text-sm text-muted-foreground">
-            Filter by claim category
-          </p>
+          <CategoryCheckboxes
+            selectedCategories={selectedCategories}
+            onCategoriesChange={onCategoriesChange}
+          />
         </CollapsibleSection>
 
         <CollapsibleSection title="Display Options" defaultOpen={false}>
