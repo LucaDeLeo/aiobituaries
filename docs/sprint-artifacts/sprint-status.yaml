@@ -121,7 +121,7 @@ development_status:
   epic-tsr-3: contexted
   tsr-3-1-url-state-hook: done
   tsr-3-2-metrics-toggle: done
-  tsr-3-3-date-range-slider: backlog
+  tsr-3-3-date-range-slider: done
   tsr-3-4-category-checkboxes: backlog
   tsr-3-5-assemble-control-panel: backlog
   epic-tsr-3-retrospective: optional

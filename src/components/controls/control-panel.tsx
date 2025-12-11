@@ -4,6 +4,7 @@ import type { Category } from '@/types/obituary'
 import type { MetricType } from '@/types/metrics'
 import { CollapsibleSection } from './collapsible-section'
 import { MetricsToggle } from './metrics-toggle'
+import { DateRangeSlider } from './date-range-slider'
 import { cn } from '@/lib/utils'
 
 // Re-export for consumers that import from control-panel
@@ -46,6 +47,8 @@ const variantStyles = {
 export function ControlPanel({
   enabledMetrics,
   onMetricsChange,
+  dateRange,
+  onDateRangeChange,
   stats,
   variant = 'sidebar',
 }: ControlPanelProps) {
@@ -69,10 +72,10 @@ export function ControlPanel({
         </CollapsibleSection>
 
         <CollapsibleSection title="Time Range" defaultOpen>
-          {/* TODO: DateRangeSlider - Story 3.3 */}
-          <p className="text-sm text-muted-foreground">
-            Filter obituaries by date range
-          </p>
+          <DateRangeSlider
+            value={dateRange}
+            onValueChange={onDateRangeChange}
+          />
         </CollapsibleSection>
 
         <CollapsibleSection title="Categories" defaultOpen>

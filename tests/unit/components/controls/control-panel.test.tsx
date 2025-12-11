@@ -114,10 +114,12 @@ describe('ControlPanel placeholder content', () => {
     expect(screen.getByText('Epoch Capability Index')).toBeInTheDocument()
   })
 
-  it('has placeholder text for Time Range', async () => {
+  it('renders DateRangeSlider for Time Range', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
-    expect(screen.getByText(/Filter obituaries by date range/)).toBeInTheDocument()
+    // DateRangeSlider is now rendered instead of placeholder text
+    expect(screen.getByRole('slider', { name: /start year/i })).toBeInTheDocument()
+    expect(screen.getByRole('slider', { name: /end year/i })).toBeInTheDocument()
   })
 
   it('has placeholder text for Categories', async () => {
