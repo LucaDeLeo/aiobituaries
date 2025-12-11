@@ -10,6 +10,7 @@ import {
   useReducedMotion,
 } from 'motion/react'
 import { ParentSize } from '@visx/responsive'
+import { cn } from '@/lib/utils'
 import { scaleTime, scaleLinear } from '@visx/scale'
 import { AxisBottom } from '@visx/axis'
 import { GridColumns } from '@visx/grid'
@@ -42,6 +43,8 @@ export interface ScatterPlotProps {
   height?: number
   /** Active category filters - empty array shows all (no filtering) */
   activeCategories?: Category[]
+  /** Fill parent container height (for grid layout). Parent must have explicit height. */
+  fillContainer?: boolean
 }
 
 const MARGIN = { top: 20, right: 20, bottom: 40, left: 20 }
@@ -1004,12 +1007,15 @@ export function ScatterPlotInner({
   )
 }
 
-export function ScatterPlot({ data, height, activeCategories = [] }: ScatterPlotProps) {
+export function ScatterPlot({ data, height, activeCategories = [], fillContainer }: ScatterPlotProps) {
   return (
     <div
-      className="w-full min-h-[300px] md:min-h-[400px]"
+      className={cn(
+        "w-full",
+        fillContainer ? "h-full" : "min-h-[300px] md:min-h-[400px]"
+      )}
       data-testid="scatter-plot-container"
-      style={{ height: height || 'auto' }}
+      style={fillContainer ? undefined : { height: height || 'auto' }}
     >
       <ParentSize>
         {({ width, height: parentHeight }) => (

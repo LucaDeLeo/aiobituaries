@@ -98,3 +98,44 @@ development_status:
   6-7-wcag-compliance-audit: done
   6-8-performance-optimization: done
   epic-6-retrospective: optional
+
+  # Timeline Visualization Redesign (Feature)
+  # Source: docs/sprint-artifacts/epics-timeline-redesign.md
+
+  # Epic TSR-1: Layout Foundation
+  epic-tsr-1: contexted
+  tsr-1-1-css-grid-page-layout: done
+  tsr-1-2-control-panel-shell: backlog
+  tsr-1-3-responsive-control-surfaces: backlog
+  epic-tsr-1-retrospective: optional
+
+  # Epic TSR-2: Y-Axis Log Scale
+  epic-tsr-2: contexted
+  tsr-2-1-scale-utilities: backlog
+  tsr-2-2-ai-metrics-helpers: backlog
+  tsr-2-3-scatter-plot-y-axis: backlog
+  tsr-2-4-y-axis-labels-grid: backlog
+  epic-tsr-2-retrospective: optional
+
+  # Epic TSR-3: Control Panel Implementation
+  epic-tsr-3: contexted
+  tsr-3-1-url-state-hook: backlog
+  tsr-3-2-metrics-toggle: backlog
+  tsr-3-3-date-range-slider: backlog
+  tsr-3-4-category-checkboxes: backlog
+  tsr-3-5-assemble-control-panel: backlog
+  epic-tsr-3-retrospective: optional
+
+  # Epic TSR-4: Background Chart Updates
+  epic-tsr-4: contexted
+  tsr-4-1-metric-toggles-support: backlog
+  tsr-4-2-log-scale-adaptation: backlog
+  epic-tsr-4-retrospective: optional
+
+  # Epic TSR-5: Polish & Mobile
+  epic-tsr-5: contexted
+  tsr-5-1-mobile-bottom-sheet: backlog
+  tsr-5-2-performance-optimizations: backlog
+  tsr-5-3-tooltip-enhancement: backlog
+  tsr-5-4-zoom-controls-position: backlog
+  epic-tsr-5-retrospective: optional

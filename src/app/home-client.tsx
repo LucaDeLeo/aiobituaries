@@ -32,13 +32,15 @@ import { useFilters } from '@/lib/hooks/use-filters'
 export interface HomeClientProps {
   /** Obituary data from server-side fetch */
   obituaries: ObituarySummary[]
+  /** Layout variant: 'default' for existing, 'hero' for new grid layout */
+  variant?: 'default' | 'hero'
 }
 
 /**
  * Client-side portion of the homepage.
  * Manages filter state and passes it to visualization components.
  */
-export function HomeClient({ obituaries }: HomeClientProps) {
+export function HomeClient({ obituaries, variant = 'default' }: HomeClientProps) {
   const { categories, toggleCategory, clearFilters } = useFilters()
   const { mode, setMode, isHydrated } = useViewModeStorage()
   const liveRegion = useLiveRegionOptional()
@@ -61,6 +63,27 @@ export function HomeClient({ obituaries }: HomeClientProps) {
     )
   }
 
+  // Hero variant: Full-height chart only (controls in sidebar)
+  if (variant === 'hero') {
+    return (
+      <div className="h-full">
+        {!isHydrated || mode === 'visualization' ? (
+          <ScatterPlot
+            data={obituaries}
+            activeCategories={categories}
+            fillContainer
+          />
+        ) : (
+          <ObituaryTable
+            obituaries={obituaries}
+            activeCategories={categories}
+          />
+        )}
+      </div>
+    )
+  }
+
+  // Default variant: Existing layout
   return (
     <>
       {/* Timeline/Table Visualization */}

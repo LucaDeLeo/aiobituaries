@@ -1,0 +1,17 @@
+# Continuous Run Tracking File
+# Started: 2025-12-11T15:20:41Z
+# Epic Source: docs/sprint-artifacts/epics-timeline-redesign.md
+
+started_at: "2025-12-11T15:20:41Z"
+epic_source: "docs/sprint-artifacts/epics-timeline-redesign.md"
+status: "in-progress"
+
+stories_processed: []
+
+checkpoint:
+  story_key: "tsr-1-1-css-grid-page-layout"
+  phase: "implement"
+  saved_at: "2025-12-11T15:21:00Z"
+  data:
+    story_file_path: "/Users/luca/dev/aiobituaries/docs/sprint-artifacts/stories/tsr-1-1-css-grid-page-layout.md"
+    review_cycles: 0
