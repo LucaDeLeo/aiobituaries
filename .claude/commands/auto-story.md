@@ -1,10 +1,10 @@
 ---
-description: 'Automated story lifecycle: create, context, validate, implement, and review one story end-to-end automatically'
+description: 'Automated story lifecycle: create, implement, and review one story end-to-end automatically'
 ---
 
 # auto-story
 
-You are orchestrating the complete story lifecycle from creation through code review. This workflow executes 5 specialized sub-agents in sequence, automatically proceeding through phases unless issues require user intervention.
+You are orchestrating the complete story lifecycle from creation through code review. This workflow executes 3 specialized sub-agents in sequence, automatically proceeding through phases unless issues require user intervention.
 
 ## Workflow Overview
 
@@ -12,40 +12,21 @@ Execute the following phases in order, continuing automatically unless issues ar
 
 ### Phase 1: Story Creation
 1. Invoke the `bmm-story-creator` sub-agent using the Task tool
-2. The sub-agent will autonomously execute the create-story workflow
-3. It will return: story key, file path, status, summary
+2. The sub-agent will execute the BMAD create-story workflow
+3. It will return: story key, file path, status, ac_count
 4. Log the story key for use in subsequent phases
 5. **Auto-proceed** to Phase 2 (no checkpoint)
 
-### Phase 2: Story Context Building
-1. Invoke the `bmm-story-context-builder` sub-agent using the Task tool
-2. The sub-agent will autonomously execute the story-context workflow
-3. It will return: context file path, artifacts gathered, validation status, warnings
-4. **Auto-proceed** to Phase 3 (no checkpoint)
-
-### Phase 3: Story Context Validation
-1. Invoke the `bmm-story-context-validator` sub-agent using the Task tool
-2. The sub-agent will autonomously validate the Story Context XML
-3. It will return: validation status (PASS/FAIL), issues found, recommendations
-4. **CONDITIONAL CHECKPOINT**:
-   - If validation FAILED with CRITICAL issues:
-     - Present the issues clearly
-     - Ask: "Validation failed with critical issues. Fix issues and retry validation, or abort? (retry/abort)"
-     - If retry: Re-invoke validator and repeat this checkpoint
-     - If abort: HALT workflow
-   - If validation PASSED or only has LOW/MEDIUM issues:
-     - **Auto-proceed** to Phase 4 (no checkpoint)
-
-### Phase 4: Story Implementation
+### Phase 2: Story Implementation
 1. Invoke the `bmm-story-implementer` sub-agent using the Task tool
-2. The sub-agent will autonomously execute the dev-story workflow
+2. The sub-agent will execute the BMAD dev-story workflow
 3. It will continuously implement until complete (no pausing)
 4. It will return: implementation summary, files changed, test results, AC status
-5. **Auto-proceed** to Phase 5 (no checkpoint)
+5. **Auto-proceed** to Phase 3 (no checkpoint)
 
-### Phase 5: Code Review
+### Phase 3: Code Review
 1. Invoke the `bmm-story-reviewer` sub-agent using the Task tool
-2. The sub-agent will autonomously execute the code-review workflow
+2. The sub-agent will execute the BMAD code-review workflow
 3. It will return: review outcome (APPROVED/APPROVED_WITH_IMPROVEMENTS/CHANGES REQUESTED/BLOCKED), issues, action items
 4. **CONDITIONAL CHECKPOINT** based on outcome:
 
@@ -56,15 +37,15 @@ Execute the following phases in order, continuing automatically unless issues ar
    **If APPROVED_WITH_IMPROVEMENTS**:
    - Present MEDIUM issues found
    - Log: "Minor improvements needed. Auto-looping back to implementation to fix MEDIUM issues."
-   - **Auto-proceed** to Phase 4 (story-implementer will detect review follow-ups and fix MEDIUM issues)
-   - After fixes, automatically return to Phase 5 for re-review
+   - **Auto-proceed** to Phase 2 (story-implementer will detect review follow-ups and fix MEDIUM issues)
+   - After fixes, automatically return to Phase 3 for re-review
    - No user intervention required
 
    **If CHANGES REQUESTED**:
    - Present action items clearly organized by severity (CRITICAL/HIGH issues found)
    - Explain that story has been cycled back to in-progress status
    - Ask: "Changes requested by code review. Loop back to implementation to address issues? (yes/no)"
-   - If yes: Return to Phase 4 (story-implementer will detect review follow-ups)
+   - If yes: Return to Phase 2 (story-implementer will detect review follow-ups)
    - If no: HALT workflow with status "Changes requested - manual intervention needed"
 
    **If BLOCKED**:
@@ -86,11 +67,10 @@ Execute the following phases in order, continuing automatically unless issues ar
 **Automatic Flow**:
 - Continue automatically through phases unless issues arise
 - Log progress as each phase completes
-- Only pause for user input when CRITICAL issues or review problems occur
-- Present summaries at natural stopping points (validation failures, review outcomes)
+- Only pause for user input when review problems occur
+- Present summaries at natural stopping points (review outcomes)
 
 **Conditional Checkpoints** (only stop when):
-- Context validation FAILS with CRITICAL issues
 - Code review returns CHANGES REQUESTED or BLOCKED
 - Any sub-agent returns an error
 
@@ -113,27 +93,23 @@ Execute the following phases in order, continuing automatically unless issues ar
 
 Each sub-agent will return structured results. Look for these key fields:
 
-**story-creator**: story_key, story_file_path, status_update, summary, ac_count, tasks_count
-**story-context-builder**: story_key, context_file_path, status_update, artifacts_count, warnings
-**story-context-validator**: story_key, overall_status, validation_score, critical_issues, recommendations
-**story-implementer**: story_key, status_update, ac_status, files_created, files_modified, test_results
-**story-reviewer**: story_key, review_outcome (APPROVED/APPROVED_WITH_IMPROVEMENTS/CHANGES REQUESTED/BLOCKED), status_update, critical_issues, high_issues, medium_issues, action_items
+**story-creator**: story_key, story_file_path, status, title, ac_count, task_count
+**story-implementer**: story_key, status_update, ac_status, files_created, files_modified, test_files
+**story-reviewer**: story_key, outcome (APPROVED/APPROVED_WITH_IMPROVEMENTS/CHANGES REQUESTED/BLOCKED), issues, summary, ac_status, task_status
 
 Parse these outputs and log progress as the workflow advances automatically.
 
 ## Workflow Success Criteria
 
 The workflow runs automatically and is successful when:
-1. Story created and drafted ✅
-2. Story context assembled and validated ✅
-3. Story implemented with all ACs satisfied ✅
-4. Code review APPROVED with no CRITICAL/HIGH issues ✅
-5. MEDIUM issues auto-fixed (if any) via automatic implementation loop ✅
-6. Story status updated to "done" in sprint-status.yaml ✅
+1. Story created with embedded context ✅
+2. Story implemented with all ACs satisfied ✅
+3. Code review APPROVED with no CRITICAL/HIGH issues ✅
+4. MEDIUM issues auto-fixed (if any) via automatic implementation loop ✅
+5. Story status updated to "done" in sprint-status.yaml ✅
 
 Present a final summary showing all phases completed successfully.
 
 **Automatic Loops**:
 - MEDIUM issues: Auto-loop to implementation, no user input needed
-- Context validation failures: Ask user retry/abort
 - CRITICAL/HIGH issues from review: Ask user to continue or abort
