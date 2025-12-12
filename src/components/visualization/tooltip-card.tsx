@@ -3,6 +3,8 @@
 import { motion, useReducedMotion } from 'motion/react'
 import { formatDate } from '@/lib/utils/date'
 import { tooltipAppear, DURATIONS } from '@/lib/utils/animation'
+import { formatFlopTick } from '@/lib/utils/scales'
+import { getActualFlopAtDate, trainingComputeFrontier } from '@/data/ai-metrics'
 import type { ObituarySummary } from '@/types/obituary'
 
 export interface TooltipCardProps {
@@ -36,7 +38,7 @@ export function TooltipCard({ obituary, x, y, containerBounds }: TooltipCardProp
 
   // Tooltip dimensions and padding
   const tooltipWidth = 280
-  const tooltipHeight = 120 // Approximate height
+  const tooltipHeight = 140 // Approximate height (increased for FLOP line)
   const padding = 12
   const dotRadius = 14 // Account for dot size when flipping to below
 
@@ -64,6 +66,10 @@ export function TooltipCard({ obituary, x, y, containerBounds }: TooltipCardProp
     obituary.claim.length > 100
       ? `${obituary.claim.slice(0, 100)}...`
       : obituary.claim
+
+  // Calculate FLOP value at obituary date
+  const flopValue = getActualFlopAtDate(trainingComputeFrontier, new Date(obituary.date))
+  const formattedFlop = formatFlopTick(flopValue)
 
   return (
     <motion.div
@@ -105,6 +111,11 @@ export function TooltipCard({ obituary, x, y, containerBounds }: TooltipCardProp
           <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] pt-2 border-t border-[var(--border)]">
             <span className="font-mono truncate max-w-[140px]">{obituary.source}</span>
             <span className="font-mono text-[var(--text-muted)]">{formatDate(obituary.date)}</span>
+          </div>
+
+          {/* AI Progress (FLOP value at date) */}
+          <div className="text-[11px] text-[var(--text-muted)] mt-2 font-mono">
+            AI Progress: {formattedFlop} FLOP
           </div>
         </div>
       </div>
