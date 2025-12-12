@@ -2,6 +2,8 @@
  * ZoomControls Component Tests
  *
  * Tests for Story 3-4: Zoom Functionality
+ * Updated for Story TSR-5-4: Zoom Controls Position
+ *
  * Tests module exports and zoom-related utilities.
  * Due to React 19 + Vitest hook resolution issues with motion/react,
  * we test exports and logic functions rather than direct component rendering.
@@ -253,5 +255,58 @@ describe('getTickCount', () => {
     const countAt400 = getTickCount(1, 400)
     const countAt800 = getTickCount(1, 800)
     expect(countAt800).toBeGreaterThanOrEqual(countAt400)
+  })
+})
+
+/**
+ * Story TSR-5-4: Zoom Controls Position
+ * Tests for responsive positioning and touch target logic
+ */
+describe('ZoomControls responsive positioning logic (TSR-5-4)', () => {
+  // Simulate breakpoint-based sizing logic as implemented in component
+  const getButtonSize = (breakpoint: 'mobile' | 'tablet' | 'desktop') => {
+    const isDesktop = breakpoint === 'desktop'
+    return isDesktop ? 'h-8 w-8' : 'h-12 w-12'
+  }
+
+  const getIconSize = (breakpoint: 'mobile' | 'tablet' | 'desktop') => {
+    const isDesktop = breakpoint === 'desktop'
+    return isDesktop ? 'h-4 w-4' : 'h-5 w-5'
+  }
+
+  const getAnimationDirection = (breakpoint: 'mobile' | 'tablet' | 'desktop') => {
+    const isDesktop = breakpoint === 'desktop'
+    return isDesktop ? -10 : 10
+  }
+
+  describe('touch target sizing (AC-3)', () => {
+    it('desktop gets 32px touch targets', () => {
+      expect(getButtonSize('desktop')).toBe('h-8 w-8')
+      expect(getIconSize('desktop')).toBe('h-4 w-4')
+    })
+
+    it('tablet gets 48px touch targets', () => {
+      expect(getButtonSize('tablet')).toBe('h-12 w-12')
+      expect(getIconSize('tablet')).toBe('h-5 w-5')
+    })
+
+    it('mobile gets 48px touch targets (WCAG 2.5.5)', () => {
+      expect(getButtonSize('mobile')).toBe('h-12 w-12')
+      expect(getIconSize('mobile')).toBe('h-5 w-5')
+    })
+  })
+
+  describe('animation direction (AC-4)', () => {
+    it('desktop animates from top (y: -10)', () => {
+      expect(getAnimationDirection('desktop')).toBe(-10)
+    })
+
+    it('tablet animates from bottom (y: 10)', () => {
+      expect(getAnimationDirection('tablet')).toBe(10)
+    })
+
+    it('mobile animates from bottom (y: 10)', () => {
+      expect(getAnimationDirection('mobile')).toBe(10)
+    })
   })
 })

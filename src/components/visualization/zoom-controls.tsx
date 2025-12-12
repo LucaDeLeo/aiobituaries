@@ -5,7 +5,11 @@
  *
  * Floating control panel for zoom in/out and reset functionality.
  * Provides visual feedback for current zoom level and disabled states at limits.
- * Touch targets adapt based on breakpoint (48px tablet, 32px desktop).
+ * Touch targets adapt based on breakpoint (48px mobile/tablet, 32px desktop).
+ *
+ * Responsive positioning:
+ * - Desktop (>=1024px): top-right of chart area, 16px offset
+ * - Mobile/Tablet (<1024px): bottom-right above FAB trigger
  */
 
 import { motion } from 'motion/react'
@@ -38,18 +42,29 @@ export function ZoomControls({
   isMaxZoom,
 }: ZoomControlsProps) {
   const breakpoint = useBreakpoint()
+  const isDesktop = breakpoint === 'desktop'
 
   // Reset is disabled when scale is approximately 1
   const isDefaultZoom = Math.abs(scale - 1) < 0.01
 
-  // Touch target size based on breakpoint (tablet: 48px, desktop: 32px)
-  const buttonSize = breakpoint === 'tablet' ? 'h-12 w-12' : 'h-8 w-8'
-  const iconSize = breakpoint === 'tablet' ? 'h-5 w-5' : 'h-4 w-4'
+  // Touch target size: mobile/tablet get 48px, desktop gets 32px (WCAG 2.5.5)
+  const buttonSize = isDesktop ? 'h-8 w-8' : 'h-12 w-12'
+  const iconSize = isDesktop ? 'h-4 w-4' : 'h-5 w-5'
 
   return (
     <motion.div
-      className="absolute bottom-4 right-4 z-20 flex items-center gap-1 rounded-lg border border-[--border] bg-[--bg-secondary]/80 p-1 backdrop-blur-md"
-      initial={{ opacity: 0, y: 10 }}
+      className={cn(
+        // Base styles
+        'absolute z-20 flex items-center gap-1 rounded-lg border border-[--border] bg-[--bg-secondary]/80 p-1 backdrop-blur-md',
+        // Horizontal position - always right
+        'right-4',
+        // Vertical position - responsive
+        // Desktop: top-right of chart area
+        'lg:top-4 lg:bottom-auto',
+        // Mobile/tablet: above FAB (56px FAB + 24px offset + 16px gap = ~96px)
+        'bottom-[calc(80px+1rem)] top-auto'
+      )}
+      initial={{ opacity: 0, y: isDesktop ? -10 : 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: 0.5 }}
       data-testid="zoom-controls"
