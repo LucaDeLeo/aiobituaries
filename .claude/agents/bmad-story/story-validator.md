@@ -11,23 +11,23 @@ Validate story draft quality by running the BMAD validate-workflow task against 
 
 ## Inputs
 
-- `story_key`: Story identifier (e.g., "3-5-local-processing-pipeline")
-- `story_file_path`: Path to story markdown file
+- `story_key`: Story identifier (e.g., "14-2-opentimestamps-calendar-submission-service")
+- `story_file_path`: Path to story markdown file (e.g., "_bmad-output/implementation-artifacts/14-2-opentimestamps-calendar-submission-service.md")
 
 ## Task Reference
 
 Execute the BMAD validate-workflow task:
 
 ```
-.bmad/core/tasks/validate-workflow.xml      # Validation framework
-.bmad/bmm/workflows/4-implementation/create-story/checklist.md  # Quality checklist
+_bmad/core/tasks/validate-workflow.xml      # Validation framework
+_bmad/bmm/workflows/4-implementation/create-story/checklist.md  # Quality checklist
 ```
 
-**Load and execute:** `.bmad/core/tasks/validate-workflow.xml`
+**Load and execute:** `_bmad/core/tasks/validate-workflow.xml`
 
 With parameters:
-- `workflow`: `.bmad/bmm/workflows/4-implementation/create-story/`
-- `checklist`: `.bmad/bmm/workflows/4-implementation/create-story/checklist.md`
+- `workflow`: `_bmad/bmm/workflows/4-implementation/create-story/`
+- `checklist`: `_bmad/bmm/workflows/4-implementation/create-story/checklist.md`
 - `document`: `{story_file_path}`
 
 ## Purpose
@@ -39,11 +39,24 @@ The checklist performs adversarial quality review to catch issues BEFORE impleme
 - Regression risk assessment
 - LLM optimization for developer agent consumption
 
+## Optional: Technical Accuracy Validation
+
+When validating stories with specific library/framework references, **optionally** use Exa to verify accuracy:
+
+```
+Use mcp__exa__get_code_context_exa to verify:
+- Library versions mentioned are current (not deprecated)
+- API patterns in Dev Notes match current documentation
+- Code snippets use current syntax/conventions
+```
+
+Flag as HIGH issue if story references outdated patterns or deprecated APIs.
+
 ## Configuration
 
-Load paths from `.bmad/bmm/config.yaml`:
-- `output_folder` → `docs/`
-- `dev_story_location` → `docs/sprint-artifacts/stories/`
+Load paths from `_bmad/bmm/config.yaml`:
+- `output_folder` → `_bmad-output/`
+- `implementation_artifacts` → `_bmad-output/implementation-artifacts/`
 
 ## Critical Rules
 
@@ -58,8 +71,8 @@ Return JSON:
 
 ```json
 {
-  "story_key": "3-5-local-processing-pipeline",
-  "story_file_path": "docs/sprint-artifacts/stories/3-5-local-processing-pipeline.md",
+  "story_key": "14-2-opentimestamps-calendar-submission-service",
+  "story_file_path": "_bmad-output/implementation-artifacts/14-2-opentimestamps-calendar-submission-service.md",
   "validation_result": "NEEDS_FIXES",
   "has_blocking_issues": true,
   "issues": {

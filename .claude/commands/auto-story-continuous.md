@@ -1,4 +1,3 @@
-
 ---
 description: 'Continuous autonomous story execution with checkpoint/resume support'
 ---
@@ -50,9 +49,11 @@ All agents invoked via Task tool with appropriate `subagent_type`.
 
 ## Paths
 
-- Sprint status: `docs/sprint-artifacts/sprint-status.yaml`
-- Stories: `docs/sprint-artifacts/stories/{story_key}.md`
-- Tracking: `docs/sprint-artifacts/continuous-run-{timestamp}.yaml`
+- Sprint status: `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- Stories: `_bmad-output/implementation-artifacts/{story_key}.md`
+- Epics: `_bmad-output/trustless-verification-epics.md`
+- Tracking: `_bmad-output/implementation-artifacts/continuous-run-{timestamp}.yaml`
+- Failure reports: `_bmad-output/implementation-artifacts/failure-report-{story_key}-{timestamp}.md`
 
 ## Story Validation Heuristics
 
@@ -134,7 +135,7 @@ Update sprint-status: {story_key} → "done"
 Clear checkpoint.
 
 **On Failure:**
-Write failure report to `docs/sprint-artifacts/failure-report-{story_key}-{timestamp}.md`:
+Write failure report to `_bmad-output/implementation-artifacts/failure-report-{story_key}-{timestamp}.md`:
 - Phase, attempts, error messages
 - Files modified before failure
 - Root cause analysis
@@ -155,11 +156,11 @@ Log: {tracking_file}
 Save after each phase to tracking file:
 ```yaml
 checkpoint:
-  story_key: "3-5-local-processing"
+  story_key: "14-2-opentimestamps-calendar-submission-service"
   phase: "create"  # create | validate | implement | verify | review
-  saved_at: "2025-12-06T10:30:00Z"
+  saved_at: "2025-12-17T10:30:00Z"
   data:
-    story_file_path: "..."
+    story_file_path: "_bmad-output/implementation-artifacts/14-2-opentimestamps-calendar-submission-service.md"
     review_cycles: 0
 ```
 
@@ -169,30 +170,30 @@ On resume: Skip completed phases, continue from checkpoint.phase.
 
 ```
 Found 2 pending stories:
-  1. 3-5-local-processing (backlog)
-  2. 3-6-depth-export (backlog)
+  1. 14-2-opentimestamps-calendar-submission-service (backlog)
+  2. 14-3-store-ots-proof-in-s3 (backlog)
 
-Story 1/2: 3-5-local-processing
-  → bmm-story-creator | Create story with context for 3-5
-    Result: 3-5-local-processing.md, 4 ACs
+Story 1/2: 14-2-opentimestamps-calendar-submission-service
+  → bmm-story-creator | Create story with context for 14-2
+    Result: 14-2-opentimestamps-calendar-submission-service.md, 4 ACs
   → bmm-story-validator | Validate story (cycle 1)
     Result: 2 medium issues (missing arch constraints, wrong lib version)
   → bmm-story-creator | Fix validation issues
     Result: updated story with fixes
   → bmm-story-validator | Validate story (cycle 2)
     Result: PASSED, no medium+ issues
-  Status: 3-5-local-processing → ready-for-dev
+  Status: 14-2-opentimestamps-calendar-submission-service → ready-for-dev
 
   → bmm-story-implementer | Implement (cycle 1)
   Verification: typecheck OK, tests OK, lint OK
   → bmm-story-reviewer | Review
     Result: APPROVED, 1 low issue
-  Status: 3-5-local-processing → done
+  Status: 14-2-opentimestamps-calendar-submission-service → done
 
-  git commit -m "[Story 3-5] Local processing pipeline..."
+  git commit -m "[Story 14-2] OpenTimestamps calendar submission service..."
   git push ✓
 
-Story 2/2: 3-6-depth-export
+Story 2/2: 14-3-store-ots-proof-in-s3
   ...
 
 COMPLETE | 2 stories | 2 commits

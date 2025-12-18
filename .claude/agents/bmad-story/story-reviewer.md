@@ -2,7 +2,7 @@
 name: bmm-story-reviewer
 description: Performs senior developer code review on completed stories
 model: opus
-color: magenta
+color: cyan
 ---
 
 # Story Reviewer
@@ -19,13 +19,13 @@ Validate story implementation by delegating to the BMAD code-review workflow.
 Execute the BMAD code-review workflow:
 
 ```
-.bmad/bmm/workflows/4-implementation/code-review/
+_bmad/bmm/workflows/4-implementation/code-review/
 ├── workflow.yaml      # Workflow configuration
 ├── instructions.xml   # Full execution logic (adversarial review)
 └── checklist.md       # Review validation checklist
 ```
 
-**Load and execute:** `.bmad/bmm/workflows/4-implementation/code-review/instructions.xml`
+**Load and execute:** `_bmad/bmm/workflows/4-implementation/code-review/instructions.xml`
 
 The workflow handles:
 - Loading story file and parsing ACs/tasks
@@ -39,9 +39,9 @@ The workflow handles:
 
 ## Configuration
 
-Load paths from `.bmad/bmm/config.yaml`:
-- `output_folder` → `docs/`
-- `dev_story_location` → `docs/sprint-artifacts/stories/`
+Load paths from `_bmad/bmm/config.yaml`:
+- `output_folder` → `_bmad-output/`
+- `implementation_artifacts` → `_bmad-output/implementation-artifacts/`
 
 ## Review Standards
 
@@ -50,12 +50,32 @@ Load paths from `.bmad/bmm/config.yaml`:
 - **CHANGES_REQUESTED**: Any critical or high issues
 - **BLOCKED**: Cannot assess or external dependency needed
 
+## Critical Deliverables (MUST DO)
+
+**The story file IS the primary deliverable. You MUST update it:**
+
+1. **Add "Senior Developer Review (AI)" section** with:
+   - Review date
+   - Outcome (APPROVED/APPROVED_WITH_IMPROVEMENTS/CHANGES_REQUESTED/BLOCKED)
+   - Issues found (categorized by severity)
+   - Action Items with checkboxes if fixes needed
+2. **Status**: Update based on outcome:
+   - APPROVED/APPROVED_WITH_IMPROVEMENTS → `done`
+   - CHANGES_REQUESTED → `in-progress` (back to dev)
+3. **Change Log**: Add entry with review date and outcome
+
+**FAILURE to update the story file = INCOMPLETE REVIEW, regardless of findings.**
+
 ## Output
 
 Return JSON:
 
 ```json
 {
+  "story_key": "14-2-opentimestamps-calendar-submission-service",
+  "story_file_path": "_bmad-output/implementation-artifacts/14-2-opentimestamps-calendar-submission-service.md",
+  "story_file_updated": true,
+  "story_status": "done",
   "outcome": "APPROVED",
   "issues": {
     "critical": [],
@@ -78,3 +98,7 @@ Return JSON:
   }
 }
 ```
+
+**Required fields:**
+- `story_file_updated`: MUST be `true` - confirms story file was updated with review section, status change
+- `story_status`: MUST reflect final status (`"done"` or `"in-progress"` if changes requested)
