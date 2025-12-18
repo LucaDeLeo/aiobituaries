@@ -2,6 +2,7 @@ import { useMemo, memo } from 'react'
 import { LinePath, AreaClosed } from '@visx/shape'
 import { curveMonotoneX } from '@visx/curve'
 import { scaleLinear } from '@visx/scale'
+import type { ScaleTime } from 'd3-scale'
 import type { AIMetricSeries } from '@/data/ai-metrics'
 import { isFlopMetric } from '@/data/ai-metrics'
 import { logToFlop, type LogScale } from '@/lib/utils/scales'
@@ -11,9 +12,8 @@ export interface BackgroundChartProps {
   metrics: AIMetricSeries[]
   /** Which metrics are currently enabled (controls opacity for smooth transitions) */
   enabledMetrics: MetricType[]
-  /** Time scale for X-axis positioning (created via scaleTime) */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  xScale: any
+  /** Time scale for X-axis positioning */
+  xScale: ScaleTime<number, number>
   /** Log scale for Y-axis positioning of FLOP values */
   yScale: LogScale
   innerHeight: number

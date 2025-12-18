@@ -476,3 +476,31 @@ export function getMetricSeries(metricType: MetricType): AIMetricSeries {
 export function isFlopMetric(metricType: MetricType): boolean {
   return metricType === 'compute'
 }
+
+/**
+ * Get the maximum year from the training compute frontier data.
+ * Used to dynamically set URL state bounds.
+ *
+ * @returns The year of the most recent data point (e.g., 2025)
+ */
+export function getMaxDataYear(): number {
+  const lastPoint = trainingComputeFrontier.data.at(-1)
+  if (lastPoint) {
+    return new Date(lastPoint.date).getFullYear()
+  }
+  // Fallback if data is empty (shouldn't happen)
+  return new Date().getFullYear()
+}
+
+/**
+ * Get the minimum year from the training compute frontier data.
+ *
+ * @returns The year of the earliest data point
+ */
+export function getMinDataYear(): number {
+  const firstPoint = trainingComputeFrontier.data[0]
+  if (firstPoint) {
+    return new Date(firstPoint.date).getFullYear()
+  }
+  return 1950
+}

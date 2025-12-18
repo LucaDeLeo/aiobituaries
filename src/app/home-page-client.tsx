@@ -58,8 +58,8 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
 
   return (
     <>
-      {/* Chart section */}
-      <section className="relative overflow-hidden h-full">
+      {/* Chart section - min-h prevents CLS during hydration */}
+      <section className="relative overflow-hidden h-full min-h-[500px]">
         <HomeClient
           obituaries={obituaries}
           variant="hero"

@@ -16,7 +16,7 @@
  */
 
 import { useMemo } from 'react'
-import { motion } from 'motion/react'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { CATEGORY_ORDER, getCategory } from '@/lib/constants/categories'
 import type { Category } from '@/types/obituary'

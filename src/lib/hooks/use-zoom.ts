@@ -9,7 +9,7 @@
  */
 
 import { useCallback } from 'react'
-import { useReducedMotion } from 'motion/react'
+import { useReducedMotion } from 'framer-motion'
 import { SPRINGS } from '@/lib/utils/animation'
 import type { ViewState } from '@/types/visualization'
 

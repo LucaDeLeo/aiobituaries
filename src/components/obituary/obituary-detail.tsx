@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import { ExternalLink, ArrowLeft } from 'lucide-react'
 import { CATEGORY_LABELS } from '@/lib/constants/categories'
 import { CopyButton } from '@/components/ui/copy-button'
+import { sanitizeUrl } from '@/lib/utils/url'
 import type { Obituary, Category } from '@/types/obituary'
 
 /**
@@ -50,7 +51,7 @@ export function ObituaryDetail({ obituary }: ObituaryDetailProps) {
       <div className="flex flex-col items-center gap-4 mb-8">
         <p className="text-[--text-secondary]">
           <a
-            href={obituary.sourceUrl}
+            href={sanitizeUrl(obituary.sourceUrl)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 hover:text-[--accent-primary]

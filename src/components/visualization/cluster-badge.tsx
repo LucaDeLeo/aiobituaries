@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'motion/react'
+import { motion } from 'framer-motion'
 import { getCategoryColor } from '@/lib/utils/scatter-helpers'
 import type { PointCluster } from '@/types/visualization'
 

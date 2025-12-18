@@ -12,7 +12,7 @@
  * - Mobile/Tablet (<1024px): bottom-right above FAB trigger
  */
 
-import { motion } from 'motion/react'
+import { motion } from 'framer-motion'
 import { Plus, Minus, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint'

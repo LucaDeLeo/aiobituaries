@@ -37,7 +37,7 @@ Each "obituary" dot is positioned on the rising progress curves, creating a visu
 pnpm install
 
 # Set up environment variables
-cp .env.example .env.local
+cp .env.local.example .env.local
 # Edit .env.local with your Sanity credentials
 
 # Start development server

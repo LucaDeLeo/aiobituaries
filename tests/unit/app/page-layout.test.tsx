@@ -159,6 +159,12 @@ vi.mock('@/app/home-page-client', () => ({
   },
 }))
 
+// Mock useBreakpoint hook - default to 'desktop' for testing
+const mockUseBreakpoint = vi.fn(() => 'desktop')
+vi.mock('@/lib/hooks/use-breakpoint', () => ({
+  useBreakpoint: () => mockUseBreakpoint(),
+}))
+
 // Import after all mocks
 import Home from '@/app/page'
 
@@ -170,15 +176,20 @@ describe('Homepage Layout Structure (Story TSR-1.1)', () => {
   })
 
   describe('Desktop Grid Layout (AC-1.1.1)', () => {
-    it('renders desktop-specific layout wrapper with lg:block', async () => {
+    beforeEach(() => {
+      // Mock breakpoint to desktop for these tests
+      mockUseBreakpoint.mockReturnValue('desktop')
+    })
+
+    it('renders desktop-specific layout', async () => {
       const Component = await Home()
       await act(async () => {
         render(Component)
       })
 
-      // Find the desktop container (hidden lg:block)
-      const container = document.querySelector('.hidden.lg\\:block')
-      expect(container).toBeInTheDocument()
+      // Verify desktop content is rendered - should have CountDisplayCompact (not CountDisplay)
+      expect(screen.getByTestId('count-display-compact')).toBeInTheDocument()
+      expect(screen.queryByTestId('count-display')).not.toBeInTheDocument()
     })
 
     it('renders grid layout with correct column structure', async () => {
@@ -327,14 +338,20 @@ describe('Homepage Layout Structure (Story TSR-1.1)', () => {
   })
 
   describe('Mobile/Tablet Layout Preserved', () => {
-    it('renders mobile/tablet wrapper with lg:hidden', async () => {
+    beforeEach(() => {
+      // Mock breakpoint to mobile for these tests
+      mockUseBreakpoint.mockReturnValue('mobile')
+    })
+
+    it('renders mobile-specific layout', async () => {
       const Component = await Home()
       await act(async () => {
         render(Component)
       })
 
-      const mobileWrapper = document.querySelector('.lg\\:hidden')
-      expect(mobileWrapper).toBeInTheDocument()
+      // Verify mobile content is rendered - should have CountDisplay (not CountDisplayCompact)
+      expect(screen.getByTestId('count-display')).toBeInTheDocument()
+      expect(screen.queryByTestId('count-display-compact')).not.toBeInTheDocument()
     })
 
     it('renders CountDisplay in mobile/tablet layout', async () => {
@@ -371,6 +388,11 @@ describe('Homepage Layout Structure (Story TSR-1.1)', () => {
   })
 
   describe('Header Structure', () => {
+    beforeEach(() => {
+      // Header is only in desktop layout
+      mockUseBreakpoint.mockReturnValue('desktop')
+    })
+
     it('renders header with border-b border-border', async () => {
       const Component = await Home()
       await act(async () => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import type { CategoryDefinition } from '@/lib/constants/categories'
 
@@ -36,6 +36,8 @@ export function CategoryPill({
   isActive,
   onClick,
 }: CategoryPillProps) {
+  const shouldReduceMotion = useReducedMotion()
+
   return (
     <motion.button
       data-testid={`category-pill-${category.id}`}
@@ -54,8 +56,8 @@ export function CategoryPill({
       style={{
         backgroundColor: isActive ? `${category.color}20` : 'transparent',
       }}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
+      whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
     >
       <span
         className="w-2 h-2 rounded-full flex-shrink-0"

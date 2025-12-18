@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, useReducedMotion } from 'motion/react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { formatDate } from '@/lib/utils/date'
 import { tooltipAppear, DURATIONS } from '@/lib/utils/animation'
 import { formatFlopTick } from '@/lib/utils/scales'
@@ -12,6 +12,8 @@ export interface TooltipCardProps {
   x: number
   y: number
   containerBounds: DOMRect
+  /** Whether to show the FLOP value (compute metric enabled) */
+  showFlop?: boolean
 }
 
 /**
@@ -32,7 +34,7 @@ export interface TooltipCardProps {
  * - Near right edge: Aligns left
  * - Near left edge: Aligns right
  */
-export function TooltipCard({ obituary, x, y, containerBounds }: TooltipCardProps) {
+export function TooltipCard({ obituary, x, y, containerBounds, showFlop = true }: TooltipCardProps) {
   // Check reduced motion preference
   const shouldReduceMotion = useReducedMotion()
 
@@ -113,10 +115,12 @@ export function TooltipCard({ obituary, x, y, containerBounds }: TooltipCardProp
             <span className="font-mono text-[var(--text-muted)]">{formatDate(obituary.date)}</span>
           </div>
 
-          {/* AI Progress (FLOP value at date) */}
-          <div className="text-[11px] text-[var(--text-muted)] mt-2 font-mono">
-            AI Progress: {formattedFlop} FLOP
-          </div>
+          {/* AI Progress (FLOP value at date) - only shown when compute metric enabled */}
+          {showFlop && (
+            <div className="text-[11px] text-[var(--text-muted)] mt-2 font-mono">
+              AI Progress: {formattedFlop} FLOP
+            </div>
+          )}
         </div>
       </div>
     </motion.div>

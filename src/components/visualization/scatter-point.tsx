@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, forwardRef, useImperativeHandle, memo } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { staggerItem } from '@/lib/utils/animation'
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint'
 import type { ObituarySummary } from '@/types/obituary'

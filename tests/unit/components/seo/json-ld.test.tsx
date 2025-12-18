@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
+import { render } from '@testing-library/react'
 import { truncate } from '@/lib/utils/seo'
+import { JsonLd } from '@/components/seo/json-ld'
 import type { Obituary } from '@/types/obituary'
 
 const BASE_URL = 'https://aiobituaries.com'
@@ -179,6 +181,96 @@ describe('JsonLd Schema Generation', () => {
       expect(schema).toHaveProperty('name')
       expect(schema).toHaveProperty('description')
       expect(schema).toHaveProperty('url')
+    })
+  })
+
+  describe('XSS Prevention (serializeJsonLd)', () => {
+    it('escapes </script> tags in claim to prevent breakout', () => {
+      const maliciousObituary: Obituary = {
+        ...mockObituary,
+        claim: 'Test </script><script>alert("XSS")</script> claim',
+      }
+
+      const { container } = render(<JsonLd obituary={maliciousObituary} type="article" />)
+      const script = container.querySelector('script[type="application/ld+json"]')
+      const content = script?.innerHTML ?? ''
+
+      // Should NOT contain raw </script> that would break out
+      expect(content).not.toContain('</script>')
+      // Should contain escaped version (unicode escapes)
+      expect(content).toContain('\\u003c')
+      expect(content).toContain('\\/script')
+    })
+
+    it('escapes < characters to prevent HTML injection', () => {
+      const maliciousObituary: Obituary = {
+        ...mockObituary,
+        claim: 'Test <img src=x onerror=alert(1)> claim',
+      }
+
+      const { container } = render(<JsonLd obituary={maliciousObituary} type="article" />)
+      const script = container.querySelector('script[type="application/ld+json"]')
+      const content = script?.innerHTML ?? ''
+
+      // Should NOT contain raw < that could be parsed as HTML
+      expect(content).not.toMatch(/<[a-z]/i)
+      // Should contain unicode escape
+      expect(content).toContain('\\u003c')
+    })
+
+    it('escapes > characters for completeness', () => {
+      const obituary: Obituary = {
+        ...mockObituary,
+        claim: 'AI progress x > human intelligence',
+      }
+
+      const { container } = render(<JsonLd obituary={obituary} type="article" />)
+      const script = container.querySelector('script[type="application/ld+json"]')
+      const content = script?.innerHTML ?? ''
+
+      // Should contain unicode escape for >
+      expect(content).toContain('\\u003e')
+    })
+
+    it('handles complex XSS attempt in source field', () => {
+      const maliciousObituary: Obituary = {
+        ...mockObituary,
+        source: '</script><svg onload=alert(1)>',
+      }
+
+      const { container } = render(<JsonLd obituary={maliciousObituary} type="article" />)
+      const script = container.querySelector('script[type="application/ld+json"]')
+      const content = script?.innerHTML ?? ''
+
+      // Should escape all dangerous characters
+      expect(content).not.toContain('</script>')
+      expect(content).not.toMatch(/<svg/i)
+    })
+
+    it('produces valid JSON structure after escaping', () => {
+      const maliciousObituary: Obituary = {
+        ...mockObituary,
+        claim: '</script><script>evil()</script>',
+        source: '<test>',
+      }
+
+      const { container } = render(<JsonLd obituary={maliciousObituary} type="article" />)
+      const script = container.querySelector('script[type="application/ld+json"]')
+      const content = script?.innerHTML ?? ''
+
+      // The escaped content should maintain JSON structure
+      expect(content).toContain('@context')
+      expect(content).toContain('@type')
+    })
+
+    it('escapes website schema safely', () => {
+      const { container } = render(<JsonLd type="website" />)
+      const script = container.querySelector('script[type="application/ld+json"]')
+      const content = script?.innerHTML ?? ''
+
+      // Should properly render website schema
+      expect(content).toContain('WebSite')
+      expect(content).toContain('AI Obituaries')
     })
   })
 })

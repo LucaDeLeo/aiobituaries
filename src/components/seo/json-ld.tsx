@@ -3,6 +3,23 @@ import { truncate } from '@/lib/utils/seo'
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://aiobituaries.com'
 
+/**
+ * Safely serializes an object as JSON for embedding in a script tag.
+ * Prevents XSS by escaping characters that could break out of the script context.
+ *
+ * @param data - Object to serialize
+ * @returns JSON string safe for use in dangerouslySetInnerHTML
+ */
+function serializeJsonLd(data: object): string {
+  return JSON.stringify(data)
+    // Escape closing script tags to prevent breaking out
+    .replace(/<\/script/gi, '<\\/script')
+    // Escape < to prevent HTML injection
+    .replace(/</g, '\\u003c')
+    // Escape > for completeness
+    .replace(/>/g, '\\u003e')
+}
+
 interface JsonLdProps {
   obituary?: Obituary
   type?: 'article' | 'website'
@@ -25,7 +42,7 @@ export function JsonLd({ obituary, type = 'article' }: JsonLdProps) {
     return (
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(websiteSchema) }}
       />
     )
   }
@@ -54,7 +71,7 @@ export function JsonLd({ obituary, type = 'article' }: JsonLdProps) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleSchema) }}
     />
   )
 }

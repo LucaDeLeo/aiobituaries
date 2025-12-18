@@ -11,6 +11,7 @@ const shouldUseMock =
   (!projectId ||
     projectId === 'placeholder' ||
     projectId === 'your_project_id' ||
+    projectId === 'your_project_id_here' ||
     !dataset ||
     dataset === 'placeholder')
 

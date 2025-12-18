@@ -8,7 +8,7 @@ import {
   animate,
   AnimatePresence,
   useReducedMotion,
-} from 'motion/react'
+} from 'framer-motion'
 import { ParentSize } from '@visx/responsive'
 import { cn } from '@/lib/utils'
 import { scaleTime } from '@visx/scale'
@@ -1048,6 +1048,7 @@ export function ScatterPlotInner({
             x={tooltipData.x + MARGIN.left}
             y={tooltipData.y + MARGIN.top}
             containerBounds={containerBounds}
+            showFlop={enabledMetrics?.includes('compute') ?? true}
           />
         )}
       </AnimatePresence>

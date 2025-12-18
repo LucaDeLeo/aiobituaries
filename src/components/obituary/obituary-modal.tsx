@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { ExternalLink, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { sanitizeUrl } from '@/lib/utils/url'
 import {
   Sheet,
   SheetContent,
@@ -180,7 +181,7 @@ export function ObituaryModal({
               {/* Source with external link */}
               <div className="flex items-center gap-2">
                 <a
-                  href={obituary.sourceUrl}
+                  href={sanitizeUrl(obituary.sourceUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-sm font-mono text-[var(--accent-primary)] hover:underline"

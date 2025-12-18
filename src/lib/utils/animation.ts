@@ -5,7 +5,7 @@
  * across the application. Includes spring configurations and reduced motion support.
  */
 
-import type { Variants } from 'motion/react'
+import type { Variants } from 'framer-motion'
 
 /**
  * Standard duration presets (in seconds)

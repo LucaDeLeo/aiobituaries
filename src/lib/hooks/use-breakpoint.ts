@@ -21,9 +21,9 @@ import { BREAKPOINTS } from '@/types/navigation'
  * const isMobile = breakpoint === 'mobile'
  * ```
  */
-export function useBreakpoint(): Breakpoint {
-  // Default to desktop for SSR compatibility (most common on first render)
-  const [breakpoint, setBreakpoint] = useState<Breakpoint>('desktop')
+export function useBreakpoint(): Breakpoint | undefined {
+  // Return undefined during SSR to prevent hydration mismatch
+  const [breakpoint, setBreakpoint] = useState<Breakpoint | undefined>(undefined)
 
   useEffect(() => {
     function updateBreakpoint() {

@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { motion } from 'motion/react'
-import { CATEGORY_ORDER, getCategory, CATEGORY_LABELS } from '@/lib/constants/categories'
+import { motion, useReducedMotion } from 'framer-motion'
+import { CATEGORY_ORDER, getCategory, getCategoryLabel } from '@/lib/constants/categories'
 import { CategoryPill } from './category-pill'
 import { cn } from '@/lib/utils'
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint'
@@ -63,6 +63,7 @@ export function CategoryFilter({
   const breakpoint = useBreakpoint()
   const liveRegion = useLiveRegionOptional()
   const isInitialMount = useRef(true)
+  const shouldReduceMotion = useReducedMotion()
 
   // Announce filter changes to screen readers
   useEffect(() => {
@@ -79,11 +80,11 @@ export function CategoryFilter({
     if (showingAll) {
       message = `Showing all ${totalCount ?? filteredCount} obituaries`
     } else if (activeCategories.length === 1) {
-      const categoryLabel = CATEGORY_LABELS[activeCategories[0]]
+      const categoryLabel = getCategoryLabel(activeCategories[0])
       message = `Showing ${filteredCount} obituaries in ${categoryLabel} category`
     } else {
       const categoryLabels = activeCategories
-        .map((cat) => CATEGORY_LABELS[cat])
+        .map((cat) => getCategoryLabel(cat))
         .join(' and ')
       message = `Showing ${filteredCount} obituaries in ${categoryLabels} categories`
     }
@@ -114,9 +115,9 @@ export function CategoryFilter({
         'max-w-[calc(100vw-2rem)]',
         className
       )}
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.3, duration: 0.3 }}
+      initial={shouldReduceMotion ? false : { y: 20, opacity: 0 }}
+      animate={shouldReduceMotion ? false : { y: 0, opacity: 1 }}
+      transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.3, duration: 0.3 }}
       role="group"
       aria-label="Category filters"
     >

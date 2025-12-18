@@ -33,18 +33,17 @@ import {
 } from 'react'
 import type { Category } from '@/types/obituary'
 import type { MetricType } from '@/types/metrics'
+import { CATEGORY_ORDER } from '@/lib/constants/categories'
+import { getMaxDataYear } from '@/data/ai-metrics'
 
 // Valid metric types for URL parsing - derived from MetricType
 const METRIC_TYPES = ['compute', 'mmlu', 'eci'] as const satisfies readonly MetricType[]
 
-// Category values as const array for parseAsStringLiteral
-const CATEGORY_VALUES = ['capability', 'market', 'agi', 'dismissive'] as const
-
-// Date range constraints
+// Date range constraints - MAX_YEAR derived from actual data
 const MIN_YEAR = 1950
-const MAX_YEAR = 2025
+const MAX_YEAR = getMaxDataYear()
 const DEFAULT_FROM = 2010
-const DEFAULT_TO = 2025
+const DEFAULT_TO = MAX_YEAR
 
 // Debounce delay for date range slider (ms)
 const DATE_RANGE_DEBOUNCE = 400
@@ -60,7 +59,7 @@ const metricsParser = parseAsArrayOf(
  * Parser for category array URL parameter
  */
 const categoryParser = parseAsArrayOf(
-  parseAsStringLiteral(CATEGORY_VALUES)
+  parseAsStringLiteral(CATEGORY_ORDER)
 ).withDefault([])
 
 /**

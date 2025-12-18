@@ -18,8 +18,29 @@
  */
 
 import { useMemo } from 'react'
+import dynamic from 'next/dynamic'
 import { CategoryFilter } from '@/components/filters/category-filter'
-import { ScatterPlot } from '@/components/visualization/scatter-plot'
+
+// Dynamic import for ScatterPlot - reduces initial bundle by ~300KB
+// SSR disabled since it's a client-side D3/visx visualization
+// Skeleton matches exact ScatterPlot container sizing to prevent CLS
+const ScatterPlot = dynamic(
+  () => import('@/components/visualization/scatter-plot').then(mod => ({ default: mod.ScatterPlot })),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="w-full h-full min-h-[300px] md:min-h-[400px] bg-[--bg-secondary]"
+        role="status"
+        aria-label="Loading visualization"
+      >
+        <div className="w-full h-full flex items-center justify-center">
+          <span className="text-[--text-muted] text-sm animate-pulse">Loading visualization...</span>
+        </div>
+      </div>
+    ),
+  }
+)
 import { CategoryChart } from '@/components/visualization/category-chart'
 import { BackgroundChartLegend } from '@/components/visualization/background-chart'
 import { allMetrics } from '@/data/ai-metrics'
@@ -87,9 +108,10 @@ export function HomeClient({
   }
 
   // Hero variant: Full-height chart only (controls in sidebar)
+  // min-h-[500px] prevents CLS during hydration
   if (variant === 'hero') {
     return (
-      <div className="h-full">
+      <div className="h-full min-h-[500px]">
         {!isHydrated || mode === 'visualization' ? (
           <ScatterPlot
             data={obituaries}
