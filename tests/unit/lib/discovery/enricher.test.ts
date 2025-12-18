@@ -18,7 +18,7 @@ describe('enricher', () => {
     it('returns GPT-4 for dates after March 2023', () => {
       // GPT-4 became frontier on March 15, 2023
       const date = new Date('2023-06-15')
-      expect(getModelAtDate(date)).toBe('GPT-4')
+      expect(getModelAtDate(date)).toBe('GPT-4 (Mar 2023)')
     })
 
     it('returns Gemini 1.0 Ultra for dates in 2024', () => {
@@ -53,7 +53,7 @@ describe('enricher', () => {
 
       expect(context.currentModel).toBeDefined()
       // GPT-4 became frontier on March 15, 2023
-      expect(context.currentModel).toBe('GPT-4')
+      expect(context.currentModel).toBe('GPT-4 (Mar 2023)')
     })
 
     it('includes benchmark info when available', async () => {

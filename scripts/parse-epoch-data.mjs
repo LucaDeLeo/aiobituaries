@@ -121,10 +121,18 @@ async function main() {
   const modelRecords = parseCSV(modelsPath)
   console.log(`  Notable model records: ${modelRecords.length}`)
 
-  // 3b. Parse frontier models for model timeline
-  const frontierModelsPath = join(EPOCH_DIR, 'AI Models', 'frontier_ai_models.csv')
-  const frontierModelRecords = parseCSV(frontierModelsPath)
-  console.log(`  Frontier model records: ${frontierModelRecords.length}`)
+  // 3b. Parse all models for frontier timeline (more complete than frontier_ai_models.csv)
+  const allModelsPath = join(EPOCH_DIR, 'AI Models', 'all_ai_models.csv')
+  const allModelRecords = parseCSV(allModelsPath)
+  console.log(`  All model records: ${allModelRecords.length}`)
+
+  // Filter to frontier-quality models (marked frontier OR very high compute)
+  const frontierModelRecords = allModelRecords.filter(r => {
+    const compute = parseFloat(r['Training compute (FLOP)'])
+    const isFrontier = r['Frontier model']?.toLowerCase() === 'true' || r['Frontier model'] === '1'
+    return (compute > 1e25 || isFrontier) && r['Publication date']
+  })
+  console.log(`  Frontier-quality records: ${frontierModelRecords.length}`)
 
   // Compute frontier model timeline (who was on top when)
   const modelTimeline = computeFrontierModelTimeline(frontierModelRecords)

@@ -455,7 +455,7 @@ export const frontierModelTimeline: FrontierModelEntry[] = [
   },
   {
     "date": "2023-03-15",
-    "model": "GPT-4",
+    "model": "GPT-4 (Mar 2023)",
     "org": "OpenAI"
   },
   {
