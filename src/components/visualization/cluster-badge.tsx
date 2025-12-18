@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { getCategoryColor } from '@/lib/utils/scatter-helpers'
 import type { PointCluster } from '@/types/visualization'
 
@@ -23,6 +23,9 @@ export function ClusterBadge({
   onMouseEnter,
   onMouseLeave,
 }: ClusterBadgeProps) {
+  // P2.1 fix: Check reduced motion preference
+  const shouldReduceMotion = useReducedMotion()
+
   const color = getCategoryColor([cluster.primaryCategory])
   const radius = 12 // 24px diameter
   const badgeRadius = 8
@@ -37,11 +40,11 @@ export function ClusterBadge({
       onMouseLeave={onMouseLeave}
       style={{ cursor: 'pointer' }}
       data-testid="cluster-badge"
-      initial={{ opacity: 0, scale: 0 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0 }}
-      whileHover={{ scale: 1.15 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      initial={shouldReduceMotion ? undefined : { opacity: 0, scale: 0 }}
+      animate={shouldReduceMotion ? undefined : { opacity: 1, scale: 1 }}
+      exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0 }}
+      whileHover={shouldReduceMotion ? undefined : { scale: 1.15 }}
+      transition={shouldReduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 20 }}
     >
       {/* Glow effect circle */}
       <circle

@@ -30,11 +30,11 @@ import { SPRINGS, staggerContainer } from '@/lib/utils/animation'
 import { markPerformance, measurePerformance } from '@/lib/utils/performance'
 import {
   computeClusters,
-  isPointClustered,
   shouldShowClusters,
   DEFAULT_CLUSTER_CONFIG,
 } from '@/lib/utils/clustering'
 import { useRovingFocus } from '@/lib/hooks/use-roving-focus'
+import { useBreakpoint } from '@/lib/hooks/use-breakpoint'
 import { BackgroundChart } from './background-chart'
 import { allMetrics, trainingComputeFrontier, getActualFlopAtDate, getUnifiedDomain } from '@/data/ai-metrics'
 import {
@@ -226,6 +226,10 @@ export function ScatterPlotInner({
   const [announcement, setAnnouncement] = useState('')
   const timelineContainerRef = useRef<HTMLDivElement>(null)
 
+  // Compute breakpoint ONCE at parent level to avoid N resize listeners (P0.1 fix)
+  const breakpoint = useBreakpoint()
+  const touchRadius = breakpoint === 'tablet' ? 22 : 7 // TABLET_TOUCH_RADIUS : POINT_RADIUS
+
   // Compute inner dimensions
   const innerWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
   const innerHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
@@ -303,6 +307,12 @@ export function ScatterPlotInner({
     return computeClusters(pointPositions, DEFAULT_CLUSTER_CONFIG, viewState.scale)
   }, [pointPositions, viewState.scale])
 
+  // P0.3 fix: Precompute clustered IDs as Set for O(1) membership checks
+  const clusteredIds = useMemo(
+    () => new Set(clusters.flatMap(c => c.obituaryIds)),
+    [clusters]
+  )
+
   // Determine if a point should be filtered-in (visible at full opacity)
   // Empty activeCategories = show all; otherwise match any category (OR logic)
   const isPointFiltered = useCallback(
@@ -325,10 +335,17 @@ export function ScatterPlotInner({
     () =>
       sortedData.filter((ob) => {
         const matchesFilter = isPointFiltered(ob)
-        const isClustered = isPointClustered(ob._id, clusters) && shouldShowClusters(viewState.scale)
+        // P0.3 fix: O(1) Set lookup instead of linear scan
+        const isClustered = clusteredIds.has(ob._id) && shouldShowClusters(viewState.scale)
         return matchesFilter && !isClustered
       }),
-    [sortedData, isPointFiltered, clusters, viewState.scale]
+    [sortedData, isPointFiltered, clusteredIds, viewState.scale]
+  )
+
+  // P0.2 fix: Precompute ID → index map to avoid O(n²) findIndex in render loop
+  const visibleIndexById = useMemo(
+    () => new Map(visibleData.map((o, i) => [o._id, i])),
+    [visibleData]
   )
 
   // Viewport virtualization: Only render points within visible viewport (AC-6.8.5)
@@ -972,12 +989,13 @@ export function ScatterPlotInner({
               animate={shouldReduceMotion ? undefined : "animate"}
             >
               {visiblePointPositions.map(({ obituary, x: xPos, y: yPos, color }) => {
+                // P0.3 fix: O(1) Set lookup instead of linear scan
                 const isClustered =
-                  isPointClustered(obituary._id, clusters) &&
+                  clusteredIds.has(obituary._id) &&
                   shouldShowClusters(viewState.scale)
 
-                // Find index in visibleData for keyboard navigation
-                const visibleIndex = visibleData.findIndex((ob) => ob._id === obituary._id)
+                // Find index in visibleData for keyboard navigation (P0.2: O(1) Map lookup)
+                const visibleIndex = visibleIndexById.get(obituary._id) ?? -1
                 const isKeyboardNavigable = visibleIndex !== -1
 
                 return (
@@ -995,6 +1013,7 @@ export function ScatterPlotInner({
                     onMouseLeave={handlePointMouseLeave}
                     onClick={(element) => handlePointClick(obituary, element)}
                     shouldReduceMotion={shouldReduceMotion}
+                    touchRadius={touchRadius}
                     // Keyboard navigation props (AC-6.2.1 through AC-6.2.5)
                     tabIndex={isKeyboardNavigable ? getTabIndex(visibleIndex) : -1}
                     isFocused={isKeyboardNavigable && visibleIndex === focusedIndex}

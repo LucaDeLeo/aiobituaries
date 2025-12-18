@@ -1,8 +1,15 @@
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
-import { CATEGORY_COLORS } from '@/lib/constants/categories'
-import type { ObituarySummary } from '@/types/obituary'
+import type { ObituarySummary, Category } from '@/types/obituary'
+
+// P1.4 fix: Local CSS class mapping uses CSS variables from centralized theme
+const CATEGORY_BG_CLASSES: Record<Category, string> = {
+  capability: 'bg-[--category-capability]',
+  market: 'bg-[--category-market]',
+  agi: 'bg-[--category-agi]',
+  dismissive: 'bg-[--category-dismissive]',
+}
 
 interface ObituaryCardProps {
   obituary: ObituarySummary
@@ -32,7 +39,7 @@ export function ObituaryCard({ obituary }: ObituaryCardProps) {
   // Defensive: handle empty categories array
   const primaryCategory = obituary.categories?.[0]
   const categoryColorClass = primaryCategory
-    ? CATEGORY_COLORS[primaryCategory]
+    ? CATEGORY_BG_CLASSES[primaryCategory]
     : 'bg-[--text-muted]' // fallback for missing category
 
   return (

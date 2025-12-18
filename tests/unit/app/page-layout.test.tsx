@@ -337,53 +337,81 @@ describe('Homepage Layout Structure (Story TSR-1.1)', () => {
     })
   })
 
-  describe('Mobile/Tablet Layout Preserved', () => {
+  // P0.4 fix: Mobile and Tablet now have separate branches via ClientLayoutRouter
+  // Only ONE branch is rendered at a time based on breakpoint
+
+  describe('Mobile Layout (< 768px)', () => {
     beforeEach(() => {
-      // Mock breakpoint to mobile for these tests
       mockUseBreakpoint.mockReturnValue('mobile')
     })
 
-    it('renders mobile-specific layout', async () => {
+    it('renders mobile-specific layout with MobileTimeline', async () => {
       const Component = await Home()
       await act(async () => {
         render(Component)
       })
 
-      // Verify mobile content is rendered - should have CountDisplay (not CountDisplayCompact)
+      // Mobile renders MobileTimeline, not HomeClient
+      expect(screen.getByTestId('mobile-timeline')).toBeInTheDocument()
+      expect(screen.getByTestId('count-display')).toBeInTheDocument()
+      expect(screen.queryByTestId('home-client')).not.toBeInTheDocument()
+    })
+
+    it('renders CountDisplay in mobile layout', async () => {
+      const Component = await Home()
+      await act(async () => {
+        render(Component)
+      })
+
       expect(screen.getByTestId('count-display')).toBeInTheDocument()
       expect(screen.queryByTestId('count-display-compact')).not.toBeInTheDocument()
     })
 
-    it('renders CountDisplay in mobile/tablet layout', async () => {
+    it('renders ControlSheet in mobile layout', async () => {
+      const Component = await Home()
+      await act(async () => {
+        render(Component)
+      })
+
+      expect(screen.getByTestId('control-sheet')).toBeInTheDocument()
+    })
+  })
+
+  describe('Tablet Layout (768px - 1024px)', () => {
+    beforeEach(() => {
+      mockUseBreakpoint.mockReturnValue('tablet')
+    })
+
+    it('renders tablet-specific layout with HomeClient default variant', async () => {
+      const Component = await Home()
+      await act(async () => {
+        render(Component)
+      })
+
+      // Tablet renders HomeClient with default variant
+      const homeClient = screen.getByTestId('home-client')
+      expect(homeClient).toBeInTheDocument()
+      expect(homeClient.getAttribute('data-variant')).toBe('default')
+      expect(screen.queryByTestId('mobile-timeline')).not.toBeInTheDocument()
+    })
+
+    it('renders CountDisplay in tablet layout', async () => {
       const Component = await Home()
       await act(async () => {
         render(Component)
       })
 
       expect(screen.getByTestId('count-display')).toBeInTheDocument()
+      expect(screen.queryByTestId('count-display-compact')).not.toBeInTheDocument()
     })
 
-    it('renders MobileTimeline component for mobile', async () => {
+    it('renders ObituaryList in tablet layout', async () => {
       const Component = await Home()
       await act(async () => {
         render(Component)
       })
 
-      expect(screen.getByTestId('mobile-timeline')).toBeInTheDocument()
-    })
-
-    it('renders default HomeClient variant in tablet layout', async () => {
-      const Component = await Home()
-      await act(async () => {
-        render(Component)
-      })
-
-      // Both variants should exist - default for tablet, hero for desktop
-      const homeClients = screen.getAllByTestId('home-client')
-      const defaultVariant = homeClients.find(
-        (el) => el.getAttribute('data-variant') === 'default'
-      )
-      expect(defaultVariant).toBeInTheDocument()
+      expect(screen.getByTestId('obituary-list')).toBeInTheDocument()
     })
   })
 

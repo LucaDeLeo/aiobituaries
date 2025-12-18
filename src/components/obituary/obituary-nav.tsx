@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { AdjacentObituary } from '@/types/navigation'
 
@@ -11,31 +12,63 @@ interface ObituaryNavProps {
 }
 
 /**
+ * Check if an element is an interactive control that should block arrow key navigation.
+ * P2.2 fix: Expanded guard conditions beyond just INPUT/TEXTAREA.
+ */
+function isInteractiveElement(element: Element | null): boolean {
+  if (!element) return false
+
+  const tagName = element.tagName
+  // Guard against common interactive elements
+  if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT') {
+    return true
+  }
+
+  // Guard against contenteditable elements
+  if (element.getAttribute('contenteditable') === 'true') {
+    return true
+  }
+
+  // Guard against elements with textbox role (e.g., custom inputs)
+  if (element.getAttribute('role') === 'textbox') {
+    return true
+  }
+
+  // Guard against elements with listbox/combobox roles (dropdown menus)
+  const role = element.getAttribute('role')
+  if (role === 'listbox' || role === 'combobox' || role === 'menu') {
+    return true
+  }
+
+  return false
+}
+
+/**
  * Previous/Next navigation component for obituary detail pages.
  * Provides both click and keyboard navigation (ArrowLeft/ArrowRight).
  * Navigation order is chronological by date.
  */
 export function ObituaryNav({ previous, next }: ObituaryNavProps) {
-  // Keyboard navigation
+  const router = useRouter()
+
+  // Keyboard navigation - P2.2 fix: use Next.js router for SPA navigation
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // Skip if typing in an input
-      if (
-        document.activeElement?.tagName === 'INPUT' ||
-        document.activeElement?.tagName === 'TEXTAREA'
-      )
+      // Skip if focus is on interactive elements
+      if (isInteractiveElement(document.activeElement)) {
         return
+      }
 
       if (e.key === 'ArrowLeft' && previous) {
-        window.location.href = `/obituary/${previous.slug}`
+        router.push(`/obituary/${previous.slug}`)
       } else if (e.key === 'ArrowRight' && next) {
-        window.location.href = `/obituary/${next.slug}`
+        router.push(`/obituary/${next.slug}`)
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [previous, next])
+  }, [previous, next, router])
 
   return (
     <nav

@@ -2,10 +2,11 @@
 
 import * as Slider from '@radix-ui/react-slider'
 import { cn } from '@/lib/utils'
+import { getMaxDataYear } from '@/data/ai-metrics'
 
-// Date range constraints
+// Date range constraints - P1.3 fix: derive MAX_YEAR from actual data
 const MIN_YEAR = 1950
-const MAX_YEAR = 2025
+const MAX_YEAR = getMaxDataYear()
 
 export interface DateRangeSliderProps {
   /** Current date range [startYear, endYear] */

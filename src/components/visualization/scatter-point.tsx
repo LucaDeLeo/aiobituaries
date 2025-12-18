@@ -3,7 +3,6 @@
 import { useRef, forwardRef, useImperativeHandle, memo } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { staggerItem } from '@/lib/utils/animation'
-import { useBreakpoint } from '@/lib/hooks/use-breakpoint'
 import type { ObituarySummary } from '@/types/obituary'
 
 export interface ScatterPointProps {
@@ -27,6 +26,8 @@ export interface ScatterPointProps {
   onKeyDown?: (event: React.KeyboardEvent) => void
   /** Handler for focus events */
   onFocus?: () => void
+  /** Touch target radius - passed from parent to avoid N resize listeners (P0.1 fix) */
+  touchRadius?: number
 }
 
 const POINT_RADIUS = 7 // 14px diameter (visual size)
@@ -48,7 +49,8 @@ function arePropsEqual(prev: ScatterPointProps, next: ScatterPointProps): boolea
     prev.isHovered === next.isHovered &&
     prev.isClustered === next.isClustered &&
     prev.color === next.color &&
-    prev.tabIndex === next.tabIndex
+    prev.tabIndex === next.tabIndex &&
+    prev.touchRadius === next.touchRadius
   )
 }
 
@@ -70,12 +72,12 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
       isFocused = false,
       onKeyDown,
       onFocus,
+      touchRadius: touchRadiusProp,
     },
     ref
   ) {
     const circleRef = useRef<SVGCircleElement>(null)
     const groupRef = useRef<SVGGElement>(null)
-    const breakpoint = useBreakpoint()
 
     // Expose the group element via forwardRef
     useImperativeHandle(ref, () => groupRef.current as SVGGElement)
@@ -88,8 +90,8 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
     // Hidden if clustered
     if (isClustered) return null
 
-    // Touch target size based on breakpoint
-    const touchRadius = breakpoint === 'tablet' ? TABLET_TOUCH_RADIUS : POINT_RADIUS
+    // Touch target size - use prop from parent (avoids N resize listeners per P0.1)
+    const touchRadius = touchRadiusProp ?? POINT_RADIUS
 
     const opacity = isFiltered ? (isHovered || isFocused ? 1 : 0.85) : 0.2
     // More dramatic glow effect

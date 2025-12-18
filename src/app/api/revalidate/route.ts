@@ -1,5 +1,5 @@
 // This is SERVER-SIDE ONLY code. Never expose SANITY_WEBHOOK_SECRET to the client.
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -10,10 +10,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid secret' }, { status: 401 })
   }
 
-  // Revalidate all pages that display obituaries
+  // P1.6 fix: Use tag-based revalidation to match queries.ts cache tags
+  // All obituary queries use { next: { tags: ['obituaries'] } }
+  // Next.js 16 requires options object with expire (0 = immediate)
+  revalidateTag('obituaries', { expire: 0 })
+  revalidateTag('obituary', { expire: 0 }) // Used by getObituaryCount
+
+  // Also revalidate paths for good measure
   revalidatePath('/')
-  revalidatePath('/claims')
+  revalidatePath('/about')
   revalidatePath('/obituary/[slug]', 'page')
+  revalidatePath('/sitemap.xml')
 
   return NextResponse.json({ revalidated: true })
 }

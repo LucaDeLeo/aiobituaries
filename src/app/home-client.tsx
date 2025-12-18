@@ -109,23 +109,30 @@ export function HomeClient({
 
   // Hero variant: Full-height chart only (controls in sidebar)
   // min-h-[500px] prevents CLS during hydration
+  // P0.8 fix: Add view toggle so users can switch between visualization and table
   if (variant === 'hero') {
     return (
-      <div className="h-full min-h-[500px]">
-        {!isHydrated || mode === 'visualization' ? (
-          <ScatterPlot
-            data={obituaries}
-            activeCategories={categories}
-            enabledMetrics={enabledMetrics}
-            dateRange={dateRange}
-            fillContainer
-          />
-        ) : (
-          <ObituaryTable
-            obituaries={obituaries}
-            activeCategories={categories}
-          />
-        )}
+      <div className="h-full min-h-[500px] flex flex-col relative">
+        {/* P0.8 fix: View toggle for hero variant - positioned top-right */}
+        <div className="flex justify-end p-2 absolute top-2 right-2 z-10">
+          <TableViewToggle mode={mode} onModeChange={handleModeChange} />
+        </div>
+        <div className="flex-1 relative">
+          {!isHydrated || mode === 'visualization' ? (
+            <ScatterPlot
+              data={obituaries}
+              activeCategories={categories}
+              enabledMetrics={enabledMetrics}
+              dateRange={dateRange}
+              fillContainer
+            />
+          ) : (
+            <ObituaryTable
+              obituaries={obituaries}
+              activeCategories={categories}
+            />
+          )}
+        </div>
       </div>
     )
   }

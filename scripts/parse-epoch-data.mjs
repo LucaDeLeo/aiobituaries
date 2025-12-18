@@ -103,12 +103,15 @@ async function main() {
   const computeMonthly = aggregateByMonth(computeFrontier)
 
   // Generate TypeScript output
+  // P1.1 fix: Write to ai-metrics.generated.ts to protect handwritten helpers in ai-metrics.ts
   const output = `/**
  * AI Progress Metrics - Generated from Epoch AI data
  * Source: https://epoch.ai/data
  * Generated: ${new Date().toISOString().split('T')[0]}
  *
  * DO NOT EDIT MANUALLY - regenerate with: node scripts/parse-epoch-data.mjs
+ *
+ * P1.1: This file is auto-generated. Handwritten helpers are in ai-metrics.ts
  */
 
 export interface MetricDataPoint {
@@ -210,9 +213,11 @@ export function getNormalizedMetricAtDate(series: AIMetricSeries, date: Date): n
 }
 `
 
-  const outPath = join(__dirname, '..', 'src', 'data', 'ai-metrics.ts')
+  // P1.1 fix: Write to generated file to protect handwritten helpers
+  const outPath = join(__dirname, '..', 'src', 'data', 'ai-metrics.generated.ts')
   writeFileSync(outPath, output)
   console.log(`\nWrote ${outPath}`)
+  console.log('Note: Handwritten helpers are safe in ai-metrics.ts')
 
   // Print date ranges
   console.log('\nDate ranges:')

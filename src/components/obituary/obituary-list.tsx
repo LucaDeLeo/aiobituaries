@@ -13,20 +13,36 @@ function getStaggerClass(index: number): string {
   return `animate-fade-up animate-fade-up-delay-${delayLevel}`
 }
 
+interface ObituaryListProps {
+  /** Optional pre-fetched obituaries. If not provided, component fetches its own. */
+  obituaries?: ObituarySummary[]
+}
+
 /**
  * Obituary list component displaying a grid of obituary cards.
- * Async Server Component that fetches obituaries from Sanity CMS.
- * Renders a responsive grid: 1 column mobile, 2 tablet, 3 desktop.
+ * Async Server Component that displays obituaries in a responsive grid.
  *
+ * P0.5 fix: Accepts optional pre-fetched obituaries to avoid duplicate fetching.
+ * When parent has already fetched obituaries (e.g., page.tsx), pass them as props.
+ * Falls back to fetching from Sanity if not provided (standalone usage).
+ *
+ * Renders a responsive grid: 1 column mobile, 2 tablet, 3 desktop.
  * Features staggered entrance animation via CSS (prefers-reduced-motion safe).
  */
-export async function ObituaryList() {
+export async function ObituaryList({ obituaries: providedObituaries }: ObituaryListProps = {}) {
   let obituaries: ObituarySummary[]
-  try {
-    obituaries = await getObituaries()
-  } catch {
-    // Graceful fallback when Sanity fetch fails
-    obituaries = []
+
+  if (providedObituaries) {
+    // P0.5 fix: Use pre-fetched data when available
+    obituaries = providedObituaries
+  } else {
+    // Standalone usage - fetch our own data
+    try {
+      obituaries = await getObituaries()
+    } catch {
+      // Graceful fallback when Sanity fetch fails
+      obituaries = []
+    }
   }
 
   if (obituaries.length === 0) {

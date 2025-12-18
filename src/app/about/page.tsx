@@ -1,0 +1,114 @@
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'About',
+  description: 'About AI Obituaries - A memorial to the ever-dying predictions of AI doom',
+}
+
+export default function AboutPage() {
+  return (
+    <div className="container mx-auto px-4 py-12 max-w-3xl">
+      <h1 className="text-3xl md:text-4xl font-serif text-[--accent-primary] mb-8">
+        About AI Obituaries
+      </h1>
+
+      <div className="prose prose-invert max-w-none space-y-6 text-[--text-secondary]">
+        <p className="text-lg leading-relaxed">
+          AI Obituaries is a curated archive tracking declarations that
+          &quot;AI is dead,&quot; &quot;overhyped,&quot; or &quot;doomed to fail.&quot;
+          We visualize these claims against real AI progress metrics to provide
+          historical context for recurring skepticism.
+        </p>
+
+        <section className="mt-12">
+          <h2 className="text-xl font-semibold text-[--text-primary] mb-4">
+            The Visualization
+          </h2>
+          <p>
+            Each point on the timeline represents a published claim doubting AI capabilities,
+            predicting market collapse, or dismissing progress. The background trend lines
+            show actual AI progress data from{' '}
+            <a
+              href="https://epoch.ai/data"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[--accent-primary] hover:underline"
+            >
+              Epoch AI
+            </a>
+            :
+          </p>
+          <ul className="list-disc pl-6 mt-4 space-y-2">
+            <li>
+              <strong className="text-[--text-primary]">Training Compute</strong> &mdash;
+              Maximum FLOP used to train frontier models (exponential growth)
+            </li>
+            <li>
+              <strong className="text-[--text-primary]">MMLU Score</strong> &mdash;
+              Benchmark accuracy tracking capability improvements
+            </li>
+            <li>
+              <strong className="text-[--text-primary]">Epoch Capability Index</strong> &mdash;
+              Composite score tracking overall AI capability
+            </li>
+          </ul>
+        </section>
+
+        <section className="mt-12">
+          <h2 className="text-xl font-semibold text-[--text-primary] mb-4">
+            Categories
+          </h2>
+          <ul className="space-y-3">
+            <li>
+              <span className="inline-block w-3 h-3 rounded-full bg-[--category-capability] mr-2" />
+              <strong className="text-[--text-primary]">Capability Doubt</strong> &mdash;
+              Claims AI cannot do specific tasks
+            </li>
+            <li>
+              <span className="inline-block w-3 h-3 rounded-full bg-[--category-market] mr-2" />
+              <strong className="text-[--text-primary]">Market/Bubble</strong> &mdash;
+              Predictions that AI is overhyped or a bubble
+            </li>
+            <li>
+              <span className="inline-block w-3 h-3 rounded-full bg-[--category-agi] mr-2" />
+              <strong className="text-[--text-primary]">AGI Skepticism</strong> &mdash;
+              Claims AGI is impossible or very far away
+            </li>
+            <li>
+              <span className="inline-block w-3 h-3 rounded-full bg-[--category-dismissive] mr-2" />
+              <strong className="text-[--text-primary]">Dismissive Framing</strong> &mdash;
+              Casual dismissal or mockery of AI progress
+            </li>
+          </ul>
+        </section>
+
+        <section className="mt-12">
+          <h2 className="text-xl font-semibold text-[--text-primary] mb-4">
+            Data Sources
+          </h2>
+          <p>
+            Progress metrics are sourced from{' '}
+            <a
+              href="https://epoch.ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[--accent-primary] hover:underline"
+            >
+              Epoch AI
+            </a>
+            , a research organization tracking AI development. Obituary claims
+            are manually curated from published articles, interviews, and social media.
+          </p>
+        </section>
+
+        <section className="mt-12 pt-8 border-t border-[--border]">
+          <p className="text-sm text-[--text-muted] italic">
+            This project is not intended to mock individuals, but to provide
+            historical perspective on the recurring nature of AI skepticism
+            and the often-surprising pace of progress.
+          </p>
+        </section>
+      </div>
+    </div>
+  )
+}

@@ -16,7 +16,7 @@
  */
 
 import { useMemo } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { CATEGORY_ORDER, getCategory } from '@/lib/constants/categories'
 import type { Category } from '@/types/obituary'
@@ -38,6 +38,9 @@ export function CategoryChart({
   activeCategories = [],
   onCategoryClick,
 }: CategoryChartProps) {
+  // P2.1 fix: Check reduced motion preference
+  const shouldReduceMotion = useReducedMotion()
+
   // Count obituaries per category (handles multi-category items)
   const counts = useMemo(() => {
     const result: Record<Category, number> = {
@@ -86,9 +89,9 @@ export function CategoryChart({
               isActive ? 'opacity-100' : 'opacity-40'
             )}
             onClick={() => onCategoryClick?.(categoryId)}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: isActive ? 1 : 0.4, x: 0 }}
-            transition={{ delay: index * 0.1 }}
+            initial={shouldReduceMotion ? undefined : { opacity: 0, x: -20 }}
+            animate={shouldReduceMotion ? { opacity: isActive ? 1 : 0.4 } : { opacity: isActive ? 1 : 0.4, x: 0 }}
+            transition={shouldReduceMotion ? { duration: 0 } : { delay: index * 0.1 }}
           >
             <div className="flex justify-between mb-1">
               <span className="text-sm text-[--text-secondary] group-hover:text-[--text-primary] transition-colors">
@@ -102,9 +105,9 @@ export function CategoryChart({
               <motion.div
                 className="h-full rounded-full"
                 style={{ backgroundColor: category.color }}
-                initial={{ width: 0 }}
+                initial={shouldReduceMotion ? { width: `${barWidth}%` } : { width: 0 }}
                 animate={{ width: `${barWidth}%` }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.5, delay: index * 0.1 }}
               />
             </div>
           </motion.button>

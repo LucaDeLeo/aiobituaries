@@ -16,46 +16,54 @@ export const metadata = homepageMetadata;
 export default async function Home() {
   const obituaries = await getObituaries();
 
+  // P0.4 fix: Separate mobile and tablet content to prevent double-mounting
+  // Only ONE branch is mounted at a time via ClientLayoutRouter
+
+  // Mobile: < 768px - Timeline-centric view
   const mobileContent = (
-    <main className="min-h-screen flex flex-col">
-      <section className="flex flex-col items-center justify-center py-12 md:py-24 px-4">
+    <div className="min-h-screen flex flex-col">
+      <section className="flex flex-col items-center justify-center py-12 px-4">
         <CountDisplay />
       </section>
-
-      {/* Tablet: Full-width chart */}
-      <div className="hidden md:block flex-1">
-        <Suspense fallback={null}>
-          <HomeClient obituaries={obituaries} />
-        </Suspense>
-        <section className="px-4 pb-24 max-w-7xl mx-auto">
-          <ObituaryList />
-        </section>
-      </div>
-
-      {/* Mobile: Hybrid view */}
-      <div className="md:hidden flex-1 flex flex-col min-h-0">
+      <div className="flex-1 flex flex-col min-h-0">
         <Suspense fallback={<div className="flex-1 flex items-center justify-center">Loading...</div>}>
           <MobileTimeline obituaries={obituaries} />
         </Suspense>
       </div>
-
-      {/* Control sheet for tablet/mobile */}
       <ControlSheet totalCount={obituaries.length} />
-    </main>
+    </div>
   );
 
+  // Tablet: 768px - 1024px - Full chart with list below
+  const tabletContent = (
+    <div className="min-h-screen flex flex-col">
+      <section className="flex flex-col items-center justify-center py-24 px-4">
+        <CountDisplay />
+      </section>
+      <div className="flex-1">
+        <Suspense fallback={null}>
+          <HomeClient obituaries={obituaries} />
+        </Suspense>
+        <section className="px-4 pb-24 max-w-7xl mx-auto">
+          <ObituaryList obituaries={obituaries} />
+        </section>
+      </div>
+      <ControlSheet totalCount={obituaries.length} />
+    </div>
+  );
+
+  // Desktop: >= 1024px - Full dashboard layout
   const desktopContent = (
-    <main className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen">
       <header className="flex items-center px-6 py-4 border-b border-border" aria-label="Dashboard header">
         <CountDisplayCompact />
       </header>
-
       <div className="grid grid-cols-[1fr_320px] flex-1 min-h-[500px] gap-0">
         <Suspense fallback={null}>
           <HomePageClient obituaries={obituaries} />
         </Suspense>
       </div>
-    </main>
+    </div>
   );
 
   return (
@@ -63,6 +71,7 @@ export default async function Home() {
       <JsonLd type="website" />
       <ClientLayoutRouter
         mobile={mobileContent}
+        tablet={tabletContent}
         desktop={desktopContent}
         fallback={desktopContent}
       />

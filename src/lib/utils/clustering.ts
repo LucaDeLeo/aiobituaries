@@ -31,8 +31,12 @@ interface PositionedPoint {
 }
 
 /**
- * Compute clusters from positioned points using grid-based approach.
+ * Compute clusters from positioned points using proximity-based approach.
+ * Scans points sorted by X, finding nearby points within threshold distance.
  * Threshold scales inversely with zoom - at low zoom, more clustering occurs.
+ *
+ * Note: Current implementation is O(n^2) in worst case. For large datasets,
+ * consider spatial hashing or grid bucketing for better performance.
  *
  * @param points - Array of points with obituary data and computed x,y positions
  * @param config - Clustering configuration (threshold, minPoints)

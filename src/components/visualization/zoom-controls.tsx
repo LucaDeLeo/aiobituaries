@@ -12,7 +12,7 @@
  * - Mobile/Tablet (<1024px): bottom-right above FAB trigger
  */
 
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Plus, Minus, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint'
@@ -43,6 +43,8 @@ export function ZoomControls({
 }: ZoomControlsProps) {
   const breakpoint = useBreakpoint()
   const isDesktop = breakpoint === 'desktop'
+  // P2.1 fix: Check reduced motion preference
+  const shouldReduceMotion = useReducedMotion()
 
   // Reset is disabled when scale is approximately 1
   const isDefaultZoom = Math.abs(scale - 1) < 0.01
@@ -64,9 +66,9 @@ export function ZoomControls({
         // Mobile/tablet: above FAB (56px FAB + 24px offset + 16px gap = ~96px)
         'bottom-[calc(80px+1rem)] top-auto'
       )}
-      initial={{ opacity: 0, y: isDesktop ? -10 : 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, delay: 0.5 }}
+      initial={shouldReduceMotion ? undefined : { opacity: 0, y: isDesktop ? -10 : 10 }}
+      animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+      transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.2, delay: 0.5 }}
       data-testid="zoom-controls"
     >
       <Button

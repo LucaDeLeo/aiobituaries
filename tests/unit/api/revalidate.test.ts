@@ -4,10 +4,11 @@ import { NextRequest } from 'next/server'
 // Mock next/cache before importing route handler
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
 }))
 
 import { POST } from '@/app/api/revalidate/route'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 
 const VALID_SECRET = 'test-secret-12345'
 
@@ -95,7 +96,8 @@ describe('POST /api/revalidate', () => {
       expect(revalidatePath).toHaveBeenCalledWith('/')
     })
 
-    it('calls revalidatePath for claims page', async () => {
+    // P1.6 fix: /claims removed (doesn't exist), /about and /sitemap.xml added
+    it('calls revalidatePath for about page', async () => {
       const request = new NextRequest('http://localhost:3000/api/revalidate', {
         method: 'POST',
         headers: {
@@ -105,7 +107,35 @@ describe('POST /api/revalidate', () => {
 
       await POST(request)
 
-      expect(revalidatePath).toHaveBeenCalledWith('/claims')
+      expect(revalidatePath).toHaveBeenCalledWith('/about')
+    })
+
+    it('calls revalidatePath for sitemap', async () => {
+      const request = new NextRequest('http://localhost:3000/api/revalidate', {
+        method: 'POST',
+        headers: {
+          'x-sanity-webhook-secret': VALID_SECRET,
+        },
+      })
+
+      await POST(request)
+
+      expect(revalidatePath).toHaveBeenCalledWith('/sitemap.xml')
+    })
+
+    // P1.6 fix: Test tag-based revalidation
+    it('calls revalidateTag for obituaries and obituary tags', async () => {
+      const request = new NextRequest('http://localhost:3000/api/revalidate', {
+        method: 'POST',
+        headers: {
+          'x-sanity-webhook-secret': VALID_SECRET,
+        },
+      })
+
+      await POST(request)
+
+      expect(revalidateTag).toHaveBeenCalledWith('obituaries', { expire: 0 })
+      expect(revalidateTag).toHaveBeenCalledWith('obituary', { expire: 0 })
     })
 
     it('calls revalidatePath for obituary dynamic routes', async () => {
@@ -121,7 +151,8 @@ describe('POST /api/revalidate', () => {
       expect(revalidatePath).toHaveBeenCalledWith('/obituary/[slug]', 'page')
     })
 
-    it('calls revalidatePath exactly 3 times', async () => {
+    // P1.6 fix: Now 4 paths (/, /about, /obituary/[slug], /sitemap.xml) and 2 tags
+    it('calls revalidatePath exactly 4 times', async () => {
       const request = new NextRequest('http://localhost:3000/api/revalidate', {
         method: 'POST',
         headers: {
@@ -131,7 +162,20 @@ describe('POST /api/revalidate', () => {
 
       await POST(request)
 
-      expect(revalidatePath).toHaveBeenCalledTimes(3)
+      expect(revalidatePath).toHaveBeenCalledTimes(4)
+    })
+
+    it('calls revalidateTag exactly 2 times', async () => {
+      const request = new NextRequest('http://localhost:3000/api/revalidate', {
+        method: 'POST',
+        headers: {
+          'x-sanity-webhook-secret': VALID_SECRET,
+        },
+      })
+
+      await POST(request)
+
+      expect(revalidateTag).toHaveBeenCalledTimes(2)
     })
   })
 
