@@ -83,3 +83,13 @@ NEXT_PUBLIC_SANITY_PROJECT_ID=xxx
 NEXT_PUBLIC_SANITY_DATASET=production
 SANITY_WEBHOOK_SECRET=xxx
 ```
+
+### Discovery Pipeline (optional)
+
+For the automated obituary discovery pipeline (`/api/discover`):
+```
+EXA_API_KEY=xxx              # Exa search API (dashboard.exa.ai)
+ANTHROPIC_API_KEY=xxx        # Claude classification (console.anthropic.com)
+SANITY_WRITE_TOKEN=xxx       # Sanity write token (sanity.io/manage)
+CRON_SECRET=xxx              # Auth for Vercel cron (generate random string)
+```

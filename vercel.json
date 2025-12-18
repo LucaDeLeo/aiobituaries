@@ -1,5 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "installCommand": "bun install"
+  "installCommand": "bun install",
+  "crons": [
+    {
+      "path": "/api/discover",
+      "schedule": "0 9 * * *"
+    }
+  ]
 }
