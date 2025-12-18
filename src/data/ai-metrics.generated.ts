@@ -1,7 +1,7 @@
 /**
  * AI Progress Metrics - Generated from Epoch AI data
  * Source: https://epoch.ai/data
- * Generated: 2025-12-02
+ * Generated: 2025-12-18
  *
  * DO NOT EDIT MANUALLY - regenerate with: node scripts/parse-epoch-data.mjs
  *
@@ -283,6 +283,221 @@ export const trainingComputeFrontier: AIMetricSeries = {
  * All metric series for visualization
  */
 export const allMetrics: AIMetricSeries[] = [mmluFrontier, eciFrontier, trainingComputeFrontier]
+
+/**
+ * Frontier model timeline - which model was the frontier at each date
+ * Based on training compute from Epoch's frontier_ai_models.csv
+ */
+export interface FrontierModelEntry {
+  /** Date this model became the frontier */
+  date: string
+  /** Model name */
+  model: string
+  /** Organization that created the model */
+  org: string
+}
+
+export const frontierModelTimeline: FrontierModelEntry[] = [
+  {
+    "date": "1950-07-02",
+    "model": "Theseus",
+    "org": "Bell Laboratories"
+  },
+  {
+    "date": "1957-01-01",
+    "model": "Perceptron Mark I",
+    "org": "Cornell Aeronautical Laboratory,Cornell University"
+  },
+  {
+    "date": "1959-02-01",
+    "model": "Pandemonium (morse)",
+    "org": "Massachusetts Institute of Technology (MIT)"
+  },
+  {
+    "date": "1960-03-30",
+    "model": "Perceptron (1960)",
+    "org": "Cornell Aeronautical Laboratory"
+  },
+  {
+    "date": "1987-06-06",
+    "model": "NetTalk (transcription)",
+    "org": "Princeton University"
+  },
+  {
+    "date": "1989-11-27",
+    "model": "Handwritten digit recognition network",
+    "org": "AT&T"
+  },
+  {
+    "date": "1989-12-01",
+    "model": "Zip CNN",
+    "org": "AT&T,Bell Laboratories"
+  },
+  {
+    "date": "1992-05-01",
+    "model": "TD-Gammon",
+    "org": "IBM"
+  },
+  {
+    "date": "1994-12-02",
+    "model": "Predictive Coding NN",
+    "org": "Technical University of Munich"
+  },
+  {
+    "date": "1997-11-15",
+    "model": "LSTM",
+    "org": "Technical University of Munich"
+  },
+  {
+    "date": "2000-11-28",
+    "model": "PoE MNIST",
+    "org": "University College London (UCL)"
+  },
+  {
+    "date": "2000-11-28",
+    "model": "Neural LM",
+    "org": "University of Montreal / Université de Montréal"
+  },
+  {
+    "date": "2007-06-22",
+    "model": "SB-LM",
+    "org": "Google"
+  },
+  {
+    "date": "2013-01-16",
+    "model": "DistBelief NNLM",
+    "org": "Google"
+  },
+  {
+    "date": "2014-06-18",
+    "model": "SPPNet",
+    "org": "Microsoft,Xi’an Jiaotong University,University of Science and Technology of China (USTC)"
+  },
+  {
+    "date": "2014-09-04",
+    "model": "VGG16",
+    "org": "University of Oxford"
+  },
+  {
+    "date": "2014-09-10",
+    "model": "Seq2Seq LSTM",
+    "org": "Google"
+  },
+  {
+    "date": "2014-12-03",
+    "model": "SNM-skip",
+    "org": "Google"
+  },
+  {
+    "date": "2015-10-01",
+    "model": "AlphaGo Fan",
+    "org": "DeepMind"
+  },
+  {
+    "date": "2016-01-27",
+    "model": "AlphaGo Lee",
+    "org": "DeepMind"
+  },
+  {
+    "date": "2016-09-26",
+    "model": "GNMT",
+    "org": "Google"
+  },
+  {
+    "date": "2018-05-02",
+    "model": "ResNeXt-101 32x48d",
+    "org": "Facebook"
+  },
+  {
+    "date": "2019-09-17",
+    "model": "Megatron-BERT",
+    "org": "NVIDIA"
+  },
+  {
+    "date": "2019-10-23",
+    "model": "T5-11B",
+    "org": "Google"
+  },
+  {
+    "date": "2019-10-30",
+    "model": "AlphaStar",
+    "org": "DeepMind"
+  },
+  {
+    "date": "2020-01-28",
+    "model": "Meena",
+    "org": "Google Brain"
+  },
+  {
+    "date": "2020-05-28",
+    "model": "GPT-3 175B (davinci)",
+    "org": "OpenAI"
+  },
+  {
+    "date": "2021-05-31",
+    "model": "Wu Dao 2.0",
+    "org": "Beijing Academy of Artificial Intelligence / BAAI"
+  },
+  {
+    "date": "2021-09-03",
+    "model": "FLAN 137B",
+    "org": "Google Research"
+  },
+  {
+    "date": "2022-04-04",
+    "model": "PaLM (540B)",
+    "org": "Google Research"
+  },
+  {
+    "date": "2022-06-29",
+    "model": "Minerva (540B)",
+    "org": "Google"
+  },
+  {
+    "date": "2023-03-15",
+    "model": "GPT-4",
+    "org": "OpenAI"
+  },
+  {
+    "date": "2023-12-06",
+    "model": "Gemini 1.0 Ultra",
+    "org": "Google DeepMind"
+  },
+  {
+    "date": "2025-02-17",
+    "model": "Grok 3",
+    "org": "xAI"
+  },
+  {
+    "date": "2025-02-27",
+    "model": "GPT-4.5",
+    "org": "OpenAI"
+  },
+  {
+    "date": "2025-07-09",
+    "model": "Grok 4",
+    "org": "xAI"
+  }
+]
+
+/**
+ * Get the frontier model at a specific date
+ * Returns the most recent model that was released on or before the given date
+ */
+export function getFrontierModelAtDate(date: Date): FrontierModelEntry | null {
+  const dateStr = date.toISOString().slice(0, 10)
+  let result: FrontierModelEntry | null = null
+
+  for (const entry of frontierModelTimeline) {
+    if (entry.date <= dateStr) {
+      result = entry
+    } else {
+      break
+    }
+  }
+
+  return result
+}
 
 /**
  * Get interpolated value for a metric at a specific date

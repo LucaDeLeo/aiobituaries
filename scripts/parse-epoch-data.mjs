@@ -62,6 +62,40 @@ function aggregateByMonth(points) {
     .sort((a, b) => new Date(a.date) - new Date(b.date))
 }
 
+// Get frontier model timeline (most notable model at each date)
+function computeFrontierModelTimeline(records) {
+  // Filter to records with valid dates and training compute
+  const valid = records.filter(r =>
+    r['Publication date'] &&
+    r['Model'] &&
+    r['Training compute (FLOP)'] &&
+    !isNaN(parseFloat(r['Training compute (FLOP)']))
+  )
+
+  // Sort by date
+  valid.sort((a, b) => new Date(a['Publication date']) - new Date(b['Publication date']))
+
+  // Track frontier - each time a model beats the previous max compute
+  const timeline = []
+  let maxCompute = 0
+
+  for (const record of valid) {
+    const compute = parseFloat(record['Training compute (FLOP)'])
+
+    if (compute > maxCompute) {
+      maxCompute = compute
+      timeline.push({
+        date: record['Publication date'],
+        model: record['Model'],
+        compute: compute,
+        org: record['Organization'] || 'Unknown'
+      })
+    }
+  }
+
+  return timeline
+}
+
 // Main
 async function main() {
   console.log('Parsing Epoch AI data...')
@@ -86,6 +120,15 @@ async function main() {
   const modelsPath = join(EPOCH_DIR, 'AI Models', 'notable_ai_models.csv')
   const modelRecords = parseCSV(modelsPath)
   console.log(`  Notable model records: ${modelRecords.length}`)
+
+  // 3b. Parse frontier models for model timeline
+  const frontierModelsPath = join(EPOCH_DIR, 'AI Models', 'frontier_ai_models.csv')
+  const frontierModelRecords = parseCSV(frontierModelsPath)
+  console.log(`  Frontier model records: ${frontierModelRecords.length}`)
+
+  // Compute frontier model timeline (who was on top when)
+  const modelTimeline = computeFrontierModelTimeline(frontierModelRecords)
+  console.log(`  Model timeline entries: ${modelTimeline.length}`)
 
   // Get training compute frontier (log scale makes sense here)
   const computeFrontier = computeFrontierEnvelope(modelRecords, 'Publication date', 'Training compute (FLOP)')
@@ -170,6 +213,44 @@ export const trainingComputeFrontier: AIMetricSeries = {
  * All metric series for visualization
  */
 export const allMetrics: AIMetricSeries[] = [mmluFrontier, eciFrontier, trainingComputeFrontier]
+
+/**
+ * Frontier model timeline - which model was the frontier at each date
+ * Based on training compute from Epoch's frontier_ai_models.csv
+ */
+export interface FrontierModelEntry {
+  /** Date this model became the frontier */
+  date: string
+  /** Model name */
+  model: string
+  /** Organization that created the model */
+  org: string
+}
+
+export const frontierModelTimeline: FrontierModelEntry[] = ${JSON.stringify(
+  modelTimeline.map(m => ({ date: m.date, model: m.model, org: m.org })),
+  null,
+  2
+)}
+
+/**
+ * Get the frontier model at a specific date
+ * Returns the most recent model that was released on or before the given date
+ */
+export function getFrontierModelAtDate(date: Date): FrontierModelEntry | null {
+  const dateStr = date.toISOString().slice(0, 10)
+  let result: FrontierModelEntry | null = null
+
+  for (const entry of frontierModelTimeline) {
+    if (entry.date <= dateStr) {
+      result = entry
+    } else {
+      break
+    }
+  }
+
+  return result
+}
 
 /**
  * Get interpolated value for a metric at a specific date

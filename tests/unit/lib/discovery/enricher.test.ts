@@ -6,35 +6,44 @@ import {
 } from '@/lib/discovery/enricher'
 
 describe('enricher', () => {
+  // Tests use Epoch AI frontier model data (based on training compute)
+  // Source: epoch_data/AI Models/frontier_ai_models.csv
   describe('getModelAtDate', () => {
-    it('returns GPT-3 for dates before GPT-3.5', () => {
-      const date = new Date('2022-06-01')
-      expect(getModelAtDate(date)).toBe('GPT-3')
+    it('returns Minerva for dates in mid-2022', () => {
+      // Minerva (540B) was frontier from June 2022 to March 2023
+      const date = new Date('2022-08-01')
+      expect(getModelAtDate(date)).toBe('Minerva (540B)')
     })
 
-    it('returns GPT-3.5 for dates after ChatGPT launch', () => {
-      const date = new Date('2022-12-15')
-      expect(getModelAtDate(date)).toBe('GPT-3.5')
-    })
-
-    it('returns GPT-4 for dates after GPT-4 launch', () => {
+    it('returns GPT-4 for dates after March 2023', () => {
+      // GPT-4 became frontier on March 15, 2023
       const date = new Date('2023-06-15')
       expect(getModelAtDate(date)).toBe('GPT-4')
     })
 
-    it('returns GPT-4 Turbo for dates in late 2023', () => {
-      const date = new Date('2024-01-15')
-      expect(getModelAtDate(date)).toBe('GPT-4 Turbo')
-    })
-
-    it('returns GPT-4o for dates in mid 2024', () => {
+    it('returns Gemini 1.0 Ultra for dates in 2024', () => {
+      // Gemini 1.0 Ultra became frontier Dec 6, 2023
       const date = new Date('2024-06-15')
-      expect(getModelAtDate(date)).toBe('GPT-4o')
+      expect(getModelAtDate(date)).toBe('Gemini 1.0 Ultra')
     })
 
-    it('returns o1 for dates after September 2024', () => {
-      const date = new Date('2024-10-15')
-      expect(getModelAtDate(date)).toBe('o1')
+    it('returns Grok 3 for dates after Feb 2025', () => {
+      // Grok 3 became frontier Feb 17, 2025
+      const date = new Date('2025-02-20')
+      expect(getModelAtDate(date)).toBe('Grok 3')
+    })
+
+    it('returns historical model for 1990s date', () => {
+      // Zip CNN was frontier in late 1989
+      const date = new Date('1990-06-01')
+      expect(getModelAtDate(date)).toBe('Zip CNN')
+    })
+
+    it('returns latest model for future dates', () => {
+      // Should return the most recent frontier model
+      const date = new Date('2030-01-01')
+      // Grok 4 is latest in Epoch data (July 2025)
+      expect(getModelAtDate(date)).toBe('Grok 4')
     })
   })
 
@@ -43,7 +52,7 @@ describe('enricher', () => {
       const context = await enrichContext('2023-06-15')
 
       expect(context.currentModel).toBeDefined()
-      // 2023-06-15 is between GPT-4 launch (Mar 14) and GPT-4 Turbo (Dec 6)
+      // GPT-4 became frontier on March 15, 2023
       expect(context.currentModel).toBe('GPT-4')
     })
 
@@ -66,13 +75,16 @@ describe('enricher', () => {
     })
 
     it('handles dates outside metric range', async () => {
-      // Very old date
+      // Historical date - Epoch data goes back to 1950
       const oldContext = await enrichContext('1990-01-01')
-      expect(oldContext.currentModel).toBe('GPT-3') // Earliest in timeline
+      // Zip CNN was frontier in 1989
+      expect(oldContext.currentModel).toBe('Zip CNN')
 
       // Future date
       const futureContext = await enrichContext('2030-01-01')
       expect(futureContext.currentModel).toBeDefined()
+      // Should return latest frontier (Grok 4)
+      expect(futureContext.currentModel).toBe('Grok 4')
     })
   })
 

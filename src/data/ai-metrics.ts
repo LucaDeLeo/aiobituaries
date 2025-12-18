@@ -18,8 +18,11 @@ export {
   getMetricValueAtDate,
   normalizeMetricValue,
   getNormalizedMetricAtDate,
+  frontierModelTimeline,
+  getFrontierModelAtDate,
   type MetricDataPoint,
   type AIMetricSeries,
+  type FrontierModelEntry,
 } from './ai-metrics.generated'
 
 // Re-export MetricType for convenience

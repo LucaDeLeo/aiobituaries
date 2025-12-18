@@ -11,42 +11,22 @@ import {
   getMetricValueAtDate,
   trainingComputeFrontier,
   mmluFrontier,
+  getFrontierModelAtDate,
 } from '@/data/ai-metrics'
 import type { ContextMetadata } from '@/types/context'
 
 /**
- * Timeline of notable AI models for enrichment
- * Maps date ranges to the leading model at that time
- */
-const MODEL_TIMELINE: Array<{ until: string; model: string }> = [
-  // `until` = last day this model was the frontier, date <= until returns this model
-  { until: '2020-06-10', model: 'GPT-3' }, // GPT-3 released Jun 11, 2020
-  { until: '2022-11-29', model: 'GPT-3' }, // ChatGPT (GPT-3.5) released Nov 30, 2022
-  { until: '2023-03-13', model: 'GPT-3.5' }, // GPT-4 released Mar 14, 2023
-  { until: '2023-11-05', model: 'GPT-4' }, // GPT-4 Turbo released Nov 6, 2023
-  { until: '2024-05-12', model: 'GPT-4 Turbo' }, // GPT-4o released May 13, 2024
-  { until: '2024-09-11', model: 'GPT-4o' }, // o1 released Sep 12, 2024
-  { until: '2024-12-04', model: 'o1' }, // o1 Pro released Dec 5, 2024
-  { until: '2025-01-19', model: 'o1 Pro' }, // DeepSeek R1 released Jan 20, 2025
-  { until: '2099-12-31', model: 'DeepSeek R1' }, // Current frontier
-]
-
-/**
  * Get the leading AI model at a given date
+ *
+ * Uses Epoch AI's frontier_ai_models.csv data to determine
+ * which model had the highest training compute at that time.
  *
  * @param date - The date to check
  * @returns Name of the leading model at that time
  */
 export function getModelAtDate(date: Date): string {
-  const dateStr = date.toISOString().slice(0, 10)
-
-  for (const { until, model } of MODEL_TIMELINE) {
-    if (dateStr <= until) {
-      return model
-    }
-  }
-
-  return 'Unknown'
+  const entry = getFrontierModelAtDate(date)
+  return entry ? entry.model : 'Unknown'
 }
 
 /**
