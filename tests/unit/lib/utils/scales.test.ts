@@ -23,7 +23,8 @@ describe('LOG_TICK_VALUES', () => {
 
   it('values are powers of 10', () => {
     LOG_TICK_VALUES.forEach((val, i) => {
-      expect(val).toBe(Math.pow(10, 17 + i))
+      // Compare log values to avoid floating point precision issues with large numbers
+      expect(Math.log10(val)).toBeCloseTo(17 + i, 10)
     })
   })
 })
