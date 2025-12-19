@@ -135,10 +135,11 @@ describe('getReducedMotionVariants', () => {
   })
 
   it('handles non-object variant values', () => {
-    const mixedVariants: Variants = {
+    // Test with string variant reference (motion/react allows string references at runtime)
+    const mixedVariants = {
       initial: { opacity: 0 },
-      animate: 'visible' as unknown as Record<string, unknown>, // String variant name
-    }
+      animate: 'visible', // String variant name reference
+    } as unknown as Variants
 
     const result = getReducedMotionVariants(mixedVariants, true)
     expect(result.animate).toBe('visible')

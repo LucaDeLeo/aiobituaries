@@ -20,7 +20,7 @@
  *     budgetPath: ./lighthouse-budget.json
  * ```
  */
-import { test, expect } from '@playwright/test'
+import { test } from '@playwright/test'
 
 test.describe('Lighthouse Placeholder', () => {
   test.skip('Full Lighthouse audit requires additional setup', async () => {

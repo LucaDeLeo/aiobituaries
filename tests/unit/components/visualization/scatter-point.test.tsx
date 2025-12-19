@@ -36,7 +36,6 @@ describe('ScatterPoint behavior contracts', () => {
 
   it('scatter-helpers exports are available for integration', async () => {
     const helpers = await import('@/lib/utils/scatter-helpers')
-    expect(helpers.CATEGORY_HEX_COLORS).toBeDefined()
     expect(helpers.hashToJitter).toBeDefined()
     expect(helpers.getCategoryColor).toBeDefined()
   })

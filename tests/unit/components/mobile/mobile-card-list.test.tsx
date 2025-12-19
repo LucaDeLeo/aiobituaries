@@ -9,9 +9,9 @@ import { describe, it, expect } from 'vitest'
 
 describe('MobileCardList module exports', () => {
   it('exports MobileCardList component', async () => {
-    const module = await import('@/components/mobile/mobile-card-list')
-    expect(module.MobileCardList).toBeDefined()
-    expect(typeof module.MobileCardList).toBe('function')
+    const cardListModule = await import('@/components/mobile/mobile-card-list')
+    expect(cardListModule.MobileCardList).toBeDefined()
+    expect(typeof cardListModule.MobileCardList).toBe('function')
   })
 })
 

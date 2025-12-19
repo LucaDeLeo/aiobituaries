@@ -76,8 +76,9 @@ describe('generateObituaryMetadata', () => {
   it('includes openGraph metadata', () => {
     const metadata = generateObituaryMetadata(mockObituary)
     expect(metadata.openGraph).toBeDefined()
-    expect(metadata.openGraph?.type).toBe('article')
-    expect(metadata.openGraph?.siteName).toBe('AI Obituaries')
+    const og = metadata.openGraph as { type?: string; siteName?: string }
+    expect(og.type).toBe('article')
+    expect(og.siteName).toBe('AI Obituaries')
   })
 
   it('includes correct openGraph URL', () => {
@@ -97,7 +98,8 @@ describe('generateObituaryMetadata', () => {
   it('includes twitter card metadata', () => {
     const metadata = generateObituaryMetadata(mockObituary)
     expect(metadata.twitter).toBeDefined()
-    expect(metadata.twitter?.card).toBe('summary_large_image')
+    const twitter = metadata.twitter as { card?: string }
+    expect(twitter.card).toBe('summary_large_image')
   })
 
   it('includes twitter title and description', () => {
@@ -130,7 +132,8 @@ describe('homepageMetadata', () => {
   })
 
   it('has openGraph type website', () => {
-    expect(homepageMetadata.openGraph?.type).toBe('website')
+    const og = homepageMetadata.openGraph as { type?: string }
+    expect(og.type).toBe('website')
   })
 
   it('has openGraph site name', () => {
@@ -144,7 +147,8 @@ describe('homepageMetadata', () => {
   })
 
   it('has twitter card summary_large_image', () => {
-    expect(homepageMetadata.twitter?.card).toBe('summary_large_image')
+    const twitter = homepageMetadata.twitter as { card?: string }
+    expect(twitter.card).toBe('summary_large_image')
   })
 
   it('has twitter title and description', () => {

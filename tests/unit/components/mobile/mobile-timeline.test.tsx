@@ -8,15 +8,15 @@ import { describe, it, expect } from 'vitest'
 
 describe('MobileTimeline module exports', () => {
   it('exports MobileTimeline component', async () => {
-    const module = await import('@/components/mobile/mobile-timeline')
-    expect(module.MobileTimeline).toBeDefined()
-    expect(typeof module.MobileTimeline).toBe('function')
+    const timelineModule = await import('@/components/mobile/mobile-timeline')
+    expect(timelineModule.MobileTimeline).toBeDefined()
+    expect(typeof timelineModule.MobileTimeline).toBe('function')
   })
 
   it('exports MobileTimelineProps type (via module)', async () => {
     // Types are compile-time only, but we verify module loads
-    const module = await import('@/components/mobile/mobile-timeline')
-    expect(module).toBeDefined()
+    const timelineModule = await import('@/components/mobile/mobile-timeline')
+    expect(timelineModule).toBeDefined()
   })
 })
 
@@ -50,21 +50,21 @@ describe('MobileTimeline component dependencies', () => {
 describe('Mobile components integration', () => {
   it('DensityBar exports DateRange type', async () => {
     // This verifies the type can be imported
-    const module = await import('@/components/mobile/density-bar')
-    expect(module.DensityBar).toBeDefined()
+    const densityBarModule = await import('@/components/mobile/density-bar')
+    expect(densityBarModule.DensityBar).toBeDefined()
   })
 
   it('MobileCardList accepts required props', async () => {
-    const module = await import('@/components/mobile/mobile-card-list')
+    const cardListModule = await import('@/components/mobile/mobile-card-list')
     // Verify component exists and is a function
-    expect(typeof module.MobileCardList).toBe('function')
+    expect(typeof cardListModule.MobileCardList).toBe('function')
   })
 })
 
 describe('ObituaryModal side prop', () => {
   it('ObituaryModal accepts side prop', async () => {
-    const module = await import('@/components/obituary/obituary-modal')
+    const modalModule = await import('@/components/obituary/obituary-modal')
     // Verify the component exists - prop types are verified at compile time
-    expect(module.ObituaryModal).toBeDefined()
+    expect(modalModule.ObituaryModal).toBeDefined()
   })
 })

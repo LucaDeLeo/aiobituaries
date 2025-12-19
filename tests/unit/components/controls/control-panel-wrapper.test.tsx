@@ -55,7 +55,7 @@ describe('ControlPanelWrapper rendering', () => {
     const { ControlPanelWrapper } = await import('@/components/controls')
     render(<ControlPanelWrapper totalCount={25} />)
     expect(screen.getByText('Background Metrics')).toBeInTheDocument()
-    expect(screen.getByText('Time Range')).toBeInTheDocument()
+    expect(screen.getByText('AI Progress Era')).toBeInTheDocument()
     expect(screen.getByText('Categories')).toBeInTheDocument()
     expect(screen.getByText('Display Options')).toBeInTheDocument()
   })

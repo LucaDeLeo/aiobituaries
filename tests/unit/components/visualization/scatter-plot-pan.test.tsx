@@ -163,10 +163,9 @@ describe('Motion library availability', () => {
 
 describe('ViewState type compatibility', () => {
   it('ViewState includes translateX field', async () => {
-    // Import the type properly and check it has the required fields
-    const { ViewState } = await import('@/types/visualization') as unknown as {
-      ViewState: { scale: number; translateX: number; translateY: number }
-    }
+    // Import the module to verify it loads correctly
+    const visualizationModule = await import('@/types/visualization')
+    expect(visualizationModule).toBeDefined()
     // TypeScript compilation proves ViewState has these fields
     // Runtime check that we can create valid viewState objects
     const viewState = {

@@ -314,7 +314,8 @@ test.describe('Resource Loading', () => {
     const resourceTimings: { name: string; duration: number; type: string }[] = []
 
     page.on('response', async (response) => {
-      const timing = response.timing()
+      // Playwright Response has timing() but TypeScript types may lag behind
+      const timing = (response as unknown as { timing(): { responseEnd: number; requestStart: number } | null }).timing()
       if (timing) {
         resourceTimings.push({
           name: response.url(),

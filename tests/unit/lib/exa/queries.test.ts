@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import type { DiscoveryCandidate } from '@/types/discovery'
 
 // Mock the Exa client module
 vi.mock('@/lib/exa/client', () => ({

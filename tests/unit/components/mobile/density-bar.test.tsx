@@ -9,14 +9,14 @@ import { describe, it, expect } from 'vitest'
 
 describe('DensityBar module exports', () => {
   it('exports DensityBar component', async () => {
-    const module = await import('@/components/mobile/density-bar')
-    expect(module.DensityBar).toBeDefined()
-    expect(typeof module.DensityBar).toBe('function')
+    const densityBarModule = await import('@/components/mobile/density-bar')
+    expect(densityBarModule.DensityBar).toBeDefined()
+    expect(typeof densityBarModule.DensityBar).toBe('function')
   })
 
   it('exports DateRange type (module loads)', async () => {
-    const module = await import('@/components/mobile/density-bar')
-    expect(module).toBeDefined()
+    const densityBarModule = await import('@/components/mobile/density-bar')
+    expect(densityBarModule).toBeDefined()
   })
 })
 
@@ -47,7 +47,7 @@ describe('DensityBar density calculation logic', () => {
   })
 
   it('height is 2px for bars with count = 0', () => {
-    const count = 0
+    // When count is 0, the component renders a 2px minimum height bar
     const expectedHeight = 2
     expect(expectedHeight).toBe(2)
   })

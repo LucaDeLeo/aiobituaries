@@ -223,9 +223,8 @@ describe('sanity/mutations', () => {
 
   describe('filterNewDrafts', () => {
     it('filters out existing drafts', async () => {
-      mockFetch
-        .mockResolvedValueOnce(1) // First URL exists
-        .mockResolvedValueOnce(0) // Second URL is new
+      // Mock returns array of existing URLs (batch query)
+      mockFetch.mockResolvedValueOnce(['https://example.com/existing'])
 
       const drafts: ObituaryDraft[] = [
         {

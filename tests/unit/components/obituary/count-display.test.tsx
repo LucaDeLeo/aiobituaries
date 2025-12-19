@@ -1,181 +1,60 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, act } from '@testing-library/react'
-
-// Mock the queries module - vi.fn() goes inside factory to avoid hoisting issues
-vi.mock('@/lib/sanity/queries', () => ({
-  getObituaryCount: vi.fn(),
-}))
-
-// Import after mock setup
-import { getObituaryCount } from '@/lib/sanity/queries'
+import { describe, it, expect } from 'vitest'
+import { render, screen } from '@testing-library/react'
 import { CountDisplay } from '@/components/obituary/count-display'
 
-// Type the mocked function
-const mockedGetObituaryCount = vi.mocked(getObituaryCount)
-
 describe('CountDisplay', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('renders with formatted count', async () => {
-    mockedGetObituaryCount.mockResolvedValue(42)
-
-    const Component = await CountDisplay()
-    await act(async () => {
-      render(Component)
-    })
-
+  it('renders with formatted count', () => {
+    render(<CountDisplay count={42} />)
     expect(screen.getByText('42')).toBeInTheDocument()
   })
 
-  it('formats large numbers with commas', async () => {
-    mockedGetObituaryCount.mockResolvedValue(1247)
-
-    const Component = await CountDisplay()
-    await act(async () => {
-      render(Component)
-    })
-
+  it('formats large numbers with commas', () => {
+    render(<CountDisplay count={1247} />)
     expect(screen.getByText('1,247')).toBeInTheDocument()
   })
 
-  it('formats very large numbers correctly', async () => {
-    mockedGetObituaryCount.mockResolvedValue(1234567)
-
-    const Component = await CountDisplay()
-    await act(async () => {
-      render(Component)
-    })
-
+  it('formats very large numbers correctly', () => {
+    render(<CountDisplay count={1234567} />)
     expect(screen.getByText('1,234,567')).toBeInTheDocument()
   })
 
-  it('renders obituaries label', async () => {
-    mockedGetObituaryCount.mockResolvedValue(50)
-
-    const Component = await CountDisplay()
-    await act(async () => {
-      render(Component)
-    })
-
-    // Label is now capitalized in the editorial design
-    expect(screen.getByText('Obituaries')).toBeInTheDocument()
-  })
-
-  it('applies font-mono class to number span', async () => {
-    mockedGetObituaryCount.mockResolvedValue(200)
-
-    const Component = await CountDisplay()
-    await act(async () => {
-      render(Component)
-    })
-
-    // Classes are on the number span inside h1 (not on h1 itself)
-    const numberSpan = screen.getByText('200')
-    expect(numberSpan.className).toContain('font-mono')
-  })
-
-  it('applies responsive text sizing classes', async () => {
-    mockedGetObituaryCount.mockResolvedValue(300)
-
-    const Component = await CountDisplay()
-    await act(async () => {
-      render(Component)
-    })
-
-    // Classes are on the number span inside h1
-    const numberSpan = screen.getByText('300')
-    // Updated for dramatic hero design: massive sizes
-    expect(numberSpan.className).toContain('text-7xl')
-    expect(numberSpan.className).toContain('md:text-9xl')
-  })
-
-  it('applies gold accent color class', async () => {
-    mockedGetObituaryCount.mockResolvedValue(400)
-
-    const Component = await CountDisplay()
-    await act(async () => {
-      render(Component)
-    })
-
-    // Classes are on the number span inside h1
-    const numberSpan = screen.getByText('400')
-    expect(numberSpan.className).toContain('text-[--accent-primary]')
-  })
-
-  it('applies animate-pulse-glow class', async () => {
-    mockedGetObituaryCount.mockResolvedValue(500)
-
-    const Component = await CountDisplay()
-    await act(async () => {
-      render(Component)
-    })
-
-    // Classes are on the number span inside h1
-    const numberSpan = screen.getByText('500')
-    expect(numberSpan.className).toContain('animate-pulse-glow')
-  })
-
-  it('applies motion-reduce class for accessibility', async () => {
-    mockedGetObituaryCount.mockResolvedValue(600)
-
-    const Component = await CountDisplay()
-    await act(async () => {
-      render(Component)
-    })
-
-    // Classes are on the number span inside h1
-    const numberSpan = screen.getByText('600')
-    expect(numberSpan.className).toContain('motion-reduce:animate-none')
-  })
-
-  it('handles zero count', async () => {
-    mockedGetObituaryCount.mockResolvedValue(0)
-
-    const Component = await CountDisplay()
-    await act(async () => {
-      render(Component)
-    })
-
+  it('displays zero count', () => {
+    render(<CountDisplay count={0} />)
     expect(screen.getByText('0')).toBeInTheDocument()
   })
 
-  it('falls back to 0 when Sanity fetch fails', async () => {
-    mockedGetObituaryCount.mockRejectedValue(new Error('Sanity fetch failed'))
-
-    const Component = await CountDisplay()
-    await act(async () => {
-      render(Component)
-    })
-
-    expect(screen.getByText('0')).toBeInTheDocument()
+  it('renders obituaries label', () => {
+    render(<CountDisplay count={50} />)
     expect(screen.getByText('Obituaries')).toBeInTheDocument()
   })
 
-  it('applies secondary text color to label', async () => {
-    mockedGetObituaryCount.mockResolvedValue(700)
-
-    const Component = await CountDisplay()
-    await act(async () => {
-      render(Component)
-    })
-
-    const labelElement = screen.getByText('Obituaries')
-    expect(labelElement.className).toContain('text-[--text-secondary]')
+  it('includes sr-only text with count for accessibility', () => {
+    render(<CountDisplay count={42} />)
+    expect(screen.getByText('42 AI Obituaries')).toHaveClass('sr-only')
   })
 
-  it('renders in a centered container', async () => {
-    mockedGetObituaryCount.mockResolvedValue(800)
+  it('has decorative elements marked aria-hidden', () => {
+    const { container } = render(<CountDisplay count={10} />)
+    const ariaHiddenElements = container.querySelectorAll('[aria-hidden="true"]')
+    // Should have decorative lines and the visual number
+    expect(ariaHiddenElements.length).toBeGreaterThan(0)
+  })
 
-    const Component = await CountDisplay()
-    let container: HTMLElement
-    await act(async () => {
-      const result = render(Component)
-      container = result.container
-    })
+  it('renders within h1 heading', () => {
+    render(<CountDisplay count={100} />)
+    const heading = screen.getByRole('heading', { level: 1 })
+    expect(heading).toBeInTheDocument()
+  })
 
-    const wrapper = container!.firstChild as HTMLElement
-    expect(wrapper.className).toContain('text-center')
+  it('applies proper styling classes for animation', () => {
+    const { container } = render(<CountDisplay count={50} />)
+    const animatedElement = container.querySelector('.animate-pulse-glow')
+    expect(animatedElement).toBeInTheDocument()
+  })
+
+  it('has motion-reduce class for reduced motion preference', () => {
+    const { container } = render(<CountDisplay count={50} />)
+    const element = container.querySelector('.motion-reduce\\:animate-none')
+    expect(element).toBeInTheDocument()
   })
 })

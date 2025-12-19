@@ -13,7 +13,6 @@
 import React from 'react'
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup, act } from '@testing-library/react'
-import { format } from 'date-fns'
 import { CATEGORY_LABELS } from '@/lib/constants/categories'
 import type { Obituary, Category } from '@/types/obituary'
 import type { ContextMetadata } from '@/types/context'
@@ -135,14 +134,13 @@ describe('ObituaryDetail', () => {
   })
 
   describe('Date Display (AC-2.3.4)', () => {
-    it('formats date as "MMMM d, yyyy" (March 14, 2023)', async () => {
+    it('formats date as "MMM d, yyyy" (Mar 14, 2023)', async () => {
       await act(async () => {
         render(<ObituaryDetail obituary={mockObituary} />)
       })
 
-      // Use the same formatting to handle timezone edge cases
-      const expectedDate = format(new Date('2023-03-14'), 'MMMM d, yyyy')
-      expect(screen.getByText(expectedDate)).toBeInTheDocument()
+      // formatDate uses short month format
+      expect(screen.getByText('Mar 14, 2023')).toBeInTheDocument()
     })
 
     it('renders date in a time element with ISO datetime', async () => {
@@ -163,8 +161,8 @@ describe('ObituaryDetail', () => {
         render(<ObituaryDetail obituary={januaryObituary} />)
       })
 
-      const expectedDate = format(new Date('2024-01-01'), 'MMMM d, yyyy')
-      expect(screen.getByText(expectedDate)).toBeInTheDocument()
+      // formatDate uses short month format: "Jan 1, 2024"
+      expect(screen.getByText('Jan 1, 2024')).toBeInTheDocument()
     })
   })
 

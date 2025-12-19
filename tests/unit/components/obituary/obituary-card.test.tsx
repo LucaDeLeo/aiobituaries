@@ -74,20 +74,20 @@ describe('ObituaryCard utilities', () => {
   })
 })
 
-describe('CATEGORY_COLORS', () => {
+describe('CATEGORY_BG_CLASSES', () => {
   it('has all four categories defined', async () => {
-    const { CATEGORY_COLORS } = await import('@/lib/constants/categories')
-    expect(CATEGORY_COLORS).toHaveProperty('capability')
-    expect(CATEGORY_COLORS).toHaveProperty('market')
-    expect(CATEGORY_COLORS).toHaveProperty('agi')
-    expect(CATEGORY_COLORS).toHaveProperty('dismissive')
+    const { CATEGORY_BG_CLASSES } = await import('@/lib/constants/categories')
+    expect(CATEGORY_BG_CLASSES).toHaveProperty('capability')
+    expect(CATEGORY_BG_CLASSES).toHaveProperty('market')
+    expect(CATEGORY_BG_CLASSES).toHaveProperty('agi')
+    expect(CATEGORY_BG_CLASSES).toHaveProperty('dismissive')
   })
 
   it('uses CSS variable-based classes', async () => {
-    const { CATEGORY_COLORS } = await import('@/lib/constants/categories')
-    expect(CATEGORY_COLORS.capability).toContain('bg-[--category-')
-    expect(CATEGORY_COLORS.market).toContain('bg-[--category-')
-    expect(CATEGORY_COLORS.agi).toContain('bg-[--category-')
-    expect(CATEGORY_COLORS.dismissive).toContain('bg-[--category-')
+    const { CATEGORY_BG_CLASSES } = await import('@/lib/constants/categories')
+    expect(CATEGORY_BG_CLASSES.capability).toContain('bg-[--category-')
+    expect(CATEGORY_BG_CLASSES.market).toContain('bg-[--category-')
+    expect(CATEGORY_BG_CLASSES.agi).toContain('bg-[--category-')
+    expect(CATEGORY_BG_CLASSES.dismissive).toContain('bg-[--category-')
   })
 })

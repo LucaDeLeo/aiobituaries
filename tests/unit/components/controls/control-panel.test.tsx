@@ -78,10 +78,10 @@ describe('ControlPanel collapsible sections', () => {
     expect(screen.getByText('Background Metrics')).toBeInTheDocument()
   })
 
-  it('renders Time Range section', async () => {
+  it('renders AI Progress Era section', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
-    expect(screen.getByText('Time Range')).toBeInTheDocument()
+    expect(screen.getByText('AI Progress Era')).toBeInTheDocument()
   })
 
   it('renders Categories section', async () => {
@@ -115,7 +115,7 @@ describe('ControlPanel placeholder content', () => {
     expect(screen.getByText('Epoch Capability Index')).toBeInTheDocument()
   })
 
-  it('renders DateRangeSlider for Time Range', async () => {
+  it('renders DateRangeSlider for AI Progress Era', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
     // DateRangeSlider is now rendered instead of placeholder text
@@ -152,11 +152,11 @@ describe('ControlPanel section default states', () => {
     expect(bgMetricsButton).toHaveAttribute('data-state', 'open')
   })
 
-  it('has Time Range section open by default', async () => {
+  it('has AI Progress Era section open by default', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
-    const timeRangeButton = screen.getByRole('button', { name: /time range/i })
-    expect(timeRangeButton).toHaveAttribute('data-state', 'open')
+    const progressEraButton = screen.getByRole('button', { name: /ai progress era/i })
+    expect(progressEraButton).toHaveAttribute('data-state', 'open')
   })
 
   it('has Categories section open by default', async () => {

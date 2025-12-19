@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  hashToJitter,
-  getCategoryColor,
-  CATEGORY_HEX_COLORS,
-} from '@/lib/utils/scatter-helpers'
+import { hashToJitter, getCategoryColor } from '@/lib/utils/scatter-helpers'
 
 describe('hashToJitter', () => {
   it('produces deterministic output for same input', () => {
@@ -68,22 +64,4 @@ describe('getCategoryColor', () => {
   })
 })
 
-describe('CATEGORY_HEX_COLORS', () => {
-  it('has all four categories', () => {
-    expect(Object.keys(CATEGORY_HEX_COLORS)).toHaveLength(4)
-  })
-
-  it('values are valid hex colors', () => {
-    const hexPattern = /^#[0-9A-Fa-f]{6}$/
-    Object.values(CATEGORY_HEX_COLORS).forEach((color) => {
-      expect(color).toMatch(hexPattern)
-    })
-  })
-
-  it('contains expected category keys', () => {
-    expect(CATEGORY_HEX_COLORS).toHaveProperty('capability')
-    expect(CATEGORY_HEX_COLORS).toHaveProperty('market')
-    expect(CATEGORY_HEX_COLORS).toHaveProperty('agi')
-    expect(CATEGORY_HEX_COLORS).toHaveProperty('dismissive')
-  })
-})
+// CATEGORY_HEX_COLORS was moved to categories.ts - colors now derived from there
