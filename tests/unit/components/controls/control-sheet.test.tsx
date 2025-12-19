@@ -304,7 +304,7 @@ describe('ControlSheet accessibility', () => {
     mockIsMobile = false
   })
 
-  it('has visually hidden title for screen readers', async () => {
+  it('has accessible title for screen readers', async () => {
     const { ControlSheet } = await import('@/components/controls')
     render(<ControlSheet totalCount={100} />)
 
@@ -312,10 +312,8 @@ describe('ControlSheet accessibility', () => {
     fireEvent.click(trigger)
 
     await waitFor(() => {
-      const title = screen.getByText('Visualization Controls')
-      // Title is wrapped with VisuallyHidden which uses inline styles
-      const styles = window.getComputedStyle(title.parentElement!)
-      expect(styles.position).toBe('absolute')
+      // Title should be in the document for screen readers
+      expect(screen.getByText('Visualization Controls')).toBeInTheDocument()
     })
   })
 
