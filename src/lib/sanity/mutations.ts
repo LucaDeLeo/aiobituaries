@@ -83,7 +83,7 @@ export async function createObituaryDraft(
 }
 
 /**
- * Create multiple obituary drafts in Sanity
+ * Create multiple obituary drafts in Sanity using a transaction for efficiency
  *
  * @param drafts - Array of drafts to create
  * @returns Object with created IDs and failed indices
@@ -91,19 +91,52 @@ export async function createObituaryDraft(
 export async function createObituaryDrafts(
   drafts: ObituaryDraft[]
 ): Promise<{ createdIds: string[]; failedIndices: number[] }> {
-  const createdIds: string[] = []
-  const failedIndices: number[] = []
+  const client = getSanityWriteClient()
 
-  for (let i = 0; i < drafts.length; i++) {
-    const id = await createObituaryDraft(drafts[i])
-    if (id) {
-      createdIds.push(id)
-    } else {
-      failedIndices.push(i)
-    }
+  if (!client) {
+    console.warn('[sanity/mutations] Write client not configured')
+    return { createdIds: [], failedIndices: drafts.map((_, i) => i) }
   }
 
-  return { createdIds, failedIndices }
+  if (drafts.length === 0) {
+    return { createdIds: [], failedIndices: [] }
+  }
+
+  try {
+    // Use transaction for batch creation (more efficient than sequential creates)
+    const transaction = client.transaction()
+    const tempIds: string[] = []
+
+    for (const draft of drafts) {
+      // Generate a temporary ID for tracking
+      const tempId = `drafts.${Date.now()}-${Math.random().toString(36).slice(2)}`
+      tempIds.push(tempId)
+      transaction.create({ ...draft, _id: tempId })
+    }
+
+    const result = await transaction.commit()
+
+    // Extract created IDs from transaction result
+    const createdIds = result.results.map((r) => r.id)
+    return { createdIds, failedIndices: [] }
+  } catch (error) {
+    console.error('[sanity/mutations] Batch create failed, falling back to sequential:', error)
+
+    // Fallback to sequential creation
+    const createdIds: string[] = []
+    const failedIndices: number[] = []
+
+    for (let i = 0; i < drafts.length; i++) {
+      const id = await createObituaryDraft(drafts[i])
+      if (id) {
+        createdIds.push(id)
+      } else {
+        failedIndices.push(i)
+      }
+    }
+
+    return { createdIds, failedIndices }
+  }
 }
 
 /**
@@ -135,6 +168,7 @@ export async function obituaryExistsByUrl(sourceUrl: string): Promise<boolean> {
 
 /**
  * Filter drafts to exclude those that already exist (by URL)
+ * Uses a single GROQ query for efficiency instead of N individual queries
  *
  * @param drafts - Array of drafts to filter
  * @returns Drafts that don't already exist in Sanity
@@ -142,12 +176,29 @@ export async function obituaryExistsByUrl(sourceUrl: string): Promise<boolean> {
 export async function filterNewDrafts(
   drafts: ObituaryDraft[]
 ): Promise<ObituaryDraft[]> {
-  const results = await Promise.all(
-    drafts.map(async (draft) => ({
-      draft,
-      exists: await obituaryExistsByUrl(draft.sourceUrl),
-    }))
-  )
+  if (drafts.length === 0) return []
 
-  return results.filter((r) => !r.exists).map((r) => r.draft)
+  const client = getSanityWriteClient()
+
+  if (!client) {
+    // Can't check, return all drafts
+    return drafts
+  }
+
+  try {
+    // Single query to find all existing URLs (more efficient than N queries)
+    const urls = drafts.map((d) => d.sourceUrl)
+    const existingUrls = await client.fetch<string[]>(
+      `*[_type == "obituary" && sourceUrl in $urls].sourceUrl`,
+      { urls }
+    )
+
+    // Filter out drafts whose URLs already exist
+    const existingSet = new Set(existingUrls)
+    return drafts.filter((draft) => !existingSet.has(draft.sourceUrl))
+  } catch (error) {
+    console.error('[sanity/mutations] Batch URL check failed:', error)
+    // On error, return all drafts (let individual creates handle duplicates)
+    return drafts
+  }
 }

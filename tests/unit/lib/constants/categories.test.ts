@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest'
 import {
   CATEGORIES,
   CATEGORY_ORDER,
-  CATEGORY_COLORS,
+  CATEGORY_BG_CLASSES,
+  CATEGORY_BADGE_CLASSES,
   CATEGORY_LABELS,
   getCategory,
   getCategoryColor,
@@ -264,15 +265,27 @@ describe('isValidCategory function', () => {
   })
 })
 
-describe('legacy constants (deprecated)', () => {
-  describe('CATEGORY_COLORS', () => {
+describe('Tailwind class constants', () => {
+  describe('CATEGORY_BG_CLASSES', () => {
     it('contains all four categories', () => {
-      expect(Object.keys(CATEGORY_COLORS)).toHaveLength(4)
+      expect(Object.keys(CATEGORY_BG_CLASSES)).toHaveLength(4)
     })
 
     it('has Tailwind class format values', () => {
-      Object.values(CATEGORY_COLORS).forEach((value) => {
+      Object.values(CATEGORY_BG_CLASSES).forEach((value) => {
         expect(value).toMatch(/^bg-\[--category-/)
+      })
+    })
+  })
+
+  describe('CATEGORY_BADGE_CLASSES', () => {
+    it('contains all four categories', () => {
+      expect(Object.keys(CATEGORY_BADGE_CLASSES)).toHaveLength(4)
+    })
+
+    it('has badge styling with opacity and text color', () => {
+      Object.values(CATEGORY_BADGE_CLASSES).forEach((value) => {
+        expect(value).toMatch(/bg-\[--category-.*\/20.*text-\[--category-/)
       })
     })
   })

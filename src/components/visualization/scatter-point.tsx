@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, forwardRef, useImperativeHandle, memo } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { staggerItem } from '@/lib/utils/animation'
 import type { ObituarySummary } from '@/types/obituary'
 
@@ -16,8 +16,8 @@ export interface ScatterPointProps {
   onMouseEnter?: () => void
   onMouseLeave?: () => void
   onClick?: (element: HTMLElement) => void
-  /** Override reduced motion for testing purposes */
-  shouldReduceMotion?: boolean
+  /** Whether to reduce motion (computed once in parent to avoid N hook calls) */
+  shouldReduceMotion: boolean
   /** Tab index for roving tabindex pattern (0 = focusable, -1 = programmatically focusable) */
   tabIndex?: 0 | -1
   /** Whether this point currently has keyboard focus */
@@ -32,7 +32,6 @@ export interface ScatterPointProps {
 
 const POINT_RADIUS = 7 // 14px diameter (visual size)
 const FOCUSED_POINT_RADIUS = 9 // ~1.25x scale when focused (AC-6.2.5)
-const TABLET_TOUCH_RADIUS = 22 // 44px diameter touch target for tablet
 const FOCUS_RING_RADIUS = 14 // 2px gold ring outside point (AC-6.2.5)
 
 /**
@@ -67,7 +66,7 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
       onMouseEnter,
       onMouseLeave,
       onClick,
-      shouldReduceMotion: shouldReduceMotionProp,
+      shouldReduceMotion,
       tabIndex = -1,
       isFocused = false,
       onKeyDown,
@@ -81,11 +80,6 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
 
     // Expose the group element via forwardRef
     useImperativeHandle(ref, () => groupRef.current as SVGGElement)
-
-    // Check reduced motion preference - allow override for testing
-    // IMPORTANT: Call hook unconditionally before early return
-    const reducedMotionPref = useReducedMotion()
-    const prefersReducedMotion = shouldReduceMotionProp ?? reducedMotionPref
 
     // Hidden if clustered
     if (isClustered) return null
@@ -111,10 +105,12 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
     const pointId = `point-${obituary._id}`
     const descriptionId = `desc-${obituary._id}`
 
-    // Format date for screen reader
-    const formattedDate = new Date(obituary.date).toLocaleDateString('en-US', {
+    // Format date for screen reader (UTC-safe)
+    const date = new Date(obituary.date + 'T00:00:00Z')
+    const formattedDate = date.toLocaleDateString('en-US', {
       month: 'long',
       year: 'numeric',
+      timeZone: 'UTC',
     })
 
     return (
@@ -148,7 +144,7 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
             stroke="var(--accent-primary)"
             strokeWidth={2}
             strokeDasharray="4 2"
-            className={prefersReducedMotion ? '' : 'animate-focus-ring'}
+            className={shouldReduceMotion ? '' : 'animate-focus-ring'}
             data-testid="scatter-point-focus-ring"
           />
         )}
@@ -192,7 +188,7 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
               opacity: isHovered || isFocused ? 0.4 : 0.15,
               r: isHovered || isFocused ? currentRadius + 6 : currentRadius + 4,
             }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.3 }}
           />
         )}
 
@@ -208,21 +204,21 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
           style={{
             filter: `drop-shadow(0 0 ${glowIntensity}px ${color}) drop-shadow(0 0 ${outerGlowIntensity}px ${color}40)`,
             pointerEvents: 'none',
-            willChange: prefersReducedMotion ? 'auto' : 'transform, opacity',
+            willChange: shouldReduceMotion ? 'auto' : 'transform, opacity',
           }}
-          variants={prefersReducedMotion ? undefined : staggerItem}
-          initial={prefersReducedMotion ? undefined : { opacity: 0, scale: 0 }}
+          variants={shouldReduceMotion ? undefined : staggerItem}
+          initial={shouldReduceMotion ? undefined : { opacity: 0, scale: 0 }}
           animate={
-            prefersReducedMotion
+            shouldReduceMotion
               ? { opacity }
               : {
                   opacity,
                   scale: isHovered ? 1.3 : 1,
                 }
           }
-          whileHover={prefersReducedMotion ? undefined : { scale: 1.3 }}
+          whileHover={shouldReduceMotion ? undefined : { scale: 1.3 }}
           transition={
-            prefersReducedMotion
+            shouldReduceMotion
               ? { duration: 0 }
               : {
                   // 200ms per AC-4.4.6 for filter transitions

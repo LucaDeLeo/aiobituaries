@@ -91,8 +91,12 @@ export const modalSlideIn: Variants = {
 
 /**
  * Stagger container animation.
- * Applies staggered delay to child elements with dynamic timing calculation.
- * Maximum total duration is capped at 500ms regardless of child count.
+ * Applies staggered delay to child elements.
+ *
+ * Timing: 100ms initial delay, then 50ms between each child.
+ * Note: Total animation time scales with child count. With 100 children,
+ * total entrance animation would be ~5 seconds. For performance-critical
+ * cases with many children, consider reducing stagger or disabling animation.
  *
  * Usage:
  * <motion.g variants={staggerContainer} initial="initial" animate="animate">

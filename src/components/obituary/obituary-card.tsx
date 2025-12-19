@@ -1,15 +1,8 @@
 import Link from 'next/link'
-import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
-import type { ObituarySummary, Category } from '@/types/obituary'
-
-// P1.4 fix: Local CSS class mapping uses CSS variables from centralized theme
-const CATEGORY_BG_CLASSES: Record<Category, string> = {
-  capability: 'bg-[--category-capability]',
-  market: 'bg-[--category-market]',
-  agi: 'bg-[--category-agi]',
-  dismissive: 'bg-[--category-dismissive]',
-}
+import { formatDate } from '@/lib/utils/date'
+import { CATEGORY_BG_CLASSES } from '@/lib/constants/categories'
+import type { ObituarySummary } from '@/types/obituary'
 
 interface ObituaryCardProps {
   obituary: ObituarySummary
@@ -73,7 +66,7 @@ export function ObituaryCard({ obituary }: ObituaryCardProps) {
             aria-hidden="true"
           />
           <span className="text-sm text-[--text-muted] font-mono">
-            {format(new Date(obituary.date), 'MMM d, yyyy')}
+            {formatDate(obituary.date)}
           </span>
         </div>
         <p className="font-serif italic text-[--text-primary] mb-3 leading-relaxed text-lg">

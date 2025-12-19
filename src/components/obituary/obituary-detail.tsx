@@ -1,21 +1,10 @@
 import Link from 'next/link'
-import { format } from 'date-fns'
 import { ExternalLink, ArrowLeft } from 'lucide-react'
-import { CATEGORY_LABELS } from '@/lib/constants/categories'
+import { formatDate } from '@/lib/utils/date'
+import { CATEGORY_LABELS, CATEGORY_BADGE_CLASSES } from '@/lib/constants/categories'
 import { CopyButton } from '@/components/ui/copy-button'
 import { sanitizeUrl } from '@/lib/utils/url'
-import type { Obituary, Category } from '@/types/obituary'
-
-/**
- * Badge color mappings with semi-transparent background and solid text.
- * Uses /20 opacity modifier for background with full opacity text.
- */
-const BADGE_COLORS: Record<Category, string> = {
-  capability: 'bg-[--category-capability]/20 text-[--category-capability]',
-  market: 'bg-[--category-market]/20 text-[--category-market]',
-  agi: 'bg-[--category-agi]/20 text-[--category-agi]',
-  dismissive: 'bg-[--category-dismissive]/20 text-[--category-dismissive]',
-}
+import type { Obituary } from '@/types/obituary'
 
 interface ObituaryDetailProps {
   obituary: Obituary
@@ -65,7 +54,7 @@ export function ObituaryDetail({ obituary }: ObituaryDetailProps) {
           dateTime={obituary.date}
           className="text-[--text-muted]"
         >
-          {format(new Date(obituary.date), 'MMMM d, yyyy')}
+          {formatDate(obituary.date)}
         </time>
       </div>
 
@@ -73,7 +62,7 @@ export function ObituaryDetail({ obituary }: ObituaryDetailProps) {
         {obituary.categories?.map((category) => (
           <span
             key={category}
-            className={`px-3 py-1 rounded-full text-sm font-medium ${BADGE_COLORS[category]}`}
+            className={`px-3 py-1 rounded-full text-sm font-medium ${CATEGORY_BADGE_CLASSES[category]}`}
           >
             {CATEGORY_LABELS[category]}
           </span>

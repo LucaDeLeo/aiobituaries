@@ -18,9 +18,12 @@ export interface DateRangeSliderProps {
 }
 
 /**
- * DateRangeSlider - Dual-handle slider for selecting a year range
+ * DateRangeSlider - Dual-handle slider for selecting AI progress era
  *
- * Allows users to select a start and end year for the visualization.
+ * Controls the Y-axis domain (which years of AI compute progress are visible).
+ * Does NOT filter obituaries by date - it adjusts the vertical scale to show
+ * AI progress data from the selected year range.
+ *
  * Values update immediately during drag for responsive UI, while
  * URL updates are debounced by the parent state hook.
  *

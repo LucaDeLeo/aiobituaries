@@ -1,9 +1,11 @@
-import { getObituaryCount } from '@/lib/sanity/queries'
+export interface CountDisplayProps {
+  /** Obituary count to display (passed from parent to avoid duplicate fetches) */
+  count: number
+}
 
 /**
  * Hero count display component.
- * Server Component that fetches obituary count from Sanity and displays it
- * prominently with gold styling and pulsing glow animation.
+ * Displays obituary count prominently with gold styling and pulsing glow animation.
  *
  * Features:
  * - Massive, dramatic number display (dominates viewport)
@@ -12,17 +14,9 @@ import { getObituaryCount } from '@/lib/sanity/queries'
  * - Gold accent color (#C9A962) with enhanced glow
  * - Decorative horizontal rules for archival aesthetic
  * - Responsive sizing scaling from mobile to large desktop
- * - Graceful fallback on fetch errors
  * - Screen reader accessible with descriptive label
  */
-export async function CountDisplay() {
-  let count: number
-  try {
-    count = await getObituaryCount()
-  } catch {
-    // Graceful fallback when Sanity fetch fails
-    count = 0
-  }
+export function CountDisplay({ count }: CountDisplayProps) {
   const formattedCount = new Intl.NumberFormat('en-US').format(count)
 
   return (

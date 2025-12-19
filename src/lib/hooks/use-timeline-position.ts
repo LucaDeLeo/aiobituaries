@@ -153,7 +153,7 @@ export function useTimelinePosition(): UseTimelinePositionReturn {
   const [position, setPosition] = useState<TimelinePosition | null>(null)
   const [wasRestored, setWasRestored] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Load position on mount (client-side only)
   // This is a legitimate use of setState in useEffect - syncing React state with

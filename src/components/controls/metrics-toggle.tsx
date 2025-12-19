@@ -2,35 +2,26 @@
 
 import type { MetricType } from '@/types/metrics'
 import { cn } from '@/lib/utils'
+import { allMetrics } from '@/data/ai-metrics.generated'
 
 /**
- * Metric configuration for display
+ * UI-specific descriptions for each metric (not in generated data)
  */
-const METRICS = [
-  {
-    id: 'compute' as const,
-    label: 'Training Compute',
-    description: 'FLOP trend line',
-    color: 'rgb(118, 185, 0)',
-  },
-  {
-    id: 'mmlu' as const,
-    label: 'MMLU Score',
-    description: 'Benchmark accuracy',
-    color: 'rgb(234, 179, 8)',
-  },
-  {
-    id: 'eci' as const,
-    label: 'Epoch Capability Index',
-    description: 'Composite capability',
-    color: 'rgb(99, 102, 241)',
-  },
-] satisfies Array<{
-  id: MetricType
-  label: string
-  description: string
-  color: string
-}>
+const METRIC_DESCRIPTIONS: Record<MetricType, string> = {
+  compute: 'FLOP trend line',
+  mmlu: 'Benchmark accuracy',
+  eci: 'Composite capability',
+}
+
+/**
+ * Derive metrics config from generated data with UI descriptions
+ */
+const METRICS = allMetrics.map((metric) => ({
+  id: metric.id as MetricType,
+  label: metric.label,
+  description: METRIC_DESCRIPTIONS[metric.id as MetricType],
+  color: metric.color,
+}))
 
 export interface MetricsToggleProps {
   /** Currently enabled metrics */

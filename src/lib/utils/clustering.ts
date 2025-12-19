@@ -31,12 +31,65 @@ interface PositionedPoint {
 }
 
 /**
- * Compute clusters from positioned points using proximity-based approach.
- * Scans points sorted by X, finding nearby points within threshold distance.
- * Threshold scales inversely with zoom - at low zoom, more clustering occurs.
- *
- * Note: Current implementation is O(n^2) in worst case. For large datasets,
- * consider spatial hashing or grid bucketing for better performance.
+ * Grid cell key for spatial hashing
+ */
+function getCellKey(x: number, y: number, cellSize: number): string {
+  const cellX = Math.floor(x / cellSize)
+  const cellY = Math.floor(y / cellSize)
+  return `${cellX},${cellY}`
+}
+
+/**
+ * Build spatial hash grid for O(1) neighbor lookups
+ */
+function buildSpatialGrid(
+  points: PositionedPoint[],
+  cellSize: number
+): Map<string, PositionedPoint[]> {
+  const grid = new Map<string, PositionedPoint[]>()
+  for (const point of points) {
+    const key = getCellKey(point.x, point.y, cellSize)
+    const cell = grid.get(key)
+    if (cell) {
+      cell.push(point)
+    } else {
+      grid.set(key, [point])
+    }
+  }
+  return grid
+}
+
+/**
+ * Get all points in cell and adjacent cells (9 cells total)
+ */
+function getNearbyCandidates(
+  x: number,
+  y: number,
+  cellSize: number,
+  grid: Map<string, PositionedPoint[]>
+): PositionedPoint[] {
+  const cellX = Math.floor(x / cellSize)
+  const cellY = Math.floor(y / cellSize)
+  const candidates: PositionedPoint[] = []
+
+  // Check 3x3 grid of cells centered on point's cell
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      const key = `${cellX + dx},${cellY + dy}`
+      const cell = grid.get(key)
+      if (cell) {
+        candidates.push(...cell)
+      }
+    }
+  }
+
+  return candidates
+}
+
+/**
+ * Compute clusters from positioned points using grid-based spatial hashing.
+ * Uses O(n) average case by only checking nearby cells instead of all points.
+ * Compares squared distances to avoid Math.sqrt overhead.
  *
  * @param points - Array of points with obituary data and computed x,y positions
  * @param config - Clustering configuration (threshold, minPoints)
@@ -48,28 +101,32 @@ export function computeClusters(
   config: ClusterConfig = DEFAULT_CLUSTER_CONFIG,
   zoomScale: number = 1
 ): PointCluster[] {
+  if (points.length === 0) return []
+
   // Effective threshold increases as we zoom out (more clustering)
   const effectiveThreshold = config.threshold / zoomScale
+  const thresholdSquared = effectiveThreshold * effectiveThreshold
   const clusters: PointCluster[] = []
   const assigned = new Set<string>()
 
-  // Sort points by x position for efficient nearby search
-  const sortedPoints = [...points].sort((a, b) => a.x - b.x)
+  // Build spatial hash grid with cell size = threshold (ensures neighbors are in adjacent cells)
+  const grid = buildSpatialGrid(points, effectiveThreshold)
 
-  for (const point of sortedPoints) {
+  for (const point of points) {
     if (assigned.has(point.obituary._id)) continue
 
-    // Find all nearby points within threshold
-    const nearby = sortedPoints.filter((p) => {
+    // Get candidate points from nearby cells only (O(1) average case)
+    const candidates = getNearbyCandidates(point.x, point.y, effectiveThreshold, grid)
+
+    // Find all nearby points within threshold using squared distance
+    const nearby = candidates.filter((p) => {
       if (assigned.has(p.obituary._id)) return false
       if (p.obituary._id === point.obituary._id) return true
 
       const dx = p.x - point.x
-      // Early exit if too far in x direction
-      if (Math.abs(dx) > effectiveThreshold) return false
-
       const dy = p.y - point.y
-      return Math.sqrt(dx * dx + dy * dy) <= effectiveThreshold
+      // Compare squared distances to avoid Math.sqrt
+      return dx * dx + dy * dy <= thresholdSquared
     })
 
     if (nearby.length >= config.minPoints) {

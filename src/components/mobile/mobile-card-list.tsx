@@ -9,10 +9,10 @@
  * Story 5-5: Mobile Hybrid View
  */
 
-import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
-import { CATEGORY_COLORS, CATEGORY_LABELS } from '@/lib/constants/categories'
-import type { ObituarySummary, Category } from '@/types/obituary'
+import { formatDate } from '@/lib/utils/date'
+import { CATEGORY_BG_CLASSES, CATEGORY_LABELS } from '@/lib/constants/categories'
+import type { ObituarySummary } from '@/types/obituary'
 
 export interface MobileCardListProps {
   /** Filtered obituaries to display */
@@ -61,7 +61,7 @@ export function MobileCardList({
       {obituaries.map((obituary) => {
         const primaryCategory = obituary.categories?.[0]
         const categoryColorClass = primaryCategory
-          ? CATEGORY_COLORS[primaryCategory]
+          ? CATEGORY_BG_CLASSES[primaryCategory]
           : 'bg-[--text-muted]'
 
         return (
@@ -86,7 +86,7 @@ export function MobileCardList({
                 aria-hidden="true"
               />
               <span className="text-xs text-[--text-muted]">
-                {format(new Date(obituary.date), 'MMM d, yyyy')}
+                {formatDate(obituary.date)}
               </span>
               {primaryCategory && (
                 <span className="text-xs text-[--text-muted] opacity-60">

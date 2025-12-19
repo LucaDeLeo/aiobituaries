@@ -15,6 +15,7 @@ export const metadata = homepageMetadata;
 
 export default async function Home() {
   const obituaries = await getObituaries();
+  const count = obituaries.length;
 
   // P0.4 fix: Separate mobile and tablet content to prevent double-mounting
   // Only ONE branch is mounted at a time via ClientLayoutRouter
@@ -23,7 +24,7 @@ export default async function Home() {
   const mobileContent = (
     <div className="min-h-screen flex flex-col">
       <section className="flex flex-col items-center justify-center py-12 px-4">
-        <CountDisplay />
+        <CountDisplay count={count} />
       </section>
       <div className="flex-1 flex flex-col min-h-0">
         <Suspense fallback={<div className="flex-1 flex items-center justify-center">Loading...</div>}>
@@ -38,7 +39,7 @@ export default async function Home() {
   const tabletContent = (
     <div className="min-h-screen flex flex-col">
       <section className="flex flex-col items-center justify-center py-24 px-4">
-        <CountDisplay />
+        <CountDisplay count={count} />
       </section>
       <div className="flex-1">
         <Suspense fallback={null}>
@@ -56,7 +57,7 @@ export default async function Home() {
   const desktopContent = (
     <div className="flex flex-col min-h-screen">
       <header className="flex items-center px-6 py-4 border-b border-border" aria-label="Dashboard header">
-        <CountDisplayCompact />
+        <CountDisplayCompact count={count} />
       </header>
       <div className="grid grid-cols-[1fr_320px] flex-1 min-h-[500px] gap-0">
         <Suspense fallback={null}>

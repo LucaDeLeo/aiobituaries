@@ -74,7 +74,7 @@ export function ControlPanel({
           />
         </CollapsibleSection>
 
-        <CollapsibleSection title="Time Range" defaultOpen>
+        <CollapsibleSection title="AI Progress Era" defaultOpen>
           <DateRangeSlider
             value={dateRange}
             onValueChange={onDateRangeChange}

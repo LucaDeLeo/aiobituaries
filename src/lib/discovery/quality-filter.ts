@@ -16,18 +16,23 @@ import {
 import type { DiscoveryCandidate, AuthorMetadata } from '@/types/discovery'
 
 /**
+ * Precomputed lowercase handles for O(1) lookup.
+ * Created once at module load to avoid repeated Array.from() and toLowerCase() calls.
+ */
+const LOWERCASE_HANDLES = new Set(
+  Array.from(ALL_NOTABLE_HANDLES).map((h) => h.toLowerCase())
+)
+
+/**
  * Check if a Twitter handle is in the whitelist
  *
  * @param handle - Twitter handle (with or without @)
  * @returns true if whitelisted
  */
 export function isWhitelistedHandle(handle: string): boolean {
-  // Normalize: remove @ and lowercase
+  // Normalize: remove @ and lowercase, then O(1) Set lookup
   const normalized = handle.replace(/^@/, '').toLowerCase()
-  // Check against lowercased whitelist
-  return Array.from(ALL_NOTABLE_HANDLES).some(
-    (h) => h.toLowerCase() === normalized
-  )
+  return LOWERCASE_HANDLES.has(normalized)
 }
 
 /**

@@ -1,15 +1,5 @@
 import type { Category } from '@/types/obituary'
-
-/**
- * Category colors as hex values for SVG fill.
- * These match the CSS variables defined in globals.css.
- */
-export const CATEGORY_HEX_COLORS: Record<Category, string> = {
-  capability: '#C9A962', // Gold
-  market: '#7B9E89', // Sage
-  agi: '#9E7B7B', // Rose
-  dismissive: '#7B7B9E', // Lavender
-}
+import { getCategoryColor as getCategoryColorFromConstants } from '@/lib/constants/categories'
 
 /**
  * Deterministic jitter algorithm.
@@ -35,5 +25,5 @@ export function hashToJitter(id: string): number {
  */
 export function getCategoryColor(categories: Category[]): string {
   const primary = categories[0] || 'capability'
-  return CATEGORY_HEX_COLORS[primary]
+  return getCategoryColorFromConstants(primary)
 }

@@ -1,17 +1,13 @@
-import { getObituaryCount } from '@/lib/sanity/queries'
+export interface CountDisplayCompactProps {
+  /** Obituary count to display (passed from parent to avoid duplicate fetches) */
+  count: number
+}
 
 /**
  * Compact count display for desktop header.
- * Async Server Component that fetches obituary count from Sanity.
  * Displays inline with smaller styling - no decorative elements.
  */
-export async function CountDisplayCompact() {
-  let count: number
-  try {
-    count = await getObituaryCount()
-  } catch {
-    count = 0
-  }
+export function CountDisplayCompact({ count }: CountDisplayCompactProps) {
   const formattedCount = new Intl.NumberFormat('en-US').format(count)
 
   return (

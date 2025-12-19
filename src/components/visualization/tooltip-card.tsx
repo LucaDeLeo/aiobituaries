@@ -69,9 +69,10 @@ export function TooltipCard({ obituary, x, y, containerBounds, showFlop = true }
       ? `${obituary.claim.slice(0, 100)}...`
       : obituary.claim
 
-  // Calculate FLOP value at obituary date
-  const flopValue = getActualFlopAtDate(trainingComputeFrontier, new Date(obituary.date))
-  const formattedFlop = formatFlopTick(flopValue)
+  // Calculate FLOP value only when needed (guard computation)
+  const formattedFlop = showFlop
+    ? formatFlopTick(getActualFlopAtDate(trainingComputeFrontier, new Date(obituary.date)))
+    : null
 
   return (
     <motion.div
@@ -116,7 +117,7 @@ export function TooltipCard({ obituary, x, y, containerBounds, showFlop = true }
           </div>
 
           {/* AI Progress (FLOP value at date) - only shown when compute metric enabled */}
-          {showFlop && (
+          {formattedFlop && (
             <div className="text-[11px] text-[var(--text-muted)] mt-2 font-mono">
               AI Progress: {formattedFlop} FLOP
             </div>

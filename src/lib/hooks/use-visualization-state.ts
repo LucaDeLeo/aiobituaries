@@ -49,7 +49,9 @@ const DEFAULT_TO = MAX_YEAR
 const DATE_RANGE_DEBOUNCE = 400
 
 /**
- * Parser for metrics array URL parameter
+ * Parser for metrics array URL parameter.
+ * Default ['compute'] for first-time visitors.
+ * Empty array is valid and will persist in URL (shows no background metrics).
  */
 const metricsParser = parseAsArrayOf(
   parseAsStringLiteral(METRIC_TYPES)
@@ -131,14 +133,15 @@ export function useVisualizationState(): VisualizationState {
   // null means use URL params, [from, to] means use local override
   const [localOverride, setLocalOverride] = useState<[number, number] | null>(null)
 
-  // Debounce timer ref
-  const debounceRef = useRef<NodeJS.Timeout | null>(null)
+  // Debounce timer ref (use ReturnType for browser compatibility)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Metrics setter
+  // Metrics setter - empty array is valid (no background metrics shown)
   const setMetrics = useCallback(
     (newMetrics: MetricType[]) => {
       startTransition(() => {
-        setMetricsInternal(newMetrics.length > 0 ? newMetrics : null)
+        // Keep empty arrays as-is (don't reset to null/default)
+        setMetricsInternal(newMetrics)
       })
     },
     [setMetricsInternal]

@@ -18,8 +18,8 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
-import { format } from 'date-fns'
 import { ArrowUp, ArrowDown } from 'lucide-react'
+import { formatDate } from '@/lib/utils/date'
 import type { ObituarySummary, Category } from '@/types/obituary'
 import type { TableSortConfig } from '@/types/accessibility'
 import { cn } from '@/lib/utils'
@@ -247,7 +247,7 @@ export function ObituaryTable({
               >
                 <td className="py-3 px-4 whitespace-nowrap text-[--text-secondary]">
                   <time dateTime={obituary.date}>
-                    {format(new Date(obituary.date), 'MMM d, yyyy')}
+                    {formatDate(obituary.date)}
                   </time>
                 </td>
                 <td className="py-3 px-4 text-[--text-primary]">
