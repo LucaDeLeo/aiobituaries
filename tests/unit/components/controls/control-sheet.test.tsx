@@ -304,7 +304,7 @@ describe('ControlSheet accessibility', () => {
     mockIsMobile = false
   })
 
-  it('has sr-only on SheetHeader for screen readers', async () => {
+  it('has visually hidden title for screen readers', async () => {
     const { ControlSheet } = await import('@/components/controls')
     render(<ControlSheet totalCount={100} />)
 
@@ -313,8 +313,9 @@ describe('ControlSheet accessibility', () => {
 
     await waitFor(() => {
       const title = screen.getByText('Visualization Controls')
-      // SheetHeader (parent) has sr-only, not the title itself
-      expect(title.parentElement?.className).toContain('sr-only')
+      // Title is wrapped with VisuallyHidden which uses inline styles
+      const styles = window.getComputedStyle(title.parentElement!)
+      expect(styles.position).toBe('absolute')
     })
   })
 
