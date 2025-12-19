@@ -4,11 +4,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu } from 'lucide-react'
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
+  SheetDescription,
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
@@ -31,10 +32,13 @@ export function MobileNav() {
         </Button>
       </SheetTrigger>
       <SheetContent side="right">
-        <SheetHeader>
+        <div className="flex flex-col gap-1.5 p-4">
           <SheetTitle className="font-serif">AI Obituaries</SheetTitle>
-        </SheetHeader>
-        <nav className="flex flex-col gap-4 mt-8">
+          <VisuallyHidden.Root asChild>
+            <SheetDescription>Navigation menu</SheetDescription>
+          </VisuallyHidden.Root>
+        </div>
+        <nav className="flex flex-col gap-4 mt-4 px-4">
           {links.map((link) => (
             <Link
               key={link.href}

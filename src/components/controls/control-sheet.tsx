@@ -1,11 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden'
 import {
   Sheet,
   SheetContent,
   SheetDescription,
-  SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
 import { ControlPanelWrapper } from './control-panel-wrapper'
@@ -69,13 +69,15 @@ export function ControlSheet({ totalCount, open, onOpenChange }: ControlSheetPro
             !isMobile && 'w-[320px]'
           )}
         >
-          {/* SheetHeader - sr-only for a11y, not visually rendered */}
-          <SheetHeader className="sr-only">
+          {/* Accessible title/description using Radix VisuallyHidden */}
+          <VisuallyHidden.Root asChild>
             <SheetTitle>Visualization Controls</SheetTitle>
+          </VisuallyHidden.Root>
+          <VisuallyHidden.Root asChild>
             <SheetDescription>
               Filter and configure visualization options
             </SheetDescription>
-          </SheetHeader>
+          </VisuallyHidden.Root>
 
           {/* Enhanced drag handle - mobile only */}
           {/* 44px+ tap target area with visual handle centered inside */}

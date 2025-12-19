@@ -4,34 +4,21 @@ import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ExternalLink, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden'
 import { cn } from '@/lib/utils'
 import { sanitizeUrl } from '@/lib/utils/url'
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet'
 import { ObituaryContext } from '@/components/obituary/obituary-context'
 import { CopyButton } from '@/components/ui/copy-button'
-import { getObituaryBySlug } from '@/lib/sanity/queries'
 import { formatDate } from '@/lib/utils/date'
 import { modalSlideIn, DURATIONS } from '@/lib/utils/animation'
-import { CATEGORY_LABELS } from '@/lib/constants/categories'
-import { useFocusTrap } from '@/lib/hooks/use-focus-trap'
-import type { Obituary, ObituarySummary, Category } from '@/types/obituary'
-
-/**
- * Badge color mappings with semi-transparent background and solid text.
- * Matches the pattern from obituary-detail.tsx for consistency.
- */
-const BADGE_COLORS: Record<Category, string> = {
-  capability: 'bg-[--category-capability]/20 text-[--category-capability]',
-  market: 'bg-[--category-market]/20 text-[--category-market]',
-  agi: 'bg-[--category-agi]/20 text-[--category-agi]',
-  dismissive: 'bg-[--category-dismissive]/20 text-[--category-dismissive]',
-}
+import { CATEGORY_LABELS, CATEGORY_BADGE_CLASSES } from '@/lib/constants/categories'
+import type { Obituary, ObituarySummary } from '@/types/obituary'
 
 export interface ObituaryModalProps {
   /** Summary data from timeline (used to fetch full obituary) */
@@ -57,14 +44,16 @@ export function ObituaryModal({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Generate unique IDs for ARIA relationships
-  const titleId = obituary ? `modal-title-${obituary._id}` : undefined
-  const descriptionId = obituary ? `modal-desc-${obituary._id}` : undefined
+  // Generate stable IDs for ARIA relationships (based on summary slug when available)
+  const modalId = selectedSummary?.slug ?? 'obituary-modal'
+  const titleId = `modal-title-${modalId}`
+  const descriptionId = `modal-desc-${modalId}`
 
   // Check reduced motion preference
   const shouldReduceMotion = useReducedMotion()
 
   // Restore focus to trigger element when modal closes
+  // Note: Radix Sheet handles focus trap and Escape key automatically
   const handleClose = () => {
     onClose()
     // Small delay to allow modal exit animation
@@ -72,12 +61,6 @@ export function ObituaryModal({
       triggerRef?.current?.focus()
     }, 250)
   }
-
-  // Integrate focus trap for keyboard navigation
-  const { trapRef } = useFocusTrap({
-    isActive: isOpen,
-    onEscape: handleClose,
-  })
 
   // Fetch full obituary data when modal opens
   useEffect(() => {
@@ -95,17 +78,25 @@ export function ObituaryModal({
       setError(null)
 
       try {
-        const data = await getObituaryBySlug(selectedSummary.slug)
+        const response = await fetch(`/api/obituary/${selectedSummary.slug}`)
         if (cancelled) return
-        if (data) {
-          setObituary(data)
-        } else {
-          setError('Obituary not found')
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError('Obituary not found')
+          } else {
+            setError('Failed to load obituary')
+          }
+          return
         }
+
+        const data = await response.json()
+        if (cancelled) return
+        setObituary(data)
       } catch (err) {
         if (cancelled) return
         console.error('Error fetching obituary:', err)
-        setError('Failed to load obituary')
+        setError('Failed to load obituary. Please check your connection.')
       } finally {
         if (!cancelled) {
           setIsLoading(false)
@@ -123,7 +114,6 @@ export function ObituaryModal({
   return (
     <Sheet open={isOpen} onOpenChange={handleClose}>
       <SheetContent
-        ref={trapRef as React.RefObject<HTMLDivElement>}
         side={side}
         className={cn(
           'overflow-y-auto p-6',
@@ -133,18 +123,42 @@ export function ObituaryModal({
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
       >
+        {/* Always-present accessible header with dynamic content */}
+        {/* Using Radix VisuallyHidden to satisfy Radix's internal DialogTitle check */}
+        <SheetTitle id={titleId} className="sr-only">
+          {isLoading
+            ? 'Loading obituary'
+            : error
+              ? 'Error loading obituary'
+              : obituary
+                ? `Obituary from ${obituary.source}`
+                : 'Obituary'}
+        </SheetTitle>
+        <SheetDescription id={descriptionId} className="sr-only">
+          {isLoading
+            ? 'Loading obituary details, please wait'
+            : error
+              ? error
+              : obituary
+                ? `${formatDate(obituary.date)}: ${obituary.claim.slice(0, 100)}${obituary.claim.length > 100 ? '...' : ''}`
+                : 'Obituary details'}
+        </SheetDescription>
+
+        {/* Loading state */}
         {isLoading && (
           <div className="flex items-center justify-center h-full">
             <div className="text-[var(--text-secondary)] font-mono">Loading...</div>
           </div>
         )}
 
-        {error && (
+        {/* Error state */}
+        {error && !isLoading && (
           <div className="flex items-center justify-center h-full">
             <div className="text-[var(--text-error)] font-mono">{error}</div>
           </div>
         )}
 
+        {/* Success state */}
         {obituary && !isLoading && !error && (
           <motion.div
             variants={shouldReduceMotion ? undefined : modalSlideIn}
@@ -161,17 +175,6 @@ export function ObituaryModal({
             }}
             className="space-y-6"
           >
-            <SheetHeader>
-              <SheetTitle id={titleId} className="sr-only">
-                {obituary.source}
-              </SheetTitle>
-              <SheetDescription id={descriptionId} className="sr-only">
-                Obituary from {obituary.source} on {formatDate(obituary.date)}:{' '}
-                {obituary.claim.slice(0, 100)}
-                {obituary.claim.length > 100 ? '...' : ''}
-              </SheetDescription>
-            </SheetHeader>
-
             {/* Claim */}
             <div className="space-y-4">
               <blockquote className="text-xl sm:text-2xl font-serif leading-relaxed text-[var(--text-primary)]">
@@ -199,7 +202,7 @@ export function ObituaryModal({
                 {obituary.categories?.map((category) => (
                   <span
                     key={category}
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${BADGE_COLORS[category]}`}
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${CATEGORY_BADGE_CLASSES[category]}`}
                   >
                     {CATEGORY_LABELS[category]}
                   </span>
