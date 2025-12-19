@@ -111,25 +111,39 @@ export function isValidCategory(value: string): value is Category {
 }
 
 /**
- * Category color mappings using CSS variables for the Deep Archive theme.
- * Colors are defined in globals.css under :root.
- * @deprecated Use CATEGORIES[category].colorVar instead
+ * Static Tailwind CSS class mappings (required for JIT - cannot use dynamic strings).
+ * Note: These MUST be explicit strings, not computed, for Tailwind to find them.
  */
-export const CATEGORY_COLORS: Record<Category, string> = {
+
+/**
+ * Category background classes using CSS variables.
+ * Use for category indicator dots.
+ */
+export const CATEGORY_BG_CLASSES: Record<Category, string> = {
   capability: 'bg-[--category-capability]',
   market: 'bg-[--category-market]',
   agi: 'bg-[--category-agi]',
   dismissive: 'bg-[--category-dismissive]',
-}
+} as const
+
+/**
+ * Category badge classes (semi-transparent bg + solid text).
+ * Use for category badges/pills.
+ */
+export const CATEGORY_BADGE_CLASSES: Record<Category, string> = {
+  capability: 'bg-[--category-capability]/20 text-[--category-capability]',
+  market: 'bg-[--category-market]/20 text-[--category-market]',
+  agi: 'bg-[--category-agi]/20 text-[--category-agi]',
+  dismissive: 'bg-[--category-dismissive]/20 text-[--category-dismissive]',
+} as const
 
 /**
  * Human-readable labels for each category.
- * Used in UI elements like tooltips, filters, and accessibility.
- * @deprecated Use CATEGORIES[category].label or getCategoryLabel() instead
+ * Derived from CATEGORIES for convenience.
  */
 export const CATEGORY_LABELS: Record<Category, string> = {
-  capability: 'Capability Doubt',
-  market: 'Market/Bubble',
-  agi: 'AGI Skepticism',
-  dismissive: 'Dismissive Framing',
-}
+  capability: CATEGORIES.capability.label,
+  market: CATEGORIES.market.label,
+  agi: CATEGORIES.agi.label,
+  dismissive: CATEGORIES.dismissive.label,
+} as const
