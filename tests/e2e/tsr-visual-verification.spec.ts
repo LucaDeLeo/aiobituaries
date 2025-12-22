@@ -42,16 +42,6 @@ test.describe('TSR Visual Verification', () => {
     const hasControls = await controlsText.isVisible().catch(() => false)
     await log({ message: `Controls section visible: ${hasControls}`, level: 'info' })
 
-    // Check for zoom controls
-    const zoomControls = page.locator('[data-testid="zoom-controls"]')
-    const hasZoom = await zoomControls.isVisible().catch(() => false)
-    await log({ message: `Zoom controls visible: ${hasZoom}`, level: 'info' })
-
-    if (hasZoom) {
-      const zoomBox = await zoomControls.boundingBox()
-      await log({ message: `Zoom position: y=${zoomBox?.y}px (should be near top for desktop)`, level: 'info' })
-    }
-
     await log({ message: 'Desktop verification complete', level: 'success' })
   })
 
@@ -85,21 +75,6 @@ test.describe('TSR Visual Verification', () => {
       path: 'test-results/tsr-mobile.png',
       fullPage: false
     })
-
-    // Check zoom controls position on mobile
-    const zoomControls = page.locator('[data-testid="zoom-controls"]')
-    const hasZoom = await zoomControls.isVisible().catch(() => false)
-
-    if (hasZoom) {
-      const zoomBox = await zoomControls.boundingBox()
-      const viewportHeight = VIEWPORTS.mobile.height
-      await log({ message: `Mobile zoom position: y=${zoomBox?.y}px (viewport=${viewportHeight}px)`, level: 'info' })
-
-      // On mobile, should be near bottom (y > 400 for 667px viewport)
-      if (zoomBox && zoomBox.y > viewportHeight / 2) {
-        await log({ message: 'Zoom controls correctly at bottom on mobile', level: 'success' })
-      }
-    }
 
     await log({ message: 'Mobile verification complete', level: 'success' })
   })

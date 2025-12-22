@@ -16,7 +16,11 @@ import {
   TIMELINE_POSITION_STORAGE_KEY,
   TIMELINE_POSITION_EXPIRY_MS,
 } from '@/types/navigation'
-import { MIN_SCALE, MAX_SCALE } from '@/lib/hooks/use-zoom'
+
+// Zoom is no longer supported, but we keep these for backward compatibility
+// with stored positions that may have zoom values
+const MIN_SCALE = 0.5
+const MAX_SCALE = 5
 
 /** Debounce delay for save operations (ms) */
 export const SAVE_DEBOUNCE_MS = 300

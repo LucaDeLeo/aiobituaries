@@ -15,16 +15,13 @@ import { scaleTime } from '@visx/scale'
 import { AxisBottom, AxisLeft } from '@visx/axis'
 import { GridColumns, GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
-import { timeFormat } from 'd3-time-format'
 import type { ObituarySummary, Category } from '@/types/obituary'
 import type { ViewState, PointCluster, TooltipData } from '@/types/visualization'
 import { ScatterPoint } from './scatter-point'
-import { ZoomControls } from './zoom-controls'
 import { ClusterBadge } from './cluster-badge'
 import { TooltipCard } from './tooltip-card'
 import { ObituaryModal } from '@/components/obituary/obituary-modal'
 import { hashToJitter, getCategoryColor } from '@/lib/utils/scatter-helpers'
-import { useZoom, MAX_SCALE } from '@/lib/hooks/use-zoom'
 import { useTimelinePosition } from '@/lib/hooks/use-timeline-position'
 import { SPRINGS, staggerContainer } from '@/lib/utils/animation'
 import { markPerformance, measurePerformance } from '@/lib/utils/performance'
@@ -108,55 +105,13 @@ export function formatQuarter(date: Date): string {
 }
 
 /**
- * Get tick formatter based on zoom level
- * - <0.7x: Years only ("%Y")
- * - 0.7-1.5x: Quarters ("Q1 2024")
- * - 1.5-3.0x: Months ("%b %Y")
- * - >3.0x: Weeks ("%b %d")
+ * Get tick count based on container width
  */
-export function getTickFormatter(zoomScale: number): (date: Date) => string {
-  if (zoomScale > 3) return timeFormat('%b %d') // "Jan 15" (weeks)
-  if (zoomScale > 1.5) return timeFormat('%b %Y') // "Jan 2024" (months)
-  if (zoomScale > 0.7) return formatQuarter // "Q1 2024" (quarters - custom)
-  return timeFormat('%Y') // "2024" (years only)
-}
-
-/**
- * Get tick count based on zoom level and container width
- */
-export function getTickCount(zoomScale: number, width: number): number {
+export function getTickCount(width: number): number {
   const baseCount = Math.floor(width / 120) // ~120px between ticks
-  return Math.max(3, Math.min(12, Math.floor(baseCount * zoomScale)))
+  return Math.max(3, Math.min(12, baseCount))
 }
 
-/** Minimal touch interface for our needs */
-interface TouchPoint {
-  clientX: number
-  clientY: number
-}
-
-/**
- * Get distance between two touch points
- */
-function getTouchDistance(touch1: TouchPoint, touch2: TouchPoint): number {
-  const dx = touch2.clientX - touch1.clientX
-  const dy = touch2.clientY - touch1.clientY
-  return Math.sqrt(dx * dx + dy * dy)
-}
-
-/**
- * Get center point between two touches relative to container
- */
-function getTouchCenter(
-  touch1: TouchPoint,
-  touch2: TouchPoint,
-  rect: DOMRect
-): { x: number; y: number } {
-  return {
-    x: (touch1.clientX + touch2.clientX) / 2 - rect.left,
-    y: (touch1.clientY + touch2.clientY) / 2 - rect.top,
-  }
-}
 
 // Exported for testing purposes
 export function ScatterPlotInner({
@@ -195,11 +150,6 @@ export function ScatterPlotInner({
   const startXRef = useRef(0)
   const velocityRef = useRef(0)
   const lastMoveTimeRef = useRef(0)
-
-  // Pinch zoom state refs
-  const initialPinchDistanceRef = useRef<number | null>(null)
-  const pinchCenterRef = useRef<{ x: number; y: number } | null>(null)
-  const lastPinchScaleRef = useRef(1)
 
   // State for cursor (triggers re-render for cursor change)
   const [isDragging, setIsDragging] = useState(false)
@@ -298,14 +248,14 @@ export function ScatterPlotInner({
     })
   }, [data, xScale, yScale])
 
-  // Compute clusters based on current positions and zoom level
+  // Compute clusters based on current positions
   const clusters = useMemo(() => {
-    if (!shouldShowClusters(viewState.scale)) {
+    if (!shouldShowClusters(1)) {
       return []
     }
 
-    return computeClusters(pointPositions, DEFAULT_CLUSTER_CONFIG, viewState.scale)
-  }, [pointPositions, viewState.scale])
+    return computeClusters(pointPositions, DEFAULT_CLUSTER_CONFIG, 1)
+  }, [pointPositions])
 
   // P0.3 fix: Precompute clustered IDs as Set for O(1) membership checks
   const clusteredIds = useMemo(
@@ -336,10 +286,10 @@ export function ScatterPlotInner({
       sortedData.filter((ob) => {
         const matchesFilter = isPointFiltered(ob)
         // P0.3 fix: O(1) Set lookup instead of linear scan
-        const isClustered = clusteredIds.has(ob._id) && shouldShowClusters(viewState.scale)
+        const isClustered = clusteredIds.has(ob._id) && shouldShowClusters(1)
         return matchesFilter && !isClustered
       }),
-    [sortedData, isPointFiltered, clusteredIds, viewState.scale]
+    [sortedData, isPointFiltered, clusteredIds]
   )
 
   // P0.2 fix: Precompute ID → index map to avoid O(n²) findIndex in render loop
@@ -356,39 +306,18 @@ export function ScatterPlotInner({
     const viewportRight = -viewState.translateX + width + VIEWPORT_BUFFER
 
     return pointPositions.filter(({ x }) => {
-      // Transform x position by current pan/zoom
-      const transformedX = x * viewState.scale + viewState.translateX
+      // Transform x position by current pan
+      const transformedX = x + viewState.translateX
       return transformedX >= viewportLeft && transformedX <= viewportRight
     })
-  }, [pointPositions, viewState.translateX, viewState.scale, width])
+  }, [pointPositions, viewState.translateX, width])
 
   // Create refs for scatter points
   const pointRefs = useRef<(SVGGElement | null)[]>([])
 
-  // Use zoom hook with reduced motion support (must be before useSpring that uses getZoomTransition)
-  const {
-    zoomIn,
-    zoomOut,
-    resetZoom,
-    getZoomTransition,
-    handleWheel: handleZoomWheel,
-    handlePinch,
-    isMinZoom,
-    isMaxZoom,
-  } = useZoom(viewState, setViewState)
-
   // Motion values for smooth pan animation
   const translateXMotion = useMotionValue(viewState.translateX)
   const springX = useSpring(translateXMotion, SPRINGS.pan)
-
-  // Motion values for smooth zoom animation (respects reduced motion)
-  const scaleMotion = useMotionValue(viewState.scale)
-  const springScale = useSpring(scaleMotion, getZoomTransition())
-
-  // Sync scale motion value with viewState
-  useEffect(() => {
-    scaleMotion.set(viewState.scale)
-  }, [viewState.scale, scaleMotion])
 
   // Track whether position has been restored (to prevent re-restoration)
   const hasRestoredRef = useRef(false)
@@ -403,16 +332,14 @@ export function ScatterPlotInner({
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing with external storage
       setViewState((prev) => ({
         ...prev,
-        scale: savedPosition.zoom,
         translateX: savedPosition.scrollX,
       }))
       // Also update motion values for immediate visual update
       translateXMotion.set(savedPosition.scrollX)
-      scaleMotion.set(savedPosition.zoom)
     }
-  }, [positionLoaded, wasRestored, savedPosition, translateXMotion, scaleMotion])
+  }, [positionLoaded, wasRestored, savedPosition, translateXMotion])
 
-  // Save position to sessionStorage on scroll/zoom change (debounced by hook)
+  // Save position to sessionStorage on scroll change (debounced by hook)
   // Skip initial mount and position restoration to avoid saving default values
   const isInitialMount = useRef(true)
   useEffect(() => {
@@ -425,31 +352,21 @@ export function ScatterPlotInner({
     if (!positionLoaded || (wasRestored && !hasRestoredRef.current)) {
       return
     }
-    // Save current position
-    savePosition({ scrollX: viewState.translateX, zoom: viewState.scale })
-  }, [viewState.translateX, viewState.scale, savePosition, positionLoaded, wasRestored])
+    // Save current position (zoom is always 1 now)
+    savePosition({ scrollX: viewState.translateX, zoom: 1 })
+  }, [viewState.translateX, savePosition, positionLoaded, wasRestored])
 
-  // Handler for cluster click - zoom to cluster time bounds
+  // Handler for cluster click - pan to center the cluster
   const handleClusterClick = useCallback(
     (cluster: PointCluster) => {
-      const padding = 50 // pixels of padding around cluster
       const minDateX = xScale(cluster.minDate)
       const maxDateX = xScale(cluster.maxDate)
-      const clusterWidth = maxDateX - minDateX
-
-      // Calculate target scale to fit cluster with padding
-      // Minimum scale of 1.5 ensures dots will separate after zoom
-      const targetScale = Math.min(
-        MAX_SCALE,
-        Math.max(1.5, innerWidth / (clusterWidth + padding * 2))
-      )
-
       const centerX = (minDateX + maxDateX) / 2
 
+      // Pan to center the cluster in view
       setViewState((prev) => ({
         ...prev,
-        scale: targetScale,
-        translateX: innerWidth / 2 - centerX * targetScale,
+        translateX: innerWidth / 2 - centerX,
       }))
     },
     [xScale, innerWidth, setViewState]
@@ -517,15 +434,15 @@ export function ScatterPlotInner({
       if (!obituary) return
 
       const xPos = xScale(new Date(obituary.date))
-      const scaledXPos = xPos * viewState.scale + viewState.translateX
+      const currentXPos = xPos + viewState.translateX
 
       // Check if point is outside visible bounds (with some padding)
       const padding = 100
-      if (scaledXPos < padding || scaledXPos > innerWidth - padding) {
+      if (currentXPos < padding || currentXPos > innerWidth - padding) {
         // Calculate new translateX to center the point
-        const targetTranslateX = innerWidth / 2 - xPos * viewState.scale
+        const targetTranslateX = innerWidth / 2 - xPos
         const clampedX = Math.max(
-          -(xScale(new Date(sortedData[sortedData.length - 1].date)) * viewState.scale - innerWidth + 50),
+          -(xScale(new Date(sortedData[sortedData.length - 1].date)) - innerWidth + 50),
           Math.min(50, targetTranslateX)
         )
 
@@ -540,7 +457,7 @@ export function ScatterPlotInner({
         })
       }
     },
-    [visibleData, xScale, viewState.scale, viewState.translateX, innerWidth, sortedData, translateXMotion, setViewState]
+    [visibleData, xScale, viewState.translateX, innerWidth, sortedData, translateXMotion, setViewState]
   )
 
   // Roving focus hook for keyboard navigation
@@ -614,7 +531,7 @@ export function ScatterPlotInner({
     }
   }, [])
 
-  // Calculate pan bounds (adjusted for zoom)
+  // Calculate pan bounds
   const panBounds = useMemo(() => {
     if (data.length === 0) return { min: 0, max: 0 }
     const dates = data.map((d) => new Date(d.date).getTime())
@@ -624,20 +541,17 @@ export function ScatterPlotInner({
     const containerWidth = width - MARGIN.left - MARGIN.right
     const padding = 50
 
-    // Scale data width by zoom level
-    const scaledDataWidth = dataWidth * viewState.scale
-
-    // If data fits in container (even when scaled), no panning needed
-    if (scaledDataWidth <= containerWidth) {
+    // If data fits in container, no panning needed
+    if (dataWidth <= containerWidth) {
       return { min: 0, max: 0 }
     }
 
     // Allow panning from right edge (negative translateX) to left edge
     return {
-      min: -(scaledDataWidth - containerWidth + padding),
+      min: -(dataWidth - containerWidth + padding),
       max: padding,
     }
-  }, [data, xScale, width, viewState.scale])
+  }, [data, xScale, width])
 
   // Clamp helper
   const clampTranslateX = useCallback(
@@ -730,82 +644,38 @@ export function ScatterPlotInner({
     if (isPanningRef.current) handlePanEnd()
   }, [handlePanEnd])
 
-  // Touch event handlers (single-touch pan, two-touch pinch zoom)
+  // Touch event handlers (single-touch pan only)
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
-      if (e.touches.length === 2) {
-        // Two-finger: pinch zoom
-        const rect = containerRef.current?.getBoundingClientRect()
-        if (!rect) return
-
-        initialPinchDistanceRef.current = getTouchDistance(
-          e.touches[0],
-          e.touches[1]
-        )
-        pinchCenterRef.current = getTouchCenter(
-          e.touches[0],
-          e.touches[1],
-          rect
-        )
-        lastPinchScaleRef.current = viewState.scale
-
-        // Cancel any ongoing pan
-        if (isPanningRef.current) {
-          isPanningRef.current = false
-          setIsDragging(false)
-        }
-      } else if (e.touches.length === 1) {
-        // Single-finger: pan
+      if (e.touches.length === 1) {
         handlePanStart(e.touches[0].clientX)
       }
     },
-    [handlePanStart, viewState.scale]
+    [handlePanStart]
   )
 
   const handleTouchMove = useCallback(
     (e: React.TouchEvent) => {
-      if (
-        e.touches.length === 2 &&
-        initialPinchDistanceRef.current !== null &&
-        pinchCenterRef.current !== null
-      ) {
-        // Two-finger: pinch zoom
-        e.preventDefault()
-        const currentDistance = getTouchDistance(e.touches[0], e.touches[1])
-        const pinchScale = currentDistance / initialPinchDistanceRef.current
-
-        handlePinch(pinchScale, pinchCenterRef.current.x, pinchCenterRef.current.y)
-        lastPinchScaleRef.current = viewState.scale * pinchScale
-      } else if (e.touches.length === 1) {
-        // Single-finger: pan
+      if (e.touches.length === 1) {
         handlePanMove(e.touches[0].clientX)
       }
     },
-    [handlePanMove, handlePinch, viewState.scale]
+    [handlePanMove]
   )
 
   const handleTouchEnd = useCallback(() => {
-    // Reset pinch state
-    initialPinchDistanceRef.current = null
-    pinchCenterRef.current = null
-    lastPinchScaleRef.current = viewState.scale
-
-    // End pan
     handlePanEnd()
-  }, [handlePanEnd, viewState.scale])
+  }, [handlePanEnd])
 
-  // Wheel handler - distinguish between pan (Shift/horizontal) and zoom (vertical)
+  // Wheel handler - horizontal scroll or Shift+scroll for panning
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
-      const rect = containerRef.current?.getBoundingClientRect()
-      if (!rect) return
-
       // Check if this should be pan (Shift+scroll or horizontal scroll)
       const isHorizontalScroll = Math.abs(e.deltaX) > Math.abs(e.deltaY)
       const isShiftScroll = e.shiftKey
 
       if (isShiftScroll || isHorizontalScroll) {
-        // Pan behavior (from Story 3-3) - use startTransition for performance (AC-6.8.5)
+        // Pan behavior - use startTransition for performance (AC-6.8.5)
         const deltaX = e.shiftKey ? e.deltaY : e.deltaX
         if (Math.abs(deltaX) > 0) {
           e.preventDefault()
@@ -816,13 +686,10 @@ export function ScatterPlotInner({
             setViewState((prev) => ({ ...prev, translateX: newTranslateX }))
           })
         }
-        return
       }
-
-      // Vertical scroll without shift = zoom
-      handleZoomWheel(e.nativeEvent, rect)
+      // Vertical scroll without shift = no action (removed zoom)
     },
-    [clampTranslateX, translateXMotion, handleZoomWheel]
+    [clampTranslateX, translateXMotion]
   )
 
   // Edge gradient visibility
@@ -956,26 +823,22 @@ export function ScatterPlotInner({
             scale={xScale}
             stroke="var(--border)"
             tickStroke="var(--border)"
-            tickFormat={(date) =>
-              getTickFormatter(viewState.scale)(date as Date)
-            }
+            tickFormat={(date) => formatQuarter(date as Date)}
             tickLabelProps={() => ({
               fill: 'var(--text-secondary)',
               fontSize: 11,
               textAnchor: 'middle' as const,
               dy: '0.25em',
             })}
-            numTicks={getTickCount(viewState.scale, innerWidth)}
+            numTicks={getTickCount(innerWidth)}
           />
 
-          {/* Panning and zooming content group - apply both translateX and scale transforms */}
+          {/* Panning content group - apply translateX transform */}
           {/* will-change: transform hints to browser for GPU layer promotion (AC-1, AC-2) */}
           <motion.g
-            data-testid="pan-zoom-group"
+            data-testid="pan-group"
             style={{
               x: springX,
-              scale: springScale,
-              transformOrigin: `${MARGIN.left}px ${MARGIN.top}px`,
               willChange: 'transform',
             }}
           >
@@ -992,7 +855,7 @@ export function ScatterPlotInner({
                 // P0.3 fix: O(1) Set lookup instead of linear scan
                 const isClustered =
                   clusteredIds.has(obituary._id) &&
-                  shouldShowClusters(viewState.scale)
+                  shouldShowClusters(1)
 
                 // Find index in visibleData for keyboard navigation (P0.2: O(1) Map lookup)
                 const visibleIndex = visibleIndexById.get(obituary._id) ?? -1
@@ -1048,16 +911,6 @@ export function ScatterPlotInner({
           </motion.g>
         </Group>
       </svg>
-
-      {/* Zoom Controls */}
-      <ZoomControls
-        scale={viewState.scale}
-        onZoomIn={zoomIn}
-        onZoomOut={zoomOut}
-        onReset={resetZoom}
-        isMinZoom={isMinZoom}
-        isMaxZoom={isMaxZoom}
-      />
 
       {/* Tooltip - render outside SVG with portal-like positioning */}
       <AnimatePresence>

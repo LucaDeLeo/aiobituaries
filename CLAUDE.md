@@ -36,7 +36,7 @@ Sanity CMS → GROQ queries (src/lib/sanity/) → Server Components → Client C
 ### Key Directories
 - `src/app/` - Next.js App Router pages
 - `src/components/` - React components (ui/, layout/, obituary/, visualization/)
-- `src/components/visualization/` - ScatterPlot, BackgroundChart, ZoomControls, etc.
+- `src/components/visualization/` - ScatterPlot, BackgroundChart, etc.
 - `src/data/` - Static data (ai-metrics.ts generated from Epoch AI)
 - `src/lib/sanity/` - Sanity client and GROQ queries
 - `src/lib/utils/` - Utility functions

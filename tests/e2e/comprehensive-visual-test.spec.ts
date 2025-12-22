@@ -13,8 +13,7 @@ const VIEWPORTS = {
   mobile: { width: 375, height: 667 },
 }
 
-// Allow extra time for animations
-const ANIMATION_WAIT = 1000
+// Allow extra time for data loading
 const DATA_LOAD_WAIT = 3000
 
 test.describe('Comprehensive Website Testing', () => {
@@ -124,75 +123,7 @@ test.describe('Comprehensive Website Testing', () => {
       await log({ message: 'Control panel verified', level: 'success' })
     })
 
-    test('4. Zoom controls functionality', async ({ page, log }) => {
-      await page.goto('/')
-      await page.waitForLoadState('networkidle')
-      await page.waitForTimeout(DATA_LOAD_WAIT)
-
-      await log({ message: 'Wait for zoom controls animation', level: 'step' })
-      // Zoom controls have 500ms animation delay
-      await page.waitForTimeout(ANIMATION_WAIT)
-
-      const zoomControls = page.locator('[data-testid="zoom-controls"]')
-      const zoomVisible = await zoomControls.isVisible().catch(() => false)
-
-      if (!zoomVisible) {
-        await log({ message: 'Zoom controls not visible on desktop (may be tablet/mobile only)', level: 'info' })
-        await page.screenshot({
-          path: 'test-results/comprehensive-4-no-zoom-desktop.png',
-          fullPage: false
-        })
-        return
-      }
-
-      await log({ message: 'Zoom controls visible', level: 'success' })
-
-      // Get initial zoom
-      const zoomPercentage = page.locator('[data-testid="zoom-percentage"]')
-      const initialZoom = await zoomPercentage.textContent()
-      await log({ message: `Initial zoom: ${initialZoom}`, level: 'info' })
-
-      // Test zoom in
-      await log({ message: 'Test zoom in button', level: 'step' })
-      const zoomIn = page.locator('[data-testid="zoom-in-button"]')
-      await zoomIn.click()
-      await page.waitForTimeout(500)
-
-      const afterZoomIn = await zoomPercentage.textContent()
-      await log({ message: `After zoom in: ${afterZoomIn}`, level: 'info' })
-
-      await page.screenshot({
-        path: 'test-results/comprehensive-4-zoomed-in.png',
-        fullPage: false
-      })
-
-      // Test zoom out
-      await log({ message: 'Test zoom out button', level: 'step' })
-      const zoomOut = page.locator('[data-testid="zoom-out-button"]')
-      await zoomOut.click()
-      await page.waitForTimeout(500)
-
-      const afterZoomOut = await zoomPercentage.textContent()
-      await log({ message: `After zoom out: ${afterZoomOut}`, level: 'info' })
-
-      // Test reset
-      await log({ message: 'Test reset button', level: 'step' })
-      const zoomReset = page.locator('[data-testid="zoom-reset-button"]')
-      await zoomReset.click()
-      await page.waitForTimeout(500)
-
-      const afterReset = await zoomPercentage.textContent()
-      await log({ message: `After reset: ${afterReset}`, level: 'info' })
-
-      await page.screenshot({
-        path: 'test-results/comprehensive-4-zoom-reset.png',
-        fullPage: false
-      })
-
-      await log({ message: 'Zoom controls tested successfully', level: 'success' })
-    })
-
-    test('5. Tooltip on hover', async ({ page, log }) => {
+    test('4. Tooltip on hover', async ({ page, log }) => {
       await page.goto('/')
       await page.waitForLoadState('networkidle')
       await page.waitForTimeout(DATA_LOAD_WAIT)
@@ -467,15 +398,6 @@ test.describe('Comprehensive Website Testing', () => {
       const buttons = page.locator('button')
       const buttonCount = await buttons.count()
       await log({ message: `Found ${buttonCount} buttons`, level: 'info' })
-
-      // Check zoom controls if visible
-      const zoomControls = page.locator('[data-testid="zoom-controls"]')
-      const zoomVisible = await zoomControls.isVisible().catch(() => false)
-
-      if (zoomVisible) {
-        const zoomBox = await zoomControls.boundingBox()
-        await log({ message: `Zoom controls position: y=${zoomBox?.y}px`, level: 'info' })
-      }
 
       await page.screenshot({
         path: 'test-results/comprehensive-12-tablet-touch.png',
