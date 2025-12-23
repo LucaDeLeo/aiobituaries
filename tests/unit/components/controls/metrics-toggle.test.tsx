@@ -14,48 +14,53 @@ describe('MetricsToggle', () => {
   })
 
   describe('rendering', () => {
-    it('renders all three metrics', () => {
+    // Note: MetricsToggle currently only renders 'compute' metric
+    // since MMLU/ECI use different scales and don't align with dot Y-positions
+    it('renders the compute metric', () => {
       render(<MetricsToggle {...defaultProps} />)
 
       expect(screen.getByText('Training Compute')).toBeInTheDocument()
-      expect(screen.getByText('MMLU Score')).toBeInTheDocument()
-      expect(screen.getByText('Epoch Capability Index')).toBeInTheDocument()
     })
 
-    it('renders descriptions for each metric', () => {
+    it('renders description for compute metric', () => {
       render(<MetricsToggle {...defaultProps} />)
 
-      expect(screen.getByText('FLOP trend line')).toBeInTheDocument()
-      expect(screen.getByText('Benchmark accuracy')).toBeInTheDocument()
-      expect(screen.getByText('Composite capability')).toBeInTheDocument()
+      expect(screen.getByText(/FLOP trend line/)).toBeInTheDocument()
     })
 
     it('shows checked state for enabled metrics', () => {
       render(
         <MetricsToggle
           {...defaultProps}
-          enabledMetrics={['compute', 'mmlu']}
+          enabledMetrics={['compute']}
         />
       )
 
       const computeCheckbox = screen.getByRole('checkbox', {
         name: /training compute/i,
       })
-      const mmluCheckbox = screen.getByRole('checkbox', {
-        name: /mmlu score/i,
-      })
-      const eciCheckbox = screen.getByRole('checkbox', {
-        name: /capability index/i,
-      })
 
       expect(computeCheckbox).toBeChecked()
-      expect(mmluCheckbox).toBeChecked()
-      expect(eciCheckbox).not.toBeChecked()
+    })
+
+    it('shows unchecked state when compute is not enabled', () => {
+      render(
+        <MetricsToggle
+          {...defaultProps}
+          enabledMetrics={[]}
+        />
+      )
+
+      const computeCheckbox = screen.getByRole('checkbox', {
+        name: /training compute/i,
+      })
+
+      expect(computeCheckbox).not.toBeChecked()
     })
   })
 
   describe('interactions', () => {
-    it('calls onMetricsChange when enabling a metric', () => {
+    it('calls onMetricsChange when disabling compute', () => {
       const onMetricsChange = vi.fn()
       render(
         <MetricsToggle
@@ -64,27 +69,27 @@ describe('MetricsToggle', () => {
         />
       )
 
-      const mmluCheckbox = screen.getByRole('checkbox', {
-        name: /mmlu score/i,
+      const computeCheckbox = screen.getByRole('checkbox', {
+        name: /training compute/i,
       })
-      fireEvent.click(mmluCheckbox)
+      fireEvent.click(computeCheckbox)
 
-      expect(onMetricsChange).toHaveBeenCalledWith(['compute', 'mmlu'])
+      expect(onMetricsChange).toHaveBeenCalledWith([])
     })
 
-    it('calls onMetricsChange when disabling a metric', () => {
+    it('calls onMetricsChange when enabling compute', () => {
       const onMetricsChange = vi.fn()
       render(
         <MetricsToggle
-          enabledMetrics={['compute', 'mmlu']}
+          enabledMetrics={[]}
           onMetricsChange={onMetricsChange}
         />
       )
 
-      const mmluCheckbox = screen.getByRole('checkbox', {
-        name: /mmlu score/i,
+      const computeCheckbox = screen.getByRole('checkbox', {
+        name: /training compute/i,
       })
-      fireEvent.click(mmluCheckbox)
+      fireEvent.click(computeCheckbox)
 
       expect(onMetricsChange).toHaveBeenCalledWith(['compute'])
     })
@@ -108,17 +113,11 @@ describe('MetricsToggle', () => {
   })
 
   describe('accessibility', () => {
-    it('has accessible labels for all checkboxes', () => {
+    it('has accessible label for checkbox', () => {
       render(<MetricsToggle {...defaultProps} />)
 
       expect(
         screen.getByRole('checkbox', { name: /training compute/i })
-      ).toBeInTheDocument()
-      expect(
-        screen.getByRole('checkbox', { name: /mmlu score/i })
-      ).toBeInTheDocument()
-      expect(
-        screen.getByRole('checkbox', { name: /capability index/i })
       ).toBeInTheDocument()
     })
 
@@ -131,48 +130,38 @@ describe('MetricsToggle', () => {
         />
       )
 
-      const mmluCheckbox = screen.getByRole('checkbox', {
-        name: /mmlu score/i,
+      const computeCheckbox = screen.getByRole('checkbox', {
+        name: /training compute/i,
       })
-      mmluCheckbox.focus()
-      fireEvent.keyDown(mmluCheckbox, { key: ' ', code: 'Space' })
+      computeCheckbox.focus()
+      fireEvent.keyDown(computeCheckbox, { key: ' ' })
+      fireEvent.keyUp(computeCheckbox, { key: ' ' })
+      fireEvent.click(computeCheckbox)
 
-      // Native checkbox handles this, but verify it's focusable
-      expect(mmluCheckbox).toHaveFocus()
+      expect(onMetricsChange).toHaveBeenCalled()
     })
   })
 
   describe('edge cases', () => {
     it('handles empty enabledMetrics', () => {
-      render(<MetricsToggle {...defaultProps} enabledMetrics={[]} />)
+      render(
+        <MetricsToggle {...defaultProps} enabledMetrics={[]} />
+      )
 
-      const computeCheckbox = screen.getByRole('checkbox', {
-        name: /training compute/i,
-      })
-      const mmluCheckbox = screen.getByRole('checkbox', {
-        name: /mmlu score/i,
-      })
-      const eciCheckbox = screen.getByRole('checkbox', {
-        name: /capability index/i,
-      })
-
-      expect(computeCheckbox).not.toBeChecked()
-      expect(mmluCheckbox).not.toBeChecked()
-      expect(eciCheckbox).not.toBeChecked()
+      const checkbox = screen.getByRole('checkbox')
+      expect(checkbox).not.toBeChecked()
     })
 
-    it('handles all metrics enabled', () => {
+    it('handles compute metric enabled', () => {
       render(
         <MetricsToggle
           {...defaultProps}
-          enabledMetrics={['compute', 'mmlu', 'eci']}
+          enabledMetrics={['compute']}
         />
       )
 
-      const checkboxes = screen.getAllByRole('checkbox')
-      checkboxes.forEach((checkbox) => {
-        expect(checkbox).toBeChecked()
-      })
+      const checkbox = screen.getByRole('checkbox')
+      expect(checkbox).toBeChecked()
     })
 
     it('applies custom className', () => {

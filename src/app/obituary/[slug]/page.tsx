@@ -89,7 +89,7 @@ export default async function ObituaryPage({ params }: PageProps) {
           </BreadcrumbList>
         </Breadcrumb>
         <ObituaryDetail obituary={obituary} />
-        <ObituaryContext context={obituary.context} />
+        <ObituaryContext context={obituary.context} date={obituary.date} />
         <ObituaryNav previous={obituary.previous} next={obituary.next} />
       </div>
     </>

@@ -8,6 +8,16 @@ import type { ContextMetadata } from './context'
 export type Category = 'market' | 'capability' | 'agi' | 'dismissive'
 
 /**
+ * Lightweight skeptic reference for linking from obituary to skeptic profile.
+ */
+export interface SkepticRef {
+  /** Skeptic display name */
+  name: string
+  /** URL-safe slug for linking */
+  slug: string
+}
+
+/**
  * Core data model representing an AI skepticism claim documented as an "obituary".
  * Each obituary captures a claim, its source, date, categorization, and contextual
  * data (stock prices, benchmarks) that existed when the claim was made.
@@ -29,6 +39,8 @@ export interface Obituary {
   categories: Category[]
   /** Contextual data at time of claim */
   context: ContextMetadata
+  /** Reference to linked skeptic profile (optional - may be null) */
+  skeptic?: SkepticRef | null
 }
 
 /**

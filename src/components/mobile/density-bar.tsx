@@ -6,6 +6,7 @@
  * Shows distribution of obituaries over time as a horizontal bar chart.
  * Uses adaptive granularity: yearly for historical data, monthly for recent.
  * Tapping a bar filters the card list to that time period.
+ * Includes AI progress era indicator to provide context about AI capability at each time.
  *
  * Story 5-5: Mobile Hybrid View
  * Performance: Optimized to reduce DOM elements by using yearly granularity
@@ -16,6 +17,17 @@ import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { parseUTCDate, createUTCDate, getUTCMonthEnd } from '@/lib/utils/date'
 import type { ObituarySummary, Category } from '@/types/obituary'
+
+/**
+ * AI era milestones with approximate dates and colors.
+ * These provide context about AI capability level at different times.
+ */
+const AI_ERA_MILESTONES = [
+  { year: 1956, label: 'Early AI', color: 'var(--text-muted)' },
+  { year: 2012, label: 'Deep Learning', color: 'var(--era-pre-llm, #3b82f6)' },
+  { year: 2020, label: 'GPT-3 Era', color: 'var(--era-gpt3, #8b5cf6)' },
+  { year: 2023, label: 'GPT-4+', color: 'var(--era-frontier, #f59e0b)' },
+] as const
 
 export interface DateRange {
   start: Date
@@ -118,6 +130,41 @@ export function DensityBar({
     return { density, years, maxCount }
   }, [obituaries, activeCategories])
 
+  // Calculate era sections for the timeline based on year range
+  const eraSections = useMemo(() => {
+    if (years.length === 0) return []
+
+    const minYear = years[0]
+    const maxYear = years[years.length - 1]
+    const yearSpan = maxYear - minYear + 1
+
+    const sections: Array<{
+      startPercent: number
+      widthPercent: number
+      color: string
+      label: string
+    }> = []
+
+    AI_ERA_MILESTONES.forEach((milestone, index) => {
+      const nextMilestone = AI_ERA_MILESTONES[index + 1]
+      const eraStart = Math.max(milestone.year, minYear)
+      const eraEnd = nextMilestone ? Math.min(nextMilestone.year - 1, maxYear) : maxYear
+
+      if (eraStart <= maxYear && eraEnd >= minYear) {
+        const startPercent = ((eraStart - minYear) / yearSpan) * 100
+        const endPercent = ((eraEnd - minYear + 1) / yearSpan) * 100
+        sections.push({
+          startPercent,
+          widthPercent: endPercent - startPercent,
+          color: milestone.color,
+          label: milestone.label,
+        })
+      }
+    })
+
+    return sections
+  }, [years])
+
   // Check if a bar is in the active period (P1.2 fix: use UTC dates)
   const isBarActive = (item: DensityItem): boolean => {
     if (!activePeriod) return false
@@ -168,6 +215,40 @@ export function DensityBar({
 
   return (
     <div className="px-4 py-3 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
+      {/* AI Era Progress Indicator */}
+      <div className="mb-2">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide">AI Progress</span>
+          <div className="flex-1 h-2 rounded-full overflow-hidden relative">
+            {eraSections.map((section, index) => (
+              <div
+                key={index}
+                className="absolute top-0 h-full"
+                style={{
+                  left: `${section.startPercent}%`,
+                  width: `${section.widthPercent}%`,
+                  backgroundColor: section.color,
+                  opacity: 0.7,
+                }}
+                title={section.label}
+              />
+            ))}
+          </div>
+        </div>
+        {/* Era labels - show key milestones */}
+        <div className="flex gap-3 text-[9px]">
+          {AI_ERA_MILESTONES.slice(-3).map((era) => (
+            <span key={era.year} className="flex items-center gap-1">
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: era.color }}
+              />
+              <span className="text-[var(--text-muted)]">{era.label}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* Density Bars - CSS containment for performance */}
       <div
         className="flex items-end gap-[2px] h-12 mb-2"

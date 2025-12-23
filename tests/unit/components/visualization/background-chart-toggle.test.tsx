@@ -76,10 +76,10 @@ describe('BackgroundChart metric visibility (AC-1, AC-2)', () => {
     )
 
     // mmlu and eci should be hidden (opacity 0)
-    const mmluGroup = container.querySelector('[data-metric-id="mmlu"]')
+    const arcagiGroup = container.querySelector('[data-metric-id="arcagi"]')
     const eciGroup = container.querySelector('[data-metric-id="eci"]')
 
-    expect(mmluGroup?.getAttribute('style')).toContain('opacity: 0')
+    expect(arcagiGroup?.getAttribute('style')).toContain('opacity: 0')
     expect(eciGroup?.getAttribute('style')).toContain('opacity: 0')
   })
 
@@ -91,7 +91,7 @@ describe('BackgroundChart metric visibility (AC-1, AC-2)', () => {
       <svg>
         <BackgroundChart
           metrics={allMetrics}
-          enabledMetrics={['compute', 'mmlu']}
+          enabledMetrics={['compute', 'arcagi']}
           xScale={createMockXScale()}
           yScale={createMockLogYScale()}
           innerHeight={400}
@@ -101,11 +101,11 @@ describe('BackgroundChart metric visibility (AC-1, AC-2)', () => {
 
     // Compute (FLOP metric) uses 0.6 opacity, MMLU (overlay) uses 0.3
     const computeGroup = container.querySelector('[data-metric-id="compute"]')
-    const mmluGroup = container.querySelector('[data-metric-id="mmlu"]')
+    const arcagiGroup = container.querySelector('[data-metric-id="arcagi"]')
     const eciGroup = container.querySelector('[data-metric-id="eci"]')
 
     expect(computeGroup?.getAttribute('style')).toContain('opacity: 0.6')
-    expect(mmluGroup?.getAttribute('style')).toContain('opacity: 0.3')
+    expect(arcagiGroup?.getAttribute('style')).toContain('opacity: 0.3')
     expect(eciGroup?.getAttribute('style')).toContain('opacity: 0')
   })
 
@@ -117,7 +117,7 @@ describe('BackgroundChart metric visibility (AC-1, AC-2)', () => {
       <svg>
         <BackgroundChart
           metrics={allMetrics}
-          enabledMetrics={['compute', 'mmlu', 'eci']}
+          enabledMetrics={['compute', 'arcagi', 'eci']}
           xScale={createMockXScale()}
           yScale={createMockLogYScale()}
           innerHeight={400}
@@ -127,11 +127,11 @@ describe('BackgroundChart metric visibility (AC-1, AC-2)', () => {
 
     // Compute uses 0.6, overlay metrics (mmlu, eci) use 0.3
     const computeGroup = container.querySelector('[data-metric-id="compute"]')
-    const mmluGroup = container.querySelector('[data-metric-id="mmlu"]')
+    const arcagiGroup = container.querySelector('[data-metric-id="arcagi"]')
     const eciGroup = container.querySelector('[data-metric-id="eci"]')
 
     expect(computeGroup?.getAttribute('style')).toContain('opacity: 0.6')
-    expect(mmluGroup?.getAttribute('style')).toContain('opacity: 0.3')
+    expect(arcagiGroup?.getAttribute('style')).toContain('opacity: 0.3')
     expect(eciGroup?.getAttribute('style')).toContain('opacity: 0.3')
   })
 })
@@ -164,11 +164,11 @@ describe('BackgroundChart empty state (AC-3)', () => {
 
     // All metrics should have opacity 0
     const computeGroup = container.querySelector('[data-metric-id="compute"]')
-    const mmluGroup = container.querySelector('[data-metric-id="mmlu"]')
+    const arcagiGroup = container.querySelector('[data-metric-id="arcagi"]')
     const eciGroup = container.querySelector('[data-metric-id="eci"]')
 
     expect(computeGroup?.getAttribute('style')).toContain('opacity: 0')
-    expect(mmluGroup?.getAttribute('style')).toContain('opacity: 0')
+    expect(arcagiGroup?.getAttribute('style')).toContain('opacity: 0')
     expect(eciGroup?.getAttribute('style')).toContain('opacity: 0')
   })
 })
@@ -214,7 +214,7 @@ describe('BackgroundChart metric colors (AC-5)', () => {
       <svg>
         <BackgroundChart
           metrics={allMetrics}
-          enabledMetrics={['mmlu']}
+          enabledMetrics={['arcagi']}
           xScale={createMockXScale()}
           yScale={createMockLogYScale()}
           innerHeight={400}
@@ -222,8 +222,8 @@ describe('BackgroundChart metric colors (AC-5)', () => {
       </svg>
     )
 
-    const mmluGroup = container.querySelector('[data-metric-id="mmlu"]')
-    const linePath = mmluGroup?.querySelector('path[stroke]')
+    const arcagiGroup = container.querySelector('[data-metric-id="arcagi"]')
+    const linePath = arcagiGroup?.querySelector('path[stroke]')
 
     expect(linePath?.getAttribute('stroke')).toBe('rgb(234, 179, 8)')
   })
@@ -395,7 +395,7 @@ describe('BackgroundChart - Log Scale Adaptation (TSR-4-2)', () => {
         <svg>
           <BackgroundChart
             metrics={[mmluFrontier]}
-            enabledMetrics={['mmlu']}
+            enabledMetrics={['arcagi']}
             xScale={createMockXScale()}
             yScale={createMockLogYScale()}
             innerHeight={400}
@@ -403,7 +403,7 @@ describe('BackgroundChart - Log Scale Adaptation (TSR-4-2)', () => {
         </svg>
       )
 
-      const metricGroup = container.querySelector('[data-metric-id="mmlu"]')
+      const metricGroup = container.querySelector('[data-metric-id="arcagi"]')
       expect(metricGroup?.getAttribute('style')).toContain('opacity: 0.3')
     })
 
@@ -435,7 +435,7 @@ describe('BackgroundChart - Log Scale Adaptation (TSR-4-2)', () => {
         <svg>
           <BackgroundChart
             metrics={[mmluFrontier]}
-            enabledMetrics={['mmlu']}
+            enabledMetrics={['arcagi']}
             xScale={createMockXScale()}
             yScale={createMockLogYScale()}
             innerHeight={400}
@@ -443,8 +443,8 @@ describe('BackgroundChart - Log Scale Adaptation (TSR-4-2)', () => {
         </svg>
       )
 
-      const mmluGroup = container.querySelector('[data-metric-id="mmlu"]')
-      const linePath = mmluGroup?.querySelector('path[stroke]')
+      const arcagiGroup = container.querySelector('[data-metric-id="arcagi"]')
+      const linePath = arcagiGroup?.querySelector('path[stroke]')
       // Non-compute uses strokeOpacity 0.5 vs 0.8 for compute
       expect(linePath?.getAttribute('stroke-opacity')).toBe('0.5')
     })
@@ -558,7 +558,7 @@ describe('BackgroundChart - Log Scale Adaptation (TSR-4-2)', () => {
         <svg>
           <BackgroundChart
             metrics={[mmluFrontier]}
-            enabledMetrics={['mmlu']}
+            enabledMetrics={['arcagi']}
             xScale={createMockXScale()}
             yScale={createMockLogYScale()}
             innerHeight={400}
@@ -566,7 +566,7 @@ describe('BackgroundChart - Log Scale Adaptation (TSR-4-2)', () => {
         </svg>
       )
 
-      const areaPath = container.querySelector('path[fill^="url(#area-gradient-mmlu"]')
+      const areaPath = container.querySelector('path[fill^="url(#area-gradient-arcagi"]')
       expect(areaPath).toBeInTheDocument()
     })
   })
@@ -601,7 +601,7 @@ describe('BackgroundChart - Log Scale Adaptation (TSR-4-2)', () => {
         <svg>
           <BackgroundChart
             metrics={[mmluFrontier]}
-            enabledMetrics={['mmlu']}
+            enabledMetrics={['arcagi']}
             xScale={createMockXScale()}
             yScale={createMockLogYScale()}
             innerHeight={400}
@@ -609,7 +609,7 @@ describe('BackgroundChart - Log Scale Adaptation (TSR-4-2)', () => {
         </svg>
       )
 
-      const metricGroup = container.querySelector('[data-metric-id="mmlu"]')
+      const metricGroup = container.querySelector('[data-metric-id="arcagi"]')
       const style = metricGroup?.getAttribute('style')
       expect(style).toContain('transition: opacity 200ms ease-in-out')
     })

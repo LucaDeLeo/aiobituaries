@@ -127,21 +127,31 @@ export function AIContextCell({ date }: AIContextCellProps) {
   const dotColor = getComputeColor(metrics.compute)
   const compactValue = formatComputeCompact(metrics.compute)
 
+  // Get human-readable era label
+  const eraLabel = metrics.compute < 20 ? 'Early AI' :
+                   metrics.compute < 23 ? 'Pre-LLM' :
+                   metrics.compute < 25 ? 'GPT-3 era' : 'Frontier'
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="flex items-center gap-1.5 cursor-help">
+        <div className="flex items-center gap-2 cursor-help">
           <span
-            className="w-2 h-2 rounded-full flex-shrink-0"
+            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
             style={{ backgroundColor: dotColor }}
             aria-hidden="true"
           />
-          <span className="font-mono text-xs text-[var(--text-secondary)]">
-            {compactValue}
-          </span>
+          <div className="flex flex-col">
+            <span className="font-mono text-sm text-[var(--text-primary)]">
+              {compactValue}
+            </span>
+            <span className="text-[10px] text-[var(--text-muted)]">
+              {eraLabel}
+            </span>
+          </div>
         </div>
       </TooltipTrigger>
-      <TooltipContent side="left" className="max-w-[200px]">
+      <TooltipContent side="left" className="max-w-[220px]">
         <div className="text-xs space-y-1.5">
           <div className="font-medium text-[var(--text-primary)]">
             AI Progress at this date

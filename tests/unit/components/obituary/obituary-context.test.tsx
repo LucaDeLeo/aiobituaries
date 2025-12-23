@@ -52,6 +52,9 @@ const mockMilestoneAndNoteContext: ContextMetadata = {
   note: 'First AI winter reference',
 }
 
+// Default test date (when AI metrics are available)
+const mockDate = '2024-01-15'
+
 describe('ObituaryContext', () => {
   afterEach(async () => {
     await act(async () => {
@@ -62,7 +65,7 @@ describe('ObituaryContext', () => {
   describe('Section Heading (AC-2.4.1)', () => {
     it('renders "Context at Time" heading when data exists', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockFullContext} />)
+        render(<ObituaryContext context={mockFullContext} date={mockDate} />)
       })
 
       expect(screen.getByRole('heading', { name: /context at time/i })).toBeInTheDocument()
@@ -70,44 +73,50 @@ describe('ObituaryContext', () => {
 
     it('renders "Context at Time" heading even when empty', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockEmptyContext} />)
+        render(<ObituaryContext context={mockEmptyContext} date={mockDate} />)
       })
 
       expect(screen.getByRole('heading', { name: /context at time/i })).toBeInTheDocument()
     })
   })
 
-  describe('Empty State (AC-2.4.8)', () => {
-    it('shows "Context data unavailable" when no context data exists', async () => {
+  describe('Empty CMS Context (AC-2.4.8)', () => {
+    it('shows computed AI metrics when CMS context is empty', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockEmptyContext} />)
+        render(<ObituaryContext context={mockEmptyContext} date={mockDate} />)
       })
 
-      expect(screen.getByText('Context data unavailable')).toBeInTheDocument()
+      // Even with empty CMS context, computed AI metrics are always shown
+      expect(screen.getByText('AI Progress')).toBeInTheDocument()
+      expect(screen.getByText('Frontier Model')).toBeInTheDocument()
     })
 
-    it('applies muted text styling to empty state message', async () => {
+    it('does not show CMS-only cards when context is empty', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockEmptyContext} />)
+        render(<ObituaryContext context={mockEmptyContext} date={mockDate} />)
       })
 
-      const emptyMessage = screen.getByText('Context data unavailable')
-      expect(emptyMessage).toHaveClass('text-[var(--text-muted)]')
+      // CMS-specific cards should not appear
+      expect(screen.queryByText('Stock Prices')).not.toBeInTheDocument()
+      expect(screen.queryByText('Benchmark')).not.toBeInTheDocument()
+      expect(screen.queryByText('AI Milestone')).not.toBeInTheDocument()
     })
 
-    it('does not show empty state when any data exists', async () => {
+    it('shows CMS cards when any CMS data exists', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockPartialContext} />)
+        render(<ObituaryContext context={mockPartialContext} date={mockDate} />)
       })
 
-      expect(screen.queryByText('Context data unavailable')).not.toBeInTheDocument()
+      // Should show computed cards plus CMS cards with data
+      expect(screen.getByText('AI Progress')).toBeInTheDocument()
+      expect(screen.getByText('Stock Prices')).toBeInTheDocument()
     })
   })
 
   describe('Stock Prices (AC-2.4.2, AC-2.4.9)', () => {
     it('displays stock prices when available', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockStockPricesOnlyContext} />)
+        render(<ObituaryContext context={mockStockPricesOnlyContext} date={mockDate} />)
       })
 
       expect(screen.getByText(/NVDA:/)).toBeInTheDocument()
@@ -117,7 +126,7 @@ describe('ObituaryContext', () => {
 
     it('formats currency correctly as USD', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockStockPricesOnlyContext} />)
+        render(<ObituaryContext context={mockStockPricesOnlyContext} date={mockDate} />)
       })
 
       // Check for proper USD formatting: $XXX.XX
@@ -128,7 +137,7 @@ describe('ObituaryContext', () => {
 
     it('displays Stock Prices card title', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockStockPricesOnlyContext} />)
+        render(<ObituaryContext context={mockStockPricesOnlyContext} date={mockDate} />)
       })
 
       expect(screen.getByText('Stock Prices')).toBeInTheDocument()
@@ -139,7 +148,7 @@ describe('ObituaryContext', () => {
         nvdaPrice: 450.5,
       }
       await act(async () => {
-        render(<ObituaryContext context={partialStocks} />)
+        render(<ObituaryContext context={partialStocks} date={mockDate} />)
       })
 
       expect(screen.getByText(/NVDA:/)).toBeInTheDocument()
@@ -152,7 +161,7 @@ describe('ObituaryContext', () => {
         nvdaPrice: 0,
       }
       await act(async () => {
-        render(<ObituaryContext context={zeroPrice} />)
+        render(<ObituaryContext context={zeroPrice} date={mockDate} />)
       })
 
       expect(screen.getByText(/NVDA:/)).toBeInTheDocument()
@@ -164,7 +173,7 @@ describe('ObituaryContext', () => {
         currentModel: 'GPT-4',
       }
       await act(async () => {
-        render(<ObituaryContext context={noStocks} />)
+        render(<ObituaryContext context={noStocks} date={mockDate} />)
       })
 
       expect(screen.queryByText('Stock Prices')).not.toBeInTheDocument()
@@ -174,59 +183,65 @@ describe('ObituaryContext', () => {
   describe('AI Model (AC-2.4.3)', () => {
     it('displays AI model when available', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockPartialContext} />)
+        render(<ObituaryContext context={mockPartialContext} date={mockDate} />)
       })
 
       expect(screen.getByText('GPT-4')).toBeInTheDocument()
     })
 
-    it('displays Latest AI Model card title', async () => {
+    it('displays Frontier Model card title', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockPartialContext} />)
+        render(<ObituaryContext context={mockPartialContext} date={mockDate} />)
       })
 
-      expect(screen.getByText('Latest AI Model')).toBeInTheDocument()
+      expect(screen.getByText('Frontier Model')).toBeInTheDocument()
     })
 
-    it('does not show AI Model card when no model exists', async () => {
+    it('always shows Frontier Model card when date is provided', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockStockPricesOnlyContext} />)
+        render(<ObituaryContext context={mockStockPricesOnlyContext} date={mockDate} />)
       })
 
-      expect(screen.queryByText('Latest AI Model')).not.toBeInTheDocument()
+      // Frontier Model is always computed from date, so it should be present
+      expect(screen.getByText('Frontier Model')).toBeInTheDocument()
     })
   })
 
   describe('Benchmark (AC-2.4.4)', () => {
     it('displays benchmark name and score when available', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockFullContext} />)
+        render(<ObituaryContext context={mockFullContext} date={mockDate} />)
       })
 
-      expect(screen.getByText(/MMLU/)).toBeInTheDocument()
+      // CMS benchmark card should show the CMS benchmark name and score
+      expect(screen.getByText('Benchmark')).toBeInTheDocument()
+      // There may be multiple MMLU elements (CMS card + computed AI Progress), just check one exists
+      expect(screen.getAllByText(/MMLU/).length).toBeGreaterThanOrEqual(1)
       expect(screen.getByText(/86\.5%/)).toBeInTheDocument()
     })
 
     it('displays Benchmark card title', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockFullContext} />)
+        render(<ObituaryContext context={mockFullContext} date={mockDate} />)
       })
 
       expect(screen.getByText('Benchmark')).toBeInTheDocument()
     })
 
-    it('displays benchmark without score when score is missing', async () => {
+    it('displays CMS benchmark card when name is provided', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockBenchmarkOnlyContext} />)
+        render(<ObituaryContext context={mockBenchmarkOnlyContext} date={mockDate} />)
       })
 
-      expect(screen.getByText('MMLU')).toBeInTheDocument()
-      expect(screen.queryByText(/%/)).not.toBeInTheDocument()
+      // CMS benchmark card shows the benchmark name
+      expect(screen.getByText('Benchmark')).toBeInTheDocument()
+      // MMLU may appear in both CMS card and computed AI Progress card
+      expect(screen.getAllByText(/MMLU/).length).toBeGreaterThanOrEqual(1)
     })
 
     it('applies gold color and mono font to benchmark score', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockFullContext} />)
+        render(<ObituaryContext context={mockFullContext} date={mockDate} />)
       })
 
       const scoreElement = screen.getByText(/86\.5%/)
@@ -236,7 +251,7 @@ describe('ObituaryContext', () => {
 
     it('does not show Benchmark card when no benchmark exists', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockPartialContext} />)
+        render(<ObituaryContext context={mockPartialContext} date={mockDate} />)
       })
 
       expect(screen.queryByText('Benchmark')).not.toBeInTheDocument()
@@ -248,7 +263,7 @@ describe('ObituaryContext', () => {
         benchmarkScore: 0,
       }
       await act(async () => {
-        render(<ObituaryContext context={zeroBenchmark} />)
+        render(<ObituaryContext context={zeroBenchmark} date={mockDate} />)
       })
 
       expect(screen.getByText(/0%/)).toBeInTheDocument()
@@ -258,7 +273,7 @@ describe('ObituaryContext', () => {
   describe('Milestone (AC-2.4.5)', () => {
     it('displays milestone when available', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockFullContext} />)
+        render(<ObituaryContext context={mockFullContext} date={mockDate} />)
       })
 
       expect(screen.getByText('ChatGPT reached 100M users')).toBeInTheDocument()
@@ -266,7 +281,7 @@ describe('ObituaryContext', () => {
 
     it('displays AI Milestone card title', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockMilestoneAndNoteContext} />)
+        render(<ObituaryContext context={mockMilestoneAndNoteContext} date={mockDate} />)
       })
 
       expect(screen.getByText('AI Milestone')).toBeInTheDocument()
@@ -274,7 +289,7 @@ describe('ObituaryContext', () => {
 
     it('does not show Milestone card when no milestone exists', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockStockPricesOnlyContext} />)
+        render(<ObituaryContext context={mockStockPricesOnlyContext} date={mockDate} />)
       })
 
       expect(screen.queryByText('AI Milestone')).not.toBeInTheDocument()
@@ -284,7 +299,7 @@ describe('ObituaryContext', () => {
   describe('Additional Note (AC-2.4.6)', () => {
     it('displays note when available', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockFullContext} />)
+        render(<ObituaryContext context={mockFullContext} date={mockDate} />)
       })
 
       expect(screen.getByText('This marked the beginning of the AI boom.')).toBeInTheDocument()
@@ -292,7 +307,7 @@ describe('ObituaryContext', () => {
 
     it('applies muted and italic styling to note', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockMilestoneAndNoteContext} />)
+        render(<ObituaryContext context={mockMilestoneAndNoteContext} date={mockDate} />)
       })
 
       const noteElement = screen.getByText('First AI winter reference')
@@ -302,7 +317,7 @@ describe('ObituaryContext', () => {
 
     it('does not show note when note does not exist', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockStockPricesOnlyContext} />)
+        render(<ObituaryContext context={mockStockPricesOnlyContext} date={mockDate} />)
       })
 
       // Note element should not be present
@@ -312,29 +327,36 @@ describe('ObituaryContext', () => {
   })
 
   describe('Partial Data Handling (AC-2.4.7)', () => {
-    it('shows only available fields when partial data exists', async () => {
+    it('shows CMS fields and computed AI metrics together', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockMilestoneAndNoteContext} />)
+        render(<ObituaryContext context={mockMilestoneAndNoteContext} date={mockDate} />)
       })
 
-      // Should show milestone and note
+      // Should show CMS milestone and note
       expect(screen.getByText('AI Milestone')).toBeInTheDocument()
       expect(screen.getByText('ChatGPT launched')).toBeInTheDocument()
       expect(screen.getByText('First AI winter reference')).toBeInTheDocument()
 
-      // Should NOT show stock prices, AI model, or benchmark
+      // Should NOT show stock prices or CMS benchmark (not in context)
       expect(screen.queryByText('Stock Prices')).not.toBeInTheDocument()
-      expect(screen.queryByText('Latest AI Model')).not.toBeInTheDocument()
       expect(screen.queryByText('Benchmark')).not.toBeInTheDocument()
+
+      // But computed AI cards (AI Progress, Frontier Model) should always be present
+      expect(screen.getByText('AI Progress')).toBeInTheDocument()
+      expect(screen.getByText('Frontier Model')).toBeInTheDocument()
     })
 
-    it('renders full context with all four cards', async () => {
+    it('renders full context with all cards', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockFullContext} />)
+        render(<ObituaryContext context={mockFullContext} date={mockDate} />)
       })
 
+      // Computed AI metrics cards (always present when date is provided)
+      expect(screen.getByText('AI Progress')).toBeInTheDocument()
+      expect(screen.getByText('Frontier Model')).toBeInTheDocument()
+
+      // CMS-based cards (present when context has them)
       expect(screen.getByText('Stock Prices')).toBeInTheDocument()
-      expect(screen.getByText('Latest AI Model')).toBeInTheDocument()
       expect(screen.getByText('Benchmark')).toBeInTheDocument()
       expect(screen.getByText('AI Milestone')).toBeInTheDocument()
     })
@@ -343,7 +365,7 @@ describe('ObituaryContext', () => {
   describe('Deep Archive Styling (AC-2.4.10)', () => {
     it('section has border-top separator', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockFullContext} />)
+        render(<ObituaryContext context={mockFullContext} date={mockDate} />)
       })
 
       const section = document.querySelector('section')
@@ -353,7 +375,7 @@ describe('ObituaryContext', () => {
 
     it('cards use Deep Archive background color', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockStockPricesOnlyContext} />)
+        render(<ObituaryContext context={mockStockPricesOnlyContext} date={mockDate} />)
       })
 
       const card = document.querySelector('[data-slot="card"]')
@@ -362,7 +384,7 @@ describe('ObituaryContext', () => {
 
     it('cards use Deep Archive border color', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockStockPricesOnlyContext} />)
+        render(<ObituaryContext context={mockStockPricesOnlyContext} date={mockDate} />)
       })
 
       const card = document.querySelector('[data-slot="card"]')
@@ -371,7 +393,7 @@ describe('ObituaryContext', () => {
 
     it('section heading uses primary text color', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockFullContext} />)
+        render(<ObituaryContext context={mockFullContext} date={mockDate} />)
       })
 
       const heading = screen.getByRole('heading', { name: /context at time/i })
@@ -380,7 +402,7 @@ describe('ObituaryContext', () => {
 
     it('card titles use secondary text color', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockStockPricesOnlyContext} />)
+        render(<ObituaryContext context={mockStockPricesOnlyContext} date={mockDate} />)
       })
 
       const cardTitle = document.querySelector('[data-slot="card-title"]')
@@ -389,7 +411,7 @@ describe('ObituaryContext', () => {
 
     it('grid has responsive layout', async () => {
       await act(async () => {
-        render(<ObituaryContext context={mockFullContext} />)
+        render(<ObituaryContext context={mockFullContext} date={mockDate} />)
       })
 
       const grid = document.querySelector('.grid')

@@ -32,10 +32,10 @@ describe('CategoryCheckboxes', () => {
     it('shows "Showing all categories" when empty selection', () => {
       render(<CategoryCheckboxes {...defaultProps} selectedCategories={[]} />)
 
-      expect(screen.getByText('Showing all categories')).toBeInTheDocument()
+      expect(screen.getByText('✓ Showing all categories')).toBeInTheDocument()
     })
 
-    it('shows "Show all" when categories selected', () => {
+    it('shows "Clear filters" when categories selected', () => {
       render(
         <CategoryCheckboxes
           {...defaultProps}
@@ -43,7 +43,7 @@ describe('CategoryCheckboxes', () => {
         />
       )
 
-      expect(screen.getByText('Show all')).toBeInTheDocument()
+      expect(screen.getByText('✕ Clear filters')).toBeInTheDocument()
     })
 
     it('shows checked state for selected categories', () => {
@@ -135,7 +135,7 @@ describe('CategoryCheckboxes', () => {
       expect(onCategoriesChange).toHaveBeenCalledWith(['market'])
     })
 
-    it('calls onCategoriesChange with empty array when clicking Show All', () => {
+    it('calls onCategoriesChange with empty array when clicking Clear filters', () => {
       const onCategoriesChange = vi.fn()
       render(
         <CategoryCheckboxes
@@ -144,8 +144,8 @@ describe('CategoryCheckboxes', () => {
         />
       )
 
-      const showAllButton = screen.getByRole('button', { name: /show all/i })
-      fireEvent.click(showAllButton)
+      const clearFiltersButton = screen.getByRole('button', { name: /clear filters/i })
+      fireEvent.click(clearFiltersButton)
 
       expect(onCategoriesChange).toHaveBeenCalledWith([])
     })

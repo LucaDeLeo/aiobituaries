@@ -159,10 +159,10 @@ describe('AI Metrics Helpers', () => {
       expect(series.id).toBe('compute')
     })
 
-    it('returns mmluFrontier for mmlu', () => {
-      const series = getMetricSeries('mmlu')
-      expect(series).toBe(mmluFrontier)
-      expect(series.id).toBe('mmlu')
+    it('returns mmluFrontier (arcagi) for arcagi', () => {
+      const series = getMetricSeries('arcagi')
+      expect(series).toBe(mmluFrontier) // mmluFrontier is aliased to arcagiFrontier
+      expect(series.id).toBe('arcagi')
     })
 
     it('returns eciFrontier for eci', () => {

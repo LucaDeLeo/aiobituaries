@@ -54,19 +54,19 @@ export function CategoryCheckboxes({
 
   return (
     <div className={cn('flex flex-col gap-3', className)}>
-      {/* Show All button */}
+      {/* Show All / Clear Filters button */}
       <button
         type="button"
         onClick={handleShowAll}
         className={cn(
-          'text-sm text-left px-2 py-1 rounded transition-colors',
-          'hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          'text-sm text-left px-3 py-2 rounded-md transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           showingAll
-            ? 'text-foreground font-medium'
-            : 'text-muted-foreground'
+            ? 'text-foreground font-medium bg-muted/50'
+            : 'text-[var(--accent-primary)] font-medium bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20'
         )}
       >
-        {showingAll ? 'Showing all categories' : 'Show all'}
+        {showingAll ? '✓ Showing all categories' : '✕ Clear filters'}
       </button>
 
       {/* Category checkboxes */}

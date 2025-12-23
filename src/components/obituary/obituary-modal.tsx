@@ -227,11 +227,9 @@ export function ObituaryModal({
             </div>
 
             {/* Context Section */}
-            {obituary.context && (
-              <div className="border-t border-[var(--border)] pt-4">
-                <ObituaryContext context={obituary.context} />
-              </div>
-            )}
+            <div className="border-t border-[var(--border)] pt-4">
+              <ObituaryContext context={obituary.context} date={obituary.date} />
+            </div>
 
             {/* Action Buttons */}
             <div className="flex justify-between items-center pt-4 border-t border-[var(--border)]">

@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description = `${skeptic.name}'s ${claimCount} AI skepticism claim${claimCount !== 1 ? 's' : ''} tracked against actual AI progress metrics.`
 
   return {
-    title: `${skeptic.name} | AI Obituaries`,
+    title: skeptic.name,
     description,
     openGraph: {
       title: `${skeptic.name} | AI Obituaries`,

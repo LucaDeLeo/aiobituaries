@@ -56,6 +56,15 @@ export function ObituaryDetail({ obituary }: ObituaryDetailProps) {
         >
           {formatDate(obituary.date)}
         </time>
+        {obituary.skeptic && (
+          <Link
+            href={`/skeptics/${obituary.skeptic.slug}`}
+            className="text-sm text-[var(--text-muted)] hover:text-[var(--accent-primary)]
+                       transition-colors underline underline-offset-4"
+          >
+            View {obituary.skeptic.name}&apos;s profile →
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-wrap justify-center gap-2 mb-8">

@@ -1,11 +1,20 @@
+'use client'
+
+import { useMemo } from 'react'
+import { useVisualizationState } from '@/lib/hooks/use-visualization-state'
+import type { ObituarySummary } from '@/types/obituary'
+
 export interface CountDisplayProps {
-  /** Obituary count to display (passed from parent to avoid duplicate fetches) */
+  /** Total obituary count */
   count: number
+  /** Optional obituaries for filtered count calculation */
+  obituaries?: ObituarySummary[]
 }
 
 /**
  * Hero count display component.
  * Displays obituary count prominently with gold styling and pulsing glow animation.
+ * Responds to active category filters via URL state.
  *
  * Features:
  * - Massive, dramatic number display (dominates viewport)
@@ -16,8 +25,21 @@ export interface CountDisplayProps {
  * - Responsive sizing scaling from mobile to large desktop
  * - Screen reader accessible with descriptive label
  */
-export function CountDisplay({ count }: CountDisplayProps) {
-  const formattedCount = new Intl.NumberFormat('en-US').format(count)
+export function CountDisplay({ count, obituaries }: CountDisplayProps) {
+  const { categories } = useVisualizationState()
+
+  // Calculate filtered count based on active categories
+  const { displayCount, isFiltered } = useMemo(() => {
+    if (!obituaries || categories.length === 0) {
+      return { displayCount: count, isFiltered: false }
+    }
+    const filtered = obituaries.filter((obit) =>
+      obit.categories?.some((cat) => categories.includes(cat))
+    ).length
+    return { displayCount: filtered, isFiltered: true }
+  }, [obituaries, categories, count])
+
+  const formattedCount = new Intl.NumberFormat('en-US').format(displayCount)
 
   return (
     <div className="text-center relative">
@@ -30,7 +52,9 @@ export function CountDisplay({ count }: CountDisplayProps) {
 
       {/* Main h1 heading - MASSIVE number */}
       <h1 className="relative">
-        <span className="sr-only">{count} AI Obituaries</span>
+        <span className="sr-only">
+          {isFiltered ? `${displayCount} of ${count}` : count} AI Obituaries
+        </span>
 
         {/* The giant number */}
         <span
@@ -59,6 +83,16 @@ export function CountDisplay({ count }: CountDisplayProps) {
         <div className="w-1.5 h-1.5 rotate-45 border border-[var(--accent-primary)]/50" />
         <div className="h-px w-16 md:w-24 bg-gradient-to-l from-transparent to-[var(--accent-primary)]/50" />
       </div>
+
+      {/* Filter indicator */}
+      {isFiltered && (
+        <p
+          aria-hidden="true"
+          className="mt-2 text-sm text-[var(--text-muted)]"
+        >
+          of {count} total
+        </p>
+      )}
 
       {/* Tagline */}
       <p className="mt-6 md:mt-8 text-xs md:text-sm text-[var(--text-muted)] font-serif italic max-w-md mx-auto">

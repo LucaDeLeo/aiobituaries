@@ -13,8 +13,6 @@ const defaultProps: ControlPanelProps = {
   onMetricsChange: () => {},
   selectedCategories: [],
   onCategoriesChange: () => {},
-  dateRange: [2010, 2025],
-  onDateRangeChange: () => {},
   displayOptions: { showTrendAnnotations: true, enableClustering: false },
   onDisplayOptionsChange: () => {},
   stats: { total: 100, visible: 42 },
@@ -78,49 +76,28 @@ describe('ControlPanel collapsible sections', () => {
     expect(screen.getByText('Background Metrics')).toBeInTheDocument()
   })
 
-  it('renders AI Progress Era section', async () => {
-    const { ControlPanel } = await import('@/components/controls')
-    render(<ControlPanel {...defaultProps} />)
-    expect(screen.getByText('AI Progress Era')).toBeInTheDocument()
-  })
-
   it('renders Categories section', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
     expect(screen.getByText('Categories')).toBeInTheDocument()
   })
 
-  it('renders Display Options section', async () => {
+  it('renders 2 collapsible section triggers (plus category button)', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
-    expect(screen.getByText('Display Options')).toBeInTheDocument()
-  })
-
-  it('renders all 4 collapsible section triggers', async () => {
-    const { ControlPanel } = await import('@/components/controls')
-    render(<ControlPanel {...defaultProps} />)
-    // 4 collapsible section triggers + 1 "Show all" button from CategoryCheckboxes
+    // 2 collapsible section triggers + 1 "Show all" button from CategoryCheckboxes
     const buttons = screen.getAllByRole('button')
-    expect(buttons.length).toBeGreaterThanOrEqual(4)
+    expect(buttons.length).toBeGreaterThanOrEqual(2)
   })
 })
 
-describe('ControlPanel placeholder content', () => {
+describe('ControlPanel content', () => {
+  // Note: MetricsToggle currently only renders 'compute' metric
   it('renders MetricsToggle in Background Metrics section', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
-    // MetricsToggle is now rendered instead of placeholder text
+    // MetricsToggle only shows compute metric now
     expect(screen.getByText('Training Compute')).toBeInTheDocument()
-    expect(screen.getByText('MMLU Score')).toBeInTheDocument()
-    expect(screen.getByText('Epoch Capability Index')).toBeInTheDocument()
-  })
-
-  it('renders DateRangeSlider for AI Progress Era', async () => {
-    const { ControlPanel } = await import('@/components/controls')
-    render(<ControlPanel {...defaultProps} />)
-    // DateRangeSlider is now rendered instead of placeholder text
-    expect(screen.getByRole('slider', { name: /start year/i })).toBeInTheDocument()
-    expect(screen.getByRole('slider', { name: /end year/i })).toBeInTheDocument()
   })
 
   it('renders CategoryCheckboxes in Categories section', async () => {
@@ -132,16 +109,6 @@ describe('ControlPanel placeholder content', () => {
     expect(screen.getByText('AGI Skepticism')).toBeInTheDocument()
     expect(screen.getByText('Dismissive Framing')).toBeInTheDocument()
   })
-
-  it('has placeholder text for Display Options (when opened)', async () => {
-    const { ControlPanel } = await import('@/components/controls')
-    render(<ControlPanel {...defaultProps} />)
-    // Display Options is closed by default, so open it first
-    // Find the Display Options button by its text content
-    const displayOptionsButton = screen.getByRole('button', { name: /display options/i })
-    fireEvent.click(displayOptionsButton)
-    expect(screen.getByText(/Trend annotations and clustering settings/)).toBeInTheDocument()
-  })
 })
 
 describe('ControlPanel section default states', () => {
@@ -152,26 +119,12 @@ describe('ControlPanel section default states', () => {
     expect(bgMetricsButton).toHaveAttribute('data-state', 'open')
   })
 
-  it('has AI Progress Era section open by default', async () => {
-    const { ControlPanel } = await import('@/components/controls')
-    render(<ControlPanel {...defaultProps} />)
-    const progressEraButton = screen.getByRole('button', { name: /ai progress era/i })
-    expect(progressEraButton).toHaveAttribute('data-state', 'open')
-  })
-
   it('has Categories section open by default', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
     // Get the exact "Categories" section trigger (not "Showing all categories" button)
     const categoriesButton = screen.getByRole('button', { name: /^categories$/i })
     expect(categoriesButton).toHaveAttribute('data-state', 'open')
-  })
-
-  it('has Display Options section closed by default', async () => {
-    const { ControlPanel } = await import('@/components/controls')
-    render(<ControlPanel {...defaultProps} />)
-    const displayOptionsButton = screen.getByRole('button', { name: /display options/i })
-    expect(displayOptionsButton).toHaveAttribute('data-state', 'closed')
   })
 })
 
@@ -188,16 +141,16 @@ describe('ControlPanel section toggling', () => {
     expect(bgMetrics).toHaveAttribute('data-state', 'open')
   })
 
-  it('toggles Display Options section on click', async () => {
+  it('toggles Categories section on click', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
-    const displayOptions = screen.getByRole('button', { name: /display options/i })
+    const categories = screen.getByRole('button', { name: /^categories$/i })
 
-    expect(displayOptions).toHaveAttribute('data-state', 'closed')
-    fireEvent.click(displayOptions)
-    expect(displayOptions).toHaveAttribute('data-state', 'open')
-    fireEvent.click(displayOptions)
-    expect(displayOptions).toHaveAttribute('data-state', 'closed')
+    expect(categories).toHaveAttribute('data-state', 'open')
+    fireEvent.click(categories)
+    expect(categories).toHaveAttribute('data-state', 'closed')
+    fireEvent.click(categories)
+    expect(categories).toHaveAttribute('data-state', 'open')
   })
 })
 
@@ -274,12 +227,10 @@ describe('ControlPanel TypeScript interface', () => {
   it('accepts all required props without error', async () => {
     const { ControlPanel } = await import('@/components/controls')
     const props: ControlPanelProps = {
-      enabledMetrics: ['compute', 'mmlu', 'eci'],
+      enabledMetrics: ['compute', 'arcagi', 'eci'],
       onMetricsChange: () => {},
       selectedCategories: ['market', 'capability'],
       onCategoriesChange: () => {},
-      dateRange: [2015, 2024],
-      onDateRangeChange: () => {},
       displayOptions: { showTrendAnnotations: false, enableClustering: true },
       onDisplayOptionsChange: () => {},
       stats: { total: 500, visible: 123 },
@@ -296,8 +247,6 @@ describe('ControlPanel TypeScript interface', () => {
       onMetricsChange: () => {},
       selectedCategories: [],
       onCategoriesChange: () => {},
-      dateRange: [2010, 2025],
-      onDateRangeChange: () => {},
       displayOptions: { showTrendAnnotations: true, enableClustering: false },
       onDisplayOptionsChange: () => {},
       stats: { total: 10, visible: 5 },

@@ -817,6 +817,14 @@ export function ScatterPlotInner({
                 dx: -8,
                 dy: 4,
               })}
+              label="Training Compute (FLOP)"
+              labelOffset={52}
+              labelProps={{
+                fill: 'var(--text-muted)',
+                fontSize: 11,
+                fontFamily: 'var(--font-sans, sans-serif)',
+                textAnchor: 'middle' as const,
+              }}
             />
           </g>
 

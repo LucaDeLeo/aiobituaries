@@ -20,11 +20,28 @@ export default async function Home() {
   // P0.4 fix: Separate mobile and tablet content to prevent double-mounting
   // Only ONE branch is mounted at a time via ClientLayoutRouter
 
+  // Fallback for count displays during SSR/static generation
+  const countFallback = (
+    <div className="flex flex-col items-center gap-4">
+      <span className="text-7xl font-bold text-[var(--text-primary)] tabular-nums">{count}</span>
+      <span className="text-lg text-[var(--text-secondary)]">obituaries archived</span>
+    </div>
+  );
+
+  const countCompactFallback = (
+    <div className="flex items-baseline gap-2">
+      <span className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{count}</span>
+      <span className="text-sm text-[var(--text-muted)]">obituaries</span>
+    </div>
+  );
+
   // Mobile: < 768px - Timeline-centric view
   const mobileContent = (
     <div className="min-h-screen flex flex-col">
       <section className="flex flex-col items-center justify-center py-12 px-4">
-        <CountDisplay count={count} />
+        <Suspense fallback={countFallback}>
+          <CountDisplay count={count} obituaries={obituaries} />
+        </Suspense>
       </section>
       <div className="flex-1 flex flex-col min-h-0">
         <Suspense fallback={<div className="flex-1 flex items-center justify-center">Loading...</div>}>
@@ -39,7 +56,9 @@ export default async function Home() {
   const tabletContent = (
     <div className="min-h-screen flex flex-col">
       <section className="flex flex-col items-center justify-center py-24 px-4">
-        <CountDisplay count={count} />
+        <Suspense fallback={countFallback}>
+          <CountDisplay count={count} obituaries={obituaries} />
+        </Suspense>
       </section>
       <div className="flex-1">
         <Suspense fallback={null}>
@@ -57,7 +76,9 @@ export default async function Home() {
   const desktopContent = (
     <div className="flex flex-col min-h-screen">
       <header className="flex items-center px-6 py-4 border-b border-border" aria-label="Dashboard header">
-        <CountDisplayCompact count={count} />
+        <Suspense fallback={countCompactFallback}>
+          <CountDisplayCompact count={count} obituaries={obituaries} />
+        </Suspense>
       </header>
       <div className="grid grid-cols-[1fr_320px] flex-1 min-h-[500px] gap-0">
         <Suspense fallback={null}>

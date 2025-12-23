@@ -23,12 +23,14 @@ function summaryToObituary(summary: ObituarySummary): Obituary {
     ...summary,
     sourceUrl: FALLBACK_SOURCE_URL,
     context: {},
+    skeptic: null,
   }
 }
 
 /**
  * GROQ projection for full obituary fields.
  * Extracts slug.current as "slug" for cleaner API.
+ * Includes skeptic reference with name and slug for linking.
  */
 const obituaryProjection = `{
   _id,
@@ -38,7 +40,11 @@ const obituaryProjection = `{
   sourceUrl,
   date,
   categories,
-  context
+  context,
+  "skeptic": skeptic->{
+    name,
+    "slug": slug.current
+  }
 }`
 
 /**

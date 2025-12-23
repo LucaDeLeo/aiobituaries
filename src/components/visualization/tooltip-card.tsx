@@ -39,8 +39,8 @@ export function TooltipCard({ obituary, x, y, containerBounds, showFlop = true }
   const shouldReduceMotion = useReducedMotion()
 
   // Tooltip dimensions and padding
-  const tooltipWidth = 280
-  const tooltipHeight = 140 // Approximate height (increased for FLOP line)
+  const tooltipWidth = 320 // Increased for full source names
+  const tooltipHeight = 160 // Approximate height (increased for stacked layout)
   const padding = 12
   const dotRadius = 14 // Account for dot size when flipping to below
 
@@ -69,10 +69,22 @@ export function TooltipCard({ obituary, x, y, containerBounds, showFlop = true }
       ? `${obituary.claim.slice(0, 100)}...`
       : obituary.claim
 
-  // Calculate FLOP value only when needed (guard computation)
-  const formattedFlop = showFlop
-    ? formatFlopTick(getActualFlopAtDate(trainingComputeFrontier, new Date(obituary.date)))
+  // Calculate FLOP value and era label only when needed (guard computation)
+  const flopValue = showFlop
+    ? getActualFlopAtDate(trainingComputeFrontier, new Date(obituary.date))
     : null
+
+  const formattedFlop = flopValue !== null ? formatFlopTick(flopValue) : null
+
+  // Get human-readable era label based on compute level (log₁₀ FLOP)
+  const getEraLabel = (logFlop: number): string => {
+    if (logFlop < 20) return 'Early AI'
+    if (logFlop < 23) return 'Pre-LLM era'
+    if (logFlop < 25) return 'GPT-3 era'
+    return 'Frontier (GPT-4+)'
+  }
+
+  const eraLabel = flopValue !== null ? getEraLabel(flopValue) : null
 
   return (
     <motion.div
@@ -86,7 +98,7 @@ export function TooltipCard({ obituary, x, y, containerBounds, showFlop = true }
         position: 'absolute',
         left: `${left}px`,
         top: `${top}px`,
-        maxWidth: '280px',
+        maxWidth: '320px',
         zIndex: 50,
         willChange: shouldReduceMotion ? 'auto' : 'transform, opacity',
       }}
@@ -111,15 +123,15 @@ export function TooltipCard({ obituary, x, y, containerBounds, showFlop = true }
           <p className="text-sm text-[var(--text-primary)] font-serif italic leading-snug mb-3">
             &ldquo;{truncatedClaim}&rdquo;
           </p>
-          <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] pt-2 border-t border-[var(--border)]">
-            <span className="font-mono truncate max-w-[140px]">{obituary.source}</span>
+          <div className="flex flex-col gap-1 text-xs text-[var(--text-secondary)] pt-2 border-t border-[var(--border)]">
+            <span className="font-mono">{obituary.source}</span>
             <span className="font-mono text-[var(--text-muted)]">{formatDate(obituary.date)}</span>
           </div>
 
           {/* AI Progress (FLOP value at date) - only shown when compute metric enabled */}
-          {formattedFlop && (
+          {formattedFlop && eraLabel && (
             <div className="text-[11px] text-[var(--text-muted)] mt-2 font-mono">
-              AI Progress: {formattedFlop} FLOP
+              AI Progress: {eraLabel} ({formattedFlop} FLOP)
             </div>
           )}
         </div>

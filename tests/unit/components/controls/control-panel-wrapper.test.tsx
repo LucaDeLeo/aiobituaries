@@ -51,13 +51,11 @@ describe('ControlPanelWrapper rendering', () => {
     expect(screen.getByText('Controls')).toBeInTheDocument()
   })
 
-  it('renders all 4 collapsible sections', async () => {
+  it('renders 2 collapsible sections', async () => {
     const { ControlPanelWrapper } = await import('@/components/controls')
     render(<ControlPanelWrapper totalCount={25} />)
     expect(screen.getByText('Background Metrics')).toBeInTheDocument()
-    expect(screen.getByText('AI Progress Era')).toBeInTheDocument()
     expect(screen.getByText('Categories')).toBeInTheDocument()
-    expect(screen.getByText('Display Options')).toBeInTheDocument()
   })
 
   it('applies sidebar variant by default', async () => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { CATEGORY_ORDER, getCategory, getCategoryLabel } from '@/lib/constants/categories'
 import { CategoryPill } from './category-pill'
@@ -64,6 +64,33 @@ export function CategoryFilter({
   const liveRegion = useLiveRegionOptional()
   const isInitialMount = useRef(true)
   const shouldReduceMotion = useReducedMotion()
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+
+  // Check scroll position and update indicators
+  const updateScrollIndicators = useCallback(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const { scrollLeft, scrollWidth, clientWidth } = container
+    setCanScrollLeft(scrollLeft > 2)
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 2)
+  }, [])
+
+  // Check scroll indicators on mount and resize
+  useEffect(() => {
+    updateScrollIndicators()
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    container.addEventListener('scroll', updateScrollIndicators, { passive: true })
+    window.addEventListener('resize', updateScrollIndicators)
+    return () => {
+      container.removeEventListener('scroll', updateScrollIndicators)
+      window.removeEventListener('resize', updateScrollIndicators)
+    }
+  }, [updateScrollIndicators])
 
   // Announce filter changes to screen readers
   useEffect(() => {
@@ -107,11 +134,7 @@ export function CategoryFilter({
       className={cn(
         positionClass,
         'z-50',
-        'flex items-center gap-2 px-4 py-2',
-        'bg-[var(--bg-secondary)]/80 backdrop-blur-md',
-        'border border-[var(--border)] rounded-full',
-        'shadow-lg',
-        'overflow-x-auto scrollbar-hide',
+        'relative',
         'max-w-[calc(100vw-2rem)]',
         className
       )}
@@ -121,31 +144,67 @@ export function CategoryFilter({
       role="group"
       aria-label="Category filters"
     >
-      <button
-        data-testid="filter-all-button"
-        onClick={onShowAll}
-        aria-pressed={showingAll}
+      {/* Left scroll indicator */}
+      <div
         className={cn(
-          pillPadding,
-          'rounded-full text-sm font-medium transition-colors',
-          'min-h-[44px] flex items-center justify-center',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-secondary)]',
-          showingAll
-            ? 'bg-[var(--accent-primary)]/20 text-[var(--text-primary)]'
-            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
+          'absolute left-0 top-0 bottom-0 w-8 z-10',
+          'bg-gradient-to-r from-[var(--bg-secondary)] to-transparent',
+          'rounded-l-full pointer-events-none',
+          'transition-opacity duration-200',
+          canScrollLeft ? 'opacity-100' : 'opacity-0'
+        )}
+        aria-hidden="true"
+      />
+
+      {/* Scrollable content */}
+      <div
+        ref={scrollContainerRef}
+        className={cn(
+          'flex items-center gap-2 px-4 py-2',
+          'bg-[var(--bg-secondary)]/80 backdrop-blur-md',
+          'border border-[var(--border)] rounded-full',
+          'shadow-lg',
+          'overflow-x-auto scrollbar-hide'
         )}
       >
-        All
-      </button>
+        <button
+          data-testid="filter-all-button"
+          onClick={onShowAll}
+          aria-pressed={showingAll}
+          className={cn(
+            pillPadding,
+            'rounded-full text-sm font-medium transition-colors whitespace-nowrap',
+            'min-h-[44px] flex items-center justify-center',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-secondary)]',
+            showingAll
+              ? 'bg-[var(--accent-primary)]/20 text-[var(--text-primary)]'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
+          )}
+        >
+          All
+        </button>
 
-      {CATEGORY_ORDER.map((categoryId) => (
-        <CategoryPill
-          key={categoryId}
-          category={getCategory(categoryId)}
-          isActive={activeCategories.includes(categoryId)}
-          onClick={() => onToggle(categoryId)}
-        />
-      ))}
+        {CATEGORY_ORDER.map((categoryId) => (
+          <CategoryPill
+            key={categoryId}
+            category={getCategory(categoryId)}
+            isActive={activeCategories.includes(categoryId)}
+            onClick={() => onToggle(categoryId)}
+          />
+        ))}
+      </div>
+
+      {/* Right scroll indicator */}
+      <div
+        className={cn(
+          'absolute right-0 top-0 bottom-0 w-8 z-10',
+          'bg-gradient-to-l from-[var(--bg-secondary)] to-transparent',
+          'rounded-r-full pointer-events-none',
+          'transition-opacity duration-200',
+          canScrollRight ? 'opacity-100' : 'opacity-0'
+        )}
+        aria-hidden="true"
+      />
     </motion.div>
   )
 }

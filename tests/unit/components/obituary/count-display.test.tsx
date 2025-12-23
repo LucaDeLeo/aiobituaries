@@ -1,6 +1,19 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { CountDisplay } from '@/components/obituary/count-display'
+
+// Mock useVisualizationState to avoid useSearchParams issues in tests
+vi.mock('@/lib/hooks/use-visualization-state', () => ({
+  useVisualizationState: () => ({
+    categories: [],
+    metrics: ['compute'],
+    setCategories: vi.fn(),
+    setMetrics: vi.fn(),
+    toggleCategory: vi.fn(),
+    toggleMetric: vi.fn(),
+    clearFilters: vi.fn(),
+  }),
+}))
 
 describe('CountDisplay', () => {
   it('renders with formatted count', () => {
