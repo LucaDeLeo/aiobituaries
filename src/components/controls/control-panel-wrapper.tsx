@@ -32,8 +32,6 @@ export function ControlPanelWrapper({
     setMetrics,
     categories,
     setCategories,
-    dateRange,
-    setDateRange,
   } = useVisualizationState()
 
   const { mode, isHydrated } = useViewModeStorage()
@@ -54,8 +52,6 @@ export function ControlPanelWrapper({
       onMetricsChange={setMetrics}
       selectedCategories={categories}
       onCategoriesChange={setCategories}
-      dateRange={dateRange}
-      onDateRangeChange={setDateRange}
       displayOptions={displayOptions}
       onDisplayOptionsChange={handleDisplayOptionsChange}
       stats={{

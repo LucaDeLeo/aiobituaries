@@ -49,10 +49,8 @@ export interface ScatterPlotProps {
   activeCategories?: Category[]
   /** Fill parent container height (for grid layout). Parent must have explicit height. */
   fillContainer?: boolean
-  /** Enabled metrics for Y-axis domain calculation. Defaults to ['compute']. */
+  /** Enabled metrics for background chart. Defaults to ['compute']. */
   enabledMetrics?: MetricType[]
-  /** Year range for Y-axis domain [startYear, endYear]. Defaults to [2010, 2025]. */
-  dateRange?: [number, number]
 }
 
 const MARGIN = { top: 20, right: 20, bottom: 40, left: 72 }
@@ -113,6 +111,9 @@ export function getTickCount(width: number): number {
 }
 
 
+// Fixed date range for Y-axis domain calculation (full relevant AI era)
+const DEFAULT_DATE_RANGE: [number, number] = [2010, 2025]
+
 // Exported for testing purposes
 export function ScatterPlotInner({
   data,
@@ -120,14 +121,12 @@ export function ScatterPlotInner({
   height,
   activeCategories = [],
   enabledMetrics = ['compute'],
-  dateRange = [2010, 2025],
 }: {
   data: ObituarySummary[]
   width: number
   height: number
   activeCategories: Category[]
   enabledMetrics?: MetricType[]
-  dateRange?: [number, number]
 }) {
   // Timeline position persistence hook
   const {
@@ -215,11 +214,9 @@ export function ScatterPlotInner({
   }, [data, innerWidth])
 
   const yScale = useMemo((): LogScale => {
-    // Fallback to defaults if dateRange is null/undefined (shouldn't happen, but defensive)
-    const safeRange = dateRange ?? [2010, 2025]
-    const domain = getUnifiedDomain(enabledMetrics, safeRange[0], safeRange[1])
+    const domain = getUnifiedDomain(enabledMetrics, DEFAULT_DATE_RANGE[0], DEFAULT_DATE_RANGE[1])
     return createLogYScale(innerHeight, domain)
-  }, [innerHeight, enabledMetrics, dateRange])
+  }, [innerHeight, enabledMetrics])
 
   // Compute visible tick values for Y-axis (only ticks within domain)
   const visibleTickValues = useMemo(() => {
@@ -929,12 +926,13 @@ export function ScatterPlotInner({
         )}
       </AnimatePresence>
 
-      {/* Obituary Modal */}
+      {/* Obituary Detail Panel - left side to use negative space */}
       <ObituaryModal
         selectedSummary={selectedSummary}
         isOpen={isModalOpen}
         onClose={handleModalClose}
         triggerRef={clickedPointRef}
+        side="left"
       />
     </div>
   )
@@ -946,7 +944,6 @@ export function ScatterPlot({
   activeCategories = [],
   fillContainer,
   enabledMetrics,
-  dateRange,
 }: ScatterPlotProps) {
   return (
     <div
@@ -965,7 +962,6 @@ export function ScatterPlot({
             height={height || Math.max(parentHeight, 300)}
             activeCategories={activeCategories}
             enabledMetrics={enabledMetrics}
-            dateRange={dateRange}
           />
         )}
       </ParentSize>

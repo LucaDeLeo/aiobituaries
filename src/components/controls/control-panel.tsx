@@ -5,7 +5,6 @@ import type { MetricType } from '@/types/metrics'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { CollapsibleSection } from './collapsible-section'
 import { MetricsToggle } from './metrics-toggle'
-import { DateRangeSlider } from './date-range-slider'
 import { CategoryCheckboxes } from './category-checkboxes'
 import { cn } from '@/lib/utils'
 
@@ -26,10 +25,6 @@ export interface ControlPanelProps {
   selectedCategories: Category[]
   /** Callback when category selection changes */
   onCategoriesChange: (categories: Category[]) => void
-  /** Current date range [startYear, endYear] */
-  dateRange: [number, number]
-  /** Callback when date range changes */
-  onDateRangeChange: (range: [number, number]) => void
   /** Display options (trend annotations, clustering) */
   displayOptions: DisplayOptions
   /** Callback when display options change */
@@ -38,7 +33,7 @@ export interface ControlPanelProps {
   stats: { total: number; visible: number }
   /** Layout variant - affects padding and spacing */
   variant?: 'sidebar' | 'sheet' | 'drawer'
-  /** Hide chart-specific controls (Background Metrics, AI Progress Era) in table view */
+  /** Hide chart-specific controls (Background Metrics) in table view */
   isChartControlsHidden?: boolean
 }
 
@@ -53,8 +48,6 @@ export function ControlPanel({
   onMetricsChange,
   selectedCategories,
   onCategoriesChange,
-  dateRange,
-  onDateRangeChange,
   stats,
   variant = 'sidebar',
   isChartControlsHidden = false,
@@ -89,13 +82,6 @@ export function ControlPanel({
                     onMetricsChange={onMetricsChange}
                   />
                 </CollapsibleSection>
-
-                <CollapsibleSection title="AI Progress Era" defaultOpen>
-                  <DateRangeSlider
-                    value={dateRange}
-                    onValueChange={onDateRangeChange}
-                  />
-                </CollapsibleSection>
               </motion.div>
             )}
           </AnimatePresence>
@@ -124,13 +110,13 @@ export function ControlPanel({
           />
         </CollapsibleSection>
 
-        {/* Display Options - always visible */}
+        {/* Display Options - hidden until implemented
         <CollapsibleSection title="Display Options" defaultOpen={false}>
-          {/* TODO: DisplayOptions controls - future story */}
           <p className="text-sm text-muted-foreground">
             Trend annotations and clustering settings
           </p>
         </CollapsibleSection>
+        */}
       </div>
     </div>
   )

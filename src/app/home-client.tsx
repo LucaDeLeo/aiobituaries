@@ -59,10 +59,8 @@ export interface HomeClientProps {
   obituaries: ObituarySummary[]
   /** Layout variant: 'default' for existing, 'hero' for new grid layout */
   variant?: 'default' | 'hero'
-  /** Enabled metrics for Y-axis domain calculation (hero variant only) */
+  /** Enabled metrics for background chart (hero variant only) */
   enabledMetrics?: MetricType[]
-  /** Year range for Y-axis domain [startYear, endYear] (hero variant only) */
-  dateRange?: [number, number]
   /** Active category filters from parent (hero variant only) */
   activeCategories?: Category[]
 }
@@ -75,7 +73,6 @@ export function HomeClient({
   obituaries,
   variant = 'default',
   enabledMetrics,
-  dateRange,
   activeCategories: externalCategories,
 }: HomeClientProps) {
   // For default variant, use internal useFilters (backward compat)
@@ -123,7 +120,6 @@ export function HomeClient({
               data={obituaries}
               activeCategories={categories}
               enabledMetrics={enabledMetrics}
-              dateRange={dateRange}
               fillContainer
             />
           ) : (

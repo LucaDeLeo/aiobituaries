@@ -8,20 +8,24 @@ import { allMetrics } from '@/data/ai-metrics.generated'
  * UI-specific descriptions for each metric (not in generated data)
  */
 const METRIC_DESCRIPTIONS: Record<MetricType, string> = {
-  compute: 'FLOP trend line',
-  mmlu: 'Benchmark accuracy',
+  compute: 'FLOP trend line (aligns with dot Y-positions)',
+  arcagi: 'Novel reasoning benchmark',
   eci: 'Composite capability',
 }
 
 /**
- * Derive metrics config from generated data with UI descriptions
+ * Derive metrics config from generated data with UI descriptions.
+ * Currently only showing 'compute' since MMLU/ECI use different scales
+ * and don't align meaningfully with dot Y-positions.
  */
-const METRICS = allMetrics.map((metric) => ({
-  id: metric.id as MetricType,
-  label: metric.label,
-  description: METRIC_DESCRIPTIONS[metric.id as MetricType],
-  color: metric.color,
-}))
+const METRICS = allMetrics
+  .filter((metric) => metric.id === 'compute')
+  .map((metric) => ({
+    id: metric.id as MetricType,
+    label: metric.label,
+    description: METRIC_DESCRIPTIONS[metric.id as MetricType],
+    color: metric.color,
+  }))
 
 export interface MetricsToggleProps {
   /** Currently enabled metrics */

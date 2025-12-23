@@ -22,50 +22,46 @@ export interface AIMetricSeries {
 }
 
 /**
- * MMLU Benchmark Frontier
- * Best MMLU score achieved at each point in time.
- * Shows capability progress on a standardized benchmark.
+ * ARC-AGI Benchmark Frontier
+ * Best ARC-AGI score achieved at each point in time.
+ * Shows dramatic capability progress on novel reasoning tasks.
+ * Source: https://arcprize.org/
  */
-export const mmluFrontier: AIMetricSeries = {
-  id: 'mmlu',
-  label: 'MMLU Score',
+export const arcagiFrontier: AIMetricSeries = {
+  id: 'arcagi',
+  label: 'ARC-AGI Score',
   color: 'rgb(234, 179, 8)', // Amber
   unit: '%',
   data: [
       {
-          "date": "2021-08-01",
-          "value": 25.7
-      },
-      {
-          "date": "2021-12-01",
-          "value": 60
-      },
-      {
-          "date": "2022-03-01",
-          "value": 70
+          "date": "2020-06-01",
+          "value": 0
       },
       {
           "date": "2023-03-01",
-          "value": 86.4
+          "value": 0
       },
       {
-          "date": "2024-06-01",
-          "value": 86.5
+          "date": "2024-05-01",
+          "value": 5
       },
       {
           "date": "2024-09-01",
-          "value": 86.9
+          "value": 21
       },
       {
-          "date": "2024-10-01",
-          "value": 87.3
+          "date": "2024-12-01",
+          "value": 75.7
       },
       {
-          "date": "2024-11-01",
-          "value": 88.1
+          "date": "2024-12-15",
+          "value": 87.5
       }
   ],
 }
+
+// Legacy export for backward compatibility
+export const mmluFrontier = arcagiFrontier
 
 /**
  * Epoch Capabilities Index (ECI) Frontier
@@ -282,7 +278,7 @@ export const trainingComputeFrontier: AIMetricSeries = {
 /**
  * All metric series for visualization
  */
-export const allMetrics: AIMetricSeries[] = [mmluFrontier, eciFrontier, trainingComputeFrontier]
+export const allMetrics: AIMetricSeries[] = [arcagiFrontier, eciFrontier, trainingComputeFrontier]
 
 /**
  * Frontier model timeline - which model was the frontier at each date

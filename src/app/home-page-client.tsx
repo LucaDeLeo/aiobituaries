@@ -9,7 +9,7 @@
  * via props to child components.
  *
  * State flow:
- * URL (?metrics=compute,mmlu&from=2015&to=2025&cat=market)
+ * URL (?metrics=compute,mmlu&cat=market)
  *     |
  *     v
  * useVisualizationState()
@@ -17,7 +17,7 @@
  *     +---> ControlPanelWrapper ---> ControlPanel
  *     |                                   |
  *     v                                   v
- * HomeClient               [MetricsToggle, DateRangeSlider, CategoryCheckboxes]
+ * HomeClient               [MetricsToggle, CategoryCheckboxes]
  *     |
  *     v
  * ScatterPlot (filters + renders)
@@ -42,13 +42,11 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
   const {
     metrics,
     categories,
-    dateRange,
   } = useVisualizationState()
 
   // Calculate visible count based on category filter
-  // Only categories affect visible count (not metrics or dateRange) because:
+  // Only categories affect visible count (not metrics) because:
   // - Metrics toggle background lines, not points
-  // - DateRange affects Y-axis domain, not which points render
   const visibleCount = useMemo(() => {
     if (categories.length === 0) return obituaries.length
     return obituaries.filter((obit) =>
@@ -64,7 +62,6 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
           obituaries={obituaries}
           variant="hero"
           enabledMetrics={metrics}
-          dateRange={dateRange}
           activeCategories={categories}
         />
       </section>

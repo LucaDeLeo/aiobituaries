@@ -5,8 +5,8 @@ import { MobileNav } from './mobile-nav'
 export function Header() {
   return (
     <header className="sticky top-0 z-50">
-      {/* Gradient fade background for editorial feel */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg-primary)] via-[var(--bg-primary)]/95 to-transparent pointer-events-none" />
+      {/* Solid background with blur for readable sticky header */}
+      <div className="absolute inset-0 bg-[var(--bg-primary)]/95 backdrop-blur-md pointer-events-none" />
 
       {/* Top decorative border with gold accent */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--accent-primary)]/30 to-transparent" />

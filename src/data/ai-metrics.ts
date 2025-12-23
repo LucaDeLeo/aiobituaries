@@ -245,8 +245,8 @@ export function getMetricSeries(metricType: MetricType): AIMetricSeries {
   switch (metricType) {
     case 'compute':
       return trainingComputeFrontier
-    case 'mmlu':
-      return mmluFrontier
+    case 'arcagi':
+      return mmluFrontier // mmluFrontier is aliased to arcagiFrontier
     case 'eci':
       return eciFrontier
   }
