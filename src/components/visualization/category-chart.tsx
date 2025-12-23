@@ -51,7 +51,7 @@ export function CategoryChart({
     }
 
     obituaries.forEach((ob) => {
-      ob.categories.forEach((cat) => {
+      ob.categories?.forEach((cat) => {
         if (cat in result) {
           result[cat]++
         }

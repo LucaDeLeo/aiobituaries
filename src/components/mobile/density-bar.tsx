@@ -60,7 +60,7 @@ export function DensityBar({
     obituaries.forEach((ob) => {
       if (
         activeCategories.length > 0 &&
-        !ob.categories.some((c) => activeCategories.includes(c))
+        !ob.categories?.some((c) => activeCategories.includes(c))
       ) {
         return
       }

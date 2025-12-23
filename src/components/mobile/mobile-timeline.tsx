@@ -46,7 +46,7 @@ export function MobileTimeline({ obituaries }: MobileTimelineProps) {
       // Category filter (AND with categories from URL)
       if (
         activeCategories.length > 0 &&
-        !ob.categories.some((c) => activeCategories.includes(c as Category))
+        !ob.categories?.some((c) => activeCategories.includes(c as Category))
       ) {
         return false
       }

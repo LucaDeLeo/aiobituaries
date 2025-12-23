@@ -140,7 +140,7 @@ export function computeClusters(
       // Find primary category (most common)
       const categoryCounts = new Map<Category, number>()
       nearby.forEach((p) => {
-        const cat = p.obituary.categories[0]
+        const cat = p.obituary.categories?.[0]
         if (cat) {
           categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1)
         }

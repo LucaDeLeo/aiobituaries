@@ -23,7 +23,7 @@ export function hashToJitter(id: string): number {
  * @param categories - Array of categories
  * @returns Hex color string
  */
-export function getCategoryColor(categories: Category[]): string {
-  const primary = categories[0] || 'capability'
+export function getCategoryColor(categories: Category[] | null | undefined): string {
+  const primary = categories?.[0] ?? 'capability'
   return getCategoryColorFromConstants(primary)
 }

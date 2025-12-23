@@ -129,7 +129,7 @@ export function ObituaryTable({
     // Apply category filter
     if (activeCategories.length > 0) {
       filtered = obituaries.filter((ob) =>
-        ob.categories.some((c) => activeCategories.includes(c))
+        ob.categories?.some((c) => activeCategories.includes(c))
       )
     }
 
@@ -148,7 +148,7 @@ export function ObituaryTable({
         case 'category':
           return (
             multiplier *
-            (a.categories[0] || '').localeCompare(b.categories[0] || '')
+            (a.categories?.[0] || '').localeCompare(b.categories?.[0] || '')
           )
         default:
           return 0
@@ -260,7 +260,7 @@ export function ObituaryTable({
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex flex-wrap gap-1">
-                    {obituary.categories.map((cat) => (
+                    {obituary.categories?.map((cat) => (
                       <CategoryBadge key={cat} category={cat} />
                     ))}
                   </div>

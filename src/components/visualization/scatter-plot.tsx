@@ -271,7 +271,7 @@ export function ScatterPlotInner({
   const isPointFiltered = useCallback(
     (obituary: ObituarySummary): boolean => {
       if (activeCategories.length === 0) return true
-      return obituary.categories.some((cat) => activeCategories.includes(cat))
+      return obituary.categories?.some((cat) => activeCategories.includes(cat)) ?? false
     },
     [activeCategories]
   )
