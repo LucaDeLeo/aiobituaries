@@ -6,6 +6,8 @@ import {
   getUnifiedDomain,
   getMetricSeries,
   isFlopMetric,
+  getAllMetricsAtDate,
+  getCurrentMetrics,
   trainingComputeFrontier,
   mmluFrontier,
   eciFrontier,
@@ -181,6 +183,90 @@ describe('AI Metrics Helpers', () => {
 
     it('returns false for eci', () => {
       expect(isFlopMetric('eci')).toBe(false)
+    })
+  })
+
+  describe('getAllMetricsAtDate (Skeptic Pages)', () => {
+    it('returns all metrics for recent date', () => {
+      const date = new Date('2024-06-01')
+      const metrics = getAllMetricsAtDate(date)
+
+      expect(metrics.mmlu).not.toBeNull()
+      expect(metrics.eci).not.toBeNull()
+      expect(metrics.compute).toBeGreaterThan(0)
+      expect(metrics.computeFormatted).toMatch(/^10\^\d+\.\d$/)
+    })
+
+    it('returns null mmlu for dates before Aug 2021', () => {
+      const date = new Date('2021-01-15')
+      const metrics = getAllMetricsAtDate(date)
+
+      expect(metrics.mmlu).toBeNull()
+      expect(metrics.compute).toBeGreaterThan(0)
+    })
+
+    it('returns null eci for dates before Feb 2023', () => {
+      const date = new Date('2022-12-01')
+      const metrics = getAllMetricsAtDate(date)
+
+      expect(metrics.mmlu).not.toBeNull() // MMLU available
+      expect(metrics.eci).toBeNull() // ECI not yet available
+      expect(metrics.compute).toBeGreaterThan(0)
+    })
+
+    it('formats compute correctly', () => {
+      const date = new Date('2023-03-01')
+      const metrics = getAllMetricsAtDate(date)
+
+      // Compute at 2023-03-01 is 25.3
+      expect(metrics.computeFormatted).toBe('10^25.3')
+      expect(metrics.compute).toBeCloseTo(25.3, 1)
+    })
+
+    it('rounds values to 1 decimal place', () => {
+      const date = new Date('2024-01-15')
+      const metrics = getAllMetricsAtDate(date)
+
+      if (metrics.mmlu !== null) {
+        expect(metrics.mmlu.toString()).toMatch(/^\d+(\.\d)?$/)
+      }
+      if (metrics.eci !== null) {
+        expect(metrics.eci.toString()).toMatch(/^\d+(\.\d)?$/)
+      }
+      expect(metrics.compute.toString()).toMatch(/^\d+(\.\d)?$/)
+    })
+
+    it('handles very old dates (compute always available)', () => {
+      const date = new Date('1980-01-01')
+      const metrics = getAllMetricsAtDate(date)
+
+      expect(metrics.mmlu).toBeNull()
+      expect(metrics.eci).toBeNull()
+      expect(metrics.compute).toBeGreaterThan(0)
+      expect(metrics.computeFormatted).toBeDefined()
+    })
+  })
+
+  describe('getCurrentMetrics', () => {
+    it('returns non-null values for all metrics', () => {
+      const metrics = getCurrentMetrics()
+
+      expect(metrics.mmlu).not.toBeNull()
+      expect(metrics.eci).not.toBeNull()
+      expect(metrics.compute).toBeGreaterThan(0)
+      expect(metrics.computeFormatted).toBeDefined()
+    })
+
+    it('returns recent MMLU values (should be high)', () => {
+      const metrics = getCurrentMetrics()
+      // Current MMLU should be above 85%
+      expect(metrics.mmlu).toBeGreaterThan(85)
+    })
+
+    it('returns recent ECI values', () => {
+      const metrics = getCurrentMetrics()
+      // Current ECI should be above 140
+      expect(metrics.eci).toBeGreaterThan(140)
     })
   })
 })

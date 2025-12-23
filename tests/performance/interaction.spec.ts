@@ -11,7 +11,7 @@ import { test, expect } from '../support/merged-fixtures'
 test.describe('Timeline Scroll Performance (AC-6.8.5)', () => {
   test('Timeline maintains 55+ fps during scroll with 200+ points', async ({ page }) => {
     // Navigate to homepage
-    await page.goto('http://localhost:3000/')
+    await page.goto('/')
 
     // Wait for timeline to load with data
     await page.waitForSelector('[data-testid="scatter-plot"]')
@@ -93,7 +93,7 @@ test.describe('Timeline Scroll Performance (AC-6.8.5)', () => {
 test.describe('Modal Performance (AC-6.8.6)', () => {
   test('Modal opens within 300ms from click', async ({ page }) => {
     // Navigate to homepage
-    await page.goto('http://localhost:3000/')
+    await page.goto('/')
 
     // Wait for timeline to load
     await page.waitForSelector('[data-testid="scatter-plot"]')
@@ -102,32 +102,15 @@ test.describe('Modal Performance (AC-6.8.6)', () => {
     const firstPoint = page.locator('[data-testid="scatter-point"]').first()
     await firstPoint.waitFor({ state: 'visible' })
 
-    // Measure modal open time
-    const openDuration = await page.evaluate(async () => {
-      const startTime = performance.now()
+    // Measure modal open time using Playwright's click (works across all browsers)
+    const startTime = Date.now()
+    await firstPoint.click()
 
-      // Click the point
-      const point = document.querySelector('[data-testid="scatter-point"]') as HTMLElement
-      if (point) {
-        point.click()
-      }
+    // Wait for modal to be visible
+    const modal = page.locator('[role="dialog"]')
+    await modal.waitFor({ state: 'visible', timeout: 5000 })
 
-      // Wait for modal to appear
-      await new Promise<void>((resolve) => {
-        const checkModal = () => {
-          const modal = document.querySelector('[role="dialog"]')
-          if (modal && window.getComputedStyle(modal).opacity === '1') {
-            resolve()
-          } else {
-            requestAnimationFrame(checkModal)
-          }
-        }
-        checkModal()
-      })
-
-      const endTime = performance.now()
-      return endTime - startTime
-    })
+    const openDuration = Date.now() - startTime
 
     console.log(`Modal opened in ${openDuration.toFixed(2)}ms`)
 
@@ -136,49 +119,35 @@ test.describe('Modal Performance (AC-6.8.6)', () => {
   })
 
   test('Multiple modal opens maintain consistent performance', async ({ page }) => {
-    await page.goto('http://localhost:3000/')
+    await page.goto('/')
     await page.waitForSelector('[data-testid="scatter-plot"]')
 
     const durations: number[] = []
-    const points = await page.locator('[data-testid="scatter-point"]').all()
+    const pointsLocator = page.locator('[data-testid="scatter-point"]')
+    const pointCount = await pointsLocator.count()
 
-    // Test first 5 points
-    for (let i = 0; i < Math.min(5, points.length); i++) {
-      const duration = await page.evaluate(() => {
-        const start = performance.now()
+    // Test first 5 points (using Playwright's cross-browser APIs)
+    for (let i = 0; i < Math.min(5, pointCount); i++) {
+      const point = pointsLocator.first() // Always click first visible point
+      await point.waitFor({ state: 'visible' })
 
-        return new Promise<number>((resolve) => {
-          const checkAndClick = () => {
-            const point = document.querySelectorAll('[data-testid="scatter-point"]')[0] as HTMLElement
-            if (point) {
-              point.click()
+      const startTime = Date.now()
+      await point.click()
 
-              const waitForModal = () => {
-                const modal = document.querySelector('[role="dialog"]')
-                if (modal && window.getComputedStyle(modal).opacity === '1') {
-                  const end = performance.now()
+      // Wait for modal to be visible
+      const modal = page.locator('[role="dialog"]')
+      await modal.waitFor({ state: 'visible', timeout: 5000 })
 
-                  // Close modal
-                  const closeButton = modal.querySelector('[aria-label*="Close"]') as HTMLElement
-                  if (closeButton) {
-                    closeButton.click()
-                  }
-
-                  setTimeout(() => resolve(end - start), 100)
-                } else {
-                  requestAnimationFrame(waitForModal)
-                }
-              }
-              waitForModal()
-            }
-          }
-
-          setTimeout(checkAndClick, 100)
-        })
-      })
-
+      const duration = Date.now() - startTime
       durations.push(duration)
       console.log(`Modal open ${i + 1}: ${duration.toFixed(2)}ms`)
+
+      // Close modal using Escape key (more reliable than finding close button)
+      await page.keyboard.press('Escape')
+      await modal.waitFor({ state: 'hidden', timeout: 3000 })
+
+      // Small delay before next iteration
+      await page.waitForTimeout(100)
     }
 
     // All modal opens should be < 300ms

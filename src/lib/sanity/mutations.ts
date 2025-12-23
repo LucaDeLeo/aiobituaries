@@ -202,3 +202,139 @@ export async function filterNewDrafts(
     return drafts
   }
 }
+
+// =============================================================================
+// Skeptic Mutations (Notable Skeptics Feature)
+// =============================================================================
+
+import type { SkepticProfile } from '@/types/skeptic'
+
+/**
+ * Draft skeptic document for Sanity creation
+ */
+export interface SkepticDraft {
+  _type: 'skeptic'
+  name: string
+  slug: { _type: 'slug'; current: string }
+  bio: string
+  profiles?: SkepticProfile[]
+}
+
+/**
+ * Create a single skeptic in Sanity
+ *
+ * @param skeptic - The skeptic data to create
+ * @returns Created document ID or null on failure
+ */
+export async function createSkeptic(
+  skeptic: SkepticDraft
+): Promise<string | null> {
+  const client = getSanityWriteClient()
+
+  if (!client) {
+    console.warn('[sanity/mutations] Write client not configured')
+    return null
+  }
+
+  try {
+    const result = await client.create(skeptic)
+    console.log(`[sanity/mutations] Created skeptic: ${skeptic.name} (${result._id})`)
+    return result._id
+  } catch (error) {
+    console.error(`[sanity/mutations] Failed to create skeptic ${skeptic.name}:`, error)
+    return null
+  }
+}
+
+/**
+ * Create multiple skeptics in Sanity using a transaction
+ *
+ * @param skeptics - Array of skeptics to create
+ * @returns Object with created IDs and failed names
+ */
+export async function createSkeptics(
+  skeptics: SkepticDraft[]
+): Promise<{ createdIds: string[]; failedNames: string[] }> {
+  const client = getSanityWriteClient()
+
+  if (!client) {
+    console.warn('[sanity/mutations] Write client not configured')
+    return { createdIds: [], failedNames: skeptics.map((s) => s.name) }
+  }
+
+  if (skeptics.length === 0) {
+    return { createdIds: [], failedNames: [] }
+  }
+
+  const createdIds: string[] = []
+  const failedNames: string[] = []
+
+  // Create sequentially to handle errors per-skeptic
+  for (const skeptic of skeptics) {
+    const id = await createSkeptic(skeptic)
+    if (id) {
+      createdIds.push(id)
+    } else {
+      failedNames.push(skeptic.name)
+    }
+  }
+
+  return { createdIds, failedNames }
+}
+
+/**
+ * Check if a skeptic with this slug already exists
+ *
+ * @param slug - The slug to check
+ * @returns true if a skeptic with this slug exists
+ */
+export async function skepticExistsBySlug(slug: string): Promise<boolean> {
+  const client = getSanityWriteClient()
+
+  if (!client) {
+    return false
+  }
+
+  try {
+    const count = await client.fetch<number>(
+      'count(*[_type == "skeptic" && slug.current == $slug])',
+      { slug }
+    )
+    return count > 0
+  } catch (error) {
+    console.error('[sanity/mutations] Failed to check for existing skeptic:', error)
+    return false
+  }
+}
+
+/**
+ * Filter skeptics to exclude those that already exist (by slug)
+ *
+ * @param skeptics - Array of skeptics to filter
+ * @returns Skeptics that don't already exist in Sanity
+ */
+export async function filterNewSkeptics(
+  skeptics: SkepticDraft[]
+): Promise<SkepticDraft[]> {
+  if (skeptics.length === 0) return []
+
+  const client = getSanityWriteClient()
+
+  if (!client) {
+    return skeptics
+  }
+
+  try {
+    const slugs = skeptics.map((s) => s.slug.current)
+    const existingSlugs = await client.fetch<string[]>(
+      `*[_type == "skeptic" && slug.current in $slugs].slug.current`,
+      { slugs }
+    )
+
+    const existingSet = new Set(existingSlugs)
+    return skeptics.filter((skeptic) => !existingSet.has(skeptic.slug.current))
+  } catch (error) {
+    console.error('[sanity/mutations] Batch slug check failed:', error)
+    return skeptics
+  }
+}

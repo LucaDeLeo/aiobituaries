@@ -214,3 +214,60 @@ export function getMinDataYear(): number {
   }
   return 1950
 }
+
+// =============================================================================
+// Skeptic Page Helpers (Notable Skeptics Feature)
+// =============================================================================
+
+import type { MetricsSnapshot } from '@/types/skeptic'
+
+/**
+ * Get all three AI metrics (MMLU, ECI, Compute) at a specific date.
+ * Returns null for metrics that don't have data before their start date.
+ *
+ * @param date - Target date to get metrics for
+ * @returns MetricsSnapshot with all three metrics and formatted compute
+ *
+ * Metric availability:
+ * - Compute: Always available (data from 1950)
+ * - MMLU: Available from Aug 2021
+ * - ECI: Available from Feb 2023
+ *
+ * @example
+ * const metrics = getAllMetricsAtDate(new Date('2022-03-15'))
+ * // Returns: { mmlu: 67.2, compute: 24.4, computeFormatted: "10^24.4", eci: null }
+ */
+export function getAllMetricsAtDate(date: Date): MetricsSnapshot {
+  // MMLU data starts Aug 2021
+  const mmluStart = new Date('2021-08-01')
+  const mmlu = date >= mmluStart ? getMetricValueAtDate(mmluFrontier, date) : null
+
+  // ECI data starts Feb 2023
+  const eciStart = new Date('2023-02-01')
+  const eci = date >= eciStart ? getMetricValueAtDate(eciFrontier, date) : null
+
+  // Compute is always available (from 1950)
+  const compute = getMetricValueAtDate(trainingComputeFrontier, date)
+  const computeFormatted = `10^${compute.toFixed(1)}`
+
+  return {
+    mmlu: mmlu !== null ? Math.round(mmlu * 10) / 10 : null, // Round to 1 decimal
+    eci: eci !== null ? Math.round(eci * 10) / 10 : null,
+    compute: Math.round(compute * 10) / 10,
+    computeFormatted,
+  }
+}
+
+/**
+ * Get the latest/current AI metrics.
+ * Uses today's date to get the most recent available values.
+ *
+ * @returns MetricsSnapshot with current values for all metrics
+ *
+ * @example
+ * const current = getCurrentMetrics()
+ * // Returns: { mmlu: 88.1, compute: 26.7, computeFormatted: "10^26.7", eci: 154.4 }
+ */
+export function getCurrentMetrics(): MetricsSnapshot {
+  return getAllMetricsAtDate(new Date())
+}

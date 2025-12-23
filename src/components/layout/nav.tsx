@@ -33,6 +33,7 @@ export function Nav() {
   return (
     <>
       <NavLink href="/">Home</NavLink>
+      <NavLink href="/skeptics">Skeptics</NavLink>
       <NavLink href="/about">About</NavLink>
     </>
   )

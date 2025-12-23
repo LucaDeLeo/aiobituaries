@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ExternalLink, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
-import * as VisuallyHidden from '@radix-ui/react-visually-hidden'
 import { cn } from '@/lib/utils'
 import { sanitizeUrl } from '@/lib/utils/url'
 import {
@@ -124,7 +123,7 @@ export function ObituaryModal({
         aria-describedby={descriptionId}
       >
         {/* Always-present accessible header with dynamic content */}
-        {/* Using Radix VisuallyHidden to satisfy Radix's internal DialogTitle check */}
+        {/* Uses sr-only class to visually hide while satisfying Radix's DialogTitle requirement */}
         <SheetTitle id={titleId} className="sr-only">
           {isLoading
             ? 'Loading obituary'

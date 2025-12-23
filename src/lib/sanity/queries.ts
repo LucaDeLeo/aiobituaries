@@ -1,6 +1,7 @@
 import { client } from './client'
 import type { Obituary, ObituarySummary } from '@/types/obituary'
 import type { AdjacentObituary } from '@/types/navigation'
+import type { SkepticSummary, SkepticWithClaims } from '@/types/skeptic'
 import { mockObituaries } from '@/data/mock-obituaries'
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
@@ -267,5 +268,150 @@ export async function getObituaryWithNav(
           }
         : null,
     }
+  }
+}
+
+// =============================================================================
+// Skeptic Queries (Notable Skeptics Feature)
+// =============================================================================
+
+/**
+ * GROQ projection for skeptic summary fields (list views).
+ * Includes aggregated claim count from linked obituaries.
+ */
+const skepticSummaryProjection = `{
+  _id,
+  name,
+  "slug": slug.current,
+  bio,
+  profiles,
+  "claimCount": count(*[_type == "obituary" && references(^._id)])
+}`
+
+/**
+ * GROQ projection for full skeptic with claims.
+ * Includes all obituaries that reference this skeptic.
+ */
+const skepticWithClaimsProjection = `{
+  _id,
+  name,
+  "slug": slug.current,
+  bio,
+  profiles,
+  "claims": *[_type == "obituary" && references(^._id)] | order(date desc) ${summaryProjection}
+}`
+
+/**
+ * Mock skeptics data for development/fallback.
+ * In production, this data comes from Sanity CMS.
+ */
+const mockSkeptics: SkepticSummary[] = [
+  {
+    _id: 'mock-skeptic-1',
+    name: 'Gary Marcus',
+    slug: 'gary-marcus',
+    bio: 'NYU Professor Emeritus, cognitive scientist, and AI researcher known for critiquing deep learning.',
+    claimCount: 3,
+    profiles: [
+      { platform: 'twitter', url: 'https://twitter.com/GaryMarcus' },
+      { platform: 'substack', url: 'https://garymarcus.substack.com' },
+    ],
+  },
+  {
+    _id: 'mock-skeptic-2',
+    name: 'Yann LeCun',
+    slug: 'yann-lecun',
+    bio: 'Chief AI Scientist at Meta, Turing Award winner, known for skepticism about AGI timelines.',
+    claimCount: 2,
+    profiles: [
+      { platform: 'twitter', url: 'https://twitter.com/ylecun' },
+    ],
+  },
+]
+
+/**
+ * Fetch all skeptics with claim counts.
+ * Returns summary data for index page.
+ * Uses ISR with 'skeptics' tag for cache revalidation.
+ */
+export async function getSkeptics(): Promise<SkepticSummary[]> {
+  if (shouldUseMock) {
+    return mockSkeptics
+  }
+
+  try {
+    return await client.fetch(
+      `*[_type == "skeptic"] | order(name asc) ${skepticSummaryProjection}`,
+      undefined,
+      { next: { tags: ['skeptics'] } }
+    )
+  } catch {
+    return mockSkeptics
+  }
+}
+
+/**
+ * Fetch a single skeptic by slug with all their claims.
+ * Returns null if not found.
+ * Uses ISR with 'skeptics' tag for cache revalidation.
+ */
+export async function getSkepticBySlug(slug: string): Promise<SkepticWithClaims | null> {
+  if (shouldUseMock) {
+    const mockSummary = mockSkeptics.find((s) => s.slug === slug)
+    if (!mockSummary) return null
+
+    // For mock data, return a sample of obituaries as claims (first N based on claimCount)
+    // In production, claims are properly linked via Sanity references
+    const claims = mockObituaries.slice(0, mockSummary.claimCount)
+
+    return {
+      _id: mockSummary._id,
+      name: mockSummary.name,
+      slug: mockSummary.slug,
+      bio: mockSummary.bio,
+      profiles: mockSummary.profiles,
+      claims,
+    }
+  }
+
+  try {
+    return await client.fetch(
+      `*[_type == "skeptic" && slug.current == $slug][0] ${skepticWithClaimsProjection}`,
+      { slug },
+      { next: { tags: ['skeptics'] } }
+    )
+  } catch {
+    const mockSummary = mockSkeptics.find((s) => s.slug === slug)
+    if (!mockSummary) return null
+
+    return {
+      _id: mockSummary._id,
+      name: mockSummary.name,
+      slug: mockSummary.slug,
+      bio: mockSummary.bio,
+      profiles: mockSummary.profiles,
+      claims: [],
+    }
+  }
+}
+
+/**
+ * Fetch all skeptic slugs for static generation.
+ * Used by generateStaticParams() in dynamic route pages.
+ * Uses ISR with 'skeptics' tag for cache revalidation.
+ */
+export async function getAllSkepticSlugs(): Promise<string[]> {
+  if (shouldUseMock) {
+    return mockSkeptics.map((s) => s.slug)
+  }
+
+  try {
+    return await client.fetch<string[]>(
+      `*[_type == "skeptic"].slug.current`,
+      {},
+      { next: { tags: ['skeptics'] } }
+    )
+  } catch {
+    return mockSkeptics.map((s) => s.slug)
   }
 }

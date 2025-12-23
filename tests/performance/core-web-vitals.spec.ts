@@ -22,10 +22,16 @@ const THRESHOLDS = {
 
 test.describe('Core Web Vitals - Homepage', () => {
   test('LCP (Largest Contentful Paint) should be under 2.5s', async ({ page, log }) => {
-    await log({ message: 'Setting up LCP measurement', level: 'step' })
+    await log({ message: 'Navigate to homepage and measure LCP', level: 'step' })
 
-    // Create a promise to capture LCP
-    const lcpPromise = page.evaluate(() => {
+    // Navigate first, then measure LCP using buffered entries
+    await page.goto('/', { waitUntil: 'load' })
+
+    // Wait a bit for LCP to finalize after load
+    await page.waitForTimeout(1000)
+
+    // Get LCP from buffered performance entries
+    const lcp = await page.evaluate(() => {
       return new Promise<number>((resolve) => {
         let lcpValue = 0
 
@@ -38,28 +44,17 @@ test.describe('Core Web Vitals - Homepage', () => {
           }
         })
 
+        // buffered: true gets historical LCP entries
         observer.observe({ type: 'largest-contentful-paint', buffered: true })
 
-        // Resolve after load + some buffer for LCP to finalize
-        window.addEventListener('load', () => {
-          setTimeout(() => {
-            observer.disconnect()
-            resolve(lcpValue)
-          }, 1000)
-        })
-
-        // Fallback timeout
+        // Give time for buffered entries to be delivered, then resolve
         setTimeout(() => {
           observer.disconnect()
           resolve(lcpValue)
-        }, 10000)
+        }, 100)
       })
     })
 
-    await log({ message: 'Navigate to homepage', level: 'step' })
-    await page.goto('/', { waitUntil: 'load' })
-
-    const lcp = await lcpPromise
     await log({ message: `LCP: ${lcp.toFixed(0)}ms (threshold: ${THRESHOLDS.LCP}ms)`, level: 'info' })
 
     expect(lcp).toBeLessThan(THRESHOLDS.LCP)
@@ -174,8 +169,14 @@ test.describe('Core Web Vitals - Obituary Page', () => {
     const href = await obituaryLink.getAttribute('href')
     await log({ message: `Testing obituary page: ${href}`, level: 'info' })
 
-    // Navigate directly to measure clean LCP
-    const lcpPromise = page.evaluate(() => {
+    // Navigate first, then measure LCP using buffered entries
+    await page.goto(href!, { waitUntil: 'load' })
+
+    // Wait a bit for LCP to finalize after load
+    await page.waitForTimeout(1000)
+
+    // Get LCP from buffered performance entries
+    const lcp = await page.evaluate(() => {
       return new Promise<number>((resolve) => {
         let lcpValue = 0
         const observer = new PerformanceObserver((entryList) => {
@@ -185,25 +186,18 @@ test.describe('Core Web Vitals - Obituary Page', () => {
             lcpValue = lastEntry.startTime
           }
         })
+
+        // buffered: true gets historical LCP entries
         observer.observe({ type: 'largest-contentful-paint', buffered: true })
 
-        window.addEventListener('load', () => {
-          setTimeout(() => {
-            observer.disconnect()
-            resolve(lcpValue)
-          }, 1000)
-        })
-
+        // Give time for buffered entries to be delivered
         setTimeout(() => {
           observer.disconnect()
           resolve(lcpValue)
-        }, 10000)
+        }, 100)
       })
     })
 
-    await page.goto(href!, { waitUntil: 'load' })
-
-    const lcp = await lcpPromise
     await log({ message: `Obituary page LCP: ${lcp.toFixed(0)}ms`, level: 'info' })
 
     expect(lcp).toBeLessThan(THRESHOLDS.LCP)
@@ -314,14 +308,18 @@ test.describe('Resource Loading', () => {
     const resourceTimings: { name: string; duration: number; type: string }[] = []
 
     page.on('response', async (response) => {
-      // Playwright Response has timing() but TypeScript types may lag behind
-      const timing = (response as unknown as { timing(): { responseEnd: number; requestStart: number } | null }).timing()
-      if (timing) {
-        resourceTimings.push({
-          name: response.url(),
-          duration: timing.responseEnd - timing.requestStart,
-          type: response.headers()['content-type'] || 'unknown',
-        })
+      try {
+        // Playwright Response has timing() but it may not be available in all browsers
+        const timing = (response as unknown as { timing(): { responseEnd: number; requestStart: number } | null }).timing?.()
+        if (timing && timing.responseEnd && timing.requestStart) {
+          resourceTimings.push({
+            name: response.url(),
+            duration: timing.responseEnd - timing.requestStart,
+            type: response.headers()['content-type'] || 'unknown',
+          })
+        }
+      } catch {
+        // Timing not available for this response, skip it
       }
     })
 
