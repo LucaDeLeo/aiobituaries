@@ -1,8 +1,6 @@
 'use client'
 
 import { useRef, forwardRef, useImperativeHandle, memo } from 'react'
-import { motion } from 'framer-motion'
-import { staggerItem } from '@/lib/utils/animation'
 import type { ObituarySummary } from '@/types/obituary'
 
 export interface ScatterPointProps {
@@ -88,12 +86,11 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
     const touchRadius = touchRadiusProp ?? POINT_RADIUS
 
     const opacity = isFiltered ? (isHovered || isFocused ? 1 : 0.85) : 0.2
-    // More dramatic glow effect
-    const glowIntensity = isHovered || isFocused ? 12 : 6
-    const outerGlowIntensity = isHovered || isFocused ? 20 : 10
 
     // Use larger radius when focused (AC-6.2.5: 1.25x scale)
     const currentRadius = isFocused ? FOCUSED_POINT_RADIUS : POINT_RADIUS
+    // Scale up on hover
+    const displayRadius = isHovered ? currentRadius * 1.3 : currentRadius
 
     const handleClick = () => {
       if (circleRef.current && onClick) {
@@ -149,84 +146,39 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
           />
         )}
 
-        {/* Invisible touch target (larger on tablet for 44px minimum) */}
-        <motion.circle
+        {/* Combined touch target and visual circle - PERFORMANCE: single element instead of 3 */}
+        <circle
           ref={circleRef}
-          data-testid="scatter-point-touch-target"
+          data-testid="scatter-point"
           cx={x}
           cy={y}
-          r={touchRadius}
-          fill="transparent"
+          r={Math.max(touchRadius, displayRadius)}
+          fill={color}
+          opacity={opacity}
           style={{
             cursor: isFiltered ? 'pointer' : 'default',
             pointerEvents: isFiltered ? 'auto' : 'none',
+            // CSS transition instead of Framer Motion - much lighter weight
+            transition: shouldReduceMotion ? 'none' : 'r 150ms ease-out, opacity 150ms ease-out',
           }}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
           onClick={handleClick}
         />
 
-        {/* Outer glow ring (subtle atmospheric effect) */}
-        {/* suppressHydrationWarning: Framer Motion renders initial opacity differently on SSR vs client */}
-        {isFiltered && (
-          <motion.circle
-            suppressHydrationWarning
+        {/* Outer glow ring - only render when hovered/focused for performance */}
+        {isFiltered && (isHovered || isFocused) && (
+          <circle
             cx={x}
             cy={y}
-            r={currentRadius + 4}
+            r={displayRadius + 4}
             fill="none"
             stroke={color}
-            strokeWidth={1}
-            style={{
-              pointerEvents: 'none',
-            }}
-            initial={{
-              opacity: 0.15,
-              r: currentRadius + 4,
-            }}
-            animate={{
-              opacity: isHovered || isFocused ? 0.4 : 0.15,
-              r: isHovered || isFocused ? currentRadius + 6 : currentRadius + 4,
-            }}
-            transition={{ duration: shouldReduceMotion ? 0 : 0.3 }}
+            strokeWidth={1.5}
+            opacity={0.4}
+            style={{ pointerEvents: 'none' }}
           />
         )}
-
-        {/* Visual dot (scales up when focused per AC-6.2.5) */}
-        {/* suppressHydrationWarning: Framer Motion renders initial props differently on SSR vs client */}
-        <motion.circle
-          suppressHydrationWarning
-          data-testid="scatter-point"
-          cx={x}
-          cy={y}
-          r={currentRadius}
-          fill={color}
-          style={{
-            filter: `drop-shadow(0 0 ${glowIntensity}px ${color}) drop-shadow(0 0 ${outerGlowIntensity}px ${color}40)`,
-            pointerEvents: 'none',
-            willChange: shouldReduceMotion ? 'auto' : 'transform, opacity',
-          }}
-          variants={shouldReduceMotion ? undefined : staggerItem}
-          initial={shouldReduceMotion ? undefined : { opacity: 0, scale: 0 }}
-          animate={
-            shouldReduceMotion
-              ? { opacity }
-              : {
-                  opacity,
-                  scale: isHovered ? 1.3 : 1,
-                }
-          }
-          whileHover={shouldReduceMotion ? undefined : { scale: 1.3 }}
-          transition={
-            shouldReduceMotion
-              ? { duration: 0 }
-              : {
-                  // 200ms per AC-4.4.6 for filter transitions
-                  opacity: { duration: 0.2 },
-                  scale: { type: 'spring', stiffness: 300, damping: 20 },
-                }
-          }
-        />
       </g>
     )
   }

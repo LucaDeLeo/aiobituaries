@@ -23,7 +23,7 @@ import { TooltipCard } from './tooltip-card'
 import { ObituaryModal } from '@/components/obituary/obituary-modal'
 import { hashToJitter, getCategoryColor } from '@/lib/utils/scatter-helpers'
 import { useTimelinePosition } from '@/lib/hooks/use-timeline-position'
-import { SPRINGS, staggerContainer } from '@/lib/utils/animation'
+import { SPRINGS } from '@/lib/utils/animation'
 import { markPerformance, measurePerformance } from '@/lib/utils/performance'
 import {
   computeClusters,
@@ -848,14 +848,12 @@ export function ScatterPlotInner({
               willChange: 'transform',
             }}
           >
-            {/* Data Points with staggered entrance animation (role="list" for keyboard nav) */}
+            {/* Data Points - role="list" for keyboard nav */}
             {/* Performance optimization (AC-6.8.5): Only render visible points with viewport virtualization */}
-            <motion.g
+            {/* NOTE: Removed stagger animation - with 136+ points, stagger caused 7s+ total animation time */}
+            <g
               role="list"
               aria-label="Obituary data points"
-              variants={shouldReduceMotion ? undefined : staggerContainer}
-              initial={shouldReduceMotion ? undefined : "initial"}
-              animate={shouldReduceMotion ? undefined : "animate"}
             >
               {visiblePointPositions.map(({ obituary, x: xPos, y: yPos, color }) => {
                 // P0.3 fix: O(1) Set lookup instead of linear scan
@@ -899,7 +897,7 @@ export function ScatterPlotInner({
                   />
                 )
               })}
-            </motion.g>
+            </g>
 
             {/* Cluster badges - render AFTER individual dots for proper z-index layering */}
             <AnimatePresence>
