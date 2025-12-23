@@ -2,6 +2,7 @@
 
 import type { Category } from '@/types/obituary'
 import type { MetricType } from '@/types/metrics'
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { CollapsibleSection } from './collapsible-section'
 import { MetricsToggle } from './metrics-toggle'
 import { DateRangeSlider } from './date-range-slider'
@@ -37,6 +38,8 @@ export interface ControlPanelProps {
   stats: { total: number; visible: number }
   /** Layout variant - affects padding and spacing */
   variant?: 'sidebar' | 'sheet' | 'drawer'
+  /** Hide chart-specific controls (Background Metrics, AI Progress Era) in table view */
+  isChartControlsHidden?: boolean
 }
 
 const variantStyles = {
@@ -54,6 +57,7 @@ export function ControlPanel({
   onDateRangeChange,
   stats,
   variant = 'sidebar',
+  isChartControlsHidden = false,
 }: ControlPanelProps) {
   return (
     <div className={cn('flex flex-col h-full', variantStyles[variant])}>
@@ -67,20 +71,52 @@ export function ControlPanel({
 
       {/* Collapsible sections */}
       <div className="flex-1 overflow-y-auto">
-        <CollapsibleSection title="Background Metrics" defaultOpen>
-          <MetricsToggle
-            enabledMetrics={enabledMetrics}
-            onMetricsChange={onMetricsChange}
-          />
-        </CollapsibleSection>
+        {/* MotionConfig respects prefers-reduced-motion user preference */}
+        <MotionConfig reducedMotion="user">
+          {/* Chart-specific controls - animated based on view mode */}
+          <AnimatePresence initial={false}>
+            {!isChartControlsHidden && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="overflow-hidden"
+              >
+                <CollapsibleSection title="Background Metrics" defaultOpen>
+                  <MetricsToggle
+                    enabledMetrics={enabledMetrics}
+                    onMetricsChange={onMetricsChange}
+                  />
+                </CollapsibleSection>
 
-        <CollapsibleSection title="AI Progress Era" defaultOpen>
-          <DateRangeSlider
-            value={dateRange}
-            onValueChange={onDateRangeChange}
-          />
-        </CollapsibleSection>
+                <CollapsibleSection title="AI Progress Era" defaultOpen>
+                  <DateRangeSlider
+                    value={dateRange}
+                    onValueChange={onDateRangeChange}
+                  />
+                </CollapsibleSection>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
+          {/* Hint when chart controls hidden */}
+          <AnimatePresence>
+            {isChartControlsHidden && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="overflow-hidden px-4 py-3 text-sm text-muted-foreground bg-secondary/30 border-b border-border"
+              >
+                Chart controls hidden in table view
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </MotionConfig>
+
+        {/* Categories - always visible */}
         <CollapsibleSection title="Categories" defaultOpen>
           <CategoryCheckboxes
             selectedCategories={selectedCategories}
@@ -88,6 +124,7 @@ export function ControlPanel({
           />
         </CollapsibleSection>
 
+        {/* Display Options - always visible */}
         <CollapsibleSection title="Display Options" defaultOpen={false}>
           {/* TODO: DisplayOptions controls - future story */}
           <p className="text-sm text-muted-foreground">

@@ -2,6 +2,7 @@
 
 import { ControlPanel, type DisplayOptions } from './control-panel'
 import { useVisualizationState } from '@/lib/hooks/use-visualization-state'
+import { useViewModeStorage } from '@/components/obituary/table-view-toggle'
 
 interface ControlPanelWrapperProps {
   /** Total count of obituaries */
@@ -35,6 +36,11 @@ export function ControlPanelWrapper({
     setDateRange,
   } = useVisualizationState()
 
+  const { mode, isHydrated } = useViewModeStorage()
+
+  // Hide chart controls when in table view (after hydration)
+  const isChartControlsHidden = isHydrated && mode === 'table'
+
   // Placeholder for future display options (Story 3.X)
   const displayOptions: DisplayOptions = {
     showTrendAnnotations: true,
@@ -57,6 +63,7 @@ export function ControlPanelWrapper({
         visible: visibleCount ?? totalCount,
       }}
       variant={variant}
+      isChartControlsHidden={isChartControlsHidden}
     />
   )
 }

@@ -25,6 +25,8 @@ import type { TableSortConfig } from '@/types/accessibility'
 import { cn } from '@/lib/utils'
 import { getCategoryColor, getCategoryLabel } from '@/lib/constants/categories'
 import { VisuallyHidden } from '@/components/accessibility/visually-hidden'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { AIContextCell } from './ai-context-cell'
 
 export interface ObituaryTableProps {
   /** Obituary data to display */
@@ -179,8 +181,9 @@ export function ObituaryTable({
   }, [sortConfig, activeCategories, displayData.length, obituaries.length])
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-[--border]">
-      <table
+    <TooltipProvider delayDuration={200}>
+      <div className="overflow-x-auto rounded-lg border border-[--border]">
+        <table
         className="w-full text-left border-collapse"
         role="grid"
         aria-label="AI Obituaries"
@@ -208,9 +211,14 @@ export function ObituaryTable({
             <th
               scope="col"
               className="py-3 px-4 text-[--text-secondary] font-medium"
-              aria-sort="none"
             >
               Claim
+            </th>
+            <th
+              scope="col"
+              className="py-3 px-4 text-[--text-secondary] font-medium"
+            >
+              AI Level
             </th>
             <SortableHeader
               column="category"
@@ -230,7 +238,7 @@ export function ObituaryTable({
           {displayData.length === 0 ? (
             <tr>
               <td
-                colSpan={5}
+                colSpan={6}
                 className="py-12 text-center text-[--text-muted]"
               >
                 No obituaries match the selected filters.
@@ -259,6 +267,9 @@ export function ObituaryTable({
                   </p>
                 </td>
                 <td className="py-3 px-4">
+                  <AIContextCell date={obituary.date} />
+                </td>
+                <td className="py-3 px-4">
                   <div className="flex flex-wrap gap-1">
                     {obituary.categories?.map((cat) => (
                       <CategoryBadge key={cat} category={cat} />
@@ -284,12 +295,13 @@ export function ObituaryTable({
 
         <tfoot className="bg-[--bg-tertiary]">
           <tr>
-            <td colSpan={5} className="py-3 px-4 text-[--text-muted] text-sm">
+            <td colSpan={6} className="py-3 px-4 text-[--text-muted] text-sm">
               Showing {displayData.length} of {obituaries.length} obituaries
             </td>
           </tr>
         </tfoot>
-      </table>
-    </div>
+        </table>
+      </div>
+    </TooltipProvider>
   )
 }
