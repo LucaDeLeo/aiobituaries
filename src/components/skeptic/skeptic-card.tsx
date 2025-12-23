@@ -28,32 +28,32 @@ export function SkepticCard({ skeptic }: SkepticCardProps) {
       href={`/skeptics/${skeptic.slug}`}
       className={cn(
         'group relative block p-6 rounded-xl',
-        'bg-[--bg-card] border border-[--border]',
+        'bg-[var(--bg-card)] border border-[var(--border)]',
         'shadow-lg shadow-black/20',
-        'hover:-translate-y-1 hover:shadow-xl hover:shadow-[--accent-primary]/10',
-        'hover:border-[--accent-primary]/40',
+        'hover:-translate-y-1 hover:shadow-xl hover:shadow-[var(--accent-primary)]/10',
+        'hover:border-[var(--accent-primary)]/40',
         'transition-all duration-300 ease-out',
         'focus-visible:outline-none focus-visible:ring-2',
-        'focus-visible:ring-[--ring] focus-visible:ring-offset-2',
-        'focus-visible:ring-offset-[--bg-primary]'
+        'focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2',
+        'focus-visible:ring-offset-[var(--bg-primary)]'
       )}
     >
       {/* Subtle glow on hover */}
-      <div className="absolute -inset-px rounded-xl bg-[--accent-primary]/0 group-hover:bg-[--accent-primary]/5 transition-colors duration-300 pointer-events-none" />
+      <div className="absolute -inset-px rounded-xl bg-[var(--accent-primary)]/0 group-hover:bg-[var(--accent-primary)]/5 transition-colors duration-300 pointer-events-none" />
 
       <div className="relative">
         {/* Name and claim count */}
         <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="text-lg font-semibold text-[--text-primary] group-hover:text-[--accent-primary] transition-colors">
+          <h3 className="text-lg font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors">
             {skeptic.name}
           </h3>
-          <span className="text-sm text-[--text-muted] font-mono whitespace-nowrap">
+          <span className="text-sm text-[var(--text-muted)] font-mono whitespace-nowrap">
             {skeptic.claimCount} claim{skeptic.claimCount !== 1 ? 's' : ''}
           </span>
         </div>
 
         {/* Bio */}
-        <p className="text-sm text-[--text-secondary] mb-4 leading-relaxed">
+        <p className="text-sm text-[var(--text-secondary)] mb-4 leading-relaxed">
           {truncateBio(skeptic.bio)}
         </p>
 

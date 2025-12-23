@@ -4,37 +4,37 @@ export function Footer() {
   return (
     <footer className="relative mt-auto py-12 overflow-hidden">
       {/* Top decorative border */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[--border] to-transparent" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
 
       {/* Background gradient for depth */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[--bg-secondary]/50 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-secondary)]/50 to-transparent pointer-events-none" />
 
       <div className="relative container mx-auto px-4">
         {/* Decorative divider */}
         <div className="flex items-center justify-center gap-4 mb-8" aria-hidden="true">
-          <div className="h-px w-12 md:w-20 bg-gradient-to-r from-transparent to-[--accent-primary]/30" />
-          <span className="text-[--accent-primary]/40 text-sm">✦</span>
-          <div className="h-px w-12 md:w-20 bg-gradient-to-l from-transparent to-[--accent-primary]/30" />
+          <div className="h-px w-12 md:w-20 bg-gradient-to-r from-transparent to-[var(--accent-primary)]/30" />
+          <span className="text-[var(--accent-primary)]/40 text-sm">✦</span>
+          <div className="h-px w-12 md:w-20 bg-gradient-to-l from-transparent to-[var(--accent-primary)]/30" />
         </div>
 
         {/* Quote */}
         <blockquote className="max-w-lg mx-auto text-center mb-8">
-          <p className="font-serif italic text-[--text-secondary] text-sm md:text-base leading-relaxed">
+          <p className="font-serif italic text-[var(--text-secondary)] text-sm md:text-base leading-relaxed">
             &ldquo;The reports of my death have been greatly exaggerated.&rdquo;
           </p>
-          <cite className="block mt-2 text-xs text-[--text-muted] not-italic font-mono">
+          <cite className="block mt-2 text-xs text-[var(--text-muted)] not-italic font-mono">
             — AI, probably
           </cite>
         </blockquote>
 
         {/* Bottom section */}
-        <div className="flex flex-col items-center gap-4 pt-6 border-t border-[--border]/50">
-          <p className="text-xs text-[--text-muted] tracking-wider uppercase">
+        <div className="flex flex-col items-center gap-4 pt-6 border-t border-[var(--border)]/50">
+          <p className="text-xs text-[var(--text-muted)] tracking-wider uppercase">
             © {currentYear} AI Obituaries
           </p>
 
           {/* Tombstone icon */}
-          <div className="text-[--accent-primary]/30" aria-hidden="true">
+          <div className="text-[var(--accent-primary)]/30" aria-hidden="true">
             <svg
               width="24"
               height="32"

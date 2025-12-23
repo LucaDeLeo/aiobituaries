@@ -273,7 +273,7 @@ describe('Tailwind class constants', () => {
 
     it('has Tailwind class format values', () => {
       Object.values(CATEGORY_BG_CLASSES).forEach((value) => {
-        expect(value).toMatch(/^bg-\[--category-/)
+        expect(value).toMatch(/^bg-\[var\(--category-/)
       })
     })
   })
@@ -285,7 +285,7 @@ describe('Tailwind class constants', () => {
 
     it('has badge styling with opacity and text color', () => {
       Object.values(CATEGORY_BADGE_CLASSES).forEach((value) => {
-        expect(value).toMatch(/bg-\[--category-.*\/20.*text-\[--category-/)
+        expect(value).toMatch(/bg-\[var\(--category-.*\/20.*text-\[var\(--category-/)
       })
     })
   })

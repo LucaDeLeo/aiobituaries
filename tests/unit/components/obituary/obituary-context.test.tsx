@@ -92,7 +92,7 @@ describe('ObituaryContext', () => {
       })
 
       const emptyMessage = screen.getByText('Context data unavailable')
-      expect(emptyMessage).toHaveClass('text-[--text-muted]')
+      expect(emptyMessage).toHaveClass('text-[var(--text-muted)]')
     })
 
     it('does not show empty state when any data exists', async () => {
@@ -230,7 +230,7 @@ describe('ObituaryContext', () => {
       })
 
       const scoreElement = screen.getByText(/86\.5%/)
-      expect(scoreElement).toHaveClass('text-[--accent-primary]')
+      expect(scoreElement).toHaveClass('text-[var(--accent-primary)]')
       expect(scoreElement).toHaveClass('font-mono')
     })
 
@@ -296,7 +296,7 @@ describe('ObituaryContext', () => {
       })
 
       const noteElement = screen.getByText('First AI winter reference')
-      expect(noteElement).toHaveClass('text-[--text-muted]')
+      expect(noteElement).toHaveClass('text-[var(--text-muted)]')
       expect(noteElement).toHaveClass('italic')
     })
 
@@ -348,7 +348,7 @@ describe('ObituaryContext', () => {
 
       const section = document.querySelector('section')
       expect(section).toHaveClass('border-t')
-      expect(section).toHaveClass('border-[--border]')
+      expect(section).toHaveClass('border-[var(--border)]')
     })
 
     it('cards use Deep Archive background color', async () => {
@@ -357,7 +357,7 @@ describe('ObituaryContext', () => {
       })
 
       const card = document.querySelector('[data-slot="card"]')
-      expect(card).toHaveClass('bg-[--bg-card]')
+      expect(card).toHaveClass('bg-[var(--bg-card)]')
     })
 
     it('cards use Deep Archive border color', async () => {
@@ -366,7 +366,7 @@ describe('ObituaryContext', () => {
       })
 
       const card = document.querySelector('[data-slot="card"]')
-      expect(card).toHaveClass('border-[--border]')
+      expect(card).toHaveClass('border-[var(--border)]')
     })
 
     it('section heading uses primary text color', async () => {
@@ -375,7 +375,7 @@ describe('ObituaryContext', () => {
       })
 
       const heading = screen.getByRole('heading', { name: /context at time/i })
-      expect(heading).toHaveClass('text-[--text-primary]')
+      expect(heading).toHaveClass('text-[var(--text-primary)]')
     })
 
     it('card titles use secondary text color', async () => {
@@ -384,7 +384,7 @@ describe('ObituaryContext', () => {
       })
 
       const cardTitle = document.querySelector('[data-slot="card-title"]')
-      expect(cardTitle).toHaveClass('text-[--text-secondary]')
+      expect(cardTitle).toHaveClass('text-[var(--text-secondary)]')
     })
 
     it('grid has responsive layout', async () => {

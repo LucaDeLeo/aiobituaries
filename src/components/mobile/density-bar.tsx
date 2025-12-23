@@ -167,7 +167,7 @@ export function DensityBar({
   }
 
   return (
-    <div className="px-4 py-3 bg-[--bg-secondary] border-b border-[--border]">
+    <div className="px-4 py-3 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
       {/* Density Bars - CSS containment for performance */}
       <div
         className="flex items-end gap-[2px] h-12 mb-2"
@@ -190,9 +190,9 @@ export function DensityBar({
                 'flex-1 min-w-[2px] rounded-t transition-colors',
                 item.count > 0
                   ? isActive
-                    ? 'bg-[--accent-primary]'
-                    : 'bg-[--accent-primary]/60 hover:bg-[--accent-primary]/80'
-                  : 'bg-[--border]',
+                    ? 'bg-[var(--accent-primary)]'
+                    : 'bg-[var(--accent-primary)]/60 hover:bg-[var(--accent-primary)]/80'
+                  : 'bg-[var(--border)]',
                 // Yearly bars are slightly wider for visual distinction
                 item.isYearly && 'min-w-[4px]'
               )}
@@ -206,7 +206,7 @@ export function DensityBar({
       </div>
 
       {/* Year Labels - show subset for readability */}
-      <div className="flex justify-between text-xs text-[--text-muted]">
+      <div className="flex justify-between text-xs text-[var(--text-muted)]">
         {years
           .filter((_, i) => i === 0 || i === years.length - 1 || (years.length > 10 && i % Math.ceil(years.length / 5) === 0))
           .map((year) => (
@@ -219,7 +219,7 @@ export function DensityBar({
         <button
           type="button"
           onClick={() => onPeriodSelect(null)}
-          className="mt-2 text-xs text-[--accent-primary] underline"
+          className="mt-2 text-xs text-[var(--accent-primary)] underline"
         >
           Clear date filter
         </button>

@@ -108,8 +108,8 @@ export function CategoryFilter({
         positionClass,
         'z-50',
         'flex items-center gap-2 px-4 py-2',
-        'bg-[--bg-secondary]/80 backdrop-blur-md',
-        'border border-[--border] rounded-full',
+        'bg-[var(--bg-secondary)]/80 backdrop-blur-md',
+        'border border-[var(--border)] rounded-full',
         'shadow-lg',
         'overflow-x-auto scrollbar-hide',
         'max-w-[calc(100vw-2rem)]',
@@ -129,10 +129,10 @@ export function CategoryFilter({
           pillPadding,
           'rounded-full text-sm font-medium transition-colors',
           'min-h-[44px] flex items-center justify-center',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--accent-primary] focus-visible:ring-offset-2 focus-visible:ring-offset-[--bg-secondary]',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-secondary)]',
           showingAll
-            ? 'bg-[--accent-primary]/20 text-[--text-primary]'
-            : 'text-[--text-secondary] hover:text-[--text-primary] hover:bg-[--bg-tertiary]'
+            ? 'bg-[var(--accent-primary)]/20 text-[var(--text-primary)]'
+            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
         )}
       >
         All

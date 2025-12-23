@@ -8,11 +8,11 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="container mx-auto px-4 py-12 max-w-3xl">
-      <h1 className="text-3xl md:text-4xl font-serif text-[--accent-primary] mb-8">
+      <h1 className="text-3xl md:text-4xl font-serif text-[var(--accent-primary)] mb-8">
         About AI Obituaries
       </h1>
 
-      <div className="prose prose-invert max-w-none space-y-6 text-[--text-secondary]">
+      <div className="prose prose-invert max-w-none space-y-6 text-[var(--text-secondary)]">
         <p className="text-lg leading-relaxed">
           AI Obituaries is a curated archive tracking declarations that
           &quot;AI is dead,&quot; &quot;overhyped,&quot; or &quot;doomed to fail.&quot;
@@ -21,7 +21,7 @@ export default function AboutPage() {
         </p>
 
         <section className="mt-12">
-          <h2 className="text-xl font-semibold text-[--text-primary] mb-4">
+          <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4">
             The Visualization
           </h2>
           <p>
@@ -32,7 +32,7 @@ export default function AboutPage() {
               href="https://epoch.ai/data"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[--accent-primary] hover:underline"
+              className="text-[var(--accent-primary)] hover:underline"
             >
               Epoch AI
             </a>
@@ -40,50 +40,50 @@ export default function AboutPage() {
           </p>
           <ul className="list-disc pl-6 mt-4 space-y-2">
             <li>
-              <strong className="text-[--text-primary]">Training Compute</strong> &mdash;
+              <strong className="text-[var(--text-primary)]">Training Compute</strong> &mdash;
               Maximum FLOP used to train frontier models (exponential growth)
             </li>
             <li>
-              <strong className="text-[--text-primary]">MMLU Score</strong> &mdash;
+              <strong className="text-[var(--text-primary)]">MMLU Score</strong> &mdash;
               Benchmark accuracy tracking capability improvements
             </li>
             <li>
-              <strong className="text-[--text-primary]">Epoch Capability Index</strong> &mdash;
+              <strong className="text-[var(--text-primary)]">Epoch Capability Index</strong> &mdash;
               Composite score tracking overall AI capability
             </li>
           </ul>
         </section>
 
         <section className="mt-12">
-          <h2 className="text-xl font-semibold text-[--text-primary] mb-4">
+          <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4">
             Categories
           </h2>
           <ul className="space-y-3">
             <li>
-              <span className="inline-block w-3 h-3 rounded-full bg-[--category-capability] mr-2" />
-              <strong className="text-[--text-primary]">Capability Doubt</strong> &mdash;
+              <span className="inline-block w-3 h-3 rounded-full bg-[var(--category-capability)] mr-2" />
+              <strong className="text-[var(--text-primary)]">Capability Doubt</strong> &mdash;
               Claims AI cannot do specific tasks
             </li>
             <li>
-              <span className="inline-block w-3 h-3 rounded-full bg-[--category-market] mr-2" />
-              <strong className="text-[--text-primary]">Market/Bubble</strong> &mdash;
+              <span className="inline-block w-3 h-3 rounded-full bg-[var(--category-market)] mr-2" />
+              <strong className="text-[var(--text-primary)]">Market/Bubble</strong> &mdash;
               Predictions that AI is overhyped or a bubble
             </li>
             <li>
-              <span className="inline-block w-3 h-3 rounded-full bg-[--category-agi] mr-2" />
-              <strong className="text-[--text-primary]">AGI Skepticism</strong> &mdash;
+              <span className="inline-block w-3 h-3 rounded-full bg-[var(--category-agi)] mr-2" />
+              <strong className="text-[var(--text-primary)]">AGI Skepticism</strong> &mdash;
               Claims AGI is impossible or very far away
             </li>
             <li>
-              <span className="inline-block w-3 h-3 rounded-full bg-[--category-dismissive] mr-2" />
-              <strong className="text-[--text-primary]">Dismissive Framing</strong> &mdash;
+              <span className="inline-block w-3 h-3 rounded-full bg-[var(--category-dismissive)] mr-2" />
+              <strong className="text-[var(--text-primary)]">Dismissive Framing</strong> &mdash;
               Casual dismissal or mockery of AI progress
             </li>
           </ul>
         </section>
 
         <section className="mt-12">
-          <h2 className="text-xl font-semibold text-[--text-primary] mb-4">
+          <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4">
             Data Sources
           </h2>
           <p>
@@ -92,7 +92,7 @@ export default function AboutPage() {
               href="https://epoch.ai"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[--accent-primary] hover:underline"
+              className="text-[var(--accent-primary)] hover:underline"
             >
               Epoch AI
             </a>
@@ -101,8 +101,8 @@ export default function AboutPage() {
           </p>
         </section>
 
-        <section className="mt-12 pt-8 border-t border-[--border]">
-          <p className="text-sm text-[--text-muted] italic">
+        <section className="mt-12 pt-8 border-t border-[var(--border)]">
+          <p className="text-sm text-[var(--text-muted)] italic">
             This project is not intended to mock individuals, but to provide
             historical perspective on the recurring nature of AI skepticism
             and the often-surprising pace of progress.

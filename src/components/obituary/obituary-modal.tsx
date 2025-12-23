@@ -241,7 +241,7 @@ export function ObituaryModal({
               />
               <Link
                 href={`/obituary/${obituary.slug}`}
-                className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] bg-[--accent-primary] text-[--bg-primary] rounded-lg font-medium hover:opacity-90 transition-opacity"
+                className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] bg-[var(--accent-primary)] text-[var(--bg-primary)] rounded-lg font-medium hover:opacity-90 transition-opacity"
               >
                 View full page
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />

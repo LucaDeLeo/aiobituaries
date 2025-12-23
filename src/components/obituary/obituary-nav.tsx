@@ -72,21 +72,21 @@ export function ObituaryNav({ previous, next }: ObituaryNavProps) {
 
   return (
     <nav
-      className="flex justify-between items-stretch gap-4 mt-8 pt-6 border-t border-[--border]"
+      className="flex justify-between items-stretch gap-4 mt-8 pt-6 border-t border-[var(--border)]"
       aria-label="Obituary navigation"
     >
       {/* Previous */}
       {previous ? (
         <Link
           href={`/obituary/${previous.slug}`}
-          className="group flex-1 flex items-center gap-3 p-4 rounded-lg bg-[--bg-card] border border-[--border] hover:border-[--accent-primary] transition-colors"
+          className="group flex-1 flex items-center gap-3 p-4 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] hover:border-[var(--accent-primary)] transition-colors"
         >
-          <ChevronLeft className="w-5 h-5 text-[--text-muted] group-hover:text-[--accent-primary]" />
+          <ChevronLeft className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--accent-primary)]" />
           <div className="flex flex-col min-w-0">
-            <span className="text-xs text-[--text-muted] uppercase tracking-wider">
+            <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">
               Previous
             </span>
-            <span className="text-sm text-[--text-secondary] truncate">
+            <span className="text-sm text-[var(--text-secondary)] truncate">
               {previous.source}
             </span>
           </div>
@@ -99,17 +99,17 @@ export function ObituaryNav({ previous, next }: ObituaryNavProps) {
       {next ? (
         <Link
           href={`/obituary/${next.slug}`}
-          className="group flex-1 flex items-center justify-end gap-3 p-4 rounded-lg bg-[--bg-card] border border-[--border] hover:border-[--accent-primary] transition-colors text-right"
+          className="group flex-1 flex items-center justify-end gap-3 p-4 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] hover:border-[var(--accent-primary)] transition-colors text-right"
         >
           <div className="flex flex-col min-w-0">
-            <span className="text-xs text-[--text-muted] uppercase tracking-wider">
+            <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">
               Next
             </span>
-            <span className="text-sm text-[--text-secondary] truncate">
+            <span className="text-sm text-[var(--text-secondary)] truncate">
               {next.source}
             </span>
           </div>
-          <ChevronRight className="w-5 h-5 text-[--text-muted] group-hover:text-[--accent-primary]" />
+          <ChevronRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--accent-primary)]" />
         </Link>
       ) : (
         <div className="flex-1" aria-hidden="true" />

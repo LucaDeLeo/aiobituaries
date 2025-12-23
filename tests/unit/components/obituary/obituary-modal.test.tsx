@@ -151,7 +151,7 @@ describe('View Full Page Link rendering behavior (AC-5.1.2, AC-5.1.3, AC-5.1.7)'
    * <Link
    *   href={`/obituary/${obituary.slug}`}
    *   className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px]
-   *              bg-[--accent-primary] text-[--bg-primary] rounded-lg
+   *              bg-[var(--accent-primary)] text-[var(--bg-primary)] rounded-lg
    *              font-medium hover:opacity-90 transition-opacity"
    * >
    *   View full page
@@ -177,8 +177,8 @@ describe('View Full Page Link rendering behavior (AC-5.1.2, AC-5.1.3, AC-5.1.7)'
       'px-4', // Horizontal padding
       'py-2', // Vertical padding
       'min-h-[44px]', // 44px touch target (AC-5.1.7)
-      'bg-[--accent-primary]', // Gold background (AC-5.1.2)
-      'text-[--bg-primary]', // Dark text on gold (AC-5.1.2)
+      'bg-[var(--accent-primary)]', // Gold background (AC-5.1.2)
+      'text-[var(--bg-primary)]', // Dark text on gold (AC-5.1.2)
       'rounded-lg', // Rounded corners
       'font-medium', // Medium weight text
       'hover:opacity-90', // Hover effect

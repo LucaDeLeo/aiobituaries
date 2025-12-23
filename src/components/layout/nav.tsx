@@ -21,8 +21,8 @@ function NavLink({ href, children }: NavLinkProps) {
       className={cn(
         'text-sm font-medium transition-colors pb-1',
         isActive
-          ? 'text-[--accent-primary] border-b-2 border-[--accent-primary]'
-          : 'text-[--text-secondary] hover:text-[--text-primary]'
+          ? 'text-[var(--accent-primary)] border-b-2 border-[var(--accent-primary)]'
+          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
       )}
     >
       {children}

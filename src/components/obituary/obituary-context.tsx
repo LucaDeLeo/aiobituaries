@@ -28,11 +28,11 @@ export function ObituaryContext({ context }: ObituaryContextProps) {
   // Handle null/undefined context from CMS
   if (!context) {
     return (
-      <section className="mt-12 pt-8 border-t border-[--border]">
-        <h2 className="text-lg font-semibold text-[--text-primary] mb-4">
+      <section className="mt-12 pt-8 border-t border-[var(--border)]">
+        <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
           Context at Time
         </h2>
-        <p className="text-[--text-muted]">Context data unavailable</p>
+        <p className="text-[var(--text-muted)]">Context data unavailable</p>
       </section>
     )
   }
@@ -50,11 +50,11 @@ export function ObituaryContext({ context }: ObituaryContextProps) {
   // Empty state: no context data available
   if (!hasAnyData) {
     return (
-      <section className="mt-12 pt-8 border-t border-[--border]">
-        <h2 className="text-lg font-semibold text-[--text-primary] mb-4">
+      <section className="mt-12 pt-8 border-t border-[var(--border)]">
+        <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
           Context at Time
         </h2>
-        <p className="text-[--text-muted]">Context data unavailable</p>
+        <p className="text-[var(--text-muted)]">Context data unavailable</p>
       </section>
     )
   }
@@ -66,33 +66,33 @@ export function ObituaryContext({ context }: ObituaryContextProps) {
     context.googPrice !== undefined
 
   return (
-    <section className="mt-12 pt-8 border-t border-[--border]">
-      <h2 className="text-lg font-semibold text-[--text-primary] mb-4">
+    <section className="mt-12 pt-8 border-t border-[var(--border)]">
+      <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
         Context at Time
       </h2>
 
       <div className="grid gap-4 md:grid-cols-2">
         {/* Stock Prices Card */}
         {hasStockPrices && (
-          <Card className="bg-[--bg-card] border-[--border]">
+          <Card className="bg-[var(--bg-card)] border-[var(--border)]">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-[--text-secondary]">
+              <CardTitle className="text-sm text-[var(--text-secondary)]">
                 Stock Prices
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1">
               {context.nvdaPrice !== undefined && (
-                <p className="text-[--text-primary]">
+                <p className="text-[var(--text-primary)]">
                   NVDA: {formatCurrency(context.nvdaPrice)}
                 </p>
               )}
               {context.msftPrice !== undefined && (
-                <p className="text-[--text-primary]">
+                <p className="text-[var(--text-primary)]">
                   MSFT: {formatCurrency(context.msftPrice)}
                 </p>
               )}
               {context.googPrice !== undefined && (
-                <p className="text-[--text-primary]">
+                <p className="text-[var(--text-primary)]">
                   GOOG: {formatCurrency(context.googPrice)}
                 </p>
               )}
@@ -102,31 +102,31 @@ export function ObituaryContext({ context }: ObituaryContextProps) {
 
         {/* Latest AI Model Card */}
         {context.currentModel && (
-          <Card className="bg-[--bg-card] border-[--border]">
+          <Card className="bg-[var(--bg-card)] border-[var(--border)]">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-[--text-secondary]">
+              <CardTitle className="text-sm text-[var(--text-secondary)]">
                 Latest AI Model
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-[--text-primary]">{context.currentModel}</p>
+              <p className="text-[var(--text-primary)]">{context.currentModel}</p>
             </CardContent>
           </Card>
         )}
 
         {/* Benchmark Card */}
         {context.benchmarkName && (
-          <Card className="bg-[--bg-card] border-[--border]">
+          <Card className="bg-[var(--bg-card)] border-[var(--border)]">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-[--text-secondary]">
+              <CardTitle className="text-sm text-[var(--text-secondary)]">
                 Benchmark
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-[--text-primary]">
+              <p className="text-[var(--text-primary)]">
                 {context.benchmarkName}
                 {context.benchmarkScore !== undefined && (
-                  <span className="ml-2 text-[--accent-primary] font-mono">
+                  <span className="ml-2 text-[var(--accent-primary)] font-mono">
                     {context.benchmarkScore}%
                   </span>
                 )}
@@ -137,14 +137,14 @@ export function ObituaryContext({ context }: ObituaryContextProps) {
 
         {/* AI Milestone Card */}
         {context.milestone && (
-          <Card className="bg-[--bg-card] border-[--border]">
+          <Card className="bg-[var(--bg-card)] border-[var(--border)]">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-[--text-secondary]">
+              <CardTitle className="text-sm text-[var(--text-secondary)]">
                 AI Milestone
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-[--text-primary]">{context.milestone}</p>
+              <p className="text-[var(--text-primary)]">{context.milestone}</p>
             </CardContent>
           </Card>
         )}
@@ -152,7 +152,7 @@ export function ObituaryContext({ context }: ObituaryContextProps) {
 
       {/* Additional Note - outside card grid */}
       {context.note && (
-        <p className="mt-4 text-sm text-[--text-muted] italic">
+        <p className="mt-4 text-sm text-[var(--text-muted)] italic">
           {context.note}
         </p>
       )}

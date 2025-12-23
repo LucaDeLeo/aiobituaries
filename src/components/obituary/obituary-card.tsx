@@ -33,26 +33,26 @@ export function ObituaryCard({ obituary }: ObituaryCardProps) {
   const primaryCategory = obituary.categories?.[0]
   const categoryColorClass = primaryCategory
     ? CATEGORY_BG_CLASSES[primaryCategory]
-    : 'bg-[--text-muted]' // fallback for missing category
+    : 'bg-[var(--text-muted)]' // fallback for missing category
 
   return (
     <Link
       href={`/obituary/${obituary.slug}`}
       className={cn(
         'group relative block p-6 rounded-xl',
-        'bg-[--bg-card] border border-[--border]',
+        'bg-[var(--bg-card)] border border-[var(--border)]',
         // Dramatic lift and shadow on hover
         'shadow-lg shadow-black/20',
-        'hover:-translate-y-1 hover:shadow-xl hover:shadow-[--accent-primary]/10',
-        'hover:border-[--accent-primary]/40',
+        'hover:-translate-y-1 hover:shadow-xl hover:shadow-[var(--accent-primary)]/10',
+        'hover:border-[var(--accent-primary)]/40',
         'transition-all duration-300 ease-out',
         'focus-visible:outline-none focus-visible:ring-2',
-        'focus-visible:ring-[--ring] focus-visible:ring-offset-2',
-        'focus-visible:ring-offset-[--bg-primary]'
+        'focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2',
+        'focus-visible:ring-offset-[var(--bg-primary)]'
       )}
     >
       {/* Subtle glow on hover */}
-      <div className="absolute -inset-px rounded-xl bg-[--accent-primary]/0 group-hover:bg-[--accent-primary]/5 transition-colors duration-300 pointer-events-none" />
+      <div className="absolute -inset-px rounded-xl bg-[var(--accent-primary)]/0 group-hover:bg-[var(--accent-primary)]/5 transition-colors duration-300 pointer-events-none" />
 
       <div className="relative">
         <div className="flex items-center gap-2 mb-3">
@@ -65,14 +65,14 @@ export function ObituaryCard({ obituary }: ObituaryCardProps) {
             )}
             aria-hidden="true"
           />
-          <span className="text-sm text-[--text-muted] font-mono">
+          <span className="text-sm text-[var(--text-muted)] font-mono">
             {formatDate(obituary.date)}
           </span>
         </div>
-        <p className="font-serif italic text-[--text-primary] mb-3 leading-relaxed text-lg">
+        <p className="font-serif italic text-[var(--text-primary)] mb-3 leading-relaxed text-lg">
           &ldquo;{truncateClaim(obituary.claim)}&rdquo;
         </p>
-        <p className="text-sm text-[--text-secondary] group-hover:text-[--accent-primary] transition-colors">
+        <p className="text-sm text-[var(--text-secondary)] group-hover:text-[var(--accent-primary)] transition-colors">
           {obituary.source}
         </p>
       </div>

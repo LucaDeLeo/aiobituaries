@@ -118,7 +118,7 @@ export function AIContextCell({ date }: AIContextCellProps) {
   // Handle invalid date gracefully
   if (!isValid || !metrics) {
     return (
-      <span className="text-xs text-[--text-muted]" aria-label="Invalid date">
+      <span className="text-xs text-[var(--text-muted)]" aria-label="Invalid date">
         —
       </span>
     )
@@ -136,17 +136,17 @@ export function AIContextCell({ date }: AIContextCellProps) {
             style={{ backgroundColor: dotColor }}
             aria-hidden="true"
           />
-          <span className="font-mono text-xs text-[--text-secondary]">
+          <span className="font-mono text-xs text-[var(--text-secondary)]">
             {compactValue}
           </span>
         </div>
       </TooltipTrigger>
       <TooltipContent side="left" className="max-w-[200px]">
         <div className="text-xs space-y-1.5">
-          <div className="font-medium text-[--text-primary]">
+          <div className="font-medium text-[var(--text-primary)]">
             AI Progress at this date
           </div>
-          <div className="space-y-0.5 text-[--text-secondary]">
+          <div className="space-y-0.5 text-[var(--text-secondary)]">
             <div>Compute: {metrics.computeFormatted} FLOP</div>
             <div>
               MMLU:{' '}

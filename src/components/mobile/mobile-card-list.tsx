@@ -41,13 +41,13 @@ export function MobileCardList({
   if (obituaries.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-8 text-center">
-        <p className="text-[--text-muted]">
+        <p className="text-[var(--text-muted)]">
           No obituaries match your filters.
           <br />
           <button
             type="button"
             onClick={onClearFilters}
-            className="text-[--accent-primary] underline mt-2"
+            className="text-[var(--accent-primary)] underline mt-2"
           >
             Clear filters
           </button>
@@ -62,7 +62,7 @@ export function MobileCardList({
         const primaryCategory = obituary.categories?.[0]
         const categoryColorClass = primaryCategory
           ? CATEGORY_BG_CLASSES[primaryCategory]
-          : 'bg-[--text-muted]'
+          : 'bg-[var(--text-muted)]'
 
         return (
           <button
@@ -71,12 +71,12 @@ export function MobileCardList({
             onClick={() => onSelect(obituary)}
             className={cn(
               'w-full text-left p-4 rounded-lg relative group',
-              'bg-[--bg-card] border border-[--border]',
+              'bg-[var(--bg-card)] border border-[var(--border)]',
               'shadow-md shadow-black/10',
               'active:scale-[0.98] active:shadow-sm transition-all duration-200',
               'focus-visible:outline-none focus-visible:ring-2',
-              'focus-visible:ring-[--ring] focus-visible:ring-offset-2',
-              'focus-visible:ring-offset-[--bg-primary]'
+              'focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2',
+              'focus-visible:ring-offset-[var(--bg-primary)]'
             )}
           >
             {/* Date and category indicator */}
@@ -85,23 +85,23 @@ export function MobileCardList({
                 className={cn('w-2 h-2 rounded-full shrink-0', categoryColorClass)}
                 aria-hidden="true"
               />
-              <span className="text-xs text-[--text-muted]">
+              <span className="text-xs text-[var(--text-muted)]">
                 {formatDate(obituary.date)}
               </span>
               {primaryCategory && (
-                <span className="text-xs text-[--text-muted] opacity-60">
+                <span className="text-xs text-[var(--text-muted)] opacity-60">
                   {CATEGORY_LABELS[primaryCategory]}
                 </span>
               )}
             </div>
 
             {/* Claim preview */}
-            <p className="font-serif italic text-sm text-[--text-primary] mb-2 leading-relaxed">
+            <p className="font-serif italic text-sm text-[var(--text-primary)] mb-2 leading-relaxed">
               &ldquo;{truncateClaim(obituary.claim)}&rdquo;
             </p>
 
             {/* Source */}
-            <p className="text-xs text-[--text-secondary]">{obituary.source}</p>
+            <p className="text-xs text-[var(--text-secondary)]">{obituary.source}</p>
           </button>
         )
       })}

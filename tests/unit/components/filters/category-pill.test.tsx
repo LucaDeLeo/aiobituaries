@@ -133,7 +133,7 @@ describe('Accessibility requirements', () => {
     const focusClasses = cn(
       'focus-visible:outline-none',
       'focus-visible:ring-2',
-      'focus-visible:ring-[--accent-primary]'
+      'focus-visible:ring-[var(--accent-primary)]'
     )
     expect(focusClasses).toContain('focus-visible:ring-2')
   })

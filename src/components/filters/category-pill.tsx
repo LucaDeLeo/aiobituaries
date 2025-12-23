@@ -48,10 +48,10 @@ export function CategoryPill({
         'flex items-center gap-2 px-3 py-1.5 rounded-full',
         'text-sm font-medium transition-colors whitespace-nowrap',
         'min-h-[44px]',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--accent-primary] focus-visible:ring-offset-2 focus-visible:ring-offset-[--bg-secondary]',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-secondary)]',
         isActive
-          ? 'text-[--text-primary]'
-          : 'text-[--text-secondary] hover:text-[--text-primary] hover:bg-[--bg-tertiary]'
+          ? 'text-[var(--text-primary)]'
+          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
       )}
       style={{
         backgroundColor: isActive ? `${category.color}20` : 'transparent',

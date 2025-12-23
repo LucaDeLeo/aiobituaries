@@ -26,10 +26,10 @@ export default async function SkepticsPage() {
     <div className="max-w-5xl mx-auto px-4 py-12">
       {/* Header */}
       <div className="mb-10">
-        <h1 className="text-3xl font-bold text-[--text-primary] mb-3">
+        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-3">
           Notable AI Skeptics
         </h1>
-        <p className="text-lg text-[--text-secondary] max-w-2xl">
+        <p className="text-lg text-[var(--text-secondary)] max-w-2xl">
           Tracking predictions about AI&apos;s limitations against actual
           progress. Click any skeptic to see their claims alongside the AI
           capabilities at the time.
@@ -45,7 +45,7 @@ export default async function SkepticsPage() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <p className="text-[--text-muted]">No skeptics added yet.</p>
+          <p className="text-[var(--text-muted)]">No skeptics added yet.</p>
         </div>
       )}
     </div>

@@ -48,8 +48,8 @@ export async function ObituaryList({ obituaries: providedObituaries }: ObituaryL
   if (obituaries.length === 0) {
     return (
       <div className="text-center py-12 animate-fade-up">
-        <p className="text-[--text-secondary] text-lg">No obituaries found.</p>
-        <p className="text-[--text-muted] text-sm mt-2">
+        <p className="text-[var(--text-secondary)] text-lg">No obituaries found.</p>
+        <p className="text-[var(--text-muted)] text-sm mt-2">
           Check back later for new entries.
         </p>
       </div>

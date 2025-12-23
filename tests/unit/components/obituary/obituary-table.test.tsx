@@ -248,17 +248,17 @@ describe('Alternating Row Colors (AC-6.4.15)', () => {
    * Verified by code review of obituary-table.tsx lines 243-246:
    *
    * <tr className={cn(...,
-   *   index % 2 === 0 ? 'bg-[--bg-secondary]/30' : 'bg-[--bg-primary]'
+   *   index % 2 === 0 ? 'bg-[var(--bg-secondary)]/30' : 'bg-[var(--bg-primary)]'
    * )}>
    */
-  it('documents even rows have bg-[--bg-secondary]/30 (AC-6.4.15)', () => {
-    const evenRowClass = 'bg-[--bg-secondary]/30'
-    expect(evenRowClass).toContain('bg-[--bg-secondary]')
+  it('documents even rows have bg-[var(--bg-secondary)]/30 (AC-6.4.15)', () => {
+    const evenRowClass = 'bg-[var(--bg-secondary)]/30'
+    expect(evenRowClass).toContain('bg-[var(--bg-secondary)]')
   })
 
-  it('documents odd rows have bg-[--bg-primary] (AC-6.4.15)', () => {
-    const oddRowClass = 'bg-[--bg-primary]'
-    expect(oddRowClass).toBe('bg-[--bg-primary]')
+  it('documents odd rows have bg-[var(--bg-primary)] (AC-6.4.15)', () => {
+    const oddRowClass = 'bg-[var(--bg-primary)]'
+    expect(oddRowClass).toBe('bg-[var(--bg-primary)]')
   })
 })
 
@@ -306,14 +306,14 @@ describe('Focus styling', () => {
   /**
    * Verified by code review of Link className in row:
    * 'focus-visible:outline-none focus-visible:ring-2
-   *  focus-visible:ring-[--accent-primary] focus-visible:ring-offset-2
-   *  focus-visible:ring-offset-[--bg-primary]'
+   *  focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2
+   *  focus-visible:ring-offset-[var(--bg-primary)]'
    */
   it('documents View details link has focus-visible styling', () => {
     const focusClasses = [
       'focus-visible:outline-none',
       'focus-visible:ring-2',
-      'focus-visible:ring-[--accent-primary]',
+      'focus-visible:ring-[var(--accent-primary)]',
     ]
     focusClasses.forEach((cls) => {
       expect(cls.startsWith('focus-visible:')).toBe(true)

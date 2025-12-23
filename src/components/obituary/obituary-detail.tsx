@@ -24,26 +24,26 @@ export function ObituaryDetail({ obituary }: ObituaryDetailProps) {
     <article>
       <Link
         href="/"
-        className="inline-flex items-center gap-2 text-[--text-secondary]
-                   hover:text-[--text-primary] mb-8 transition-colors"
+        className="inline-flex items-center gap-2 text-[var(--text-secondary)]
+                   hover:text-[var(--text-primary)] mb-8 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" aria-hidden="true" />
         Back to all obituaries
       </Link>
 
       <blockquote className="font-serif text-2xl md:text-3xl lg:text-4xl
-                             text-[--text-primary] italic text-center
+                             text-[var(--text-primary)] italic text-center
                              leading-relaxed mb-8">
         &ldquo;{obituary.claim}&rdquo;
       </blockquote>
 
       <div className="flex flex-col items-center gap-4 mb-8">
-        <p className="text-[--text-secondary]">
+        <p className="text-[var(--text-secondary)]">
           <a
             href={sanitizeUrl(obituary.sourceUrl)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 hover:text-[--accent-primary]
+            className="inline-flex items-center gap-1 hover:text-[var(--accent-primary)]
                        transition-colors underline underline-offset-4"
           >
             {obituary.source}
@@ -52,7 +52,7 @@ export function ObituaryDetail({ obituary }: ObituaryDetailProps) {
         </p>
         <time
           dateTime={obituary.date}
-          className="text-[--text-muted]"
+          className="text-[var(--text-muted)]"
         >
           {formatDate(obituary.date)}
         </time>

@@ -11,9 +11,9 @@ interface ToastProps {
 
 export function Toast({ toast, onDismiss }: ToastProps) {
   const variants = {
-    default: 'bg-[--bg-card] border-[--border]',
-    success: 'bg-[--bg-card] border-[#7B9E89]',
-    destructive: 'bg-[--bg-card] border-red-500',
+    default: 'bg-[var(--bg-card)] border-[var(--border)]',
+    success: 'bg-[var(--bg-card)] border-[#7B9E89]',
+    destructive: 'bg-[var(--bg-card)] border-red-500',
   }
 
   const icons = {
@@ -37,14 +37,14 @@ export function Toast({ toast, onDismiss }: ToastProps) {
         <span className="flex-shrink-0 mt-0.5">{icons[variant]}</span>
       )}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[--text-primary]">{toast.title}</p>
+        <p className="text-sm font-medium text-[var(--text-primary)]">{toast.title}</p>
         {toast.description && (
-          <p className="text-sm text-[--text-muted] mt-1">{toast.description}</p>
+          <p className="text-sm text-[var(--text-muted)] mt-1">{toast.description}</p>
         )}
       </div>
       <button
         onClick={() => onDismiss(toast.id)}
-        className="flex-shrink-0 text-[--text-muted] hover:text-[--text-primary] transition-colors"
+        className="flex-shrink-0 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
         aria-label="Dismiss"
       >
         <X className="w-4 h-4" />

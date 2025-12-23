@@ -63,8 +63,8 @@ describe('SkipLink', () => {
         visibility: 'focus:not-sr-only',
         position: 'focus:fixed focus:top-4 focus:left-4 focus:z-[100]',
         spacing: 'focus:px-4 focus:py-2 focus:rounded-lg',
-        colors: 'focus:bg-[--accent-primary] focus:text-[--bg-primary]',
-        focus: 'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--accent-primary]',
+        colors: 'focus:bg-[var(--accent-primary)] focus:text-[var(--bg-primary)]',
+        focus: 'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-primary)]',
         typography: 'focus:font-medium',
       }
 

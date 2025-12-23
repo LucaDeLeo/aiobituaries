@@ -94,14 +94,14 @@ export function CategoryChart({
             transition={shouldReduceMotion ? { duration: 0 } : { delay: index * 0.1 }}
           >
             <div className="flex justify-between mb-1">
-              <span className="text-sm text-[--text-secondary] group-hover:text-[--text-primary] transition-colors">
+              <span className="text-sm text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
                 {category.label}
               </span>
-              <span className="text-sm text-[--text-muted]">
+              <span className="text-sm text-[var(--text-muted)]">
                 {count} ({percentage}%)
               </span>
             </div>
-            <div className="h-2 bg-[--bg-tertiary] rounded-full overflow-hidden">
+            <div className="h-2 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
               <motion.div
                 className="h-full rounded-full"
                 style={{ backgroundColor: category.color }}

@@ -43,8 +43,8 @@ export function MobileNav() {
               className={cn(
                 'text-lg font-medium transition-colors',
                 pathname === link.href
-                  ? 'text-[--accent-primary]'
-                  : 'text-[--text-secondary] hover:text-[--text-primary]'
+                  ? 'text-[var(--accent-primary)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}
             >
               {link.label}

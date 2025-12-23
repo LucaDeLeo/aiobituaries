@@ -30,12 +30,12 @@ const ScatterPlot = dynamic(
     ssr: false,
     loading: () => (
       <div
-        className="w-full h-full min-h-[300px] md:min-h-[400px] bg-[--bg-secondary]"
+        className="w-full h-full min-h-[300px] md:min-h-[400px] bg-[var(--bg-secondary)]"
         role="status"
         aria-label="Loading visualization"
       >
         <div className="w-full h-full flex items-center justify-center">
-          <span className="text-[--text-muted] text-sm animate-pulse">Loading visualization...</span>
+          <span className="text-[var(--text-muted)] text-sm animate-pulse">Loading visualization...</span>
         </div>
       </div>
     ),
@@ -167,7 +167,7 @@ export function HomeClient({
 
       {/* Category Breakdown Chart */}
       <section className="max-w-md mx-auto px-4 py-8">
-        <h2 className="text-lg font-semibold mb-4 text-[--text-primary]">
+        <h2 className="text-lg font-semibold mb-4 text-[var(--text-primary)]">
           Category Breakdown
         </h2>
         <CategoryChart

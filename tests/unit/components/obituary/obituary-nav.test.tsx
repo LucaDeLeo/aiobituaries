@@ -55,12 +55,12 @@ describe('Previous link rendering behavior (AC-5.2.1, AC-5.2.5)', () => {
    * {previous ? (
    *   <Link
    *     href={`/obituary/${previous.slug}`}
-   *     className="group flex-1 flex items-center gap-3 p-4 rounded-lg bg-[--bg-card] border border-[--border] hover:border-[--accent-primary] transition-colors"
+   *     className="group flex-1 flex items-center gap-3 p-4 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] hover:border-[var(--accent-primary)] transition-colors"
    *   >
-   *     <ChevronLeft className="w-5 h-5 text-[--text-muted] group-hover:text-[--accent-primary]" />
+   *     <ChevronLeft className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--accent-primary)]" />
    *     <div className="flex flex-col min-w-0">
-   *       <span className="text-xs text-[--text-muted] uppercase tracking-wider">Previous</span>
-   *       <span className="text-sm text-[--text-secondary] truncate">{previous.source}</span>
+   *       <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Previous</span>
+   *       <span className="text-sm text-[var(--text-secondary)] truncate">{previous.source}</span>
    *     </div>
    *   </Link>
    * ) : (
@@ -96,13 +96,13 @@ describe('Next link rendering behavior (AC-5.2.2, AC-5.2.5)', () => {
    * {next ? (
    *   <Link
    *     href={`/obituary/${next.slug}`}
-   *     className="group flex-1 flex items-center justify-end gap-3 p-4 rounded-lg bg-[--bg-card] border border-[--border] hover:border-[--accent-primary] transition-colors text-right"
+   *     className="group flex-1 flex items-center justify-end gap-3 p-4 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] hover:border-[var(--accent-primary)] transition-colors text-right"
    *   >
    *     <div className="flex flex-col min-w-0">
-   *       <span className="text-xs text-[--text-muted] uppercase tracking-wider">Next</span>
-   *       <span className="text-sm text-[--text-secondary] truncate">{next.source}</span>
+   *       <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Next</span>
+   *       <span className="text-sm text-[var(--text-secondary)] truncate">{next.source}</span>
    *     </div>
-   *     <ChevronRight className="w-5 h-5 text-[--text-muted] group-hover:text-[--accent-primary]" />
+   *     <ChevronRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--accent-primary)]" />
    *   </Link>
    * ) : (
    *   <div className="flex-1" aria-hidden="true" />
@@ -156,26 +156,26 @@ describe('Empty placeholder behavior (AC-5.2.3)', () => {
 describe('Hover styling with gold accent (AC-5.2.6)', () => {
   /**
    * Verified by code review of link className:
-   * hover:border-[--accent-primary] - Border changes to gold (#C9A962) on hover
-   * group-hover:text-[--accent-primary] - Icon color changes to gold on hover
+   * hover:border-[var(--accent-primary)] - Border changes to gold (#C9A962) on hover
+   * group-hover:text-[var(--accent-primary)] - Icon color changes to gold on hover
    */
   it('documents hover border class', () => {
-    const hoverBorderClass = 'hover:border-[--accent-primary]'
+    const hoverBorderClass = 'hover:border-[var(--accent-primary)]'
     expect(hoverBorderClass).toContain('hover:')
     expect(hoverBorderClass).toContain('--accent-primary')
   })
 
   it('documents icon hover color class', () => {
-    const iconHoverClass = 'group-hover:text-[--accent-primary]'
+    const iconHoverClass = 'group-hover:text-[var(--accent-primary)]'
     expect(iconHoverClass).toContain('group-hover:')
     expect(iconHoverClass).toContain('--accent-primary')
   })
 
   it('documents card styling classes', () => {
     const cardClasses = [
-      'bg-[--bg-card]', // Card background
+      'bg-[var(--bg-card)]', // Card background
       'border',
-      'border-[--border]', // Default border
+      'border-[var(--border)]', // Default border
       'rounded-lg', // Rounded corners
       'p-4', // Padding
       'flex-1', // Equal width
@@ -257,7 +257,7 @@ describe('Keyboard navigation behavior (AC-5.2.4)', () => {
 describe('Navigation layout (AC-5.2.7)', () => {
   /**
    * Verified by code review of nav className:
-   * "flex justify-between items-stretch gap-4 mt-8 pt-6 border-t border-[--border]"
+   * "flex justify-between items-stretch gap-4 mt-8 pt-6 border-t border-[var(--border)]"
    */
   it('documents two-column flex layout', () => {
     const layoutClasses = [
@@ -273,7 +273,7 @@ describe('Navigation layout (AC-5.2.7)', () => {
 
   it('documents top border separator', () => {
     // mt-8 pt-6 border-t - positioned at bottom with top border separator
-    const positionClasses = ['mt-8', 'pt-6', 'border-t', 'border-[--border]']
+    const positionClasses = ['mt-8', 'pt-6', 'border-t', 'border-[var(--border)]']
     positionClasses.forEach((cls) => {
       expect(typeof cls).toBe('string')
     })

@@ -69,6 +69,6 @@ describe('NotFound Page (AC-2.3.9)', () => {
     })
 
     const heading = screen.getByRole('heading', { level: 1 })
-    expect(heading.className).toContain('text-[--text-primary]')
+    expect(heading.className).toContain('text-[var(--text-primary)]')
   })
 })

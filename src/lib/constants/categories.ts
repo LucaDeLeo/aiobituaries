@@ -120,10 +120,10 @@ export function isValidCategory(value: string): value is Category {
  * Use for category indicator dots.
  */
 export const CATEGORY_BG_CLASSES: Record<Category, string> = {
-  capability: 'bg-[--category-capability]',
-  market: 'bg-[--category-market]',
-  agi: 'bg-[--category-agi]',
-  dismissive: 'bg-[--category-dismissive]',
+  capability: 'bg-[var(--category-capability)]',
+  market: 'bg-[var(--category-market)]',
+  agi: 'bg-[var(--category-agi)]',
+  dismissive: 'bg-[var(--category-dismissive)]',
 } as const
 
 /**
@@ -131,10 +131,10 @@ export const CATEGORY_BG_CLASSES: Record<Category, string> = {
  * Use for category badges/pills.
  */
 export const CATEGORY_BADGE_CLASSES: Record<Category, string> = {
-  capability: 'bg-[--category-capability]/20 text-[--category-capability]',
-  market: 'bg-[--category-market]/20 text-[--category-market]',
-  agi: 'bg-[--category-agi]/20 text-[--category-agi]',
-  dismissive: 'bg-[--category-dismissive]/20 text-[--category-dismissive]',
+  capability: 'bg-[var(--category-capability)]/20 text-[var(--category-capability)]',
+  market: 'bg-[var(--category-market)]/20 text-[var(--category-market)]',
+  agi: 'bg-[var(--category-agi)]/20 text-[var(--category-agi)]',
+  dismissive: 'bg-[var(--category-dismissive)]/20 text-[var(--category-dismissive)]',
 } as const
 
 /**

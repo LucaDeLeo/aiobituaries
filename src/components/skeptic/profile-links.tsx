@@ -46,8 +46,8 @@ export function ProfileLinks({ profiles, className }: ProfileLinksProps) {
             className={cn(
               'inline-flex items-center gap-1 px-2 py-1 rounded-md',
               'text-xs font-medium',
-              'bg-[--bg-secondary] text-[--text-muted]',
-              'hover:bg-[--bg-tertiary] hover:text-[--text-secondary]',
+              'bg-[var(--bg-secondary)] text-[var(--text-muted)]',
+              'hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]',
               'transition-colors duration-150'
             )}
             onClick={(e) => e.stopPropagation()}
@@ -84,9 +84,9 @@ export function ProfileLinksLarge({ profiles, className }: ProfileLinksProps) {
             className={cn(
               'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg',
               'text-sm font-medium',
-              'bg-[--bg-secondary] text-[--text-secondary]',
-              'hover:bg-[--bg-tertiary] hover:text-[--accent-primary]',
-              'border border-[--border]',
+              'bg-[var(--bg-secondary)] text-[var(--text-secondary)]',
+              'hover:bg-[var(--bg-tertiary)] hover:text-[var(--accent-primary)]',
+              'border border-[var(--border)]',
               'transition-colors duration-150'
             )}
           >

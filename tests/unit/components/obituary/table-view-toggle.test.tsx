@@ -133,16 +133,16 @@ describe('Focus styling (AC-6.4.14)', () => {
   /**
    * Verified by code review of button className:
    * 'focus-visible:outline-none focus-visible:ring-2
-   *  focus-visible:ring-[--accent-primary] focus-visible:ring-offset-2
-   *  focus-visible:ring-offset-[--bg-primary]'
+   *  focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2
+   *  focus-visible:ring-offset-[var(--bg-primary)]'
    */
   it('documents focus-visible ring styling', () => {
     const focusClasses = [
       'focus-visible:outline-none',
       'focus-visible:ring-2',
-      'focus-visible:ring-[--accent-primary]',
+      'focus-visible:ring-[var(--accent-primary)]',
       'focus-visible:ring-offset-2',
-      'focus-visible:ring-offset-[--bg-primary]',
+      'focus-visible:ring-offset-[var(--bg-primary)]',
     ]
     focusClasses.forEach((cls) => {
       expect(cls.startsWith('focus-visible:')).toBe(true)

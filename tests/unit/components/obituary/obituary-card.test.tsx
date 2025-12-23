@@ -85,9 +85,9 @@ describe('CATEGORY_BG_CLASSES', () => {
 
   it('uses CSS variable-based classes', async () => {
     const { CATEGORY_BG_CLASSES } = await import('@/lib/constants/categories')
-    expect(CATEGORY_BG_CLASSES.capability).toContain('bg-[--category-')
-    expect(CATEGORY_BG_CLASSES.market).toContain('bg-[--category-')
-    expect(CATEGORY_BG_CLASSES.agi).toContain('bg-[--category-')
-    expect(CATEGORY_BG_CLASSES.dismissive).toContain('bg-[--category-')
+    expect(CATEGORY_BG_CLASSES.capability).toContain('bg-[var(--category-')
+    expect(CATEGORY_BG_CLASSES.market).toContain('bg-[var(--category-')
+    expect(CATEGORY_BG_CLASSES.agi).toContain('bg-[var(--category-')
+    expect(CATEGORY_BG_CLASSES.dismissive).toContain('bg-[var(--category-')
   })
 })

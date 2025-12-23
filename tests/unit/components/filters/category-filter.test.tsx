@@ -206,7 +206,7 @@ describe('Positioning classes', () => {
 
   it('backdrop blur classes are valid', async () => {
     const { cn } = await import('@/lib/utils')
-    const backdropClasses = cn('bg-[--bg-secondary]/80', 'backdrop-blur-md')
+    const backdropClasses = cn('bg-[var(--bg-secondary)]/80', 'backdrop-blur-md')
     expect(backdropClasses).toContain('backdrop-blur-md')
   })
 

@@ -72,15 +72,15 @@ export default async function ObituaryPage({ params }: PageProps) {
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link href="/" className="text-[--text-muted] hover:text-[--text-secondary]">
+                <Link href="/" className="text-[var(--text-muted)] hover:text-[var(--text-secondary)]">
                   Home
                 </Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
-            <BreadcrumbSeparator className="text-[--text-muted]" />
+            <BreadcrumbSeparator className="text-[var(--text-muted)]" />
             <BreadcrumbItem>
               <BreadcrumbPage
-                className="text-[--text-secondary]"
+                className="text-[var(--text-secondary)]"
                 title={obituary.source.length > 40 ? obituary.source : undefined}
               >
                 {truncatedSource}

@@ -19,7 +19,7 @@ import { parseUTCDate } from '@/lib/utils/date'
 // DensityBar uses adaptive granularity that must be consistent client-side
 const DensityBar = dynamic(() => import('./density-bar').then((mod) => mod.DensityBar), {
   ssr: false,
-  loading: () => <div className="h-[88px] bg-[--bg-secondary] border-b border-[--border]" />,
+  loading: () => <div className="h-[88px] bg-[var(--bg-secondary)] border-b border-[var(--border)]" />,
 })
 import { MobileCardList } from './mobile-card-list'
 import { ObituaryModal } from '@/components/obituary/obituary-modal'
@@ -87,7 +87,7 @@ export function MobileTimeline({ obituaries }: MobileTimelineProps) {
       />
 
       {/* Sticky Category Filter at bottom */}
-      <div className="sticky bottom-0 z-10 bg-[--bg-primary] border-t border-[--border] p-2">
+      <div className="sticky bottom-0 z-10 bg-[var(--bg-primary)] border-t border-[var(--border)] p-2">
         <CategoryFilter
           activeCategories={activeCategories}
           onToggle={toggleCategory}

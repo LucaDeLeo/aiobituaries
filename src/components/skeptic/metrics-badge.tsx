@@ -57,8 +57,8 @@ function MetricRow({ label, value, compact }: MetricRowProps) {
         compact ? 'text-xs' : 'text-sm'
       )}
     >
-      <span className="text-[--text-muted]">{label}:</span>
-      <span className="text-[--text-secondary] tabular-nums">{value}</span>
+      <span className="text-[var(--text-muted)]">{label}:</span>
+      <span className="text-[var(--text-secondary)] tabular-nums">{value}</span>
     </div>
   )
 }
@@ -76,12 +76,12 @@ export function CurrentMetricsFooter({ metrics, className }: CurrentMetricsFoote
   return (
     <div
       className={cn(
-        'bg-[--bg-secondary] border border-[--border] rounded-lg p-4',
+        'bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4',
         className
       )}
     >
-      <p className="text-sm text-[--text-muted] mb-2">Today&apos;s AI Metrics</p>
-      <p className="font-mono text-sm text-[--text-secondary]">
+      <p className="text-sm text-[var(--text-muted)] mb-2">Today&apos;s AI Metrics</p>
+      <p className="font-mono text-sm text-[var(--text-secondary)]">
         MMLU {metrics.mmlu !== null ? `${metrics.mmlu}%` : '--'} · Compute{' '}
         {metrics.computeFormatted} · ECI{' '}
         {metrics.eci !== null ? metrics.eci : '--'}

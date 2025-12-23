@@ -39,17 +39,17 @@ export function TableViewToggle({ mode, onModeChange }: TableViewToggleProps) {
     <div
       role="group"
       aria-label="View mode"
-      className="hidden md:inline-flex rounded-lg border border-[--border] p-1 bg-[--bg-secondary]"
+      className="hidden md:inline-flex rounded-lg border border-[var(--border)] p-1 bg-[var(--bg-secondary)]"
     >
       <button
         type="button"
         onClick={() => onModeChange('visualization')}
         className={cn(
           'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--accent-primary] focus-visible:ring-offset-2 focus-visible:ring-offset-[--bg-primary]',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)]',
           mode === 'visualization'
-            ? 'bg-[--accent-primary] text-[--bg-primary]'
-            : 'text-[--text-secondary] hover:text-[--text-primary] hover:bg-[--bg-tertiary]'
+            ? 'bg-[var(--accent-primary)] text-[var(--bg-primary)]'
+            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
         )}
         aria-pressed={mode === 'visualization'}
       >
@@ -61,10 +61,10 @@ export function TableViewToggle({ mode, onModeChange }: TableViewToggleProps) {
         onClick={() => onModeChange('table')}
         className={cn(
           'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--accent-primary] focus-visible:ring-offset-2 focus-visible:ring-offset-[--bg-primary]',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)]',
           mode === 'table'
-            ? 'bg-[--accent-primary] text-[--bg-primary]'
-            : 'text-[--text-secondary] hover:text-[--text-primary] hover:bg-[--bg-tertiary]'
+            ? 'bg-[var(--accent-primary)] text-[var(--bg-primary)]'
+            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
         )}
         aria-pressed={mode === 'table'}
       >

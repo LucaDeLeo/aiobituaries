@@ -79,26 +79,26 @@ export default async function SkepticPage({ params }: PageProps) {
             <BreadcrumbLink asChild>
               <Link
                 href="/"
-                className="text-[--text-muted] hover:text-[--text-secondary]"
+                className="text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
               >
                 Home
               </Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
-          <BreadcrumbSeparator className="text-[--text-muted]" />
+          <BreadcrumbSeparator className="text-[var(--text-muted)]" />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
               <Link
                 href="/skeptics"
-                className="text-[--text-muted] hover:text-[--text-secondary]"
+                className="text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
               >
                 Skeptics
               </Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
-          <BreadcrumbSeparator className="text-[--text-muted]" />
+          <BreadcrumbSeparator className="text-[var(--text-muted)]" />
           <BreadcrumbItem>
-            <BreadcrumbPage className="text-[--text-secondary]">
+            <BreadcrumbPage className="text-[var(--text-secondary)]">
               {skeptic.name}
             </BreadcrumbPage>
           </BreadcrumbItem>
@@ -107,16 +107,16 @@ export default async function SkepticPage({ params }: PageProps) {
 
       {/* Header */}
       <header className="mb-10">
-        <h1 className="text-3xl font-bold text-[--text-primary] mb-3">
+        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-3">
           {skeptic.name}
         </h1>
-        <p className="text-lg text-[--text-secondary] mb-4">{skeptic.bio}</p>
+        <p className="text-lg text-[var(--text-secondary)] mb-4">{skeptic.bio}</p>
         <ProfileLinksLarge profiles={skeptic.profiles} />
       </header>
 
       {/* Claims section */}
       <section className="mb-10">
-        <h2 className="text-xl font-semibold text-[--text-primary] mb-4">
+        <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4">
           {claimCount} Claim{claimCount !== 1 ? 's' : ''}
         </h2>
         <SkepticClaimList claims={skeptic.claims} />

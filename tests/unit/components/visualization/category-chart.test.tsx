@@ -402,13 +402,13 @@ describe('Hover state classes', () => {
     const buttonClasses = cn('w-full', 'text-left', 'group', 'cursor-pointer')
     const labelClasses = cn(
       'text-sm',
-      'text-[--text-secondary]',
-      'group-hover:text-[--text-primary]',
+      'text-[var(--text-secondary)]',
+      'group-hover:text-[var(--text-primary)]',
       'transition-colors'
     )
 
     expect(buttonClasses).toContain('group')
-    expect(labelClasses).toContain('group-hover:text-[--text-primary]')
+    expect(labelClasses).toContain('group-hover:text-[var(--text-primary)]')
     expect(labelClasses).toContain('transition-colors')
   })
 })
@@ -492,7 +492,7 @@ describe('Bar track styling', () => {
 
     const trackClasses = cn(
       'h-2',
-      'bg-[--bg-tertiary]',
+      'bg-[var(--bg-tertiary)]',
       'rounded-full',
       'overflow-hidden'
     )

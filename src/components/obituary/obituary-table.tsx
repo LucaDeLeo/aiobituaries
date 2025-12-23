@@ -94,10 +94,10 @@ function SortableHeader({
         onClick={() => onSort(column)}
         className={cn(
           'flex items-center gap-1 font-medium transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--accent-primary] focus-visible:ring-offset-2 focus-visible:ring-offset-[--bg-tertiary]',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-tertiary)]',
           isActive
-            ? 'text-[--accent-primary]'
-            : 'text-[--text-secondary] hover:text-[--text-primary]'
+            ? 'text-[var(--accent-primary)]'
+            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
         )}
       >
         {children}
@@ -182,7 +182,7 @@ export function ObituaryTable({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="overflow-x-auto rounded-lg border border-[--border]">
+      <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
         <table
         className="w-full text-left border-collapse"
         role="grid"
@@ -190,8 +190,8 @@ export function ObituaryTable({
       >
         <caption className="sr-only">{captionText}</caption>
 
-        <thead className="bg-[--bg-tertiary]">
-          <tr className="border-b border-[--border]">
+        <thead className="bg-[var(--bg-tertiary)]">
+          <tr className="border-b border-[var(--border)]">
             <SortableHeader
               column="date"
               currentColumn={sortConfig.column}
@@ -210,13 +210,13 @@ export function ObituaryTable({
             </SortableHeader>
             <th
               scope="col"
-              className="py-3 px-4 text-[--text-secondary] font-medium"
+              className="py-3 px-4 text-[var(--text-secondary)] font-medium"
             >
               Claim
             </th>
             <th
               scope="col"
-              className="py-3 px-4 text-[--text-secondary] font-medium"
+              className="py-3 px-4 text-[var(--text-secondary)] font-medium"
             >
               AI Level
             </th>
@@ -239,7 +239,7 @@ export function ObituaryTable({
             <tr>
               <td
                 colSpan={6}
-                className="py-12 text-center text-[--text-muted]"
+                className="py-12 text-center text-[var(--text-muted)]"
               >
                 No obituaries match the selected filters.
               </td>
@@ -249,20 +249,20 @@ export function ObituaryTable({
               <tr
                 key={obituary._id}
                 className={cn(
-                  'border-b border-[--border] hover:bg-[--bg-tertiary] transition-colors',
-                  index % 2 === 0 ? 'bg-[--bg-secondary]/30' : 'bg-[--bg-primary]'
+                  'border-b border-[var(--border)] hover:bg-[var(--bg-tertiary)] transition-colors',
+                  index % 2 === 0 ? 'bg-[var(--bg-secondary)]/30' : 'bg-[var(--bg-primary)]'
                 )}
               >
-                <td className="py-3 px-4 whitespace-nowrap text-[--text-secondary]">
+                <td className="py-3 px-4 whitespace-nowrap text-[var(--text-secondary)]">
                   <time dateTime={obituary.date}>
                     {formatDate(obituary.date)}
                   </time>
                 </td>
-                <td className="py-3 px-4 text-[--text-primary]">
+                <td className="py-3 px-4 text-[var(--text-primary)]">
                   {obituary.source}
                 </td>
                 <td className="py-3 px-4 max-w-md">
-                  <p className="line-clamp-2 text-[--text-primary]">
+                  <p className="line-clamp-2 text-[var(--text-primary)]">
                     {obituary.claim}
                   </p>
                 </td>
@@ -279,7 +279,7 @@ export function ObituaryTable({
                 <td className="py-3 px-4">
                   <Link
                     href={`/obituary/${obituary.slug}`}
-                    className="text-sm text-[--accent-primary] hover:underline whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--accent-primary] focus-visible:ring-offset-2 focus-visible:ring-offset-[--bg-primary] rounded"
+                    className="text-sm text-[var(--accent-primary)] hover:underline whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)] rounded"
                   >
                     View details
                     <VisuallyHidden>
@@ -293,9 +293,9 @@ export function ObituaryTable({
           )}
         </tbody>
 
-        <tfoot className="bg-[--bg-tertiary]">
+        <tfoot className="bg-[var(--bg-tertiary)]">
           <tr>
-            <td colSpan={6} className="py-3 px-4 text-[--text-muted] text-sm">
+            <td colSpan={6} className="py-3 px-4 text-[var(--text-muted)] text-sm">
               Showing {displayData.length} of {obituaries.length} obituaries
             </td>
           </tr>

@@ -44,12 +44,12 @@ export function CopyButton({ text, label, className }: CopyButtonProps) {
       onClick={handleCopy}
       className={cn(
         'inline-flex items-center gap-2 px-4 py-2 rounded-lg',
-        'border border-[--border] bg-transparent',
-        'text-[--text-secondary] text-sm font-medium',
-        'hover:border-[--accent-primary] hover:text-[--accent-primary]',
+        'border border-[var(--border)] bg-transparent',
+        'text-[var(--text-secondary)] text-sm font-medium',
+        'hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]',
         'focus-visible:outline-none focus-visible:ring-2',
-        'focus-visible:ring-[--accent-primary] focus-visible:ring-offset-2',
-        'focus-visible:ring-offset-[--bg-primary]',
+        'focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2',
+        'focus-visible:ring-offset-[var(--bg-primary)]',
         'transition-colors',
         className
       )}
