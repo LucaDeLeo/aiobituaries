@@ -25,6 +25,83 @@ export {
   type FrontierModelEntry,
 } from './ai-metrics.generated'
 
+// =============================================================================
+// P1.3 Performance Fix: Optimized Metric Lookup with Precomputed Timestamps
+// =============================================================================
+
+/**
+ * Cache for precomputed timestamp arrays per series.
+ * Avoids O(n) Date parsing on every lookup.
+ */
+const timestampCache = new WeakMap<{ data: { date: string }[] }, number[]>()
+
+/**
+ * Get or create cached timestamp array for a metric series.
+ * Uses WeakMap keyed by series object reference for automatic cleanup.
+ */
+function getTimestamps(series: { data: { date: string }[] }): number[] {
+  let cached = timestampCache.get(series)
+  if (!cached) {
+    cached = series.data.map(d => new Date(d.date).getTime())
+    timestampCache.set(series, cached)
+  }
+  return cached
+}
+
+/**
+ * Binary search to find the interval containing targetTime.
+ * Returns index of the point just before or at targetTime.
+ *
+ * @returns Index where timestamps[index] <= targetTime < timestamps[index+1],
+ *          or -1 if before first point, or length-1 if at/after last point.
+ */
+function findInterval(timestamps: number[], targetTime: number): number {
+  if (targetTime <= timestamps[0]) return -1
+  if (targetTime >= timestamps[timestamps.length - 1]) return timestamps.length - 1
+
+  let lo = 0
+  let hi = timestamps.length - 1
+
+  while (lo < hi - 1) {
+    const mid = (lo + hi) >>> 1
+    if (timestamps[mid] <= targetTime) {
+      lo = mid
+    } else {
+      hi = mid
+    }
+  }
+
+  return lo
+}
+
+/**
+ * Optimized version of getMetricValueAtDate using binary search.
+ * O(log n) time complexity with O(1) amortized timestamp caching.
+ *
+ * @param series - Any metric series
+ * @param date - Target date
+ * @returns Interpolated value at the date
+ */
+export function getMetricValueAtDateFast(series: AIMetricSeries, date: Date): number {
+  const timestamps = getTimestamps(series)
+  const targetTime = date.getTime()
+  const points = series.data
+
+  const idx = findInterval(timestamps, targetTime)
+
+  // Before first point - return first value
+  if (idx === -1) return points[0].value
+
+  // At or after last point - return last value
+  if (idx === points.length - 1) return points[points.length - 1].value
+
+  // Interpolate between idx and idx+1
+  const startTime = timestamps[idx]
+  const endTime = timestamps[idx + 1]
+  const ratio = (targetTime - startTime) / (endTime - startTime)
+  return points[idx].value + ratio * (points[idx + 1].value - points[idx].value)
+}
+
 // Re-export MetricType for convenience
 export type { MetricType }
 
@@ -45,7 +122,10 @@ import {
 
 /**
  * Get actual FLOP value (not log) at a date from training compute series.
- * Uses existing getMetricValueAtDate for interpolation, then converts from log.
+ * Uses optimized getMetricValueAtDateFast for O(log n) interpolation,
+ * then converts from log.
+ *
+ * P1.3 fix: Uses binary search with cached timestamps instead of linear scan.
  *
  * @param series - Must be trainingComputeFrontier (other series not in FLOP)
  * @param date - Target date
@@ -57,7 +137,7 @@ import {
  * // Returns ~10^25.3 FLOP
  */
 export function getActualFlopAtDate(series: AIMetricSeries, date: Date): number {
-  const logValue = getMetricValueAtDate(series, date)
+  const logValue = getMetricValueAtDateFast(series, date)
   return logToFlop(logValue)
 }
 

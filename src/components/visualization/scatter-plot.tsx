@@ -171,6 +171,7 @@ export function ScatterPlotInner({
   const [selectedSummary, setSelectedSummary] = useState<ObituarySummary | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const clickedPointRef = useRef<HTMLElement | null>(null)
+  const modalCloseTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Keyboard accessibility state (AC-6.2.6)
   const [announcement, setAnnouncement] = useState('')
@@ -214,7 +215,9 @@ export function ScatterPlotInner({
   }, [data, innerWidth])
 
   const yScale = useMemo((): LogScale => {
-    const domain = getUnifiedDomain(enabledMetrics, dateRange[0], dateRange[1])
+    // Fallback to defaults if dateRange is null/undefined (shouldn't happen, but defensive)
+    const safeRange = dateRange ?? [2010, 2025]
+    const domain = getUnifiedDomain(enabledMetrics, safeRange[0], safeRange[1])
     return createLogYScale(innerHeight, domain)
   }, [innerHeight, enabledMetrics, dateRange])
 
@@ -312,8 +315,6 @@ export function ScatterPlotInner({
     })
   }, [pointPositions, viewState.translateX, width])
 
-  // Create refs for scatter points
-  const pointRefs = useRef<(SVGGElement | null)[]>([])
 
   // Motion values for smooth pan animation
   const translateXMotion = useMotionValue(viewState.translateX)
@@ -418,12 +419,17 @@ export function ScatterPlotInner({
     []
   )
 
-  // Handler for modal close
+  // Handler for modal close (P2.4 fix: store timeout ref for cleanup)
   const handleModalClose = useCallback(() => {
     setIsModalOpen(false)
+    // Clear any previous timeout
+    if (modalCloseTimeoutRef.current) {
+      clearTimeout(modalCloseTimeoutRef.current)
+    }
     // Delay clearing selectedSummary to allow exit animation
-    setTimeout(() => {
+    modalCloseTimeoutRef.current = setTimeout(() => {
       setSelectedSummary(null)
+      modalCloseTimeoutRef.current = null
     }, 300)
   }, [])
 
@@ -482,14 +488,11 @@ export function ScatterPlotInner({
       // First handle roving focus navigation
       rovingHandleKeyDown(event, index)
 
-      // Then handle activation keys
+      // Then handle activation keys (P0.1 fix: use event.currentTarget instead of unused pointRefs)
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault()
-        const element = pointRefs.current[index]
-        if (element) {
-          handlePointClick(obituary, element as unknown as HTMLElement)
-          setAnnouncement(`Opening details for ${obituary.source}`)
-        }
+        handlePointClick(obituary, event.currentTarget as HTMLElement)
+        setAnnouncement(`Opening details for ${obituary.source}`)
       }
 
       // Handle Escape to exit roving focus (AC-6.2.8)
@@ -522,11 +525,14 @@ export function ScatterPlotInner({
     [visibleData.length]
   )
 
-  // Cleanup tooltip timeout on unmount
+  // Cleanup timeouts on unmount (P2.4 fix: also clean modal timeout)
   useEffect(() => {
     return () => {
       if (tooltipTimeoutRef.current) {
         clearTimeout(tooltipTimeoutRef.current)
+      }
+      if (modalCloseTimeoutRef.current) {
+        clearTimeout(modalCloseTimeoutRef.current)
       }
     }
   }, [])

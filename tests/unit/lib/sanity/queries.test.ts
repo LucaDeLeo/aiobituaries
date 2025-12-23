@@ -176,7 +176,8 @@ describe('Sanity queries', () => {
       await getAllObituarySlugs()
 
       const fetchCall = vi.mocked(client.fetch).mock.calls[0][0] as string
-      expect(fetchCall).toContain('*[_type == "obituary"]')
+      // Query now includes defined() check to filter null slugs
+      expect(fetchCall).toContain('*[_type == "obituary" && defined(slug.current)]')
       expect(fetchCall).toContain('slug.current')
     })
   })

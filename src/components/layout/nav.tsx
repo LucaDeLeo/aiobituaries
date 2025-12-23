@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { NAV_LINKS } from '@/lib/constants/navigation'
 
 interface NavLinkProps {
   href: string
@@ -32,9 +33,11 @@ function NavLink({ href, children }: NavLinkProps) {
 export function Nav() {
   return (
     <>
-      <NavLink href="/">Home</NavLink>
-      <NavLink href="/skeptics">Skeptics</NavLink>
-      <NavLink href="/about">About</NavLink>
+      {NAV_LINKS.map((link) => (
+        <NavLink key={link.href} href={link.href}>
+          {link.label}
+        </NavLink>
+      ))}
     </>
   )
 }

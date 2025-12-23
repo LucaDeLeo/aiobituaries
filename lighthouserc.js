@@ -18,9 +18,10 @@ module.exports = {
   ci: {
     collect: {
       // Test both homepage and a sample obituary page
+      // P2.1 fix: Use valid mock slug instead of 404-prone 'sample-slug'
       url: [
         'http://localhost:3000/',
-        'http://localhost:3000/obituary/sample-slug'
+        'http://localhost:3000/obituary/agi-impossible-2020'
       ],
       // Run 3 times and take average to account for variance
       numberOfRuns: 3,

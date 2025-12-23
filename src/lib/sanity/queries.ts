@@ -103,20 +103,23 @@ export async function getObituaryBySlug(slug: string): Promise<Obituary | null> 
  * Fetch all obituary slugs for static generation.
  * Used by generateStaticParams() in dynamic route pages.
  * Uses ISR with 'obituaries' tag for cache revalidation.
+ * Filters out null/undefined slugs to prevent build errors.
  */
 export async function getAllObituarySlugs(): Promise<string[]> {
   if (shouldUseMock) {
-    return mockObituaries.map((o) => o.slug)
+    return mockObituaries.map((o) => o.slug).filter((s): s is string => !!s)
   }
 
   try {
-    return await client.fetch<string[]>(
-      `*[_type == "obituary"].slug.current`,
+    const slugs = await client.fetch<(string | null)[]>(
+      `*[_type == "obituary" && defined(slug.current)].slug.current`,
       {},
       { next: { tags: ['obituaries'] } }
     )
+    // Filter out any null/undefined slugs that slipped through
+    return slugs.filter((s): s is string => typeof s === 'string' && s.length > 0)
   } catch {
-    return mockObituaries.map((o) => o.slug)
+    return mockObituaries.map((o) => o.slug).filter((s): s is string => !!s)
   }
 }
 
@@ -399,19 +402,22 @@ export async function getSkepticBySlug(slug: string): Promise<SkepticWithClaims 
  * Fetch all skeptic slugs for static generation.
  * Used by generateStaticParams() in dynamic route pages.
  * Uses ISR with 'skeptics' tag for cache revalidation.
+ * Filters out null/undefined slugs to prevent build errors.
  */
 export async function getAllSkepticSlugs(): Promise<string[]> {
   if (shouldUseMock) {
-    return mockSkeptics.map((s) => s.slug)
+    return mockSkeptics.map((s) => s.slug).filter((s): s is string => !!s)
   }
 
   try {
-    return await client.fetch<string[]>(
-      `*[_type == "skeptic"].slug.current`,
+    const slugs = await client.fetch<(string | null)[]>(
+      `*[_type == "skeptic" && defined(slug.current)].slug.current`,
       {},
       { next: { tags: ['skeptics'] } }
     )
+    // Filter out any null/undefined slugs that slipped through
+    return slugs.filter((s): s is string => typeof s === 'string' && s.length > 0)
   } catch {
-    return mockSkeptics.map((s) => s.slug)
+    return mockSkeptics.map((s) => s.slug).filter((s): s is string => !!s)
   }
 }

@@ -2,7 +2,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import type { ContextMetadata } from '@/types/context'
 
 interface ObituaryContextProps {
-  context: ContextMetadata
+  context: ContextMetadata | null | undefined
 }
 
 /**
@@ -25,6 +25,18 @@ function formatCurrency(value: number): string {
  * Shows empty state when no context data exists.
  */
 export function ObituaryContext({ context }: ObituaryContextProps) {
+  // Handle null/undefined context from CMS
+  if (!context) {
+    return (
+      <section className="mt-12 pt-8 border-t border-[--border]">
+        <h2 className="text-lg font-semibold text-[--text-primary] mb-4">
+          Context at Time
+        </h2>
+        <p className="text-[--text-muted]">Context data unavailable</p>
+      </section>
+    )
+  }
+
   // Check if any context data exists
   const hasAnyData =
     context.nvdaPrice !== undefined ||

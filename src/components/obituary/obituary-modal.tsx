@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ExternalLink, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
@@ -51,13 +51,30 @@ export function ObituaryModal({
   // Check reduced motion preference
   const shouldReduceMotion = useReducedMotion()
 
+  // P2.4 fix: Store timeout ref for cleanup
+  const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (focusTimeoutRef.current) {
+        clearTimeout(focusTimeoutRef.current)
+      }
+    }
+  }, [])
+
   // Restore focus to trigger element when modal closes
   // Note: Radix Sheet handles focus trap and Escape key automatically
   const handleClose = () => {
     onClose()
+    // Clear any previous timeout
+    if (focusTimeoutRef.current) {
+      clearTimeout(focusTimeoutRef.current)
+    }
     // Small delay to allow modal exit animation
-    setTimeout(() => {
+    focusTimeoutRef.current = setTimeout(() => {
       triggerRef?.current?.focus()
+      focusTimeoutRef.current = null
     }, 250)
   }
 

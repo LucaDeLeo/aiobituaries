@@ -50,12 +50,15 @@ function arePropsEqual(
   // X-scale domain is Date objects - compare timestamps
   const prevXDomain = prev.xScale.domain()
   const nextXDomain = next.xScale.domain()
-  if (prevXDomain[0].getTime() !== nextXDomain[0].getTime()) return false
-  if (prevXDomain[1].getTime() !== nextXDomain[1].getTime()) return false
+  // Guard against null/undefined domains during initialization
+  if (!prevXDomain || !nextXDomain) return prev.xScale === next.xScale
+  if (prevXDomain[0]?.getTime() !== nextXDomain[0]?.getTime()) return false
+  if (prevXDomain[1]?.getTime() !== nextXDomain[1]?.getTime()) return false
 
   // Y-scale domain comparison
   const prevYDomain = prev.yScale.domain()
   const nextYDomain = next.yScale.domain()
+  if (!prevYDomain || !nextYDomain) return prev.yScale === next.yScale
   if (prevYDomain[0] !== nextYDomain[0]) return false
   if (prevYDomain[1] !== nextYDomain[1]) return false
 

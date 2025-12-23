@@ -14,6 +14,7 @@
 
 import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
+import { parseUTCDate, createUTCDate, getUTCMonthEnd } from '@/lib/utils/date'
 import type { ObituarySummary, Category } from '@/types/obituary'
 
 export interface DateRange {
@@ -55,7 +56,7 @@ export function DensityBar({
     const monthlyCounts: Record<string, number> = {}
     const yearlyCounts: Record<number, number> = {}
 
-    // Apply category filter and count
+    // Apply category filter and count (P1.2 fix: use UTC date parsing)
     obituaries.forEach((ob) => {
       if (
         activeCategories.length > 0 &&
@@ -64,22 +65,22 @@ export function DensityBar({
         return
       }
 
-      const date = new Date(ob.date)
-      const year = date.getFullYear()
-      const monthKey = `${year}-${date.getMonth()}`
+      const date = parseUTCDate(ob.date)
+      const year = date.getUTCFullYear()
+      const monthKey = `${year}-${date.getUTCMonth()}`
 
       monthlyCounts[monthKey] = (monthlyCounts[monthKey] || 0) + 1
       yearlyCounts[year] = (yearlyCounts[year] || 0) + 1
     })
 
-    // Get year range
-    const dates = obituaries.map((ob) => new Date(ob.date))
+    // Get year range (P1.2 fix: use UTC methods)
+    const dates = obituaries.map((ob) => parseUTCDate(ob.date))
     if (dates.length === 0) {
       return { density: [], years: [], maxCount: 1 }
     }
 
-    const minYear = Math.min(...dates.map((d) => d.getFullYear()))
-    const maxYear = Math.max(...dates.map((d) => d.getFullYear()))
+    const minYear = Math.min(...dates.map((d) => d.getUTCFullYear()))
+    const maxYear = Math.max(...dates.map((d) => d.getUTCFullYear()))
     const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i)
 
     // Build density array with adaptive granularity
@@ -117,44 +118,45 @@ export function DensityBar({
     return { density, years, maxCount }
   }, [obituaries, activeCategories])
 
-  // Check if a bar is in the active period
+  // Check if a bar is in the active period (P1.2 fix: use UTC dates)
   const isBarActive = (item: DensityItem): boolean => {
     if (!activePeriod) return false
     if (item.isYearly) {
       // For yearly bars, check if any part of the year overlaps
-      const yearStart = new Date(item.year, 0, 1)
-      const yearEnd = new Date(item.year, 11, 31)
+      const yearStart = createUTCDate(item.year, 0, 1)
+      const yearEnd = createUTCDate(item.year, 11, 31)
       return yearStart <= activePeriod.end && yearEnd >= activePeriod.start
     } else {
-      const barDate = new Date(item.year, item.monthNum!, 15)
+      const barDate = createUTCDate(item.year, item.monthNum!, 15)
       return barDate >= activePeriod.start && barDate <= activePeriod.end
     }
   }
 
-  // Get date range for a bar click
+  // Get date range for a bar click (P1.2 fix: use UTC dates)
   const getBarDateRange = (item: DensityItem): DateRange => {
     if (item.isYearly) {
       return {
-        start: new Date(item.year, 0, 1),
-        end: new Date(item.year, 11, 31),
+        start: createUTCDate(item.year, 0, 1),
+        end: createUTCDate(item.year, 11, 31),
       }
     } else {
       return {
-        start: new Date(item.year, item.monthNum!, 1),
-        end: new Date(item.year, item.monthNum! + 1, 0), // Last day of month
+        start: createUTCDate(item.year, item.monthNum!, 1),
+        end: getUTCMonthEnd(item.year, item.monthNum!),
       }
     }
   }
 
-  // Get label for accessibility
+  // Get label for accessibility (P1.2 fix: use UTC date)
   const getBarLabel = (item: DensityItem): string => {
     if (item.isYearly) {
       return `${item.count} obituaries in ${item.year}. Tap to filter.`
     } else {
-      const monthDate = new Date(item.year, item.monthNum!)
+      const monthDate = createUTCDate(item.year, item.monthNum!)
       const monthName = monthDate.toLocaleDateString('en-US', {
         month: 'short',
         year: 'numeric',
+        timeZone: 'UTC',
       })
       return `${item.count} obituaries in ${monthName}. Tap to filter.`
     }

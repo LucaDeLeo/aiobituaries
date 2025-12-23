@@ -14,15 +14,11 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
+import { NAV_LINKS } from '@/lib/constants/navigation'
 
 export function MobileNav() {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
-
-  const links = [
-    { href: '/', label: 'Home' },
-    { href: '/about', label: 'About' },
-  ]
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -39,7 +35,7 @@ export function MobileNav() {
           </VisuallyHidden.Root>
         </div>
         <nav className="flex flex-col gap-4 mt-4 px-4">
-          {links.map((link) => (
+          {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}

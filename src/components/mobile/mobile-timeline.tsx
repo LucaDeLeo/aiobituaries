@@ -13,6 +13,7 @@
 import { useState, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import type { DateRange } from './density-bar'
+import { parseUTCDate } from '@/lib/utils/date'
 
 // Dynamic import with ssr: false prevents hydration mismatch
 // DensityBar uses adaptive granularity that must be consistent client-side
@@ -50,9 +51,9 @@ export function MobileTimeline({ obituaries }: MobileTimelineProps) {
         return false
       }
 
-      // Date filter from density bar tap
+      // Date filter from density bar tap (P1.2 fix: use UTC date parsing)
       if (dateFilter) {
-        const obDate = new Date(ob.date)
+        const obDate = parseUTCDate(ob.date)
         if (obDate < dateFilter.start || obDate > dateFilter.end) {
           return false
         }
