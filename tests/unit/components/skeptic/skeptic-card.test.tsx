@@ -71,13 +71,13 @@ describe('SkepticCard utilities', () => {
     })
 
     it('uses plural "claims" for 0', () => {
-      const count = 0
+      const count: number = 0
       const text = `${count} claim${count !== 1 ? 's' : ''}`
       expect(text).toBe('0 claims')
     })
 
     it('uses plural "claims" for multiple', () => {
-      const count = 5
+      const count: number = 5
       const text = `${count} claim${count !== 1 ? 's' : ''}`
       expect(text).toBe('5 claims')
     })
