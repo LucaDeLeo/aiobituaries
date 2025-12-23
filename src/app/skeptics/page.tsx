@@ -3,11 +3,11 @@ import { getSkeptics } from '@/lib/sanity/queries'
 import { SkepticCard } from '@/components/skeptic/skeptic-card'
 
 export const metadata: Metadata = {
-  title: 'Notable AI Skeptics | AI Obituaries',
+  title: 'Notable AI Skeptics',
   description:
     'Track record of notable AI skeptics and their predictions about AI limitations over time.',
   openGraph: {
-    title: 'Notable AI Skeptics | AI Obituaries',
+    title: 'Notable AI Skeptics',
     description:
       'Track record of notable AI skeptics and their predictions about AI limitations.',
     type: 'website',

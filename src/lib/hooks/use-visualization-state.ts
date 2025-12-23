@@ -10,15 +10,17 @@
  * URL Format:
  * - ?metrics=compute,mmlu - enabled metric trend lines
  * - ?cat=market,agi - selected categories (empty = all)
+ * - ?q=search+term - search query filter
  *
  * Example full URL:
- * /?metrics=compute,mmlu&cat=market,agi
+ * /?metrics=compute,mmlu&cat=market,agi&q=climate
  */
 
 import {
   useQueryState,
   parseAsArrayOf,
   parseAsStringLiteral,
+  parseAsString,
 } from 'nuqs'
 import {
   useCallback,
@@ -48,6 +50,12 @@ const categoryParser = parseAsArrayOf(
 ).withDefault([])
 
 /**
+ * Parser for search query URL parameter.
+ * Empty string is treated as null (no search).
+ */
+const searchParser = parseAsString.withDefault('')
+
+/**
  * Visualization state interface
  */
 export interface VisualizationState {
@@ -60,6 +68,11 @@ export interface VisualizationState {
   categories: Category[]
   /** Set selected categories */
   setCategories: (categories: Category[]) => void
+
+  /** Current search query (empty = no search filter) */
+  searchQuery: string
+  /** Set search query */
+  setSearchQuery: (query: string) => void
 
   /** True during URL transition */
   isPending: boolean
@@ -89,6 +102,9 @@ export function useVisualizationState(): VisualizationState {
   // Category state
   const [categories, setCategoriesInternal] = useQueryState('cat', categoryParser)
 
+  // Search query state
+  const [searchQuery, setSearchQueryInternal] = useQueryState('q', searchParser)
+
   // Metrics setter - empty array is valid (no background metrics shown)
   const setMetrics = useCallback(
     (newMetrics: MetricType[]) => {
@@ -110,11 +126,23 @@ export function useVisualizationState(): VisualizationState {
     [setCategoriesInternal]
   )
 
+  // Search query setter - empty string clears URL param
+  const setSearchQuery = useCallback(
+    (query: string) => {
+      startTransition(() => {
+        setSearchQueryInternal(query.trim() || null)
+      })
+    },
+    [setSearchQueryInternal]
+  )
+
   return {
     metrics: metrics as MetricType[],
     setMetrics,
     categories: categories as Category[],
     setCategories,
+    searchQuery: searchQuery ?? '',
+    setSearchQuery,
     isPending,
   }
 }

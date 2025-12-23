@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import type { MetricType } from '@/types/metrics'
 import { cn } from '@/lib/utils'
 import { allMetrics } from '@/data/ai-metrics.generated'
@@ -58,6 +59,14 @@ export function MetricsToggle({
   onMetricsChange,
   className,
 }: MetricsToggleProps) {
+  // Track mounted state to prevent hydration mismatch
+  // enabledMetrics comes from URL state which may differ between SSR and client
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const handleToggle = (metricId: MetricType) => {
     const isEnabled = enabledMetrics.includes(metricId)
 
@@ -73,7 +82,9 @@ export function MetricsToggle({
   return (
     <div className={cn('flex flex-col gap-3', className)}>
       {METRICS.map((metric) => {
-        const isChecked = enabledMetrics.includes(metric.id)
+        // Use false during SSR to ensure consistent hydration
+        // After mount, use actual state from URL params
+        const isChecked = mounted && enabledMetrics.includes(metric.id)
         const checkboxId = `metric-${metric.id}`
 
         return (

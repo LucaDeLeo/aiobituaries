@@ -54,20 +54,49 @@ export function CategoryCheckboxes({
 
   return (
     <div className={cn('flex flex-col gap-3', className)}>
-      {/* Show All / Clear Filters button */}
-      <button
-        type="button"
-        onClick={handleShowAll}
-        className={cn(
-          'text-sm text-left px-3 py-2 rounded-md transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          showingAll
-            ? 'text-foreground font-medium bg-muted/50'
-            : 'text-[var(--accent-primary)] font-medium bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20'
-        )}
+      {/* All categories checkbox - consistent pattern with category checkboxes */}
+      <label
+        htmlFor="category-all"
+        className="flex items-center gap-3 cursor-pointer group"
       >
-        {showingAll ? '✓ Showing all categories' : '✕ Clear filters'}
-      </button>
+        <div className="relative flex items-center justify-center">
+          <input
+            type="checkbox"
+            id="category-all"
+            checked={showingAll}
+            onChange={handleShowAll}
+            className="peer sr-only"
+          />
+          {/* Visual checkbox */}
+          <div
+            className={cn(
+              'h-4 w-4 rounded border-2 transition-colors',
+              'peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2',
+              showingAll
+                ? 'border-foreground bg-foreground'
+                : 'border-muted-foreground/50 group-hover:border-muted-foreground bg-transparent'
+            )}
+          >
+            {/* Checkmark */}
+            {showingAll && (
+              <svg
+                className="h-full w-full text-background"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 8l3 3 5-6" />
+              </svg>
+            )}
+          </div>
+        </div>
+        <span className="text-sm font-medium">All categories</span>
+      </label>
+
+      <div className="h-px bg-border" aria-hidden="true" />
 
       {/* Category checkboxes */}
       {CATEGORY_ORDER.map((categoryId) => {

@@ -6,7 +6,9 @@ import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { CollapsibleSection } from './collapsible-section'
 import { MetricsToggle } from './metrics-toggle'
 import { CategoryCheckboxes } from './category-checkboxes'
+import { SearchInput } from './search-input'
 import { cn } from '@/lib/utils'
+import { CATEGORY_ORDER, CATEGORIES } from '@/lib/constants/categories'
 
 // Re-export for consumers that import from control-panel
 export type { MetricType }
@@ -25,6 +27,10 @@ export interface ControlPanelProps {
   selectedCategories: Category[]
   /** Callback when category selection changes */
   onCategoriesChange: (categories: Category[]) => void
+  /** Current search query */
+  searchQuery: string
+  /** Callback when search query changes */
+  onSearchChange: (query: string) => void
   /** Display options (trend annotations, clustering) */
   displayOptions: DisplayOptions
   /** Callback when display options change */
@@ -48,18 +54,52 @@ export function ControlPanel({
   onMetricsChange,
   selectedCategories,
   onCategoriesChange,
+  searchQuery,
+  onSearchChange,
   stats,
   variant = 'sidebar',
   isChartControlsHidden = false,
 }: ControlPanelProps) {
   return (
     <div className={cn('flex flex-col h-full', variantStyles[variant])}>
-      {/* Header with stats */}
-      <div className="p-4 border-b border-border">
-        <h2 className="font-semibold">Controls</h2>
-        <p className="text-sm text-muted-foreground">
-          Showing {stats.visible} of {stats.total}
+      {/* Header with stats and search */}
+      <div className="p-4 border-b border-border space-y-3">
+        <div>
+          <h2 className="font-semibold">Controls</h2>
+          <p className="text-sm text-muted-foreground">
+            Showing {stats.visible} of {stats.total}
+          </p>
+        </div>
+        <SearchInput
+          value={searchQuery}
+          onChange={onSearchChange}
+          placeholder="Search claims, sources..."
+        />
+      </div>
+
+      {/* Chart explanation - helps users understand the visualization */}
+      <div className="px-4 py-3 bg-accent/5 border-b border-border">
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          <span className="font-medium text-foreground">How to read this chart:</span>{' '}
+          Each dot represents a skeptical AI claim. Vertical position shows AI capability
+          level (training compute) when the claim was made—higher means more advanced AI existed.
         </p>
+        {/* Compact category legend */}
+        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 pt-2 border-t border-border/50">
+          {CATEGORY_ORDER.map((categoryId) => {
+            const category = CATEGORIES[categoryId]
+            return (
+              <div key={categoryId} className="flex items-center gap-1.5">
+                <span
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: category.color }}
+                  aria-hidden="true"
+                />
+                <span className="text-[10px] text-muted-foreground">{category.label}</span>
+              </div>
+            )
+          })}
+        </div>
       </div>
 
       {/* Collapsible sections */}

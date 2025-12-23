@@ -43,6 +43,7 @@ export function ProfileLinks({ profiles, className }: ProfileLinksProps) {
             href={profile.url}
             target="_blank"
             rel="noopener noreferrer"
+            title={config.label}
             className={cn(
               'inline-flex items-center gap-1 px-2 py-1 rounded-md',
               'text-xs font-medium',
@@ -81,6 +82,7 @@ export function ProfileLinksLarge({ profiles, className }: ProfileLinksProps) {
             href={profile.url}
             target="_blank"
             rel="noopener noreferrer"
+            title={`Visit ${config.label}`}
             className={cn(
               'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg',
               'text-sm font-medium',

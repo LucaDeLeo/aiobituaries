@@ -32,6 +32,8 @@ export function ControlPanelWrapper({
     setMetrics,
     categories,
     setCategories,
+    searchQuery,
+    setSearchQuery,
   } = useVisualizationState()
 
   const { mode, isHydrated } = useViewModeStorage()
@@ -52,6 +54,8 @@ export function ControlPanelWrapper({
       onMetricsChange={setMetrics}
       selectedCategories={categories}
       onCategoriesChange={setCategories}
+      searchQuery={searchQuery}
+      onSearchChange={setSearchQuery}
       displayOptions={displayOptions}
       onDisplayOptionsChange={handleDisplayOptionsChange}
       stats={{

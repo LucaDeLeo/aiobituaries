@@ -25,8 +25,14 @@ import type { TableSortConfig } from '@/types/accessibility'
 import { cn } from '@/lib/utils'
 import { getCategoryColor, getCategoryLabel } from '@/lib/constants/categories'
 import { VisuallyHidden } from '@/components/accessibility/visually-hidden'
-import { TooltipProvider } from '@/components/ui/tooltip'
+import {
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui/tooltip'
 import { AIContextCell } from './ai-context-cell'
+import { Info } from 'lucide-react'
 
 export interface ObituaryTableProps {
   /** Obituary data to display */
@@ -218,7 +224,20 @@ export function ObituaryTable({
               scope="col"
               className="py-3 px-4 text-[var(--text-secondary)] font-medium"
             >
-              AI Level
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center gap-1.5 cursor-help">
+                    AI Level
+                    <Info className="w-3.5 h-3.5 text-[var(--text-muted)]" aria-hidden="true" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-[240px]">
+                  <p className="text-xs">
+                    Training compute (FLOP) at time of publication. Higher values indicate
+                    more advanced AI capabilities existed when the claim was made.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             </th>
             <SortableHeader
               column="category"

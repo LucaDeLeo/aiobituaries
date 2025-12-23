@@ -63,17 +63,35 @@ export interface HomeClientProps {
   enabledMetrics?: MetricType[]
   /** Active category filters from parent (hero variant only) */
   activeCategories?: Category[]
+  /** Search query for filtering obituaries (hero variant only) */
+  searchQuery?: string
 }
 
 /**
  * Client-side portion of the homepage.
  * Manages filter state and passes it to visualization components.
  */
+/**
+ * Helper function to check if an obituary matches a search query.
+ * Searches in claim text and source name (case-insensitive).
+ */
+function matchesSearch(obit: ObituarySummary, query: string): boolean {
+  if (!query) return true
+  const lowerQuery = query.toLowerCase()
+  return (
+    obit.claim.toLowerCase().includes(lowerQuery) ||
+    obit.source.toLowerCase().includes(lowerQuery) ||
+    obit.categories?.some(cat => cat.toLowerCase().includes(lowerQuery)) ||
+    false
+  )
+}
+
 export function HomeClient({
   obituaries,
   variant = 'default',
   enabledMetrics,
   activeCategories: externalCategories,
+  searchQuery: externalSearchQuery,
 }: HomeClientProps) {
   // For default variant, use internal useFilters (backward compat)
   // For hero variant, use external state if provided
@@ -86,13 +104,22 @@ export function HomeClient({
     ? externalCategories
     : internalCategories
 
+  // Determine search query based on variant
+  const searchQuery = variant === 'hero' ? (externalSearchQuery ?? '') : ''
+
+  // Filter obituaries based on search query (for hero variant)
+  const filteredObituaries = useMemo(() => {
+    if (!searchQuery) return obituaries
+    return obituaries.filter(obit => matchesSearch(obit, searchQuery))
+  }, [obituaries, searchQuery])
+
   // Calculate filtered count for accessibility announcements
   const filteredCount = useMemo(() => {
-    if (categories.length === 0) return obituaries.length
-    return obituaries.filter((obit) =>
+    if (categories.length === 0) return filteredObituaries.length
+    return filteredObituaries.filter((obit) =>
       obit.categories?.some((cat) => categories.includes(cat))
     ).length
-  }, [obituaries, categories])
+  }, [filteredObituaries, categories])
 
   // Handle view mode change with screen reader announcement
   const handleModeChange = (newMode: typeof mode) => {
@@ -117,14 +144,14 @@ export function HomeClient({
         <div className="flex-1 relative">
           {!isHydrated || mode === 'visualization' ? (
             <ScatterPlot
-              data={obituaries}
+              data={filteredObituaries}
               activeCategories={categories}
               enabledMetrics={enabledMetrics}
               fillContainer
             />
           ) : (
             <ObituaryTable
-              obituaries={obituaries}
+              obituaries={filteredObituaries}
               activeCategories={categories}
             />
           )}

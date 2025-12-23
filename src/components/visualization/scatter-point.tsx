@@ -11,6 +11,8 @@ export interface ScatterPointProps {
   isFiltered?: boolean
   isHovered?: boolean
   isClustered?: boolean
+  /** Whether this point is selected (modal open) */
+  isSelected?: boolean
   onMouseEnter?: () => void
   onMouseLeave?: () => void
   onClick?: (element: HTMLElement) => void
@@ -45,6 +47,7 @@ function arePropsEqual(prev: ScatterPointProps, next: ScatterPointProps): boolea
     prev.isFiltered === next.isFiltered &&
     prev.isHovered === next.isHovered &&
     prev.isClustered === next.isClustered &&
+    prev.isSelected === next.isSelected &&
     prev.color === next.color &&
     prev.tabIndex === next.tabIndex &&
     prev.touchRadius === next.touchRadius
@@ -61,6 +64,7 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
       isFiltered = true,
       isHovered = false,
       isClustered = false,
+      isSelected = false,
       onMouseEnter,
       onMouseLeave,
       onClick,
@@ -85,12 +89,12 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
     // Touch target size - use prop from parent (avoids N resize listeners per P0.1)
     const touchRadius = touchRadiusProp ?? POINT_RADIUS
 
-    const opacity = isFiltered ? (isHovered || isFocused ? 1 : 0.85) : 0.2
+    const opacity = isFiltered ? (isHovered || isFocused || isSelected ? 1 : 0.85) : 0.2
 
-    // Use larger radius when focused (AC-6.2.5: 1.25x scale)
-    const currentRadius = isFocused ? FOCUSED_POINT_RADIUS : POINT_RADIUS
-    // Scale up on hover
-    const displayRadius = isHovered ? currentRadius * 1.3 : currentRadius
+    // Use larger radius when focused or selected (AC-6.2.5: 1.25x scale)
+    const currentRadius = isFocused || isSelected ? FOCUSED_POINT_RADIUS : POINT_RADIUS
+    // Scale up on hover or selection
+    const displayRadius = isHovered || isSelected ? currentRadius * 1.3 : currentRadius
 
     const handleClick = () => {
       if (circleRef.current && onClick) {
@@ -131,8 +135,36 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
           {`${obituary.claim.slice(0, 150)}${obituary.claim.length > 150 ? '...' : ''}. Category: ${obituary.categories?.join(', ') ?? 'Unknown'}`}
         </desc>
 
+        {/* Selection ring - prominent indicator when modal is open */}
+        {isSelected && (
+          <>
+            {/* Outer pulse ring */}
+            <circle
+              cx={x}
+              cy={y}
+              r={FOCUS_RING_RADIUS + 6}
+              fill="none"
+              stroke="var(--accent-primary)"
+              strokeWidth={2}
+              opacity={0.3}
+              className={shouldReduceMotion ? '' : 'animate-pulse'}
+              data-testid="scatter-point-selection-pulse"
+            />
+            {/* Inner solid ring */}
+            <circle
+              cx={x}
+              cy={y}
+              r={FOCUS_RING_RADIUS + 2}
+              fill="none"
+              stroke="var(--accent-primary)"
+              strokeWidth={3}
+              data-testid="scatter-point-selection-ring"
+            />
+          </>
+        )}
+
         {/* Focus ring - visible when focused (AC-6.2.5: 2px gold ring) */}
-        {isFocused && (
+        {isFocused && !isSelected && (
           <circle
             cx={x}
             cy={y}

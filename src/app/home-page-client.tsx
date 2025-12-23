@@ -38,21 +38,39 @@ interface HomePageClientProps {
  * Client wrapper for desktop homepage that coordinates state between
  * ControlPanel and visualization. Single source of truth for URL state.
  */
+/**
+ * Helper function to check if an obituary matches a search query.
+ * Searches in claim text and source name (case-insensitive).
+ */
+function matchesSearch(obit: ObituarySummary, query: string): boolean {
+  if (!query) return true
+  const lowerQuery = query.toLowerCase()
+  return (
+    obit.claim.toLowerCase().includes(lowerQuery) ||
+    obit.source.toLowerCase().includes(lowerQuery) ||
+    obit.categories?.some(cat => cat.toLowerCase().includes(lowerQuery)) ||
+    false
+  )
+}
+
 export function HomePageClient({ obituaries }: HomePageClientProps) {
   const {
     metrics,
     categories,
+    searchQuery,
   } = useVisualizationState()
 
-  // Calculate visible count based on category filter
-  // Only categories affect visible count (not metrics) because:
-  // - Metrics toggle background lines, not points
+  // Calculate visible count based on category and search filters
   const visibleCount = useMemo(() => {
-    if (categories.length === 0) return obituaries.length
-    return obituaries.filter((obit) =>
-      obit.categories?.some((cat) => categories.includes(cat))
-    ).length
-  }, [obituaries, categories])
+    return obituaries.filter((obit) => {
+      // Category filter (empty = all)
+      const matchesCategory = categories.length === 0 ||
+        obit.categories?.some((cat) => categories.includes(cat))
+      // Search filter (empty = all)
+      const matchesSearchQuery = matchesSearch(obit, searchQuery)
+      return matchesCategory && matchesSearchQuery
+    }).length
+  }, [obituaries, categories, searchQuery])
 
   return (
     <>
@@ -63,6 +81,7 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
           variant="hero"
           enabledMetrics={metrics}
           activeCategories={categories}
+          searchQuery={searchQuery}
         />
       </section>
 

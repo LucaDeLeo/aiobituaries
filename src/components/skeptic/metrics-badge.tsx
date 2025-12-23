@@ -10,7 +10,7 @@ interface MetricsBadgeProps {
 
 /**
  * Displays AI metrics (MMLU, Compute, ECI) in a badge format.
- * Shows "--" for unavailable metrics (before their start date).
+ * Shows "N/A" for unavailable metrics (before their measurement start date).
  *
  * Used on skeptic pages to show what AI capabilities looked like
  * at the time each claim was made.
@@ -26,7 +26,7 @@ export function MetricsBadge({ metrics, className, compact = false }: MetricsBad
     >
       <MetricRow
         label="MMLU"
-        value={metrics.mmlu !== null ? `${metrics.mmlu}%` : '--'}
+        value={metrics.mmlu !== null ? `${metrics.mmlu}%` : 'N/A'}
         compact={compact}
       />
       <MetricRow
@@ -36,7 +36,7 @@ export function MetricsBadge({ metrics, className, compact = false }: MetricsBad
       />
       <MetricRow
         label="ECI"
-        value={metrics.eci !== null ? metrics.eci.toString() : '--'}
+        value={metrics.eci !== null ? metrics.eci.toString() : 'N/A'}
         compact={compact}
       />
     </div>
@@ -82,9 +82,9 @@ export function CurrentMetricsFooter({ metrics, className }: CurrentMetricsFoote
     >
       <p className="text-sm text-[var(--text-muted)] mb-2">Today&apos;s AI Metrics</p>
       <p className="font-mono text-sm text-[var(--text-secondary)]">
-        MMLU {metrics.mmlu !== null ? `${metrics.mmlu}%` : '--'} · Compute{' '}
+        MMLU {metrics.mmlu !== null ? `${metrics.mmlu}%` : 'N/A'} · Compute{' '}
         {metrics.computeFormatted} · ECI{' '}
-        {metrics.eci !== null ? metrics.eci : '--'}
+        {metrics.eci !== null ? metrics.eci : 'N/A'}
       </p>
     </div>
   )

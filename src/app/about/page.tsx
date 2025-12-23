@@ -36,7 +36,7 @@ export default function AboutPage() {
             >
               Epoch AI
             </a>
-            :
+            , including:
           </p>
           <ul className="list-disc pl-6 mt-4 space-y-2">
             <li>

@@ -1,4 +1,6 @@
-import Link from 'next/link'
+'use client'
+
+import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import type { SkepticSummary } from '@/types/skeptic'
 import { ProfileLinks } from './profile-links'
@@ -20,14 +22,31 @@ function truncateBio(bio: string, maxLength = 120): string {
 /**
  * Skeptic card component for the index grid.
  * Displays name, claim count, truncated bio, and profile links.
- * Links to the individual skeptic detail page.
+ * Navigates to the individual skeptic detail page on click.
+ * Uses div + onClick instead of Link to avoid nested <a> tags with ProfileLinks.
  */
 export function SkepticCard({ skeptic }: SkepticCardProps) {
+  const router = useRouter()
+
+  const handleCardClick = () => {
+    router.push(`/skeptics/${skeptic.slug}`)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      router.push(`/skeptics/${skeptic.slug}`)
+    }
+  }
+
   return (
-    <Link
-      href={`/skeptics/${skeptic.slug}`}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
       className={cn(
-        'group relative block p-6 rounded-xl',
+        'group relative block p-6 rounded-xl cursor-pointer',
         'bg-[var(--bg-card)] border border-[var(--border)]',
         'shadow-lg shadow-black/20',
         'hover:-translate-y-1 hover:shadow-xl hover:shadow-[var(--accent-primary)]/10',
@@ -60,6 +79,6 @@ export function SkepticCard({ skeptic }: SkepticCardProps) {
         {/* Profile links */}
         <ProfileLinks profiles={skeptic.profiles} />
       </div>
-    </Link>
+    </div>
   )
 }

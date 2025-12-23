@@ -881,6 +881,7 @@ export function ScatterPlotInner({
                     isFiltered={isPointFiltered(obituary)}
                     isClustered={isClustered}
                     isHovered={hoveredId === obituary._id}
+                    isSelected={isModalOpen && selectedSummary?._id === obituary._id}
                     onMouseEnter={() => handlePointMouseEnter(obituary, xPos, yPos)}
                     onMouseLeave={handlePointMouseLeave}
                     onClick={(element) => handlePointClick(obituary, element)}
