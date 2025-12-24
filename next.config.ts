@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  reactCompiler: true,
+
   // Performance optimization: Enable package import optimization for tree-shaking (AC-6.8.7)
   experimental: {
     optimizePackageImports: [

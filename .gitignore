@@ -47,3 +47,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 Benchmark Data/
+
+# BMAD output artifacts
+_bmad-output/
+
+# Benchmark data
+benchmark_data/
