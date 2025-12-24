@@ -28,9 +28,19 @@ vi.mock('@/lib/hooks/use-visualization-state', () => ({
     setCategories: vi.fn(),
     dateRange: [2010, 2025] as [number, number],
     setDateRange: vi.fn(),
+    searchQuery: '',
+    setSearchQuery: vi.fn(),
+    selectedSkeptic: null,
+    setSelectedSkeptic: vi.fn(),
     isPending: false,
   })),
 }))
+
+// Mock obituaries data
+const mockObituaries = [
+  { slug: 'test-1', date: '2024-01-01', claim: 'Test claim 1', categories: ['market'] },
+  { slug: 'test-2', date: '2024-01-02', claim: 'Test claim 2', categories: ['capability'] },
+]
 
 describe('ControlSheet module exports', () => {
   it('exports ControlSheet component', async () => {
@@ -52,13 +62,13 @@ describe('ControlSheet rendering', () => {
 
   it('renders the FAB trigger button', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} />)
     expect(screen.getByRole('button', { name: 'Open controls' })).toBeInTheDocument()
   })
 
   it('does not render sheet content when closed', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} />)
     // Sheet title is sr-only but exists in the DOM when open
     expect(screen.queryByText('Visualization Controls')).not.toBeInTheDocument()
   })
@@ -71,7 +81,7 @@ describe('ControlSheet tablet mode (side="right")', () => {
 
   it('opens sheet from right on trigger click', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} />)
 
     const trigger = screen.getByRole('button', { name: 'Open controls' })
     fireEvent.click(trigger)
@@ -83,7 +93,7 @@ describe('ControlSheet tablet mode (side="right")', () => {
 
   it('renders sheet with w-[320px] width class', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} />)
 
     const trigger = screen.getByRole('button', { name: 'Open controls' })
     fireEvent.click(trigger)
@@ -97,7 +107,7 @@ describe('ControlSheet tablet mode (side="right")', () => {
 
   it('does not render drag handle in tablet mode', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} />)
 
     const trigger = screen.getByRole('button', { name: 'Open controls' })
     fireEvent.click(trigger)
@@ -121,7 +131,7 @@ describe('ControlSheet mobile mode (side="bottom")', () => {
 
   it('renders sheet with h-[80vh] height class', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} />)
 
     const trigger = screen.getByRole('button', { name: 'Open controls' })
     fireEvent.click(trigger)
@@ -135,7 +145,7 @@ describe('ControlSheet mobile mode (side="bottom")', () => {
 
   it('renders sheet with rounded-t-2xl for rounded top corners', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} />)
 
     const trigger = screen.getByRole('button', { name: 'Open controls' })
     fireEvent.click(trigger)
@@ -149,7 +159,7 @@ describe('ControlSheet mobile mode (side="bottom")', () => {
 
   it('renders sheet with safe area bottom padding for notched devices', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} />)
 
     const trigger = screen.getByRole('button', { name: 'Open controls' })
     fireEvent.click(trigger)
@@ -163,7 +173,7 @@ describe('ControlSheet mobile mode (side="bottom")', () => {
 
   it('renders drag handle indicator in mobile mode', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} />)
 
     const trigger = screen.getByRole('button', { name: 'Open controls' })
     fireEvent.click(trigger)
@@ -183,7 +193,7 @@ describe('ControlSheet open/close behavior', () => {
 
   it('opens when trigger is clicked', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} />)
 
     const trigger = screen.getByRole('button', { name: 'Open controls' })
     fireEvent.click(trigger)
@@ -195,7 +205,7 @@ describe('ControlSheet open/close behavior', () => {
 
   it('closes when close button is clicked', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} />)
 
     // Open the sheet
     const trigger = screen.getByRole('button', { name: 'Open controls' })
@@ -216,7 +226,7 @@ describe('ControlSheet open/close behavior', () => {
 
   it('closes when Escape key is pressed', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} />)
 
     // Open the sheet
     const trigger = screen.getByRole('button', { name: 'Open controls' })
@@ -242,7 +252,7 @@ describe('ControlSheet controlled mode', () => {
 
   it('accepts controlled open state', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} open={true} onOpenChange={() => {}} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} open={true} onOpenChange={() => {}} />)
 
     await waitFor(() => {
       expect(screen.getByText('Visualization Controls')).toBeInTheDocument()
@@ -252,7 +262,7 @@ describe('ControlSheet controlled mode', () => {
   it('calls onOpenChange when state changes', async () => {
     const { ControlSheet } = await import('@/components/controls')
     const handleOpenChange = vi.fn()
-    render(<ControlSheet totalCount={100} open={false} onOpenChange={handleOpenChange} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} open={false} onOpenChange={handleOpenChange} />)
 
     const trigger = screen.getByRole('button', { name: 'Open controls' })
     fireEvent.click(trigger)
@@ -262,7 +272,7 @@ describe('ControlSheet controlled mode', () => {
 
   it('stays closed when open prop is false', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} open={false} onOpenChange={() => {}} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} open={false} onOpenChange={() => {}} />)
 
     expect(screen.queryByText('Visualization Controls')).not.toBeInTheDocument()
   })
@@ -275,7 +285,7 @@ describe('ControlSheet contains ControlPanelWrapper', () => {
 
   it('renders Controls heading when open', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} />)
 
     const trigger = screen.getByRole('button', { name: 'Open controls' })
     fireEvent.click(trigger)
@@ -287,7 +297,7 @@ describe('ControlSheet contains ControlPanelWrapper', () => {
 
   it('passes totalCount to ControlPanelWrapper', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={42} />)
+    render(<ControlSheet totalCount={42} obituaries={mockObituaries} />)
 
     const trigger = screen.getByRole('button', { name: 'Open controls' })
     fireEvent.click(trigger)
@@ -306,7 +316,7 @@ describe('ControlSheet accessibility', () => {
 
   it('has accessible title for screen readers', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} />)
 
     const trigger = screen.getByRole('button', { name: 'Open controls' })
     fireEvent.click(trigger)
@@ -319,7 +329,7 @@ describe('ControlSheet accessibility', () => {
 
   it('has accessible close button', async () => {
     const { ControlSheet } = await import('@/components/controls')
-    render(<ControlSheet totalCount={100} />)
+    render(<ControlSheet totalCount={100} obituaries={mockObituaries} />)
 
     const trigger = screen.getByRole('button', { name: 'Open controls' })
     fireEvent.click(trigger)

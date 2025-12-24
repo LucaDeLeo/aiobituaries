@@ -85,6 +85,8 @@ export interface ObituarySummary {
   date: string
   /** Array of claim categories */
   categories: Category[]
+  /** Reference to linked skeptic profile (optional - may be null) */
+  skeptic?: SkepticRef | null
   /** Claim status - how has the prediction aged? (optional, defaults to 'pending') */
   status?: ClaimStatus
 }

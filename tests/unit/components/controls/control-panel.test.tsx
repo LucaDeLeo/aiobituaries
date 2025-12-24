@@ -8,11 +8,22 @@ import { describe, it, expect } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import type { ControlPanelProps } from '@/components/controls'
 
+// Mock obituaries data for SkepticFilter
+const mockObituaries = [
+  { slug: 'test-1', date: '2024-01-01', claim: 'Test claim 1', categories: ['market'] },
+  { slug: 'test-2', date: '2024-01-02', claim: 'Test claim 2', categories: ['capability'] },
+]
+
 const defaultProps: ControlPanelProps = {
   enabledMetrics: ['compute'],
   onMetricsChange: () => {},
   selectedCategories: [],
   onCategoriesChange: () => {},
+  searchQuery: '',
+  onSearchChange: () => {},
+  selectedSkeptic: null,
+  onSkepticChange: () => {},
+  obituaries: mockObituaries,
   displayOptions: { showTrendAnnotations: true, enableClustering: false },
   onDisplayOptionsChange: () => {},
   stats: { total: 100, visible: 42 },
@@ -82,12 +93,18 @@ describe('ControlPanel collapsible sections', () => {
     expect(screen.getByText('Categories')).toBeInTheDocument()
   })
 
-  it('renders 2 collapsible section triggers (plus category button)', async () => {
+  it('renders 3 collapsible section triggers (plus category button)', async () => {
     const { ControlPanel } = await import('@/components/controls')
     render(<ControlPanel {...defaultProps} />)
-    // 2 collapsible section triggers + 1 "Show all" button from CategoryCheckboxes
+    // 3 collapsible section triggers + 1 "Show all" button from CategoryCheckboxes
     const buttons = screen.getAllByRole('button')
-    expect(buttons.length).toBeGreaterThanOrEqual(2)
+    expect(buttons.length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('renders Filter by Skeptic section', async () => {
+    const { ControlPanel } = await import('@/components/controls')
+    render(<ControlPanel {...defaultProps} />)
+    expect(screen.getByText('Filter by Skeptic')).toBeInTheDocument()
   })
 })
 
@@ -233,6 +250,11 @@ describe('ControlPanel TypeScript interface', () => {
       onMetricsChange: () => {},
       selectedCategories: ['market', 'capability'],
       onCategoriesChange: () => {},
+      searchQuery: 'test',
+      onSearchChange: () => {},
+      selectedSkeptic: 'john-doe',
+      onSkepticChange: () => {},
+      obituaries: mockObituaries,
       displayOptions: { showTrendAnnotations: false, enableClustering: true },
       onDisplayOptionsChange: () => {},
       stats: { total: 500, visible: 123 },
@@ -249,6 +271,11 @@ describe('ControlPanel TypeScript interface', () => {
       onMetricsChange: () => {},
       selectedCategories: [],
       onCategoriesChange: () => {},
+      searchQuery: '',
+      onSearchChange: () => {},
+      selectedSkeptic: null,
+      onSkepticChange: () => {},
+      obituaries: mockObituaries,
       displayOptions: { showTrendAnnotations: true, enableClustering: false },
       onDisplayOptionsChange: () => {},
       stats: { total: 10, visible: 5 },

@@ -51,6 +51,7 @@ const obituaryProjection = `{
 /**
  * GROQ projection for summary obituary fields (list/card views).
  * Excludes context and sourceUrl for smaller payload.
+ * Includes skeptic reference for filtering by skeptic.
  */
 const summaryProjection = `{
   _id,
@@ -59,7 +60,11 @@ const summaryProjection = `{
   source,
   date,
   categories,
-  status
+  status,
+  "skeptic": skeptic->{
+    name,
+    "slug": slug.current
+  }
 }`
 
 /**

@@ -171,6 +171,7 @@ export function ScatterPlotInner({
   const [isModalOpen, setIsModalOpen] = useState(false)
   const clickedPointRef = useRef<HTMLElement | null>(null)
   const modalCloseTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [clickOrigin, setClickOrigin] = useState<{ x: number; y: number } | null>(null)
 
   // Keyboard accessibility state (AC-6.2.6)
   const [announcement, setAnnouncement] = useState('')
@@ -406,9 +407,15 @@ export function ScatterPlotInner({
     setTooltipData(null)
   }, [])
 
-  // Handler for point click
+  // Handler for point click - captures element and viewport coordinates for animation
   const handlePointClick = useCallback(
     (obituary: ObituarySummary, element: HTMLElement) => {
+      // Get element's center position for animation origin
+      const rect = element.getBoundingClientRect()
+      const originX = rect.left + rect.width / 2
+      const originY = rect.top + rect.height / 2
+      setClickOrigin({ x: originX, y: originY })
+
       setSelectedSummary(obituary)
       setIsModalOpen(true)
       clickedPointRef.current = element
@@ -935,13 +942,13 @@ export function ScatterPlotInner({
         )}
       </AnimatePresence>
 
-      {/* Obituary Detail Panel - left side to use negative space */}
+      {/* Obituary Detail Panel - center dialog with origin animation */}
       <ObituaryModal
         selectedSummary={selectedSummary}
         isOpen={isModalOpen}
         onClose={handleModalClose}
         triggerRef={clickedPointRef}
-        side="left"
+        clickOrigin={clickOrigin}
       />
     </div>
   )

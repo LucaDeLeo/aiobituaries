@@ -58,9 +58,10 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
     metrics,
     categories,
     searchQuery,
+    selectedSkeptic,
   } = useVisualizationState()
 
-  // Calculate visible count based on category and search filters
+  // Calculate visible count based on category, search, and skeptic filters
   const visibleCount = useMemo(() => {
     return obituaries.filter((obit) => {
       // Category filter (empty = all)
@@ -68,9 +69,11 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
         obit.categories?.some((cat) => categories.includes(cat))
       // Search filter (empty = all)
       const matchesSearchQuery = matchesSearch(obit, searchQuery)
-      return matchesCategory && matchesSearchQuery
+      // Skeptic filter (null = all)
+      const matchesSkeptic = !selectedSkeptic || obit.skeptic?.slug === selectedSkeptic
+      return matchesCategory && matchesSearchQuery && matchesSkeptic
     }).length
-  }, [obituaries, categories, searchQuery])
+  }, [obituaries, categories, searchQuery, selectedSkeptic])
 
   return (
     <>
@@ -82,6 +85,7 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
           enabledMetrics={metrics}
           activeCategories={categories}
           searchQuery={searchQuery}
+          selectedSkeptic={selectedSkeptic}
         />
       </section>
 
@@ -90,6 +94,7 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
         <ControlPanelWrapper
           totalCount={obituaries.length}
           visibleCount={visibleCount}
+          obituaries={obituaries}
           variant="sidebar"
         />
       </aside>

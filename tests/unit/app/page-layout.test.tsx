@@ -56,27 +56,6 @@ vi.mock('@/components/mobile/mobile-timeline', () => ({
   },
 }))
 
-// Mock CountDisplay - NOT async, return plain JSX
-vi.mock('@/components/obituary/count-display', () => ({
-  CountDisplay: function MockCountDisplay() {
-    return React.createElement(
-      'div',
-      { 'data-testid': 'count-display' },
-      'CountDisplay'
-    )
-  },
-}))
-
-// Mock CountDisplayCompact - NOT async, return plain JSX
-vi.mock('@/components/obituary/count-display-compact', () => ({
-  CountDisplayCompact: function MockCountDisplayCompact() {
-    return React.createElement(
-      'div',
-      { 'data-testid': 'count-display-compact' },
-      'CountDisplayCompact'
-    )
-  },
-}))
 
 // Mock ObituaryList - NOT async, return plain JSX
 vi.mock('@/components/obituary/obituary-list', () => ({
@@ -187,9 +166,12 @@ describe('Homepage Layout Structure (Story TSR-1.1)', () => {
         render(Component)
       })
 
-      // Verify desktop content is rendered - should have CountDisplayCompact (not CountDisplay)
-      expect(screen.getByTestId('count-display-compact')).toBeInTheDocument()
-      expect(screen.queryByTestId('count-display')).not.toBeInTheDocument()
+      // Verify desktop content is rendered - HomeClient with hero variant
+      const homeClients = screen.getAllByTestId('home-client')
+      const heroVariant = homeClients.find(
+        (el) => el.getAttribute('data-variant') === 'hero'
+      )
+      expect(heroVariant).toBeInTheDocument()
     })
 
     it('renders grid layout with correct column structure', async () => {
@@ -216,15 +198,6 @@ describe('Homepage Layout Structure (Story TSR-1.1)', () => {
         (el) => el.getAttribute('data-variant') === 'hero'
       )
       expect(heroVariant).toBeInTheDocument()
-    })
-
-    it('renders CountDisplayCompact in desktop header', async () => {
-      const Component = await Home()
-      await act(async () => {
-        render(Component)
-      })
-
-      expect(screen.getByTestId('count-display-compact')).toBeInTheDocument()
     })
   })
 
@@ -353,18 +326,7 @@ describe('Homepage Layout Structure (Story TSR-1.1)', () => {
 
       // Mobile renders MobileTimeline, not HomeClient
       expect(screen.getByTestId('mobile-timeline')).toBeInTheDocument()
-      expect(screen.getByTestId('count-display')).toBeInTheDocument()
       expect(screen.queryByTestId('home-client')).not.toBeInTheDocument()
-    })
-
-    it('renders CountDisplay in mobile layout', async () => {
-      const Component = await Home()
-      await act(async () => {
-        render(Component)
-      })
-
-      expect(screen.getByTestId('count-display')).toBeInTheDocument()
-      expect(screen.queryByTestId('count-display-compact')).not.toBeInTheDocument()
     })
 
     it('does NOT render ControlSheet in mobile layout (MobileTimeline has integrated CategoryFilter)', async () => {
@@ -396,16 +358,6 @@ describe('Homepage Layout Structure (Story TSR-1.1)', () => {
       expect(screen.queryByTestId('mobile-timeline')).not.toBeInTheDocument()
     })
 
-    it('renders CountDisplay in tablet layout', async () => {
-      const Component = await Home()
-      await act(async () => {
-        render(Component)
-      })
-
-      expect(screen.getByTestId('count-display')).toBeInTheDocument()
-      expect(screen.queryByTestId('count-display-compact')).not.toBeInTheDocument()
-    })
-
     it('renders ObituaryList in tablet layout', async () => {
       const Component = await Home()
       await act(async () => {
@@ -416,32 +368,7 @@ describe('Homepage Layout Structure (Story TSR-1.1)', () => {
     })
   })
 
-  describe('Header Structure', () => {
-    beforeEach(() => {
-      // Header is only in desktop layout
-      mockUseBreakpoint.mockReturnValue('desktop')
-    })
-
-    it('renders header with border-b border-border', async () => {
-      const Component = await Home()
-      await act(async () => {
-        render(Component)
-      })
-
-      const header = document.querySelector('header.border-b.border-border')
-      expect(header).toBeInTheDocument()
-    })
-
-    it('renders header with flex layout', async () => {
-      const Component = await Home()
-      await act(async () => {
-        render(Component)
-      })
-
-      const header = document.querySelector('header.flex')
-      expect(header).toBeInTheDocument()
-    })
-  })
+  // Note: Header structure tests removed - header was simplified when CountDisplay was removed (Task 1)
 })
 
 describe('HomeClient variant prop (AC-1.1.1)', () => {

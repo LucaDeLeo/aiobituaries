@@ -417,7 +417,7 @@ async function runAudit(useLLM = false): Promise<AuditReport> {
     const obituary = obituaries[i]
     console.log(`Auditing ${i + 1}/${obituaries.length}: ${obituary.slug}`)
 
-    let result = auditObituary(obituary)
+    const result = auditObituary(obituary)
 
     // Optionally enhance with LLM scoring
     if (useLLM && getAnthropicClient()) {

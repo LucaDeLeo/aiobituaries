@@ -11,9 +11,10 @@
  * - ?metrics=compute,mmlu - enabled metric trend lines
  * - ?cat=market,agi - selected categories (empty = all)
  * - ?q=search+term - search query filter
+ * - ?skeptic=slug - filter by skeptic's claims
  *
  * Example full URL:
- * /?metrics=compute,mmlu&cat=market,agi&q=climate
+ * /?metrics=compute,mmlu&cat=market,agi&q=climate&skeptic=gary-marcus
  */
 
 import {
@@ -56,6 +57,12 @@ const categoryParser = parseAsArrayOf(
 const searchParser = parseAsString.withDefault('')
 
 /**
+ * Parser for skeptic filter URL parameter.
+ * Null means no skeptic filter applied.
+ */
+const skepticParser = parseAsString
+
+/**
  * Visualization state interface
  */
 export interface VisualizationState {
@@ -73,6 +80,11 @@ export interface VisualizationState {
   searchQuery: string
   /** Set search query */
   setSearchQuery: (query: string) => void
+
+  /** Currently selected skeptic slug (null = no filter) */
+  selectedSkeptic: string | null
+  /** Set selected skeptic */
+  setSelectedSkeptic: (slug: string | null) => void
 
   /** True during URL transition */
   isPending: boolean
@@ -105,6 +117,9 @@ export function useVisualizationState(): VisualizationState {
   // Search query state
   const [searchQuery, setSearchQueryInternal] = useQueryState('q', searchParser)
 
+  // Skeptic filter state
+  const [selectedSkeptic, setSelectedSkepticInternal] = useQueryState('skeptic', skepticParser)
+
   // Metrics setter - empty array is valid (no background metrics shown)
   const setMetrics = useCallback(
     (newMetrics: MetricType[]) => {
@@ -136,6 +151,16 @@ export function useVisualizationState(): VisualizationState {
     [setSearchQueryInternal]
   )
 
+  // Skeptic setter - null clears the filter
+  const setSelectedSkeptic = useCallback(
+    (slug: string | null) => {
+      startTransition(() => {
+        setSelectedSkepticInternal(slug)
+      })
+    },
+    [setSelectedSkepticInternal]
+  )
+
   return {
     metrics: metrics as MetricType[],
     setMetrics,
@@ -143,6 +168,8 @@ export function useVisualizationState(): VisualizationState {
     setCategories,
     searchQuery: searchQuery ?? '',
     setSearchQuery,
+    selectedSkeptic,
+    setSelectedSkeptic,
     isPending,
   }
 }

@@ -12,10 +12,13 @@ import { ControlPanelWrapper } from './control-panel-wrapper'
 import { ControlTrigger } from './control-trigger'
 import { useMediaQuery } from '@/lib/hooks/use-media-query'
 import { cn } from '@/lib/utils'
+import type { ObituarySummary } from '@/types/obituary'
 
 export interface ControlSheetProps {
   /** Total obituary count for stats */
   totalCount: number
+  /** Obituaries for skeptic filter derivation */
+  obituaries: ObituarySummary[]
   /** Optional: control open state externally */
   open?: boolean
   onOpenChange?: (open: boolean) => void
@@ -39,7 +42,7 @@ export interface ControlSheetProps {
  * IMPORTANT: Do NOT use two Sheet instances with shared state.
  * Sheet portals render to document.body - both would animate when opened.
  */
-export function ControlSheet({ totalCount, open, onOpenChange }: ControlSheetProps) {
+export function ControlSheet({ totalCount, obituaries, open, onOpenChange }: ControlSheetProps) {
   // Internal state if not controlled externally
   const [internalOpen, setInternalOpen] = useState(false)
   const isOpen = open ?? internalOpen
@@ -94,6 +97,7 @@ export function ControlSheet({ totalCount, open, onOpenChange }: ControlSheetPro
           <div className="flex-1 overflow-y-auto overscroll-contain">
             <ControlPanelWrapper
               totalCount={totalCount}
+              obituaries={obituaries}
               variant={panelVariant}
             />
           </div>

@@ -65,6 +65,8 @@ export interface HomeClientProps {
   activeCategories?: Category[]
   /** Search query for filtering obituaries (hero variant only) */
   searchQuery?: string
+  /** Selected skeptic slug for filtering (hero variant only) */
+  selectedSkeptic?: string | null
 }
 
 /**
@@ -92,6 +94,7 @@ export function HomeClient({
   enabledMetrics,
   activeCategories: externalCategories,
   searchQuery: externalSearchQuery,
+  selectedSkeptic: externalSkeptic,
 }: HomeClientProps) {
   // For default variant, use internal useFilters (backward compat)
   // For hero variant, use external state if provided
@@ -107,11 +110,25 @@ export function HomeClient({
   // Determine search query based on variant
   const searchQuery = variant === 'hero' ? (externalSearchQuery ?? '') : ''
 
-  // Filter obituaries based on search query (for hero variant)
+  // Determine skeptic filter based on variant
+  const selectedSkeptic = variant === 'hero' ? (externalSkeptic ?? null) : null
+
+  // Filter obituaries based on search query and skeptic (for hero variant)
   const filteredObituaries = useMemo(() => {
-    if (!searchQuery) return obituaries
-    return obituaries.filter(obit => matchesSearch(obit, searchQuery))
-  }, [obituaries, searchQuery])
+    let filtered = obituaries
+
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(obit => matchesSearch(obit, searchQuery))
+    }
+
+    // Skeptic filter
+    if (selectedSkeptic) {
+      filtered = filtered.filter(obit => obit.skeptic?.slug === selectedSkeptic)
+    }
+
+    return filtered
+  }, [obituaries, searchQuery, selectedSkeptic])
 
   // Calculate filtered count for accessibility announcements
   const filteredCount = useMemo(() => {

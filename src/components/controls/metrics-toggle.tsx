@@ -1,26 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import type { MetricType } from '@/types/metrics'
 import { cn } from '@/lib/utils'
 import { allMetrics } from '@/data/ai-metrics.generated'
+import { useHydrated } from '@/lib/hooks/use-hydrated'
 
 /**
  * UI-specific descriptions for each metric (not in generated data)
  */
 const METRIC_DESCRIPTIONS: Record<MetricType, string> = {
   compute: 'FLOP trend line (aligns with dot Y-positions)',
-  arcagi: 'Novel reasoning benchmark',
+  arcagi: 'Novel reasoning benchmark progress',
   eci: 'Composite capability',
 }
 
 /**
  * Derive metrics config from generated data with UI descriptions.
- * Currently only showing 'compute' since MMLU/ECI use different scales
- * and don't align meaningfully with dot Y-positions.
+ * Shows compute (primary FLOP axis) and ARC-AGI (overlay).
+ * ECI is hidden as it doesn't add meaningful visual information.
  */
 const METRICS = allMetrics
-  .filter((metric) => metric.id === 'compute')
+  .filter((metric) => metric.id === 'compute' || metric.id === 'arcagi')
   .map((metric) => ({
     id: metric.id as MetricType,
     label: metric.label,
@@ -59,13 +59,9 @@ export function MetricsToggle({
   onMetricsChange,
   className,
 }: MetricsToggleProps) {
-  // Track mounted state to prevent hydration mismatch
+  // Track hydration state to prevent hydration mismatch
   // enabledMetrics comes from URL state which may differ between SSR and client
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const isHydrated = useHydrated()
 
   const handleToggle = (metricId: MetricType) => {
     const isEnabled = enabledMetrics.includes(metricId)
@@ -83,8 +79,8 @@ export function MetricsToggle({
     <div className={cn('flex flex-col gap-3', className)}>
       {METRICS.map((metric) => {
         // Use false during SSR to ensure consistent hydration
-        // After mount, use actual state from URL params
-        const isChecked = mounted && enabledMetrics.includes(metric.id)
+        // After hydration, use actual state from URL params
+        const isChecked = isHydrated && enabledMetrics.includes(metric.id)
         const checkboxId = `metric-${metric.id}`
 
         return (

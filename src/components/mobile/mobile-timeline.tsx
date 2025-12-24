@@ -98,12 +98,11 @@ export function MobileTimeline({ obituaries }: MobileTimelineProps) {
         />
       </div>
 
-      {/* Bottom Sheet Modal */}
+      {/* Modal */}
       <ObituaryModal
         selectedSummary={selectedObituary}
         isOpen={!!selectedObituary}
         onClose={() => setSelectedObituary(null)}
-        side="bottom"
       />
     </div>
   )

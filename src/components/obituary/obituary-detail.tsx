@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ExternalLink, ArrowLeft } from 'lucide-react'
+import { ExternalLink, ArrowLeft, User } from 'lucide-react'
 import { formatDate } from '@/lib/utils/date'
 import { CATEGORY_LABELS, CATEGORY_BADGE_CLASSES } from '@/lib/constants/categories'
 import { CopyButton } from '@/components/ui/copy-button'
@@ -58,11 +58,12 @@ export function ObituaryDetail({ obituary }: ObituaryDetailProps) {
         </time>
         {obituary.skeptic && (
           <Link
-            href={`/skeptics/${obituary.skeptic.slug}`}
-            className="text-sm text-[var(--text-muted)] hover:text-[var(--accent-primary)]
-                       transition-colors underline underline-offset-4"
+            href={`/?skeptic=${obituary.skeptic.slug}`}
+            className="inline-flex items-center gap-1.5 text-sm text-[var(--text-muted)]
+                       hover:text-[var(--accent-primary)] transition-colors"
           >
-            View {obituary.skeptic.name}&apos;s profile →
+            <User className="w-3.5 h-3.5" aria-hidden="true" />
+            View all claims by {obituary.skeptic.name}
           </Link>
         )}
       </div>

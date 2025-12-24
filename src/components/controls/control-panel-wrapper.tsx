@@ -3,12 +3,15 @@
 import { ControlPanel, type DisplayOptions } from './control-panel'
 import { useVisualizationState } from '@/lib/hooks/use-visualization-state'
 import { useViewModeStorage } from '@/components/obituary/table-view-toggle'
+import type { ObituarySummary } from '@/types/obituary'
 
 interface ControlPanelWrapperProps {
   /** Total count of obituaries */
   totalCount: number
   /** Visible count after filtering (optional - falls back to totalCount if not provided) */
   visibleCount?: number
+  /** Obituaries for skeptic filter derivation */
+  obituaries: ObituarySummary[]
   /** Layout variant */
   variant?: 'sidebar' | 'sheet' | 'drawer'
 }
@@ -25,6 +28,7 @@ interface ControlPanelWrapperProps {
 export function ControlPanelWrapper({
   totalCount,
   visibleCount,
+  obituaries,
   variant = 'sidebar',
 }: ControlPanelWrapperProps) {
   const {
@@ -34,6 +38,8 @@ export function ControlPanelWrapper({
     setCategories,
     searchQuery,
     setSearchQuery,
+    selectedSkeptic,
+    setSelectedSkeptic,
   } = useVisualizationState()
 
   const { mode, isHydrated } = useViewModeStorage()
@@ -56,6 +62,9 @@ export function ControlPanelWrapper({
       onCategoriesChange={setCategories}
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
+      selectedSkeptic={selectedSkeptic}
+      onSkepticChange={setSelectedSkeptic}
+      obituaries={obituaries}
       displayOptions={displayOptions}
       onDisplayOptionsChange={handleDisplayOptionsChange}
       stats={{

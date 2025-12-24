@@ -1,21 +1,16 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
-import { ExternalLink, ArrowRight } from 'lucide-react'
+import { useEffect, useState, useRef, useCallback } from 'react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { ExternalLink, ArrowRight, X } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { sanitizeUrl } from '@/lib/utils/url'
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet'
+import * as Dialog from '@radix-ui/react-dialog'
 import { ObituaryContext } from '@/components/obituary/obituary-context'
 import { CopyButton } from '@/components/ui/copy-button'
 import { formatDate } from '@/lib/utils/date'
-import { modalSlideIn, DURATIONS } from '@/lib/utils/animation'
+import { DURATIONS } from '@/lib/utils/animation'
 import { CATEGORY_LABELS, CATEGORY_BADGE_CLASSES } from '@/lib/constants/categories'
 import type { Obituary, ObituarySummary } from '@/types/obituary'
 
@@ -28,8 +23,8 @@ export interface ObituaryModalProps {
   onClose: () => void
   /** Optional: ref to element that opened modal (for focus restoration) */
   triggerRef?: React.RefObject<HTMLElement | null>
-  /** Side of the screen to slide in from. Default: "right" */
-  side?: 'top' | 'right' | 'bottom' | 'left'
+  /** Click origin coordinates for animation (viewport-relative) */
+  clickOrigin?: { x: number; y: number } | null
 }
 
 export function ObituaryModal({
@@ -37,7 +32,7 @@ export function ObituaryModal({
   isOpen,
   onClose,
   triggerRef,
-  side = 'right',
+  clickOrigin,
 }: ObituaryModalProps) {
   const [obituary, setObituary] = useState<Obituary | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -64,8 +59,7 @@ export function ObituaryModal({
   }, [])
 
   // Restore focus to trigger element when modal closes
-  // Note: Radix Sheet handles focus trap and Escape key automatically
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     onClose()
     // Clear any previous timeout
     if (focusTimeoutRef.current) {
@@ -76,7 +70,7 @@ export function ObituaryModal({
       triggerRef?.current?.focus()
       focusTimeoutRef.current = null
     }, 250)
-  }
+  }, [onClose, triggerRef])
 
   // Fetch full obituary data when modal opens
   useEffect(() => {
@@ -127,127 +121,204 @@ export function ObituaryModal({
     }
   }, [isOpen, selectedSummary])
 
+  // Calculate transform origin based on click position
+  // Default to center if no origin provided
+  const getTransformOrigin = () => {
+    if (!clickOrigin) return 'center center'
+    // Convert viewport coordinates to relative position
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1920
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 1080
+    const xPercent = (clickOrigin.x / vw) * 100
+    const yPercent = (clickOrigin.y / vh) * 100
+    return `${xPercent}% ${yPercent}%`
+  }
+
+  // Animation variants for origin-based scale animation
+  const overlayVariants = {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 },
+  } as const
+
+  const contentVariants = {
+    initial: {
+      opacity: 0,
+      scale: 0.85,
+    },
+    animate: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        type: 'spring' as const,
+        stiffness: 300,
+        damping: 30,
+        mass: 0.8,
+      },
+    },
+    exit: {
+      opacity: 0,
+      scale: 0.9,
+      transition: {
+        duration: DURATIONS.fast,
+        ease: 'easeIn' as const,
+      },
+    },
+  }
+
   return (
-    <Sheet open={isOpen} onOpenChange={handleClose}>
-      <SheetContent
-        side={side}
-        className={cn(
-          'overflow-y-auto p-6',
-          side === 'bottom' ? 'h-[85vh] max-h-[85vh]' : 'w-full sm:max-w-lg'
-        )}
-        data-testid="obituary-modal"
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
-      >
-        {/* Always-present accessible header with dynamic content */}
-        {/* Uses sr-only class to visually hide while satisfying Radix's DialogTitle requirement */}
-        <SheetTitle id={titleId} className="sr-only">
-          {isLoading
-            ? 'Loading obituary'
-            : error
-              ? 'Error loading obituary'
-              : obituary
-                ? `Obituary from ${obituary.source}`
-                : 'Obituary'}
-        </SheetTitle>
-        <SheetDescription id={descriptionId} className="sr-only">
-          {isLoading
-            ? 'Loading obituary details, please wait'
-            : error
-              ? error
-              : obituary
-                ? `${formatDate(obituary.date)}: ${obituary.claim.slice(0, 100)}${obituary.claim.length > 100 ? '...' : ''}`
-                : 'Obituary details'}
-        </SheetDescription>
-
-        {/* Loading state */}
-        {isLoading && (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-[var(--text-secondary)] font-mono">Loading...</div>
-          </div>
-        )}
-
-        {/* Error state */}
-        {error && !isLoading && (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-[var(--text-error)] font-mono">{error}</div>
-          </div>
-        )}
-
-        {/* Success state */}
-        {obituary && !isLoading && !error && (
-          <motion.div
-            variants={shouldReduceMotion ? undefined : modalSlideIn}
-            initial={shouldReduceMotion ? undefined : "initial"}
-            animate={shouldReduceMotion ? undefined : "animate"}
-            exit={shouldReduceMotion ? undefined : "exit"}
-            transition={
-              shouldReduceMotion
-                ? { duration: 0 }
-                : { duration: DURATIONS.slow, ease: 'easeOut' }
-            }
-            style={{
-              willChange: shouldReduceMotion ? 'auto' : 'transform',
-            }}
-            className="space-y-6"
-          >
-            {/* Claim */}
-            <div className="space-y-4">
-              <blockquote className="text-xl sm:text-2xl font-serif leading-relaxed text-[var(--text-primary)]">
-                &ldquo;{obituary.claim}&rdquo;
-              </blockquote>
-
-              {/* Source with external link */}
-              <div className="flex items-center gap-2">
-                <a
-                  href={sanitizeUrl(obituary.sourceUrl)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-sm font-mono text-[var(--accent-primary)] hover:underline"
-                >
-                  {obituary.source}
-                  <ExternalLink className="w-3 h-3" aria-hidden="true" />
-                </a>
-              </div>
-
-              {/* Date and Categories */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-mono text-[var(--text-secondary)]">
-                  {formatDate(obituary.date)}
-                </span>
-                {obituary.categories?.map((category) => (
-                  <span
-                    key={category}
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${CATEGORY_BADGE_CLASSES[category]}`}
-                  >
-                    {CATEGORY_LABELS[category]}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Context Section */}
-            <div className="border-t border-[var(--border)] pt-4">
-              <ObituaryContext context={obituary.context} date={obituary.date} />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-between items-center pt-4 border-t border-[var(--border)]">
-              <CopyButton
-                text={`${window.location.origin}/obituary/${obituary.slug}`}
-                label="Copy link"
+    <Dialog.Root open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <AnimatePresence>
+        {isOpen && (
+          <Dialog.Portal forceMount>
+            {/* Backdrop overlay */}
+            <Dialog.Overlay asChild>
+              <motion.div
+                className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+                variants={shouldReduceMotion ? undefined : overlayVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: DURATIONS.fast }}
               />
-              <Link
-                href={`/obituary/${obituary.slug}`}
-                className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] bg-[var(--accent-primary)] text-[var(--bg-primary)] rounded-lg font-medium hover:opacity-90 transition-opacity"
+            </Dialog.Overlay>
+
+            {/* Dialog content with origin animation */}
+            <Dialog.Content asChild>
+              <motion.div
+                className={cn(
+                  'fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2',
+                  'w-[calc(100%-2rem)] max-w-lg max-h-[85vh]',
+                  'overflow-y-auto rounded-xl shadow-2xl',
+                  'bg-[var(--bg-primary)] border border-[var(--border)]',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]'
+                )}
+                variants={shouldReduceMotion ? undefined : contentVariants}
+                initial={shouldReduceMotion ? undefined : 'initial'}
+                animate={shouldReduceMotion ? undefined : 'animate'}
+                exit={shouldReduceMotion ? undefined : 'exit'}
+                style={{
+                  transformOrigin: getTransformOrigin(),
+                  willChange: shouldReduceMotion ? 'auto' : 'transform, opacity',
+                }}
+                data-testid="obituary-modal"
+                aria-labelledby={titleId}
+                aria-describedby={descriptionId}
               >
-                View full page
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              </Link>
-            </div>
-          </motion.div>
+                {/* Header with close button */}
+                <div className="sticky top-0 z-10 flex justify-end p-3 bg-[var(--bg-primary)] border-b border-[var(--border)]">
+                  <Dialog.Close asChild>
+                    <button
+                      className="p-2 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors"
+                      aria-label="Close modal"
+                    >
+                      <X className="w-5 h-5 text-[var(--text-secondary)]" />
+                    </button>
+                  </Dialog.Close>
+                </div>
+
+                {/* Accessible title (visually hidden) */}
+                <Dialog.Title id={titleId} className="sr-only">
+                  {isLoading
+                    ? 'Loading obituary'
+                    : error
+                      ? 'Error loading obituary'
+                      : obituary
+                        ? `Obituary from ${obituary.source}`
+                        : 'Obituary'}
+                </Dialog.Title>
+                <Dialog.Description id={descriptionId} className="sr-only">
+                  {isLoading
+                    ? 'Loading obituary details, please wait'
+                    : error
+                      ? error
+                      : obituary
+                        ? `${formatDate(obituary.date)}: ${obituary.claim.slice(0, 100)}${obituary.claim.length > 100 ? '...' : ''}`
+                        : 'Obituary details'}
+                </Dialog.Description>
+
+                {/* Content area */}
+                <div className="p-6">
+                  {/* Loading state */}
+                  {isLoading && (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="text-[var(--text-secondary)] font-mono animate-pulse">
+                        Loading...
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Error state */}
+                  {error && !isLoading && (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="text-[var(--text-error)] font-mono">{error}</div>
+                    </div>
+                  )}
+
+                  {/* Success state */}
+                  {obituary && !isLoading && !error && (
+                    <div className="space-y-6">
+                      {/* Claim */}
+                      <div className="space-y-4">
+                        <blockquote className="text-xl sm:text-2xl font-serif leading-relaxed text-[var(--text-primary)]">
+                          &ldquo;{obituary.claim}&rdquo;
+                        </blockquote>
+
+                        {/* Source with external link */}
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={sanitizeUrl(obituary.sourceUrl)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-sm font-mono text-[var(--accent-primary)] hover:underline"
+                          >
+                            {obituary.source}
+                            <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                          </a>
+                        </div>
+
+                        {/* Date and Categories */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-mono text-[var(--text-secondary)]">
+                            {formatDate(obituary.date)}
+                          </span>
+                          {obituary.categories?.map((category) => (
+                            <span
+                              key={category}
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${CATEGORY_BADGE_CLASSES[category]}`}
+                            >
+                              {CATEGORY_LABELS[category]}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Context Section */}
+                      <div className="border-t border-[var(--border)] pt-4">
+                        <ObituaryContext context={obituary.context} date={obituary.date} />
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex justify-between items-center pt-4 border-t border-[var(--border)]">
+                        <CopyButton
+                          text={`${typeof window !== 'undefined' ? window.location.origin : ''}/obituary/${obituary.slug}`}
+                          label="Copy link"
+                        />
+                        <Link
+                          href={`/obituary/${obituary.slug}`}
+                          className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] bg-[var(--accent-primary)] text-[var(--bg-primary)] rounded-lg font-medium hover:opacity-90 transition-opacity"
+                        >
+                          View full page
+                          <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </Dialog.Content>
+          </Dialog.Portal>
         )}
-      </SheetContent>
-    </Sheet>
+      </AnimatePresence>
+    </Dialog.Root>
   )
 }

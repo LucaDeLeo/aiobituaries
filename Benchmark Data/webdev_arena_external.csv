@@ -1,0 +1,37 @@
+Model version,Arena Score,Release date,Organization,Country,Training compute (FLOP),Training compute notes,Score 95% CI,Votes,Last updated,Source,Source link (site from table),Notes,id
+claude-opus-4-5-20251101_32K,1518,2025-11-24,Anthropic,United States of America,,Flagship model from a leading developer in mid-2025; very likely it used >1e25 FLOP.,=+13/-13,3592,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recQLSl4DM4fz7VAt
+gpt-5.2-2025-12-11_high,1485,2025-12-11,OpenAI,United States of America,,,=+17/-17,1646,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recDCbjVONLP8GhN2
+claude-opus-4-5-20251101,1484,2025-11-24,Anthropic,United States of America,,Flagship model from a leading developer in mid-2025; very likely it used >1e25 FLOP.,=+12/-12,3511,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recxJC6KaFZO5Yo47
+gemini-3-pro-preview,1481,2025-11-18,Google DeepMind,"United States of America,United Kingdom of Great Britain and Northern Ireland",,Almost certainly >1e25,=+10/-10,8535,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,rec7tzKLSS6JTykAP
+,1465,,,,,,=+15/-15,1725,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,"MiniMax-M2, which we don't have an entry for yet
+",rec8wVMb44iQySeae
+gpt-5-2025-08-07_medium,1399,2025-08-07,OpenAI,United States of America,6.6e+25,"Likely around 6e25 [CI: 2e25 to 2e26] FLOP. See document below for details
+
+https://docs.google.com/document/d/1V2jIk365LnhH4WDoCw5dYJjZr1Htw8IHaK1noMf5Y48/edit?tab=t.z871imftkus",=+12/-12,3948,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,rec0jRmpNdEDdrg8X
+gpt-5.2-2025-12-11_medium,1399,2025-12-11,OpenAI,United States of America,,,=+15/-15,1640,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recSZOpvwfvrDdO4h
+gpt-5.1-2025-11-13_medium,1393,2025-11-13,OpenAI,United States of America,,"Almost certainly > 1e25
+",=+11/-11,4645,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recoxpFCpzEImK5i4
+claude-sonnet-4-5-20250929_32K,1393,2025-09-29,Anthropic,United States of America,,,=+9/-9,7580,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recKmKjyv8AiR9k1T
+claude-opus-4-1-20250805,1392,2025-08-05,Anthropic,United States of America,,,=+10/-10,7296,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recDMjkTx9oZNAOzz
+claude-sonnet-4-5-20250929,1387,2025-09-29,Anthropic,United States of America,,,=+9/-9,8626,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recUrHg93mpJgakI0
+,1376,,,,,,=+15/-15,1690,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recyD2ZNG4gtW9Y0m
+glm-4.6,1368,2025-09-30,"Zhipu AI,Tsinghua University",China,4.42e+24,6 FLOP/parameter/token * 32000000000 active parameters [very likely assumption - everything else is reported to be same as at GLM 4.5] * 23000000000000 tokens = 4.42e24 FLOP,=+10/-10,6981,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recT1lwdoUHQkrBMV
+DeepSeek-V3.2-Exp_thinking,1367,2025-09-29,DeepSeek,China,3.8035594e+24,3.594058e+24 FLOP [base model] + 2.095014e+23 FLOP = 3.8035594e+24 FLOP,=+20/-19,955,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,reciI0uZdChhyGrUw
+gpt-5.1-2025-11-13_low,1359,2025-11-13,OpenAI,United States of America,,"Almost certainly > 1e25
+",=+10/-10,6540,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recGfqSb7DIX51ffo
+kimi-k2-thinking-turbo,1345,2025-11-06,Moonshot,China,4.2e+24,"Assuming the additional post-training contributed between 1% and 100% of Kimi K2's training compute (which we confidently estimate at 2.976e+24), we get a range of 3.0e24 to 6.0e24, and a geometric mean of 4.2e24.",=+10/-10,6359,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recumTXyHTALFh1iH
+gpt-5.1-codex,1335,2025-11-12,OpenAI,United States of America,,,=+10/-10,4793,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recSXM0s3Vsny5oZP
+,1317,,,,,,=+10/-10,7037,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recneYtrITTW9cMYw
+DeepSeek-V3.2-Exp,1294,2025-09-29,DeepSeek,China,3.8035594e+24,3.594058e+24 FLOP [base model] + 2.095014e+23 FLOP = 3.8035594e+24 FLOP,=+10/-10,5156,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recoUouxwJTO6jCv1
+Qwen3-Coder-480B-A35B-Instruct,1291,2025-07-31,Alibaba,China,1.575e+24,6 FLOP / parameter / token * 35 * 10^9 active parameters * 7.5 * 10^12 tokens = 1.575e+24 FLOP`,=+9/-9,7246,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recb5Q2Ez7Shxvl2o
+claude-haiku-4-5-20251001,1289,2025-10-15,Anthropic,United States of America,,,=+10/-10,7305,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,rec4L4znR9E7Yeb7E
+deepseek/deepseek-v3.2,1286,2025-12-01,DeepSeek,China,,,=+17/-17,1230,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recBICRjNsv9JEKQt
+,1264,,,,,,=+15/-15,1945,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,rec8hNzDMIzA5RXxq
+gpt-5.1-codex-mini,1252,2025-11-12,OpenAI,United States of America,,,=+17/-17,1565,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recPRratljctS351K
+grok-4-1-fast-reasoning,1227,,xAI,United States of America,,,=+13/-13,3715,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recgHWkkshK8nYtfz
+,1226,,,,,,=+20/-20,1025,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,reclY6B2Wp2f59mld
+gemini-2.5-pro,1213,2025-06-17,Google DeepMind,"United States of America,United Kingdom of Great Britain and Northern Ireland",,Flagship model from a leading developer in mid-2025; very likely it used >1e25 FLOP.,=+13/-13,3505,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recmBglMHLXb6m6s8
+,1206,,,,,,=+19/-19,1261,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,reco07u0phmlUKOm4
+,1153,,,,,,=+23/-23,945,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,rec8Eg2KdgjeEWepd
+grok-code-fast-1,1144,2025-08-28,,,,,=+21/-21,1014,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recT6aoJlcWcMufso
+,1103,,,,,,=+22/-22,1033,2025-12-17,WebDev Arena Leaderboard,https://web.lmarena.ai/leaderboard,,recYBnWjhmTwpsA6r

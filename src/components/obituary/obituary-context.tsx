@@ -40,17 +40,6 @@ export function ObituaryContext({ context, date }: ObituaryContextProps) {
     return { ...metrics, frontierModel: model }
   }, [date])
 
-  // Check if any CMS context data exists
-  const hasCmsData = context && (
-    context.nvdaPrice !== undefined ||
-    context.msftPrice !== undefined ||
-    context.googPrice !== undefined ||
-    context.benchmarkName !== undefined ||
-    context.currentModel !== undefined ||
-    context.milestone !== undefined ||
-    context.note !== undefined
-  )
-
   // Check if any stock prices exist
   const hasStockPrices = context && (
     context.nvdaPrice !== undefined ||

@@ -1,12 +1,13 @@
 'use client'
 
-import type { Category } from '@/types/obituary'
+import type { Category, ObituarySummary } from '@/types/obituary'
 import type { MetricType } from '@/types/metrics'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { CollapsibleSection } from './collapsible-section'
 import { MetricsToggle } from './metrics-toggle'
 import { CategoryCheckboxes } from './category-checkboxes'
 import { SearchInput } from './search-input'
+import { SkepticFilter } from './skeptic-filter'
 import { cn } from '@/lib/utils'
 import { CATEGORY_ORDER, CATEGORIES } from '@/lib/constants/categories'
 
@@ -31,6 +32,12 @@ export interface ControlPanelProps {
   searchQuery: string
   /** Callback when search query changes */
   onSearchChange: (query: string) => void
+  /** Currently selected skeptic slug (null = no filter) */
+  selectedSkeptic: string | null
+  /** Callback when skeptic selection changes */
+  onSkepticChange: (slug: string | null) => void
+  /** Obituaries for skeptic filter derivation */
+  obituaries: ObituarySummary[]
   /** Display options (trend annotations, clustering) */
   displayOptions: DisplayOptions
   /** Callback when display options change */
@@ -56,6 +63,9 @@ export function ControlPanel({
   onCategoriesChange,
   searchQuery,
   onSearchChange,
+  selectedSkeptic,
+  onSkepticChange,
+  obituaries,
   stats,
   variant = 'sidebar',
   isChartControlsHidden = false,
@@ -147,6 +157,15 @@ export function ControlPanel({
           <CategoryCheckboxes
             selectedCategories={selectedCategories}
             onCategoriesChange={onCategoriesChange}
+          />
+        </CollapsibleSection>
+
+        {/* Skeptic filter */}
+        <CollapsibleSection title="Filter by Skeptic" defaultOpen>
+          <SkepticFilter
+            obituaries={obituaries}
+            selectedSkeptic={selectedSkeptic}
+            onSkepticChange={onSkepticChange}
           />
         </CollapsibleSection>
 
