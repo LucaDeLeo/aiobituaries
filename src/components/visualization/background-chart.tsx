@@ -229,7 +229,9 @@ function BackgroundChartComponent({
     })
     .filter((d) => d.date >= domainStart && d.date <= domainEnd)
 
-  if (visibleData.length < 2 && currentPoints.length === 0) return null
+  // Return null if we don't have enough data points to render a meaningful line
+  // Either condition alone means we can't render - use OR instead of AND
+  if (visibleData.length < 2 || currentPoints.length === 0) return null
 
   const getX = (d: TransformedDataPoint) => xScale(d.date) ?? 0
   const getY = (d: TransformedDataPoint) => {
