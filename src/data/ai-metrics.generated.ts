@@ -1,7 +1,7 @@
 /**
  * AI Progress Metrics - Generated from Epoch AI data
  * Source: https://epoch.ai/data
- * Generated: 2025-12-18
+ * Generated: 2025-12-24
  *
  * DO NOT EDIT MANUALLY - regenerate with: node scripts/parse-epoch-data.mjs
  *
@@ -34,28 +34,36 @@ export const arcagiFrontier: AIMetricSeries = {
   unit: '%',
   data: [
       {
-          "date": "2020-06-01",
-          "value": 0
+          "date": "2021-08-01",
+          "value": 25.7
+      },
+      {
+          "date": "2021-12-01",
+          "value": 60
+      },
+      {
+          "date": "2022-03-01",
+          "value": 70
       },
       {
           "date": "2023-03-01",
-          "value": 0
+          "value": 86.4
       },
       {
-          "date": "2024-05-01",
-          "value": 5
+          "date": "2024-06-01",
+          "value": 86.5
       },
       {
           "date": "2024-09-01",
-          "value": 21
+          "value": 86.9
       },
       {
-          "date": "2024-12-01",
-          "value": 75.7
+          "date": "2024-10-01",
+          "value": 87.3
       },
       {
-          "date": "2024-12-15",
-          "value": 87.5
+          "date": "2024-11-01",
+          "value": 88.1
       }
   ],
 }
@@ -276,9 +284,72 @@ export const trainingComputeFrontier: AIMetricSeries = {
 }
 
 /**
+ * METR Task Horizon Frontier (minutes)
+ * Maximum task horizon (autonomous work duration) achieved by AI models.
+ * Measures agentic capability - how long models can work on tasks autonomously.
+ * Source: https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks/
+ */
+export const metrFrontier: AIMetricSeries = {
+  id: 'metr',
+  label: 'METR Task Horizon',
+  color: 'rgb(236, 72, 153)', // Pink
+  unit: 'minutes',
+  data: [
+      {
+          "date": "2019-11-01",
+          "value": 0
+      },
+      {
+          "date": "2023-03-01",
+          "value": 5.4
+      },
+      {
+          "date": "2023-11-01",
+          "value": 8.6
+      },
+      {
+          "date": "2024-06-01",
+          "value": 18.7
+      },
+      {
+          "date": "2024-09-01",
+          "value": 22.2
+      },
+      {
+          "date": "2024-10-01",
+          "value": 29.6
+      },
+      {
+          "date": "2024-12-01",
+          "value": 39.2
+      },
+      {
+          "date": "2025-02-01",
+          "value": 56.1
+      },
+      {
+          "date": "2025-04-01",
+          "value": 91.3
+      },
+      {
+          "date": "2025-07-01",
+          "value": 110.1
+      },
+      {
+          "date": "2025-08-01",
+          "value": 137.3
+      },
+      {
+          "date": "2025-11-01",
+          "value": 288.9
+      }
+  ],
+}
+
+/**
  * All metric series for visualization
  */
-export const allMetrics: AIMetricSeries[] = [arcagiFrontier, eciFrontier, trainingComputeFrontier]
+export const allMetrics: AIMetricSeries[] = [arcagiFrontier, eciFrontier, trainingComputeFrontier, metrFrontier]
 
 /**
  * Frontier model timeline - which model was the frontier at each date

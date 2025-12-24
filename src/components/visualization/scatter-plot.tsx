@@ -33,12 +33,12 @@ import {
 import { useRovingFocus } from '@/lib/hooks/use-roving-focus'
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint'
 import { BackgroundChart } from './background-chart'
-import { allMetrics, trainingComputeFrontier, getActualFlopAtDate, getUnifiedDomain } from '@/data/ai-metrics'
+import { allMetrics, getMetrValueAtDate, getMaxMetrValue } from '@/data/ai-metrics'
 import {
-  createLogYScale,
-  type LogScale,
-  formatFlopTick,
-  getVisibleTickValues,
+  createLinearYScale,
+  type LinearScale,
+  formatMetrTick,
+  getVisibleMetrTickValues,
 } from '@/lib/utils/scales'
 import type { MetricType } from '@/types/metrics'
 
@@ -49,8 +49,8 @@ export interface ScatterPlotProps {
   activeCategories?: Category[]
   /** Fill parent container height (for grid layout). Parent must have explicit height. */
   fillContainer?: boolean
-  /** Enabled metrics for background chart. Defaults to ['compute']. */
-  enabledMetrics?: MetricType[]
+  /** Selected metric for background chart. Defaults to 'metr'. */
+  selectedMetric?: MetricType
 }
 
 const MARGIN = { top: 20, right: 20, bottom: 40, left: 72 }
@@ -110,23 +110,19 @@ export function getTickCount(width: number): number {
   return Math.max(3, Math.min(12, baseCount))
 }
 
-
-// Fixed date range for Y-axis domain calculation (full relevant AI era)
-const DEFAULT_DATE_RANGE: [number, number] = [2010, 2025]
-
 // Exported for testing purposes
 export function ScatterPlotInner({
   data,
   width,
   height,
   activeCategories = [],
-  enabledMetrics = ['compute'],
+  selectedMetric = 'metr',
 }: {
   data: ObituarySummary[]
   width: number
   height: number
   activeCategories: Category[]
-  enabledMetrics?: MetricType[]
+  selectedMetric?: MetricType
 }) {
   // Timeline position persistence hook
   const {
@@ -214,36 +210,41 @@ export function ScatterPlotInner({
     return scale
   }, [data, innerWidth])
 
-  const yScale = useMemo((): LogScale => {
-    const domain = getUnifiedDomain(enabledMetrics, DEFAULT_DATE_RANGE[0], DEFAULT_DATE_RANGE[1])
-    return createLogYScale(innerHeight, domain)
-  }, [innerHeight, enabledMetrics])
+  // Y-axis uses METR Task Horizon (linear scale, minutes)
+  // Domain: [0, maxMetrValue] with some headroom
+  const yScale = useMemo((): LinearScale => {
+    const maxMetr = getMaxMetrValue()
+    // Add 10% headroom above max value
+    const domain: [number, number] = [0, maxMetr * 1.1]
+    return createLinearYScale(innerHeight, domain)
+  }, [innerHeight])
 
-  // Compute visible tick values for Y-axis (only ticks within domain)
+  // Compute visible tick values for Y-axis (METR linear scale)
   const visibleTickValues = useMemo(() => {
     const domain = yScale.domain() as [number, number]
-    return getVisibleTickValues(domain)
+    return getVisibleMetrTickValues(domain)
   }, [yScale])
 
 
   // Memoize point positions for performance (AC-6.8.5)
-  // Y position is based on training compute FLOP at the obituary date + log-space jitter
+  // Y position is based on METR Task Horizon at the obituary date + linear jitter
   const pointPositions = useMemo(() => {
     return data.map((obituary) => {
       const obituaryDate = new Date(obituary.date)
 
-      // Get actual FLOP value at this date
-      const baseFlop = getActualFlopAtDate(trainingComputeFrontier, obituaryDate)
+      // Get METR Task Horizon value (minutes) at this date
+      const baseMetr = getMetrValueAtDate(obituaryDate)
 
-      // Jitter in log-space: +/- 0.3 orders of magnitude
-      // hashToJitter returns 0-1, center to -0.5 to 0.5, scale to +/-0.3
-      const jitterExp = (hashToJitter(obituary._id) - 0.5) * 0.6
-      const jitteredFlop = baseFlop * Math.pow(10, jitterExp)
+      // Jitter in linear-space: +/- 10% of value (min 5 minutes for visual spread)
+      // hashToJitter returns 0-1, center to -0.5 to 0.5
+      const jitterFactor = (hashToJitter(obituary._id) - 0.5) * 0.2
+      const jitterAmount = Math.max(baseMetr * jitterFactor, (hashToJitter(obituary._id) - 0.5) * 10)
+      const jitteredMetr = Math.max(0, baseMetr + jitterAmount)
 
       return {
         obituary,
         x: xScale(obituaryDate) ?? 0,
-        y: yScale(jitteredFlop) ?? 0,
+        y: yScale(jitteredMetr) ?? 0,
         color: getCategoryColor(obituary.categories),
       }
     })
@@ -802,18 +803,18 @@ export function ScatterPlotInner({
           {/* Background metric lines showing AI progress */}
           <BackgroundChart
             metrics={allMetrics}
-            enabledMetrics={enabledMetrics}
+            selectedMetric={selectedMetric}
             xScale={xScale}
             yScale={yScale}
             innerHeight={innerHeight}
           />
 
-          {/* Y-axis (FLOP scale) */}
+          {/* Y-axis (METR Task Horizon, minutes) */}
           <g data-testid="y-axis">
             <AxisLeft
               scale={yScale}
               tickValues={visibleTickValues}
-              tickFormat={(value) => formatFlopTick(value as number)}
+              tickFormat={(value) => formatMetrTick(value as number)}
               stroke="var(--border)"
               tickStroke="var(--border)"
               tickLabelProps={() => ({
@@ -824,8 +825,8 @@ export function ScatterPlotInner({
                 dx: -8,
                 dy: 4,
               })}
-              label="Training Compute (FLOP)"
-              labelOffset={52}
+              label="Task Horizon (minutes)"
+              labelOffset={42}
               labelProps={{
                 fill: 'var(--text-muted)',
                 fontSize: 11,
@@ -937,7 +938,7 @@ export function ScatterPlotInner({
             x={tooltipData.x + MARGIN.left}
             y={tooltipData.y + MARGIN.top}
             containerBounds={containerBounds}
-            showFlop={enabledMetrics?.includes('compute') ?? true}
+            showFlop={selectedMetric === 'compute'}
           />
         )}
       </AnimatePresence>
@@ -959,7 +960,7 @@ export function ScatterPlot({
   height,
   activeCategories = [],
   fillContainer,
-  enabledMetrics,
+  selectedMetric,
 }: ScatterPlotProps) {
   return (
     <div
@@ -977,7 +978,7 @@ export function ScatterPlot({
             width={width}
             height={height || Math.max(parentHeight, 300)}
             activeCategories={activeCategories}
-            enabledMetrics={enabledMetrics}
+            selectedMetric={selectedMetric}
           />
         )}
       </ParentSize>

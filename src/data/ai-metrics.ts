@@ -9,11 +9,19 @@
 import { logToFlop } from '@/lib/utils/scales'
 import type { MetricType } from '@/types/metrics'
 
+/**
+ * Fallback maximum METR Task Horizon value (minutes).
+ * Used when data is unavailable. Based on reasonable upper bound
+ * for current AI agent capabilities (~5 hours of autonomous work).
+ */
+export const METR_MAX_FALLBACK_MINUTES = 300
+
 // Re-export everything from generated file
 export {
   mmluFrontier,
   eciFrontier,
   trainingComputeFrontier,
+  metrFrontier,
   allMetrics,
   getMetricValueAtDate,
   normalizeMetricValue,
@@ -110,6 +118,7 @@ import {
   trainingComputeFrontier,
   mmluFrontier,
   eciFrontier,
+  metrFrontier,
   getMetricValueAtDate,
   type AIMetricSeries,
   type MetricDataPoint,
@@ -249,6 +258,8 @@ export function getMetricSeries(metricType: MetricType): AIMetricSeries {
       return mmluFrontier // mmluFrontier is aliased to arcagiFrontier
     case 'eci':
       return eciFrontier
+    case 'metr':
+      return metrFrontier
   }
 }
 
@@ -280,6 +291,28 @@ export function getMaxDataYear(): number {
   }
   // Fallback if data is empty (shouldn't happen)
   return new Date().getFullYear()
+}
+
+/**
+ * Get METR Task Horizon value (minutes) at a specific date.
+ * Returns 0 for dates before METR data starts (2019-11).
+ *
+ * @param date - Target date
+ * @returns Task horizon in minutes
+ */
+export function getMetrValueAtDate(date: Date): number {
+  return getMetricValueAtDateFast(metrFrontier, date)
+}
+
+/**
+ * Get the maximum METR value from the frontier data.
+ * Used to set the Y-axis domain.
+ *
+ * @returns Maximum task horizon in minutes
+ */
+export function getMaxMetrValue(): number {
+  const lastPoint = metrFrontier.data.at(-1)
+  return lastPoint?.value ?? METR_MAX_FALLBACK_MINUTES
 }
 
 /**

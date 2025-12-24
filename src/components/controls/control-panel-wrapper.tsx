@@ -32,8 +32,8 @@ export function ControlPanelWrapper({
   variant = 'sidebar',
 }: ControlPanelWrapperProps) {
   const {
-    metrics,
-    setMetrics,
+    metric,
+    setMetric,
     categories,
     setCategories,
     searchQuery,
@@ -56,8 +56,8 @@ export function ControlPanelWrapper({
 
   return (
     <ControlPanel
-      enabledMetrics={metrics}
-      onMetricsChange={setMetrics}
+      selectedMetric={metric}
+      onMetricChange={setMetric}
       selectedCategories={categories}
       onCategoriesChange={setCategories}
       searchQuery={searchQuery}

@@ -12,6 +12,7 @@ import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const EPOCH_DIR = join(__dirname, '..', 'epoch_data')
+const BENCHMARK_DIR = join(__dirname, '..', 'benchmark_data')
 
 // Parse CSV file
 function parseCSV(filepath) {
@@ -148,10 +149,19 @@ async function main() {
   const hwRecords = parseCSV(hwPath)
   console.log(`  Hardware records: ${hwRecords.length}`)
 
+  // 5. Parse METR Time Horizons for agentic task capability
+  const metrPath = join(BENCHMARK_DIR, 'metr_time_horizons_external.csv')
+  const metrRecords = parseCSV(metrPath)
+  console.log(`  METR records: ${metrRecords.length}`)
+
+  const metrFrontier = computeFrontierEnvelope(metrRecords, 'Release date', 'Time horizon')
+  console.log(`  METR frontier points: ${metrFrontier.length}`)
+
   // Aggregate monthly for cleaner visualization
   const mmluMonthly = aggregateByMonth(mmluFrontier)
   const eciMonthly = aggregateByMonth(eciFrontier)
   const computeMonthly = aggregateByMonth(computeFrontier)
+  const metrMonthly = aggregateByMonth(metrFrontier)
 
   // Generate TypeScript output
   // P1.1 fix: Write to ai-metrics.generated.ts to protect handwritten helpers in ai-metrics.ts
@@ -179,17 +189,21 @@ export interface AIMetricSeries {
 }
 
 /**
- * MMLU Benchmark Frontier
- * Best MMLU score achieved at each point in time.
- * Shows capability progress on a standardized benchmark.
+ * ARC-AGI Benchmark Frontier
+ * Best ARC-AGI score achieved at each point in time.
+ * Shows dramatic capability progress on novel reasoning tasks.
+ * Source: https://arcprize.org/
  */
-export const mmluFrontier: AIMetricSeries = {
-  id: 'mmlu',
-  label: 'MMLU Score',
+export const arcagiFrontier: AIMetricSeries = {
+  id: 'arcagi',
+  label: 'ARC-AGI Score',
   color: 'rgb(234, 179, 8)', // Amber
   unit: '%',
   data: ${JSON.stringify(mmluMonthly.map(p => ({ date: p.date, value: Math.round(p.value * 1000) / 10 })), null, 4).replace(/\n/g, '\n  ')},
 }
+
+// Legacy export for backward compatibility
+export const mmluFrontier = arcagiFrontier
 
 /**
  * Epoch Capabilities Index (ECI) Frontier
@@ -218,9 +232,23 @@ export const trainingComputeFrontier: AIMetricSeries = {
 }
 
 /**
+ * METR Task Horizon Frontier (minutes)
+ * Maximum task horizon (autonomous work duration) achieved by AI models.
+ * Measures agentic capability - how long models can work on tasks autonomously.
+ * Source: https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks/
+ */
+export const metrFrontier: AIMetricSeries = {
+  id: 'metr',
+  label: 'METR Task Horizon',
+  color: 'rgb(236, 72, 153)', // Pink
+  unit: 'minutes',
+  data: ${JSON.stringify(metrMonthly.map(p => ({ date: p.date, value: Math.round(p.value * 10) / 10 })), null, 4).replace(/\n/g, '\n  ')},
+}
+
+/**
  * All metric series for visualization
  */
-export const allMetrics: AIMetricSeries[] = [mmluFrontier, eciFrontier, trainingComputeFrontier]
+export const allMetrics: AIMetricSeries[] = [arcagiFrontier, eciFrontier, trainingComputeFrontier, metrFrontier]
 
 /**
  * Frontier model timeline - which model was the frontier at each date
@@ -313,6 +341,7 @@ export function getNormalizedMetricAtDate(series: AIMetricSeries, date: Date): n
   console.log(`  MMLU: ${mmluMonthly[0]?.date} to ${mmluMonthly[mmluMonthly.length - 1]?.date}`)
   console.log(`  ECI: ${eciMonthly[0]?.date} to ${eciMonthly[eciMonthly.length - 1]?.date}`)
   console.log(`  Compute: ${computeMonthly[0]?.date} to ${computeMonthly[computeMonthly.length - 1]?.date}`)
+  console.log(`  METR: ${metrMonthly[0]?.date} to ${metrMonthly[metrMonthly.length - 1]?.date}`)
 }
 
 main().catch(console.error)

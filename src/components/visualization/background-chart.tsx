@@ -1,21 +1,28 @@
-import { useMemo, memo } from 'react'
-import { LinePath, AreaClosed } from '@visx/shape'
+import { useMemo, memo, useRef, useEffect, useState } from 'react'
+import { AreaClosed } from '@visx/shape'
 import { curveMonotoneX } from '@visx/curve'
 import { scaleLinear } from '@visx/scale'
+import { useReducedMotion } from 'framer-motion'
 import type { ScaleTime } from 'd3-scale'
 import type { AIMetricSeries } from '@/data/ai-metrics'
-import { isFlopMetric } from '@/data/ai-metrics'
-import { logToFlop, type LogScale } from '@/lib/utils/scales'
+import type { LinearScale } from '@/lib/utils/scales'
 import type { MetricType } from '@/types/metrics'
+import {
+  resampleMetricToPoints,
+  pointsToPathD,
+  interpolatePoints,
+  isPrimaryMetric,
+  type Point,
+} from '@/lib/utils/path-interpolation'
 
 export interface BackgroundChartProps {
   metrics: AIMetricSeries[]
-  /** Which metrics are currently enabled (controls opacity for smooth transitions) */
-  enabledMetrics: MetricType[]
+  /** Currently selected metric to display */
+  selectedMetric: MetricType
   /** Time scale for X-axis positioning */
   xScale: ScaleTime<number, number>
-  /** Log scale for Y-axis positioning of FLOP values */
-  yScale: LogScale
+  /** Linear scale for Y-axis (METR Task Horizon in minutes) */
+  yScale: LinearScale
   innerHeight: number
 }
 
@@ -29,7 +36,7 @@ interface TransformedDataPoint {
  * Custom comparison function for React.memo to prevent unnecessary re-renders.
  * BackgroundChart only needs to re-render when:
  * - Metrics data changes (new data loaded)
- * - Enabled metrics toggle (show/hide lines)
+ * - Selected metric changes (triggers morph animation)
  * - Scale domains change (date range or metric range)
  * - Chart dimensions change
  *
@@ -42,9 +49,8 @@ function arePropsEqual(
   // Quick dimension check
   if (prev.innerHeight !== next.innerHeight) return false
 
-  // Enabled metrics array comparison
-  if (prev.enabledMetrics.length !== next.enabledMetrics.length) return false
-  if (!prev.enabledMetrics.every((m, i) => m === next.enabledMetrics[i])) return false
+  // Selected metric comparison
+  if (prev.selectedMetric !== next.selectedMetric) return false
 
   // Scale domain comparison (not reference equality)
   // X-scale domain is Date objects - compare timestamps
@@ -70,150 +76,241 @@ function arePropsEqual(
 }
 
 /**
- * Renders background line charts showing AI progress metrics.
- * Training Compute uses actual FLOP values on the log Y-scale.
- * MMLU and ECI render as normalized overlays with reduced opacity.
- * Supports smooth fade transitions when metrics are toggled on/off.
+ * Animation duration for line morph (milliseconds).
+ */
+const MORPH_DURATION_MS = 600
+
+/**
+ * Ease-out quart function for smooth deceleration.
+ * Provides a similar feel to Material Design ease-out [0.4, 0, 0.2, 1].
+ */
+function easeOutQuart(t: number): number {
+  return 1 - Math.pow(1 - t, 4)
+}
+
+/**
+ * Renders background line chart showing a single AI progress metric.
+ * METR Task Horizon uses the primary linear Y-axis (minutes).
+ * Training Compute, MMLU, and ECI render as normalized overlays.
+ * Supports smooth morph animation when switching between metrics.
  *
  * Memoized to prevent re-renders during pan/zoom operations.
  */
 function BackgroundChartComponent({
   metrics,
-  enabledMetrics,
+  selectedMetric,
   xScale,
   yScale,
   innerHeight,
 }: BackgroundChartProps) {
+  // Check reduced motion preference
+  const prefersReducedMotion = useReducedMotion()
+  const shouldReduceMotion = prefersReducedMotion ?? false
+
+  // Animation state - track previous metric ID in state (not ref) for reactivity
+  // previousMetricId is updated AFTER animation completes
+  const [previousMetricId, setPreviousMetricId] = useState<MetricType>(selectedMetric)
+  const [animationProgress, setAnimationProgress] = useState(1)
+  const animationFrameRef = useRef<number | null>(null)
+
   // Memoized linear scale for normalized (non-FLOP) metrics
-  // Created once outside the map loop to avoid repeated instantiation
   const normalizedYScale = useMemo(
     () => scaleLinear({ domain: [0, 1], range: [innerHeight, 0] }),
     [innerHeight]
   )
 
-  // Transform data with appropriate Y values based on metric type
-  const transformedMetrics = useMemo(() => {
-    return metrics.map((metric) => {
-      const isCompute = isFlopMetric(metric.id as MetricType)
+  // Get the currently selected metric data
+  const currentMetric = useMemo(() => {
+    return metrics.find((m) => m.id === selectedMetric)
+  }, [metrics, selectedMetric])
 
-      // Calculate min/max ONCE per metric series (for non-compute normalization)
-      let min = 0
-      let max = 1
-      let range = 1
-      if (!isCompute) {
-        const values = metric.data.map((p) => p.value)
-        min = Math.min(...values)
-        max = Math.max(...values)
-        range = max - min || 1
+  // Get the previous metric data (for animation) - now using state, not ref
+  const previousMetric = useMemo(() => {
+    return metrics.find((m) => m.id === previousMetricId)
+  }, [metrics, previousMetricId])
+
+  // Compute resampled points for current metric
+  const currentPoints = useMemo(() => {
+    if (!currentMetric) return []
+    return resampleMetricToPoints(currentMetric, xScale, yScale, innerHeight)
+  }, [currentMetric, xScale, yScale, innerHeight])
+
+  // Compute resampled points for previous metric (for animation)
+  const previousPoints = useMemo(() => {
+    if (!previousMetric) return []
+    return resampleMetricToPoints(previousMetric, xScale, yScale, innerHeight)
+  }, [previousMetric, xScale, yScale, innerHeight])
+
+  // Check if we're currently animating (progress < 1 and metrics differ)
+  const isAnimating = animationProgress < 1 && previousMetricId !== selectedMetric
+
+  // Handle metric change - trigger animation
+  useEffect(() => {
+    // Cancel any existing animation
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = null
+    }
+
+    // If metric changed, start animation
+    if (previousMetricId !== selectedMetric) {
+      // Start morph animation (or instant swap for reduced motion)
+      const startTime = performance.now()
+      const duration = shouldReduceMotion ? 0 : MORPH_DURATION_MS
+
+      const animate = (currentTime: number) => {
+        const elapsed = currentTime - startTime
+        const rawProgress = duration === 0 ? 1 : Math.min(elapsed / duration, 1)
+        const easedProgress = easeOutQuart(rawProgress)
+
+        setAnimationProgress(easedProgress)
+
+        if (rawProgress < 1) {
+          animationFrameRef.current = requestAnimationFrame(animate)
+        } else {
+          // Animation complete - update previous to current
+          setPreviousMetricId(selectedMetric)
+          animationFrameRef.current = null
+        }
       }
+
+      // Use requestAnimationFrame even for instant swap to avoid sync setState
+      animationFrameRef.current = requestAnimationFrame(animate)
+    }
+
+    // Cleanup on unmount or when dependencies change
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = null
+      }
+    }
+  }, [selectedMetric, previousMetricId, shouldReduceMotion])
+
+  // Compute animated path
+  const animatedPathD = useMemo(() => {
+    if (!isAnimating || previousPoints.length === 0 || currentPoints.length === 0) {
+      return pointsToPathD(currentPoints)
+    }
+
+    // Ensure same length for interpolation
+    const normalizedPrev = previousPoints.length === currentPoints.length
+      ? previousPoints
+      : resampleToLength(previousPoints, currentPoints.length)
+
+    const interpolated = interpolatePoints(normalizedPrev, currentPoints, animationProgress)
+    return pointsToPathD(interpolated)
+  }, [isAnimating, previousPoints, currentPoints, animationProgress])
+
+  if (!currentMetric) return null
+
+  const isPrimary = isPrimaryMetric(currentMetric.id)
+  const baseOpacity = isPrimary ? 0.6 : 0.3
+  const strokeOpacity = isPrimary ? 0.8 : 0.5
+
+  // Use current metric's color (area fill updates with metric change)
+  const currentColor = currentMetric.color
+
+  // For area fill, use current metric's transform
+  const [domainStart, domainEnd] = xScale.domain()
+  const visibleData = currentMetric.data
+    .map((d) => {
+      const date = new Date(d.date)
+      const values = currentMetric.data.map((p) => p.value)
+      const dataMin = Math.min(...values)
+      const dataMax = Math.max(...values)
+      const range = dataMax - dataMin || 1
 
       return {
-        ...metric,
-        isLogScale: isCompute,
-        transformedData: metric.data.map((d) => {
-          const date = new Date(d.date)
-
-          if (isCompute) {
-            // Training compute: convert log10 to actual FLOP for yScale
-            return {
-              date,
-              value: d.value,
-              yValue: logToFlop(d.value),
-            }
-          } else {
-            // MMLU/ECI: normalize to 0-1 for overlay rendering
-            return {
-              date,
-              value: d.value,
-              yValue: (d.value - min) / range,
-            }
-          }
-        }),
+        date,
+        value: d.value,
+        yValue: isPrimary ? d.value : (d.value - dataMin) / range,
       }
     })
-  }, [metrics])
+    .filter((d) => d.date >= domainStart && d.date <= domainEnd)
+
+  if (visibleData.length < 2 && currentPoints.length === 0) return null
+
+  const getX = (d: TransformedDataPoint) => xScale(d.date) ?? 0
+  const getY = (d: TransformedDataPoint) => {
+    if (isPrimary) {
+      return yScale(d.yValue) ?? 0
+    } else {
+      return innerHeight * (1 - d.yValue)
+    }
+  }
+
+  const areaYScale = isPrimary ? yScale : normalizedYScale
 
   return (
-    <g className="background-chart">
-      {transformedMetrics.map((metric) => {
-        // Check if this metric is enabled for visibility
-        const isEnabled = enabledMetrics.includes(metric.id as MetricType)
+    <g className="background-chart" data-metric-id={currentMetric.id}>
+      {/* Gradient area fill - crossfade between metrics */}
+      <defs>
+        <linearGradient
+          id={`area-gradient-${currentMetric.id}`}
+          x1="0"
+          y1="0"
+          x2="0"
+          y2="1"
+        >
+          <stop offset="0%" stopColor={currentColor} stopOpacity={0.3} />
+          <stop offset="100%" stopColor={currentColor} stopOpacity={0.02} />
+        </linearGradient>
+      </defs>
 
-        // Filter data to only include points within the x-axis domain
-        const [domainStart, domainEnd] = xScale.domain()
-        const visibleData = metric.transformedData.filter(
-          (d) => d.date >= domainStart && d.date <= domainEnd
-        )
+      {/* Area under the curve - simple crossfade, not morph */}
+      <g
+        style={{
+          opacity: baseOpacity,
+          transition: shouldReduceMotion ? 'none' : 'opacity 200ms ease-in-out',
+        }}
+      >
+        <AreaClosed
+          data={visibleData}
+          x={getX}
+          y={getY}
+          yScale={areaYScale}
+          curve={curveMonotoneX}
+          fill={`url(#area-gradient-${currentMetric.id})`}
+        />
+      </g>
 
-        if (visibleData.length < 2) return null
-
-        const getX = (d: TransformedDataPoint) => xScale(d.date) ?? 0
-
-        // Y accessor depends on metric type
-        const getY = (d: TransformedDataPoint) => {
-          if (metric.isLogScale) {
-            // Compute metric: use passed yScale directly with actual FLOP values
-            return yScale(d.yValue) ?? 0
-          } else {
-            // Non-compute: render normalized to chart height (0=bottom, 1=top)
-            return innerHeight * (1 - d.yValue)
-          }
-        }
-
-        // Use appropriate scale for AreaClosed (memoized normalizedYScale for non-compute)
-        const areaYScale = metric.isLogScale ? yScale : normalizedYScale
-
-        // Opacity: full for compute (primary), reduced for overlay metrics
-        const baseOpacity = metric.isLogScale ? 0.6 : 0.3
-
-        return (
-          <g
-            key={metric.id}
-            data-metric-id={metric.id}
-            style={{
-              opacity: isEnabled ? baseOpacity : 0,
-              transition: 'opacity 200ms ease-in-out',
-            }}
-          >
-            {/* Gradient area fill */}
-            <defs>
-              <linearGradient
-                id={`area-gradient-${metric.id}`}
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop offset="0%" stopColor={metric.color} stopOpacity={0.3} />
-                <stop offset="100%" stopColor={metric.color} stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
-
-            {/* Area under the curve */}
-            <AreaClosed
-              data={visibleData}
-              x={getX}
-              y={getY}
-              yScale={areaYScale}
-              curve={curveMonotoneX}
-              fill={`url(#area-gradient-${metric.id})`}
-            />
-
-            {/* Line on top */}
-            <LinePath
-              data={visibleData}
-              x={getX}
-              y={getY}
-              curve={curveMonotoneX}
-              stroke={metric.color}
-              strokeWidth={2}
-              strokeOpacity={metric.isLogScale ? 0.8 : 0.5}
-            />
-          </g>
-        )
-      })}
+      {/* Animated line using resampled path */}
+      <path
+        d={animatedPathD}
+        fill="none"
+        stroke={currentColor}
+        strokeWidth={2}
+        strokeOpacity={strokeOpacity}
+        style={{
+          opacity: baseOpacity,
+        }}
+      />
     </g>
   )
+}
+
+/**
+ * Resample points array to a target length using linear interpolation.
+ */
+function resampleToLength(points: Point[], targetLength: number): Point[] {
+  if (points.length === 0 || targetLength === 0) return []
+  if (points.length === targetLength) return points
+
+  const result: Point[] = []
+  for (let i = 0; i < targetLength; i++) {
+    const t = i / (targetLength - 1)
+    const sourceIdx = t * (points.length - 1)
+    const lowerIdx = Math.floor(sourceIdx)
+    const upperIdx = Math.min(lowerIdx + 1, points.length - 1)
+    const fraction = sourceIdx - lowerIdx
+
+    result.push({
+      x: points[lowerIdx].x + (points[upperIdx].x - points[lowerIdx].x) * fraction,
+      y: points[lowerIdx].y + (points[upperIdx].y - points[lowerIdx].y) * fraction,
+    })
+  }
+  return result
 }
 
 /**

@@ -1,4 +1,4 @@
-import { scaleLog } from '@visx/scale'
+import { scaleLog, scaleLinear } from '@visx/scale'
 
 /**
  * Standard tick values for FLOP Y-axis (10^17 to 10^27)
@@ -80,4 +80,50 @@ export function flopToLog(flop: number): number {
  */
 export function getVisibleTickValues(domain: [number, number]): number[] {
   return LOG_TICK_VALUES.filter(v => v >= domain[0] && v <= domain[1])
+}
+
+// =============================================================================
+// METR Task Horizon Linear Scale (minutes)
+// =============================================================================
+
+/**
+ * Type for the linear scale returned by createLinearYScale
+ */
+export type LinearScale = ReturnType<typeof createLinearYScale>
+
+/**
+ * Create linear Y-scale for METR Task Horizon values (minutes)
+ * @param height - Chart inner height in pixels
+ * @param domain - [min, max] minutes (typically [0, maxMinutes])
+ * @returns visx ScaleLinear configured for Y-axis rendering
+ */
+export function createLinearYScale(height: number, domain: [number, number]) {
+  return scaleLinear({
+    domain,
+    range: [height, 0], // Inverted: high values at top (y=0)
+  })
+}
+
+/**
+ * Standard tick values for METR Y-axis (0 to 300 minutes)
+ * Provides nice round numbers for task horizon visualization
+ */
+export const METR_TICK_VALUES = [0, 50, 100, 150, 200, 250, 300] as const
+
+/**
+ * Format METR tick value as label
+ * @param value - Minutes value
+ * @returns Formatted string with "min" suffix
+ */
+export function formatMetrTick(value: number): string {
+  return `${Math.round(value)}min`
+}
+
+/**
+ * Get visible tick values for METR linear scale
+ * @param domain - [min, max] minutes
+ * @returns Filtered tick values within domain
+ */
+export function getVisibleMetrTickValues(domain: [number, number]): number[] {
+  return METR_TICK_VALUES.filter(v => v >= domain[0] && v <= domain[1])
 }

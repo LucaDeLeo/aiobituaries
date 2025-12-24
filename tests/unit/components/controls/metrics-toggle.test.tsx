@@ -5,8 +5,8 @@ import type { MetricType } from '@/types/metrics'
 
 describe('MetricsToggle', () => {
   const defaultProps = {
-    enabledMetrics: ['compute'] as MetricType[],
-    onMetricsChange: vi.fn(),
+    selectedMetric: 'metr' as MetricType,
+    onMetricChange: vi.fn(),
   }
 
   beforeEach(() => {
@@ -26,225 +26,184 @@ describe('MetricsToggle', () => {
     it('renders descriptions for metrics', () => {
       render(<MetricsToggle {...defaultProps} />)
 
-      expect(screen.getByText(/FLOP trend line/)).toBeInTheDocument()
+      expect(screen.getByText(/Historical training compute/)).toBeInTheDocument()
       expect(screen.getByText(/Novel reasoning benchmark/)).toBeInTheDocument()
     })
 
-    it('shows checked state for enabled metrics', () => {
+    it('shows selected state for the selected metric', () => {
       render(
         <MetricsToggle
           {...defaultProps}
-          enabledMetrics={['compute']}
+          selectedMetric="compute"
         />
       )
 
-      const computeCheckbox = screen.getByRole('checkbox', {
+      const computeRadio = screen.getByRole('radio', {
         name: /training compute/i,
       })
 
-      expect(computeCheckbox).toBeChecked()
+      expect(computeRadio).toBeChecked()
     })
 
-    it('shows unchecked state when compute is not enabled', () => {
+    it('shows unselected state for non-selected metrics', () => {
       render(
         <MetricsToggle
           {...defaultProps}
-          enabledMetrics={[]}
+          selectedMetric="compute"
         />
       )
 
-      const computeCheckbox = screen.getByRole('checkbox', {
-        name: /training compute/i,
+      const arcagiRadio = screen.getByRole('radio', {
+        name: /arc-agi/i,
       })
 
-      expect(computeCheckbox).not.toBeChecked()
+      expect(arcagiRadio).not.toBeChecked()
     })
   })
 
   describe('interactions', () => {
-    it('calls onMetricsChange when disabling compute', () => {
-      const onMetricsChange = vi.fn()
+    it('calls onMetricChange when selecting compute', () => {
+      const onMetricChange = vi.fn()
       render(
         <MetricsToggle
-          enabledMetrics={['compute']}
-          onMetricsChange={onMetricsChange}
+          selectedMetric="metr"
+          onMetricChange={onMetricChange}
         />
       )
 
-      const computeCheckbox = screen.getByRole('checkbox', {
+      const computeRadio = screen.getByRole('radio', {
         name: /training compute/i,
       })
-      fireEvent.click(computeCheckbox)
+      fireEvent.click(computeRadio)
 
-      expect(onMetricsChange).toHaveBeenCalledWith([])
+      expect(onMetricChange).toHaveBeenCalledWith('compute')
     })
 
-    it('calls onMetricsChange when enabling compute', () => {
-      const onMetricsChange = vi.fn()
+    it('calls onMetricChange when selecting arcagi', () => {
+      const onMetricChange = vi.fn()
       render(
         <MetricsToggle
-          enabledMetrics={[]}
-          onMetricsChange={onMetricsChange}
+          selectedMetric="compute"
+          onMetricChange={onMetricChange}
         />
       )
 
-      const computeCheckbox = screen.getByRole('checkbox', {
-        name: /training compute/i,
-      })
-      fireEvent.click(computeCheckbox)
-
-      expect(onMetricsChange).toHaveBeenCalledWith(['compute'])
-    })
-
-    it('allows disabling all metrics', () => {
-      const onMetricsChange = vi.fn()
-      render(
-        <MetricsToggle
-          enabledMetrics={['compute']}
-          onMetricsChange={onMetricsChange}
-        />
-      )
-
-      const computeCheckbox = screen.getByRole('checkbox', {
-        name: /training compute/i,
-      })
-      fireEvent.click(computeCheckbox)
-
-      expect(onMetricsChange).toHaveBeenCalledWith([])
-    })
-
-    it('calls onMetricsChange when enabling arcagi', () => {
-      const onMetricsChange = vi.fn()
-      render(
-        <MetricsToggle
-          enabledMetrics={['compute']}
-          onMetricsChange={onMetricsChange}
-        />
-      )
-
-      const arcagiCheckbox = screen.getByRole('checkbox', {
+      const arcagiRadio = screen.getByRole('radio', {
         name: /arc-agi/i,
       })
-      fireEvent.click(arcagiCheckbox)
+      fireEvent.click(arcagiRadio)
 
-      expect(onMetricsChange).toHaveBeenCalledWith(['compute', 'arcagi'])
+      expect(onMetricChange).toHaveBeenCalledWith('arcagi')
     })
 
-    it('calls onMetricsChange when disabling arcagi', () => {
-      const onMetricsChange = vi.fn()
+    it('does not call onMetricChange when clicking already selected metric', () => {
+      // Radio buttons don't fire onChange when clicking an already-selected option
+      // This is standard browser behavior
+      const onMetricChange = vi.fn()
       render(
         <MetricsToggle
-          enabledMetrics={['compute', 'arcagi']}
-          onMetricsChange={onMetricsChange}
+          selectedMetric="compute"
+          onMetricChange={onMetricChange}
         />
       )
 
-      const arcagiCheckbox = screen.getByRole('checkbox', {
-        name: /arc-agi/i,
+      const computeRadio = screen.getByRole('radio', {
+        name: /training compute/i,
       })
-      fireEvent.click(arcagiCheckbox)
+      fireEvent.click(computeRadio)
 
-      expect(onMetricsChange).toHaveBeenCalledWith(['compute'])
+      // Standard radio behavior: no event when clicking already selected
+      expect(onMetricChange).not.toHaveBeenCalled()
     })
   })
 
   describe('accessibility', () => {
-    it('has accessible labels for checkboxes', () => {
+    it('has accessible labels for radio buttons', () => {
       render(<MetricsToggle {...defaultProps} />)
 
       expect(
-        screen.getByRole('checkbox', { name: /training compute/i })
+        screen.getByRole('radio', { name: /training compute/i })
       ).toBeInTheDocument()
       expect(
-        screen.getByRole('checkbox', { name: /arc-agi/i })
+        screen.getByRole('radio', { name: /arc-agi/i })
       ).toBeInTheDocument()
     })
 
-    it('toggles on keyboard space', () => {
-      const onMetricsChange = vi.fn()
+    it('has radiogroup role on container', () => {
+      render(<MetricsToggle {...defaultProps} />)
+
+      expect(screen.getByRole('radiogroup')).toBeInTheDocument()
+    })
+
+    it('only one radio can be selected at a time', () => {
       render(
         <MetricsToggle
-          enabledMetrics={['compute']}
-          onMetricsChange={onMetricsChange}
+          {...defaultProps}
+          selectedMetric="compute"
         />
       )
 
-      const computeCheckbox = screen.getByRole('checkbox', {
+      const computeRadio = screen.getByRole('radio', {
         name: /training compute/i,
       })
-      computeCheckbox.focus()
-      fireEvent.keyDown(computeCheckbox, { key: ' ' })
-      fireEvent.keyUp(computeCheckbox, { key: ' ' })
-      fireEvent.click(computeCheckbox)
+      const arcagiRadio = screen.getByRole('radio', {
+        name: /arc-agi/i,
+      })
 
-      expect(onMetricsChange).toHaveBeenCalled()
+      expect(computeRadio).toBeChecked()
+      expect(arcagiRadio).not.toBeChecked()
     })
   })
 
   describe('edge cases', () => {
-    it('handles empty enabledMetrics', () => {
-      render(
-        <MetricsToggle {...defaultProps} enabledMetrics={[]} />
-      )
-
-      const checkboxes = screen.getAllByRole('checkbox')
-      checkboxes.forEach((checkbox) => {
-        expect(checkbox).not.toBeChecked()
-      })
-    })
-
-    it('handles compute metric enabled', () => {
+    it('handles compute metric selected', () => {
       render(
         <MetricsToggle
           {...defaultProps}
-          enabledMetrics={['compute']}
+          selectedMetric="compute"
         />
       )
 
-      const computeCheckbox = screen.getByRole('checkbox', {
+      const computeRadio = screen.getByRole('radio', {
         name: /training compute/i,
       })
-      const arcagiCheckbox = screen.getByRole('checkbox', {
+      const arcagiRadio = screen.getByRole('radio', {
         name: /arc-agi/i,
       })
-      expect(computeCheckbox).toBeChecked()
-      expect(arcagiCheckbox).not.toBeChecked()
+      expect(computeRadio).toBeChecked()
+      expect(arcagiRadio).not.toBeChecked()
     })
 
-    it('handles arcagi metric enabled', () => {
+    it('handles arcagi metric selected', () => {
       render(
         <MetricsToggle
           {...defaultProps}
-          enabledMetrics={['arcagi']}
+          selectedMetric="arcagi"
         />
       )
 
-      const computeCheckbox = screen.getByRole('checkbox', {
+      const computeRadio = screen.getByRole('radio', {
         name: /training compute/i,
       })
-      const arcagiCheckbox = screen.getByRole('checkbox', {
+      const arcagiRadio = screen.getByRole('radio', {
         name: /arc-agi/i,
       })
-      expect(computeCheckbox).not.toBeChecked()
-      expect(arcagiCheckbox).toBeChecked()
+      expect(computeRadio).not.toBeChecked()
+      expect(arcagiRadio).toBeChecked()
     })
 
-    it('handles both metrics enabled', () => {
+    it('handles metr metric selected', () => {
       render(
         <MetricsToggle
           {...defaultProps}
-          enabledMetrics={['compute', 'arcagi']}
+          selectedMetric="metr"
         />
       )
 
-      const computeCheckbox = screen.getByRole('checkbox', {
-        name: /training compute/i,
+      const metrRadio = screen.getByRole('radio', {
+        name: /metr task horizon/i,
       })
-      const arcagiCheckbox = screen.getByRole('checkbox', {
-        name: /arc-agi/i,
-      })
-      expect(computeCheckbox).toBeChecked()
-      expect(arcagiCheckbox).toBeChecked()
+      expect(metrRadio).toBeChecked()
     })
 
     it('applies custom className', () => {

@@ -9,18 +9,19 @@ import { useHydrated } from '@/lib/hooks/use-hydrated'
  * UI-specific descriptions for each metric (not in generated data)
  */
 const METRIC_DESCRIPTIONS: Record<MetricType, string> = {
-  compute: 'FLOP trend line (aligns with dot Y-positions)',
+  compute: 'Historical training compute trend',
   arcagi: 'Novel reasoning benchmark progress',
   eci: 'Composite capability',
+  metr: 'Primary Y-axis (aligns with dot positions)',
 }
 
 /**
  * Derive metrics config from generated data with UI descriptions.
- * Shows compute (primary FLOP axis) and ARC-AGI (overlay).
+ * Shows METR (primary Y-axis), Training Compute, and ARC-AGI.
  * ECI is hidden as it doesn't add meaningful visual information.
  */
 const METRICS = allMetrics
-  .filter((metric) => metric.id === 'compute' || metric.id === 'arcagi')
+  .filter((metric) => metric.id === 'compute' || metric.id === 'arcagi' || metric.id === 'metr')
   .map((metric) => ({
     id: metric.id as MetricType,
     label: metric.label,
@@ -29,101 +30,84 @@ const METRICS = allMetrics
   }))
 
 export interface MetricsToggleProps {
-  /** Currently enabled metrics */
-  enabledMetrics: MetricType[]
-  /** Callback when metrics selection changes */
-  onMetricsChange: (metrics: MetricType[]) => void
+  /** Currently selected metric */
+  selectedMetric: MetricType
+  /** Callback when metric selection changes */
+  onMetricChange: (metric: MetricType) => void
   /** Optional className for container */
   className?: string
 }
 
 /**
- * MetricsToggle - Checkbox list for toggling background metric trend lines
+ * MetricsToggle - Radio button list for selecting a background metric trend line
  *
- * Allows users to select which AI progress metrics are displayed as
- * background trend lines in the visualization. Each metric has a distinct
+ * Allows users to select which single AI progress metric is displayed as
+ * the background trend line in the visualization. Each metric has a distinct
  * color that matches its trend line.
  *
  * @example
  * ```tsx
- * const { metrics, setMetrics } = useVisualizationState()
+ * const { metric, setMetric } = useVisualizationState()
  *
  * <MetricsToggle
- *   enabledMetrics={metrics}
- *   onMetricsChange={setMetrics}
+ *   selectedMetric={metric}
+ *   onMetricChange={setMetric}
  * />
  * ```
  */
 export function MetricsToggle({
-  enabledMetrics,
-  onMetricsChange,
+  selectedMetric,
+  onMetricChange,
   className,
 }: MetricsToggleProps) {
   // Track hydration state to prevent hydration mismatch
-  // enabledMetrics comes from URL state which may differ between SSR and client
+  // selectedMetric comes from URL state which may differ between SSR and client
   const isHydrated = useHydrated()
 
-  const handleToggle = (metricId: MetricType) => {
-    const isEnabled = enabledMetrics.includes(metricId)
-
-    if (isEnabled) {
-      // Remove metric
-      onMetricsChange(enabledMetrics.filter((m) => m !== metricId))
-    } else {
-      // Add metric
-      onMetricsChange([...enabledMetrics, metricId])
-    }
+  const handleSelect = (metricId: MetricType) => {
+    onMetricChange(metricId)
   }
 
   return (
-    <div className={cn('flex flex-col gap-3', className)}>
+    <div className={cn('flex flex-col gap-3', className)} role="radiogroup" aria-label="Select background metric">
       {METRICS.map((metric) => {
         // Use false during SSR to ensure consistent hydration
         // After hydration, use actual state from URL params
-        const isChecked = isHydrated && enabledMetrics.includes(metric.id)
-        const checkboxId = `metric-${metric.id}`
+        const isSelected = isHydrated && selectedMetric === metric.id
+        const radioId = `metric-${metric.id}`
 
         return (
           <label
             key={metric.id}
-            htmlFor={checkboxId}
+            htmlFor={radioId}
             className="flex items-start gap-3 cursor-pointer group"
           >
-            {/* Custom checkbox with native input for accessibility */}
+            {/* Custom radio button with native input for accessibility */}
             <div className="relative flex items-center justify-center pt-0.5">
               <input
-                type="checkbox"
-                id={checkboxId}
-                checked={isChecked}
-                onChange={() => handleToggle(metric.id)}
+                type="radio"
+                id={radioId}
+                name="metric-select"
+                checked={isSelected}
+                onChange={() => handleSelect(metric.id)}
                 className="peer sr-only"
               />
-              {/* Visual checkbox */}
+              {/* Visual radio button */}
               <div
                 className={cn(
-                  'h-4 w-4 rounded border-2 transition-colors',
+                  'h-4 w-4 rounded-full border-2 transition-colors flex items-center justify-center',
                   'peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2',
-                  isChecked
+                  isSelected
                     ? 'border-transparent'
                     : 'border-muted-foreground/50 group-hover:border-muted-foreground'
                 )}
                 style={{
-                  backgroundColor: isChecked ? metric.color : 'transparent',
+                  backgroundColor: isSelected ? metric.color : 'transparent',
                 }}
               >
-                {/* Checkmark */}
-                {isChecked && (
-                  <svg
-                    className="h-full w-full text-white"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M4 8l3 3 5-6" />
-                  </svg>
+                {/* Inner dot for selected state */}
+                {isSelected && (
+                  <div className="h-1.5 w-1.5 rounded-full bg-white" />
                 )}
               </div>
             </div>

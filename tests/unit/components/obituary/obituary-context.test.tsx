@@ -217,7 +217,8 @@ describe('ObituaryContext', () => {
       expect(screen.getByText('Benchmark')).toBeInTheDocument()
       // There may be multiple MMLU elements (CMS card + computed AI Progress), just check one exists
       expect(screen.getAllByText(/MMLU/).length).toBeGreaterThanOrEqual(1)
-      expect(screen.getByText(/86\.5%/)).toBeInTheDocument()
+      // There may be multiple 86.5% elements if computed metrics coincide with CMS data
+      expect(screen.getAllByText(/86\.5%/).length).toBeGreaterThanOrEqual(1)
     })
 
     it('displays Benchmark card title', async () => {
@@ -244,9 +245,14 @@ describe('ObituaryContext', () => {
         render(<ObituaryContext context={mockFullContext} date={mockDate} />)
       })
 
-      const scoreElement = screen.getByText(/86\.5%/)
+      // Find the CMS Benchmark card specifically to avoid matching computed AI Progress metrics
+      const benchmarkCard = screen.getByText('Benchmark').closest('[data-slot="card"]')
+      expect(benchmarkCard).not.toBeNull()
+      const scoreElement = benchmarkCard!.querySelector('.font-mono')
+      expect(scoreElement).not.toBeNull()
       expect(scoreElement).toHaveClass('text-[var(--accent-primary)]')
       expect(scoreElement).toHaveClass('font-mono')
+      expect(scoreElement?.textContent).toContain('86.5%')
     })
 
     it('does not show Benchmark card when no benchmark exists', async () => {

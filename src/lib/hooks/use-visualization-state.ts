@@ -8,13 +8,13 @@
  * and shares the URL, recipients see the same view configuration.
  *
  * URL Format:
- * - ?metrics=compute,mmlu - enabled metric trend lines
+ * - ?metric=metr - single selected metric trend line
  * - ?cat=market,agi - selected categories (empty = all)
  * - ?q=search+term - search query filter
  * - ?skeptic=slug - filter by skeptic's claims
  *
  * Example full URL:
- * /?metrics=compute,mmlu&cat=market,agi&q=climate&skeptic=gary-marcus
+ * /?metric=metr&cat=market,agi&q=climate&skeptic=gary-marcus
  */
 
 import {
@@ -22,6 +22,7 @@ import {
   parseAsArrayOf,
   parseAsStringLiteral,
   parseAsString,
+  createParser,
 } from 'nuqs'
 import {
   useCallback,
@@ -32,16 +33,21 @@ import type { MetricType } from '@/types/metrics'
 import { CATEGORY_ORDER } from '@/lib/constants/categories'
 
 // Valid metric types for URL parsing - derived from MetricType
-const METRIC_TYPES = ['compute', 'arcagi', 'eci'] as const satisfies readonly MetricType[]
+const METRIC_TYPES = ['compute', 'arcagi', 'eci', 'metr'] as const satisfies readonly MetricType[]
 
 /**
- * Parser for metrics array URL parameter.
- * Default ['compute'] for first-time visitors.
- * Empty array is valid and will persist in URL (shows no background metrics).
+ * Parser for single metric URL parameter.
+ * Default 'metr' - the primary Y-axis metric.
+ * Handles legacy ?metrics=a,b format by taking first value.
  */
-const metricsParser = parseAsArrayOf(
-  parseAsStringLiteral(METRIC_TYPES)
-).withDefault(['compute'] as MetricType[])
+const metricParser = createParser({
+  parse: (value: string) => {
+    // Handle legacy comma-separated format (e.g., "compute,arcagi" → "compute")
+    const firstValue = value.split(',')[0] as MetricType
+    return METRIC_TYPES.includes(firstValue) ? firstValue : null
+  },
+  serialize: (value: MetricType) => value,
+}).withDefault('metr' as MetricType)
 
 /**
  * Parser for category array URL parameter
@@ -66,10 +72,10 @@ const skepticParser = parseAsString
  * Visualization state interface
  */
 export interface VisualizationState {
-  /** Currently enabled background metrics */
-  metrics: MetricType[]
-  /** Set enabled metrics */
-  setMetrics: (metrics: MetricType[]) => void
+  /** Currently selected background metric */
+  metric: MetricType
+  /** Set selected metric */
+  setMetric: (metric: MetricType) => void
 
   /** Currently selected categories (empty = all) */
   categories: Category[]
@@ -93,13 +99,13 @@ export interface VisualizationState {
 /**
  * Hook for managing comprehensive URL-synced visualization state.
  *
- * Combines metrics and categories into a single hook
+ * Combines metric and categories into a single hook
  * with immediate URL persistence behavior.
  *
  * @example
  * ```tsx
  * const {
- *   metrics, setMetrics,
+ *   metric, setMetric,
  *   categories, setCategories,
  *   isPending,
  * } = useVisualizationState()
@@ -108,8 +114,9 @@ export interface VisualizationState {
 export function useVisualizationState(): VisualizationState {
   const [isPending, startTransition] = useTransition()
 
-  // Metrics state
-  const [metrics, setMetricsInternal] = useQueryState('metrics', metricsParser)
+  // Single metric state (URL param: ?metric=metr)
+  // Also handles legacy ?metrics=a,b format via parser
+  const [metric, setMetricInternal] = useQueryState('metric', metricParser)
 
   // Category state
   const [categories, setCategoriesInternal] = useQueryState('cat', categoryParser)
@@ -120,15 +127,14 @@ export function useVisualizationState(): VisualizationState {
   // Skeptic filter state
   const [selectedSkeptic, setSelectedSkepticInternal] = useQueryState('skeptic', skepticParser)
 
-  // Metrics setter - empty array is valid (no background metrics shown)
-  const setMetrics = useCallback(
-    (newMetrics: MetricType[]) => {
+  // Metric setter - one metric always required
+  const setMetric = useCallback(
+    (newMetric: MetricType) => {
       startTransition(() => {
-        // Keep empty arrays as-is (don't reset to null/default)
-        setMetricsInternal(newMetrics)
+        setMetricInternal(newMetric)
       })
     },
-    [setMetricsInternal]
+    [setMetricInternal]
   )
 
   // Categories setter
@@ -162,8 +168,8 @@ export function useVisualizationState(): VisualizationState {
   )
 
   return {
-    metrics: metrics as MetricType[],
-    setMetrics,
+    metric: metric as MetricType,
+    setMetric,
     categories: categories as Category[],
     setCategories,
     searchQuery: searchQuery ?? '',

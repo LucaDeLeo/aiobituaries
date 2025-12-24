@@ -59,8 +59,8 @@ export interface HomeClientProps {
   obituaries: ObituarySummary[]
   /** Layout variant: 'default' for existing, 'hero' for new grid layout */
   variant?: 'default' | 'hero'
-  /** Enabled metrics for background chart (hero variant only) */
-  enabledMetrics?: MetricType[]
+  /** Selected metric for background chart (hero variant only) */
+  selectedMetric?: MetricType
   /** Active category filters from parent (hero variant only) */
   activeCategories?: Category[]
   /** Search query for filtering obituaries (hero variant only) */
@@ -91,7 +91,7 @@ function matchesSearch(obit: ObituarySummary, query: string): boolean {
 export function HomeClient({
   obituaries,
   variant = 'default',
-  enabledMetrics,
+  selectedMetric,
   activeCategories: externalCategories,
   searchQuery: externalSearchQuery,
   selectedSkeptic: externalSkeptic,
@@ -163,7 +163,7 @@ export function HomeClient({
             <ScatterPlot
               data={filteredObituaries}
               activeCategories={categories}
-              enabledMetrics={enabledMetrics}
+              selectedMetric={selectedMetric}
               fillContainer
             />
           ) : (

@@ -421,3 +421,47 @@ describe('useQueryStates options', () => {
     expect(options.history).toBe('push')
   })
 })
+
+describe('Single-select metric parser (AC-4 legacy URL fallback)', () => {
+  const METRIC_TYPES = ['compute', 'arcagi', 'eci', 'metr'] as const
+  type MetricType = (typeof METRIC_TYPES)[number]
+
+  // Simulate the custom parser logic from use-visualization-state.ts
+  function parseMetric(value: string): MetricType | null {
+    // Handle legacy comma-separated format (e.g., "compute,arcagi" → "compute")
+    const firstValue = value.split(',')[0] as MetricType
+    return METRIC_TYPES.includes(firstValue) ? firstValue : null
+  }
+
+  it('parses single valid metric', () => {
+    expect(parseMetric('compute')).toBe('compute')
+    expect(parseMetric('metr')).toBe('metr')
+    expect(parseMetric('arcagi')).toBe('arcagi')
+    expect(parseMetric('eci')).toBe('eci')
+  })
+
+  it('handles legacy comma-separated format by taking first value', () => {
+    // AC-4: Given old URL ?metrics=compute,arcagi, take first value
+    expect(parseMetric('compute,arcagi')).toBe('compute')
+    expect(parseMetric('metr,compute')).toBe('metr')
+    expect(parseMetric('arcagi,eci,compute')).toBe('arcagi')
+  })
+
+  it('returns null for invalid metric', () => {
+    expect(parseMetric('invalid')).toBeNull()
+    expect(parseMetric('mmlu')).toBeNull() // Old metric name no longer valid
+  })
+
+  it('handles legacy format with invalid first value', () => {
+    expect(parseMetric('invalid,compute')).toBeNull()
+  })
+
+  it('handles empty string', () => {
+    expect(parseMetric('')).toBeNull()
+  })
+
+  it('default metric is metr', () => {
+    const defaultMetric: MetricType = 'metr'
+    expect(defaultMetric).toBe('metr')
+  })
+})

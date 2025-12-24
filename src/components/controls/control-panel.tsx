@@ -20,10 +20,10 @@ export interface DisplayOptions {
 }
 
 export interface ControlPanelProps {
-  /** Currently enabled background metrics */
-  enabledMetrics: MetricType[]
-  /** Callback when metrics selection changes */
-  onMetricsChange: (metrics: MetricType[]) => void
+  /** Currently selected background metric */
+  selectedMetric: MetricType
+  /** Callback when metric selection changes */
+  onMetricChange: (metric: MetricType) => void
   /** Currently selected categories (empty = all) */
   selectedCategories: Category[]
   /** Callback when category selection changes */
@@ -57,8 +57,8 @@ const variantStyles = {
 }
 
 export function ControlPanel({
-  enabledMetrics,
-  onMetricsChange,
+  selectedMetric,
+  onMetricChange,
   selectedCategories,
   onCategoriesChange,
   searchQuery,
@@ -91,8 +91,8 @@ export function ControlPanel({
       <div className="px-4 py-3 bg-accent/5 border-b border-border">
         <p className="text-xs text-muted-foreground leading-relaxed">
           <span className="font-medium text-foreground">How to read this chart:</span>{' '}
-          Each dot represents a skeptical AI claim. Vertical position shows AI capability
-          level (training compute) when the claim was made—higher means more advanced AI existed.
+          Each dot represents a skeptical AI claim. Vertical position shows AI agent
+          task duration (METR) when the claim was made—higher means more capable AI existed.
         </p>
         {/* Compact category legend */}
         <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 pt-2 border-t border-border/50">
@@ -128,8 +128,8 @@ export function ControlPanel({
               >
                 <CollapsibleSection title="Background Metrics" defaultOpen>
                   <MetricsToggle
-                    enabledMetrics={enabledMetrics}
-                    onMetricsChange={onMetricsChange}
+                    selectedMetric={selectedMetric}
+                    onMetricChange={onMetricChange}
                   />
                 </CollapsibleSection>
               </motion.div>

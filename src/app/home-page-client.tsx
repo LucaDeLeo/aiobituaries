@@ -55,7 +55,7 @@ function matchesSearch(obit: ObituarySummary, query: string): boolean {
 
 export function HomePageClient({ obituaries }: HomePageClientProps) {
   const {
-    metrics,
+    metric,
     categories,
     searchQuery,
     selectedSkeptic,
@@ -82,7 +82,7 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
         <HomeClient
           obituaries={obituaries}
           variant="hero"
-          enabledMetrics={metrics}
+          selectedMetric={metric}
           activeCategories={categories}
           searchQuery={searchQuery}
           selectedSkeptic={selectedSkeptic}
