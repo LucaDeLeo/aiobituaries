@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export function Footer() {
   const currentYear = new Date().getFullYear()
 
@@ -29,9 +31,18 @@ export function Footer() {
 
         {/* Bottom section */}
         <div className="flex flex-col items-center gap-4 pt-6 border-t border-[var(--border)]/50">
-          <p className="text-xs text-[var(--text-muted)] tracking-wider uppercase">
-            © {currentYear} AI Obituaries
-          </p>
+          <div className="flex items-center gap-4 text-xs text-[var(--text-muted)]">
+            <span className="tracking-wider uppercase">
+              © {currentYear} AI Obituaries
+            </span>
+            <span className="text-[var(--border)]">·</span>
+            <Link
+              href="/privacy"
+              className="hover:text-[var(--text-secondary)] transition-colors"
+            >
+              Privacy
+            </Link>
+          </div>
 
           {/* Tombstone icon */}
           <div className="text-[var(--accent-primary)]/30" aria-hidden="true">

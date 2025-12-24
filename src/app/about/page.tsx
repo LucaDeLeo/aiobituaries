@@ -1,8 +1,34 @@
 import type { Metadata } from 'next'
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://aiobituaries.com'
+
 export const metadata: Metadata = {
   title: 'About',
-  description: 'About AI Obituaries - A memorial to the ever-dying predictions of AI doom',
+  description: 'About AI Obituaries - A data-driven archive documenting AI skepticism and tracking declarations that AI is dead, overhyped, or doomed.',
+  openGraph: {
+    title: 'About | AI Obituaries',
+    description: 'A data-driven archive documenting AI skepticism and tracking declarations that AI is dead, overhyped, or doomed.',
+    type: 'website',
+    url: `${BASE_URL}/about`,
+    siteName: 'AI Obituaries',
+    images: [
+      {
+        url: `${BASE_URL}/og/default.png`,
+        width: 1200,
+        height: 630,
+        alt: 'AI Obituaries',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'About | AI Obituaries',
+    description: 'A data-driven archive documenting AI skepticism.',
+    images: [`${BASE_URL}/og/default.png`],
+  },
+  alternates: {
+    canonical: `${BASE_URL}/about`,
+  },
 }
 
 export default function AboutPage() {
