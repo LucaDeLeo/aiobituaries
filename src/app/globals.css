@@ -4,6 +4,9 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* Layout dimensions - per tech spec Task 7 */
+  --header-height: 64px;
+
   /* Deep Archive Theme - Background colors */
   --bg-primary: #0C0C0F;
   --bg-secondary: #14141A;

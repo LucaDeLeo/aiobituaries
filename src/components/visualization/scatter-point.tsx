@@ -1,7 +1,19 @@
 'use client'
 
 import { useRef, forwardRef, useImperativeHandle, memo } from 'react'
+import { motion } from 'framer-motion'
 import type { ObituarySummary } from '@/types/obituary'
+
+/**
+ * Spring configuration for point position animation.
+ * Per tech spec Task 5: stiffness 120, damping 20.
+ * Slightly stiffer than pan spring for snappy metric switching.
+ */
+const POINT_SPRING = {
+  type: 'spring' as const,
+  stiffness: 120,
+  damping: 20,
+}
 
 export interface ScatterPointProps {
   obituary: ObituarySummary
@@ -13,6 +25,8 @@ export interface ScatterPointProps {
   isClustered?: boolean
   /** Whether this point is selected (modal open) */
   isSelected?: boolean
+  /** Whether this point is outside the current metric's data range */
+  isOutOfRange?: boolean
   onMouseEnter?: () => void
   onMouseLeave?: () => void
   onClick?: (element: HTMLElement) => void
@@ -48,6 +62,7 @@ function arePropsEqual(prev: ScatterPointProps, next: ScatterPointProps): boolea
     prev.isHovered === next.isHovered &&
     prev.isClustered === next.isClustered &&
     prev.isSelected === next.isSelected &&
+    prev.isOutOfRange === next.isOutOfRange &&
     prev.color === next.color &&
     prev.tabIndex === next.tabIndex &&
     prev.touchRadius === next.touchRadius
@@ -65,6 +80,7 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
       isHovered = false,
       isClustered = false,
       isSelected = false,
+      isOutOfRange = false,
       onMouseEnter,
       onMouseLeave,
       onClick,
@@ -89,7 +105,10 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
     // Touch target size - use prop from parent (avoids N resize listeners per P0.1)
     const touchRadius = touchRadiusProp ?? POINT_RADIUS
 
-    const opacity = isFiltered ? (isHovered || isFocused || isSelected ? 1 : 0.85) : 0.2
+    // Opacity: reduce for filtered-out, out-of-range, or normal state
+    // Out-of-range points show at 50% opacity (AC-8: visually distinguished)
+    const baseOpacity = isOutOfRange ? 0.5 : (isFiltered ? 0.85 : 0.2)
+    const opacity = (isHovered || isFocused || isSelected) ? Math.min(1, baseOpacity + 0.15) : baseOpacity
 
     // Use larger radius when focused or selected (AC-6.2.5: 1.25x scale)
     const currentRadius = isFocused || isSelected ? FOCUSED_POINT_RADIUS : POINT_RADIUS
@@ -114,8 +133,14 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
       timeZone: 'UTC',
     })
 
+    // Spring transition config for metric switching animation
+    // Per tech spec: stiffness 120, damping 20 for snappy feel
+    const springTransition = shouldReduceMotion
+      ? { duration: 0 }
+      : POINT_SPRING
+
     return (
-      <g
+      <motion.g
         ref={groupRef}
         data-testid="scatter-point-group"
         role="listitem"
@@ -126,6 +151,9 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
         onFocus={onFocus}
         className="outline-none"
         style={{ cursor: isFiltered ? 'pointer' : 'default' }}
+        animate={{ x, y }}
+        transition={springTransition}
+        initial={false}
       >
         {/* Screen reader accessible name */}
         <title id={pointId}>{`${obituary.source} - ${formattedDate}`}</title>
@@ -140,8 +168,8 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
           <>
             {/* Outer pulse ring */}
             <circle
-              cx={x}
-              cy={y}
+              cx={0}
+              cy={0}
               r={FOCUS_RING_RADIUS + 6}
               fill="none"
               stroke="var(--accent-primary)"
@@ -152,8 +180,8 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
             />
             {/* Inner solid ring */}
             <circle
-              cx={x}
-              cy={y}
+              cx={0}
+              cy={0}
               r={FOCUS_RING_RADIUS + 2}
               fill="none"
               stroke="var(--accent-primary)"
@@ -166,8 +194,8 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
         {/* Focus ring - visible when focused (AC-6.2.5: 2px gold ring) */}
         {isFocused && !isSelected && (
           <circle
-            cx={x}
-            cy={y}
+            cx={0}
+            cy={0}
             r={FOCUS_RING_RADIUS}
             fill="none"
             stroke="var(--accent-primary)"
@@ -182,8 +210,8 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
         <circle
           ref={circleRef}
           data-testid="scatter-point"
-          cx={x}
-          cy={y}
+          cx={0}
+          cy={0}
           r={Math.max(touchRadius, displayRadius)}
           fill={color}
           opacity={opacity}
@@ -201,8 +229,8 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
         {/* Outer glow ring - only render when hovered/focused for performance */}
         {isFiltered && (isHovered || isFocused) && (
           <circle
-            cx={x}
-            cy={y}
+            cx={0}
+            cy={0}
             r={displayRadius + 4}
             fill="none"
             stroke={color}
@@ -211,7 +239,7 @@ const ScatterPointComponent = forwardRef<SVGGElement, ScatterPointProps>(
             style={{ pointerEvents: 'none' }}
           />
         )}
-      </g>
+      </motion.g>
     )
   }
 )

@@ -106,12 +106,15 @@ export function createLinearYScale(height: number, domain: [number, number]) {
 
 /**
  * Standard tick values for METR Y-axis (0 to 300 minutes)
- * Provides nice round numbers for task horizon visualization
+ * @deprecated Use METRIC_CONFIGS from '@/lib/utils/metric-scales' instead.
+ * That system computes tick values dynamically from data.
  */
 export const METR_TICK_VALUES = [0, 50, 100, 150, 200, 250, 300] as const
 
 /**
- * Format METR tick value as label
+ * Format METR tick value as label (simple version)
+ * @deprecated Use formatMetrTick from '@/lib/utils/metric-scales' instead.
+ * The new version handles hours for values >= 60 minutes.
  * @param value - Minutes value
  * @returns Formatted string with "min" suffix
  */
@@ -121,6 +124,7 @@ export function formatMetrTick(value: number): string {
 
 /**
  * Get visible tick values for METR linear scale
+ * @deprecated Use getVisibleTickValues from '@/lib/utils/metric-scales' instead.
  * @param domain - [min, max] minutes
  * @returns Filtered tick values within domain
  */

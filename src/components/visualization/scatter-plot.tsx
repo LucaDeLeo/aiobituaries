@@ -33,13 +33,18 @@ import {
 import { useRovingFocus } from '@/lib/hooks/use-roving-focus'
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint'
 import { BackgroundChart } from './background-chart'
-import { allMetrics, getMetrValueAtDate, getMaxMetrValue } from '@/data/ai-metrics'
+import { allMetrics } from '@/data/ai-metrics'
 import {
   createLinearYScale,
   type LinearScale,
-  formatMetrTick,
-  getVisibleMetrTickValues,
 } from '@/lib/utils/scales'
+import {
+  getMetricConfig,
+  getMetricYValue,
+  getVisibleTickValues,
+  isDateInMetricRange,
+} from '@/lib/utils/metric-scales'
+import { useAnimatedDomain } from '@/lib/hooks/use-animated-domain'
 import type { MetricType } from '@/types/metrics'
 
 export interface ScatterPlotProps {
@@ -210,45 +215,62 @@ export function ScatterPlotInner({
     return scale
   }, [data, innerWidth])
 
-  // Y-axis uses METR Task Horizon (linear scale, minutes)
-  // Domain: [0, maxMetrValue] with some headroom
-  const yScale = useMemo((): LinearScale => {
-    const maxMetr = getMaxMetrValue()
-    // Add 10% headroom above max value
-    const domain: [number, number] = [0, maxMetr * 1.1]
-    return createLinearYScale(innerHeight, domain)
-  }, [innerHeight])
+  // Get metric configuration for selected metric
+  const metricConfig = useMemo(
+    () => getMetricConfig(selectedMetric),
+    [selectedMetric]
+  )
 
-  // Compute visible tick values for Y-axis (METR linear scale)
+  // Animate Y-axis domain transitions (600ms to match line morph)
+  const { domain: animatedDomain } = useAnimatedDomain({
+    targetDomain: metricConfig.domain,
+  })
+
+  // Y-axis uses selected metric's domain (animated)
+  const yScale = useMemo((): LinearScale => {
+    return createLinearYScale(innerHeight, animatedDomain)
+  }, [innerHeight, animatedDomain])
+
+  // Compute visible tick values for Y-axis based on selected metric
   const visibleTickValues = useMemo(() => {
-    const domain = yScale.domain() as [number, number]
-    return getVisibleMetrTickValues(domain)
-  }, [yScale])
+    return getVisibleTickValues(selectedMetric, animatedDomain)
+  }, [selectedMetric, animatedDomain])
 
 
   // Memoize point positions for performance (AC-6.8.5)
-  // Y position is based on METR Task Horizon at the obituary date + linear jitter
+  // Y position is based on selected metric's value at the obituary date + deterministic jitter
   const pointPositions = useMemo(() => {
+    const [domainMin, domainMax] = metricConfig.domain
+    const domainRange = domainMax - domainMin
+
     return data.map((obituary) => {
       const obituaryDate = new Date(obituary.date)
 
-      // Get METR Task Horizon value (minutes) at this date
-      const baseMetr = getMetrValueAtDate(obituaryDate)
+      // Get metric value at this date (null if date is before metric data starts)
+      const baseValue = getMetricYValue(selectedMetric, obituaryDate)
 
-      // Jitter in linear-space: +/- 10% of value (min 5 minutes for visual spread)
+      // Check if date is within metric's data range
+      const isInRange = isDateInMetricRange(selectedMetric, obituaryDate)
+
+      // Use domain minimum for dates before metric data starts
+      const effectiveValue = baseValue ?? domainMin
+
+      // Deterministic jitter: +/- 5% of domain range
       // hashToJitter returns 0-1, center to -0.5 to 0.5
-      const jitterFactor = (hashToJitter(obituary._id) - 0.5) * 0.2
-      const jitterAmount = Math.max(baseMetr * jitterFactor, (hashToJitter(obituary._id) - 0.5) * 10)
-      const jitteredMetr = Math.max(0, baseMetr + jitterAmount)
+      const jitterFactor = (hashToJitter(obituary._id) - 0.5) * 0.1
+      const jitterAmount = domainRange * jitterFactor
+      const jitteredValue = Math.max(domainMin, Math.min(domainMax, effectiveValue + jitterAmount))
 
       return {
         obituary,
         x: xScale(obituaryDate) ?? 0,
-        y: yScale(jitteredMetr) ?? 0,
+        y: yScale(jitteredValue) ?? 0,
         color: getCategoryColor(obituary.categories),
+        // Flag for points outside metric's data range (for reduced opacity)
+        isOutOfRange: !isInRange,
       }
     })
-  }, [data, xScale, yScale])
+  }, [data, xScale, yScale, selectedMetric, metricConfig.domain])
 
   // Compute clusters based on current positions
   const clusters = useMemo(() => {
@@ -809,12 +831,12 @@ export function ScatterPlotInner({
             innerHeight={innerHeight}
           />
 
-          {/* Y-axis (METR Task Horizon, minutes) */}
+          {/* Y-axis (dynamic based on selected metric) */}
           <g data-testid="y-axis">
             <AxisLeft
               scale={yScale}
               tickValues={visibleTickValues}
-              tickFormat={(value) => formatMetrTick(value as number)}
+              tickFormat={(value) => metricConfig.formatTick(value as number)}
               stroke="var(--border)"
               tickStroke="var(--border)"
               tickLabelProps={() => ({
@@ -825,7 +847,7 @@ export function ScatterPlotInner({
                 dx: -8,
                 dy: 4,
               })}
-              label="Task Horizon (minutes)"
+              label={metricConfig.label}
               labelOffset={42}
               labelProps={{
                 fill: 'var(--text-muted)',
@@ -868,7 +890,7 @@ export function ScatterPlotInner({
               role="list"
               aria-label="Obituary data points"
             >
-              {visiblePointPositions.map(({ obituary, x: xPos, y: yPos, color }) => {
+              {visiblePointPositions.map(({ obituary, x: xPos, y: yPos, color, isOutOfRange }) => {
                 // P0.3 fix: O(1) Set lookup instead of linear scan
                 const isClustered =
                   clusteredIds.has(obituary._id) &&
@@ -890,6 +912,7 @@ export function ScatterPlotInner({
                     isClustered={isClustered}
                     isHovered={hoveredId === obituary._id}
                     isSelected={isModalOpen && selectedSummary?._id === obituary._id}
+                    isOutOfRange={isOutOfRange}
                     onMouseEnter={() => handlePointMouseEnter(obituary, xPos, yPos)}
                     onMouseLeave={handlePointMouseLeave}
                     onClick={(element) => handlePointClick(obituary, element)}

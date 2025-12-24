@@ -77,8 +77,15 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
 
   return (
     <>
-      {/* Chart section - min-h prevents CLS during hydration */}
-      <section className="relative overflow-hidden h-full min-h-[500px]">
+      {/* Chart section - adaptive height using CSS calc with dvh for mobile browser chrome */}
+      <section
+        className="relative overflow-hidden"
+        style={{
+          height: 'calc(100dvh - var(--header-height) - 16px)',
+          minHeight: '400px',
+          maxHeight: '800px',
+        }}
+      >
         <HomeClient
           obituaries={obituaries}
           variant="hero"
