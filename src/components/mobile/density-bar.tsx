@@ -1,33 +1,22 @@
 'use client'
 
 /**
- * DensityBar Component
+ * DensityBar Component (Tombstone Timeline)
  *
- * Shows distribution of obituaries over time as a horizontal bar chart.
- * Uses adaptive granularity: yearly for historical data, monthly for recent.
- * Tapping a bar filters the card list to that time period.
- * Includes AI progress era indicator to provide context about AI capability at each time.
+ * Shows distribution of obituaries over time as tombstone silhouettes.
+ * Each tombstone represents a time period; height = obituary count.
+ * Tapping a tombstone filters the card list to that period.
+ *
+ * Design: "Graveyard Plot" - embraces the dark humor of "AI Obituaries"
+ * with tombstone shapes and misty ground aesthetics.
  *
  * Story 5-5: Mobile Hybrid View
- * Performance: Optimized to reduce DOM elements by using yearly granularity
- * for data before MONTHLY_THRESHOLD_YEAR.
  */
 
 import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { parseUTCDate, createUTCDate, getUTCMonthEnd } from '@/lib/utils/date'
 import type { ObituarySummary, Category } from '@/types/obituary'
-
-/**
- * AI era milestones with approximate dates and colors.
- * These provide context about AI capability level at different times.
- */
-const AI_ERA_MILESTONES = [
-  { year: 1956, label: 'Early AI', color: 'var(--text-muted)' },
-  { year: 2012, label: 'Deep Learning', color: 'var(--era-pre-llm, #3b82f6)' },
-  { year: 2020, label: 'GPT-3 Era', color: 'var(--era-gpt3, #8b5cf6)' },
-  { year: 2023, label: 'GPT-4+', color: 'var(--era-frontier, #f59e0b)' },
-] as const
 
 export interface DateRange {
   start: Date
@@ -39,7 +28,7 @@ export interface DensityBarProps {
   obituaries: ObituarySummary[]
   /** Active category filters from URL */
   activeCategories: Category[]
-  /** Callback when a bar is tapped */
+  /** Callback when a tombstone is tapped */
   onPeriodSelect: (period: DateRange | null) => void
   /** Currently active period filter */
   activePeriod: DateRange | null
@@ -130,46 +119,11 @@ export function DensityBar({
     return { density, years, maxCount }
   }, [obituaries, activeCategories])
 
-  // Calculate era sections for the timeline based on year range
-  const eraSections = useMemo(() => {
-    if (years.length === 0) return []
-
-    const minYear = years[0]
-    const maxYear = years[years.length - 1]
-    const yearSpan = maxYear - minYear + 1
-
-    const sections: Array<{
-      startPercent: number
-      widthPercent: number
-      color: string
-      label: string
-    }> = []
-
-    AI_ERA_MILESTONES.forEach((milestone, index) => {
-      const nextMilestone = AI_ERA_MILESTONES[index + 1]
-      const eraStart = Math.max(milestone.year, minYear)
-      const eraEnd = nextMilestone ? Math.min(nextMilestone.year - 1, maxYear) : maxYear
-
-      if (eraStart <= maxYear && eraEnd >= minYear) {
-        const startPercent = ((eraStart - minYear) / yearSpan) * 100
-        const endPercent = ((eraEnd - minYear + 1) / yearSpan) * 100
-        sections.push({
-          startPercent,
-          widthPercent: endPercent - startPercent,
-          color: milestone.color,
-          label: milestone.label,
-        })
-      }
-    })
-
-    return sections
-  }, [years])
-
-  // Check if a bar is in the active period (P1.2 fix: use UTC dates)
-  const isBarActive = (item: DensityItem): boolean => {
+  // Check if a tombstone is in the active period (P1.2 fix: use UTC dates)
+  const isTombstoneActive = (item: DensityItem): boolean => {
     if (!activePeriod) return false
     if (item.isYearly) {
-      // For yearly bars, check if any part of the year overlaps
+      // For yearly tombstones, check if any part of the year overlaps
       const yearStart = createUTCDate(item.year, 0, 1)
       const yearEnd = createUTCDate(item.year, 11, 31)
       return yearStart <= activePeriod.end && yearEnd >= activePeriod.start
@@ -179,8 +133,8 @@ export function DensityBar({
     }
   }
 
-  // Get date range for a bar click (P1.2 fix: use UTC dates)
-  const getBarDateRange = (item: DensityItem): DateRange => {
+  // Get date range for a tombstone click (P1.2 fix: use UTC dates)
+  const getTombstoneDateRange = (item: DensityItem): DateRange => {
     if (item.isYearly) {
       return {
         start: createUTCDate(item.year, 0, 1),
@@ -195,7 +149,7 @@ export function DensityBar({
   }
 
   // Get label for accessibility (P1.2 fix: use UTC date)
-  const getBarLabel = (item: DensityItem): string => {
+  const getTombstoneLabel = (item: DensityItem): string => {
     if (item.isYearly) {
       return `${item.count} obituaries in ${item.year}. Tap to filter.`
     } else {
@@ -214,97 +168,94 @@ export function DensityBar({
   }
 
   return (
-    <div className="px-3 py-2 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
-      {/* AI Era Progress Indicator - more compact */}
-      <div className="mb-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wide shrink-0">AI Progress</span>
-          <div className="flex-1 h-1.5 rounded-full overflow-hidden relative">
-            {eraSections.map((section, index) => (
-              <div
-                key={index}
-                className="absolute top-0 h-full"
-                style={{
-                  left: `${section.startPercent}%`,
-                  width: `${section.widthPercent}%`,
-                  backgroundColor: section.color,
-                  opacity: 0.8,
-                }}
-                title={section.label}
-              />
-            ))}
-          </div>
-        </div>
-        {/* Era labels - inline with dots */}
-        <div className="flex gap-2 mt-1 text-[8px]">
-          {AI_ERA_MILESTONES.slice(-3).map((era) => (
-            <span key={era.year} className="flex items-center gap-0.5">
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ backgroundColor: era.color }}
-              />
-              <span className="text-[var(--text-muted)]">{era.label}</span>
-            </span>
-          ))}
-        </div>
+    <div className="relative px-3 pt-2 pb-1 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
+      {/* Header label */}
+      <div className="flex items-center justify-between mb-2">
+        <span
+          className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)]"
+          style={{ fontVariant: 'small-caps' }}
+        >
+          Declared Deaths
+        </span>
+        {activePeriod && (
+          <button
+            type="button"
+            onClick={() => onPeriodSelect(null)}
+            className="text-[10px] text-[var(--accent-primary)] hover:underline"
+          >
+            Clear filter
+          </button>
+        )}
       </div>
 
-      {/* Density Bars - taller for better visibility */}
-      <div
-        className="flex items-end gap-[1px] h-10 mb-1.5"
-        role="group"
-        aria-label="Obituary distribution over time"
-        style={{ contain: 'layout style paint' }}
-      >
-        {density.map((item) => {
-          // Scale height: yearly bars use year count, monthly use month count
-          const scaleFactor = item.isYearly ? 4 : 1 // Yearly bars represent ~12 months of potential data
-          const normalizedCount = item.isYearly ? item.count / scaleFactor : item.count
-          const height = normalizedCount > 0 ? Math.max(3, (normalizedCount / maxCount) * 40) : 1
-          const isActive = isBarActive(item)
+      {/* Tombstone graveyard */}
+      <div className="relative">
+        {/* Tombstones container */}
+        <div
+          className="flex items-end gap-[2px] h-12"
+          role="group"
+          aria-label="Obituary distribution over time. Tap a tombstone to filter."
+          style={{ contain: 'layout style paint' }}
+        >
+          {density.map((item) => {
+            // Scale height: yearly tombstones use year count, monthly use month count
+            const scaleFactor = item.isYearly ? 4 : 1
+            const normalizedCount = item.isYearly ? item.count / scaleFactor : item.count
+            // Height: min 6px for empty, up to 44px for max
+            const height = normalizedCount > 0 ? Math.max(10, (normalizedCount / maxCount) * 44) : 6
+            const isActive = isTombstoneActive(item)
+            const hasDeaths = item.count > 0
 
-          return (
-            <button
-              key={item.key}
-              type="button"
-              className={cn(
-                'flex-1 min-w-[2px] rounded-t transition-colors',
-                item.count > 0
-                  ? isActive
-                    ? 'bg-[var(--accent-primary)]'
-                    : 'bg-[var(--accent-primary)]/60 hover:bg-[var(--accent-primary)]/80'
-                  : 'bg-[var(--border)]',
-                // Yearly bars are slightly wider for visual distinction
-                item.isYearly && 'min-w-[4px]'
-              )}
-              style={{ height: `${height}px` }}
-              onClick={() => onPeriodSelect(getBarDateRange(item))}
-              aria-label={getBarLabel(item)}
-              aria-pressed={isActive}
-            />
-          )
-        })}
+            return (
+              <button
+                key={item.key}
+                type="button"
+                className={cn(
+                  'flex-1 min-w-[3px] transition-all duration-200',
+                  // Tombstone shape: rounded top
+                  'rounded-t-sm',
+                  // Yearly tombstones slightly wider
+                  item.isYearly && 'min-w-[5px]',
+                  // Color states
+                  hasDeaths
+                    ? isActive
+                      ? 'bg-[var(--accent-primary)] shadow-[0_0_8px_var(--accent-primary)]'
+                      : 'bg-[var(--text-muted)]/50 hover:bg-[var(--text-muted)]/70'
+                    : 'bg-[var(--border)]/40',
+                  // Rise effect on active
+                  isActive && 'transform -translate-y-0.5'
+                )}
+                style={{ height: `${height}px` }}
+                onClick={() => onPeriodSelect(getTombstoneDateRange(item))}
+                aria-label={getTombstoneLabel(item)}
+                aria-pressed={isActive}
+              />
+            )
+          })}
+        </div>
+
+        {/* Ground/mist effect */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-2 pointer-events-none"
+          style={{
+            background: 'linear-gradient(to top, var(--bg-secondary) 0%, transparent 100%)',
+          }}
+        />
       </div>
 
-      {/* Year Labels - show subset for readability */}
-      <div className="flex justify-between text-[10px] text-[var(--text-muted)]">
+      {/* Year Labels */}
+      <div className="flex justify-between mt-1.5 text-[9px] text-[var(--text-muted)]/70">
         {years
-          .filter((_, i) => i === 0 || i === years.length - 1 || (years.length > 10 && i % Math.ceil(years.length / 5) === 0))
+          .filter(
+            (_, i) =>
+              i === 0 ||
+              i === years.length - 1 ||
+              (years.length > 10 && i % Math.ceil(years.length / 5) === 0)
+          )
           .map((year) => (
             <span key={year}>{year}</span>
           ))}
       </div>
-
-      {/* Active period indicator */}
-      {activePeriod && (
-        <button
-          type="button"
-          onClick={() => onPeriodSelect(null)}
-          className="mt-1.5 text-[10px] text-[var(--accent-primary)] underline"
-        >
-          Clear date filter
-        </button>
-      )}
     </div>
   )
 }

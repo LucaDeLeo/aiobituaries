@@ -30,26 +30,26 @@ describe('DensityBar component contract', () => {
 })
 
 describe('DensityBar density calculation logic', () => {
-  it('density calculation formula: height = count / maxCount * 48', () => {
-    // Verify the formula matches implementation
+  it('density calculation formula: height = count / maxCount * 44', () => {
+    // Verify the formula matches implementation (tombstone design)
     const count = 5
     const maxCount = 10
-    const expectedHeight = (count / maxCount) * 48
-    expect(expectedHeight).toBe(24)
+    const expectedHeight = (count / maxCount) * 44
+    expect(expectedHeight).toBe(22)
   })
 
-  it('minimum height is 4px for bars with count > 0', () => {
+  it('minimum height is 10px for tombstones with count > 0', () => {
     const count = 1
     const maxCount = 100
-    const rawHeight = (count / maxCount) * 48
-    const actualHeight = Math.max(4, rawHeight)
-    expect(actualHeight).toBe(4)
+    const rawHeight = (count / maxCount) * 44
+    const actualHeight = Math.max(10, rawHeight)
+    expect(actualHeight).toBe(10)
   })
 
-  it('height is 2px for bars with count = 0', () => {
-    // When count is 0, the component renders a 2px minimum height bar
-    const expectedHeight = 2
-    expect(expectedHeight).toBe(2)
+  it('height is 6px for tombstones with count = 0', () => {
+    // When count is 0, the component renders a 6px minimum height tombstone
+    const expectedHeight = 6
+    expect(expectedHeight).toBe(6)
   })
 
   it('month key format is year-month', () => {

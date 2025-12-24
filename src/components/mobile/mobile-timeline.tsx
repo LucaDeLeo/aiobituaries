@@ -3,24 +3,17 @@
 /**
  * MobileTimeline Component
  *
- * Container for mobile hybrid view combining DensityBar and MobileCardList.
+ * Container for mobile hybrid view combining DensityBar (Tombstone Timeline) and MobileCardList.
  * Manages date filter state locally, category filters come from URL state.
  * Opens ObituaryModal as a bottom sheet when a card is tapped.
  *
  * Story 5-5: Mobile Hybrid View
+ * Updated: Tombstone timeline redesign
  */
 
 import { useState, useMemo } from 'react'
-import dynamic from 'next/dynamic'
-import type { DateRange } from './density-bar'
 import { parseUTCDate } from '@/lib/utils/date'
-
-// Dynamic import with ssr: false prevents hydration mismatch
-// DensityBar uses adaptive granularity that must be consistent client-side
-const DensityBar = dynamic(() => import('./density-bar').then((mod) => mod.DensityBar), {
-  ssr: false,
-  loading: () => <div className="h-[88px] bg-[var(--bg-secondary)] border-b border-[var(--border)]" />,
-})
+import { DensityBar, type DateRange } from './density-bar'
 import { MobileCardList } from './mobile-card-list'
 import { ObituaryModal } from '@/components/obituary/obituary-modal'
 import { CategoryFilter } from '@/components/filters/category-filter'
