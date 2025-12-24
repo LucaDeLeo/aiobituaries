@@ -36,9 +36,10 @@ export default async function Home() {
   );
 
   // Mobile: < 768px - Timeline-centric view
+  // Note: No ControlSheet on mobile - MobileTimeline has integrated CategoryFilter
   const mobileContent = (
     <div className="min-h-screen flex flex-col">
-      <section className="flex flex-col items-center justify-center py-12 px-4">
+      <section className="flex flex-col items-center justify-center py-8 px-4">
         <Suspense fallback={countFallback}>
           <CountDisplay count={count} obituaries={obituaries} />
         </Suspense>
@@ -48,7 +49,6 @@ export default async function Home() {
           <MobileTimeline obituaries={obituaries} />
         </Suspense>
       </div>
-      <ControlSheet totalCount={obituaries.length} />
     </div>
   );
 

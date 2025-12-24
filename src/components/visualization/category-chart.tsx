@@ -43,12 +43,10 @@ export function CategoryChart({
 
   // Count obituaries per category (handles multi-category items)
   const counts = useMemo(() => {
-    const result: Record<Category, number> = {
-      capability: 0,
-      market: 0,
-      agi: 0,
-      dismissive: 0,
-    }
+    // Initialize counts for all categories in CATEGORY_ORDER
+    const result = Object.fromEntries(
+      CATEGORY_ORDER.map((cat) => [cat, 0])
+    ) as Record<Category, number>
 
     obituaries.forEach((ob) => {
       ob.categories?.forEach((cat) => {

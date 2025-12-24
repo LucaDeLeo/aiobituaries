@@ -43,23 +43,23 @@ export function CountDisplay({ count, obituaries }: CountDisplayProps) {
 
   return (
     <div className="text-center relative">
-      {/* Decorative top line */}
-      <div className="flex items-center justify-center gap-4 mb-6" aria-hidden="true">
-        <div className="h-px w-16 md:w-24 bg-gradient-to-r from-transparent to-[var(--accent-primary)]/50" />
-        <div className="w-1.5 h-1.5 rotate-45 border border-[var(--accent-primary)]/50" />
-        <div className="h-px w-16 md:w-24 bg-gradient-to-l from-transparent to-[var(--accent-primary)]/50" />
+      {/* Decorative top line - smaller on mobile */}
+      <div className="flex items-center justify-center gap-3 mb-3 md:mb-6" aria-hidden="true">
+        <div className="h-px w-12 md:w-24 bg-gradient-to-r from-transparent to-[var(--accent-primary)]/50" />
+        <div className="w-1 h-1 md:w-1.5 md:h-1.5 rotate-45 border border-[var(--accent-primary)]/50" />
+        <div className="h-px w-12 md:w-24 bg-gradient-to-l from-transparent to-[var(--accent-primary)]/50" />
       </div>
 
-      {/* Main h1 heading - MASSIVE number */}
+      {/* Main h1 heading - responsive sizing */}
       <h1 className="relative">
         <span className="sr-only">
           {isFiltered ? `${displayCount} of ${count}` : count} AI Obituaries
         </span>
 
-        {/* The giant number */}
+        {/* The number - more compact on mobile */}
         <span
           aria-hidden="true"
-          className="block font-mono text-7xl sm:text-8xl md:text-9xl lg:text-[11rem] xl:text-[14rem]
+          className="block font-mono text-5xl sm:text-7xl md:text-9xl lg:text-[11rem] xl:text-[14rem]
                      text-[var(--accent-primary)] animate-pulse-glow motion-reduce:animate-none
                      tracking-tighter leading-none"
         >
@@ -69,8 +69,8 @@ export function CountDisplay({ count, obituaries }: CountDisplayProps) {
         {/* Editorial label with wide tracking */}
         <span
           aria-hidden="true"
-          className="block mt-2 md:mt-4 text-sm sm:text-base md:text-xl lg:text-2xl
-                     tracking-[0.25em] md:tracking-[0.35em] uppercase
+          className="block mt-1 md:mt-4 text-xs sm:text-base md:text-xl lg:text-2xl
+                     tracking-[0.2em] md:tracking-[0.35em] uppercase
                      text-[var(--text-secondary)] font-sans font-light"
         >
           Obituaries
@@ -78,24 +78,24 @@ export function CountDisplay({ count, obituaries }: CountDisplayProps) {
       </h1>
 
       {/* Decorative bottom line */}
-      <div className="flex items-center justify-center gap-4 mt-6" aria-hidden="true">
-        <div className="h-px w-16 md:w-24 bg-gradient-to-r from-transparent to-[var(--accent-primary)]/50" />
-        <div className="w-1.5 h-1.5 rotate-45 border border-[var(--accent-primary)]/50" />
-        <div className="h-px w-16 md:w-24 bg-gradient-to-l from-transparent to-[var(--accent-primary)]/50" />
+      <div className="flex items-center justify-center gap-3 mt-3 md:mt-6" aria-hidden="true">
+        <div className="h-px w-12 md:w-24 bg-gradient-to-r from-transparent to-[var(--accent-primary)]/50" />
+        <div className="w-1 h-1 md:w-1.5 md:h-1.5 rotate-45 border border-[var(--accent-primary)]/50" />
+        <div className="h-px w-12 md:w-24 bg-gradient-to-l from-transparent to-[var(--accent-primary)]/50" />
       </div>
 
       {/* Filter indicator */}
       {isFiltered && (
         <p
           aria-hidden="true"
-          className="mt-2 text-sm text-[var(--text-muted)]"
+          className="mt-1 md:mt-2 text-xs md:text-sm text-[var(--text-muted)]"
         >
           of {count} total
         </p>
       )}
 
-      {/* Tagline */}
-      <p className="mt-6 md:mt-8 text-xs md:text-sm text-[var(--text-muted)] font-serif italic max-w-md mx-auto">
+      {/* Tagline - more compact on mobile */}
+      <p className="mt-3 md:mt-8 text-[10px] md:text-sm text-[var(--text-muted)] font-serif italic max-w-xs md:max-w-md mx-auto leading-tight">
         A memorial to the ever-dying predictions of AI doom
       </p>
     </div>

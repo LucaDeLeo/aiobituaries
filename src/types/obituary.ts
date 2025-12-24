@@ -4,8 +4,31 @@ import type { ContextMetadata } from './context'
  * Categorization of AI skepticism claims.
  * Each obituary can have multiple categories.
  * Categories determine Y-axis behavior in the contextual scatter plot visualization.
+ *
+ * Category types:
+ * - capability-narrow: Task-specific skepticism ("AI will never write code")
+ * - capability-reasoning: Intelligence/understanding skepticism ("LLMs are just autocomplete")
+ * - capability: Legacy category - maps to capability-narrow for backwards compatibility
+ * - market: Financial/bubble claims ("AI bubble will burst")
+ * - agi: AGI-specific skepticism ("AGI is impossible")
+ * - dismissive: General AI dismissal ("AI is just hype")
  */
-export type Category = 'market' | 'capability' | 'agi' | 'dismissive'
+export type Category =
+  | 'capability-narrow'
+  | 'capability-reasoning'
+  | 'capability' // Legacy - treat as capability-narrow
+  | 'market'
+  | 'agi'
+  | 'dismissive'
+
+/**
+ * Claim status tracking - how has the prediction aged?
+ *
+ * - falsified: Claim has been definitively proven wrong by AI progress
+ * - aging: Claim is showing signs of being wrong but not definitively falsified
+ * - pending: Claim cannot yet be evaluated (timeline not reached, or newly added)
+ */
+export type ClaimStatus = 'falsified' | 'aging' | 'pending'
 
 /**
  * Lightweight skeptic reference for linking from obituary to skeptic profile.
@@ -41,6 +64,8 @@ export interface Obituary {
   context: ContextMetadata
   /** Reference to linked skeptic profile (optional - may be null) */
   skeptic?: SkepticRef | null
+  /** Claim status - how has the prediction aged? (optional, defaults to 'pending') */
+  status?: ClaimStatus
 }
 
 /**
@@ -60,4 +85,6 @@ export interface ObituarySummary {
   date: string
   /** Array of claim categories */
   categories: Category[]
+  /** Claim status - how has the prediction aged? (optional, defaults to 'pending') */
+  status?: ClaimStatus
 }

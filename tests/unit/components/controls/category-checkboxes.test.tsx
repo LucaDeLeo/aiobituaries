@@ -14,28 +14,30 @@ describe('CategoryCheckboxes', () => {
   })
 
   describe('rendering', () => {
-    it('renders all four categories', () => {
+    it('renders all five categories', () => {
       render(<CategoryCheckboxes {...defaultProps} />)
 
-      expect(screen.getByText('Capability Doubt')).toBeInTheDocument()
+      expect(screen.getByText('Task Skepticism')).toBeInTheDocument()
+      expect(screen.getByText('Intelligence Skepticism')).toBeInTheDocument()
       expect(screen.getByText('Market/Bubble')).toBeInTheDocument()
       expect(screen.getByText('AGI Skepticism')).toBeInTheDocument()
       expect(screen.getByText('Dismissive Framing')).toBeInTheDocument()
     })
 
-    it('renders Show All button', () => {
+    it('renders All categories checkbox', () => {
       render(<CategoryCheckboxes {...defaultProps} />)
 
-      expect(screen.getByRole('button', { name: /show/i })).toBeInTheDocument()
+      expect(screen.getByRole('checkbox', { name: /all categories/i })).toBeInTheDocument()
     })
 
-    it('shows "Showing all categories" when empty selection', () => {
+    it('shows All categories checkbox checked when empty selection', () => {
       render(<CategoryCheckboxes {...defaultProps} selectedCategories={[]} />)
 
-      expect(screen.getByText('✓ Showing all categories')).toBeInTheDocument()
+      const allCheckbox = screen.getByRole('checkbox', { name: /all categories/i })
+      expect(allCheckbox).toBeChecked()
     })
 
-    it('shows "Clear filters" when categories selected', () => {
+    it('shows All categories checkbox unchecked when categories selected', () => {
       render(
         <CategoryCheckboxes
           {...defaultProps}
@@ -43,7 +45,8 @@ describe('CategoryCheckboxes', () => {
         />
       )
 
-      expect(screen.getByText('✕ Clear filters')).toBeInTheDocument()
+      const allCheckbox = screen.getByRole('checkbox', { name: /all categories/i })
+      expect(allCheckbox).not.toBeChecked()
     })
 
     it('shows checked state for selected categories', () => {
@@ -60,26 +63,27 @@ describe('CategoryCheckboxes', () => {
       const agiCheckbox = screen.getByRole('checkbox', {
         name: /agi skepticism/i,
       })
-      const capabilityCheckbox = screen.getByRole('checkbox', {
-        name: /capability doubt/i,
+      const taskSkepticismCheckbox = screen.getByRole('checkbox', {
+        name: /task skepticism/i,
       })
 
       expect(marketCheckbox).toBeChecked()
       expect(agiCheckbox).toBeChecked()
-      expect(capabilityCheckbox).not.toBeChecked()
+      expect(taskSkepticismCheckbox).not.toBeChecked()
     })
 
     it('renders categories in CATEGORY_ORDER sequence', () => {
       render(<CategoryCheckboxes {...defaultProps} />)
 
       const labels = screen.getAllByText(
-        /Capability Doubt|Market\/Bubble|AGI Skepticism|Dismissive Framing/
+        /Task Skepticism|Intelligence Skepticism|Market\/Bubble|AGI Skepticism|Dismissive Framing/
       )
 
-      expect(labels[0]).toHaveTextContent('Capability Doubt')
-      expect(labels[1]).toHaveTextContent('Market/Bubble')
-      expect(labels[2]).toHaveTextContent('AGI Skepticism')
-      expect(labels[3]).toHaveTextContent('Dismissive Framing')
+      expect(labels[0]).toHaveTextContent('Task Skepticism')
+      expect(labels[1]).toHaveTextContent('Intelligence Skepticism')
+      expect(labels[2]).toHaveTextContent('Market/Bubble')
+      expect(labels[3]).toHaveTextContent('AGI Skepticism')
+      expect(labels[4]).toHaveTextContent('Dismissive Framing')
     })
   })
 
@@ -135,7 +139,7 @@ describe('CategoryCheckboxes', () => {
       expect(onCategoriesChange).toHaveBeenCalledWith(['market'])
     })
 
-    it('calls onCategoriesChange with empty array when clicking Clear filters', () => {
+    it('calls onCategoriesChange with empty array when clicking All categories', () => {
       const onCategoriesChange = vi.fn()
       render(
         <CategoryCheckboxes
@@ -144,8 +148,8 @@ describe('CategoryCheckboxes', () => {
         />
       )
 
-      const clearFiltersButton = screen.getByRole('button', { name: /clear filters/i })
-      fireEvent.click(clearFiltersButton)
+      const allCategoriesCheckbox = screen.getByRole('checkbox', { name: /all categories/i })
+      fireEvent.click(allCategoriesCheckbox)
 
       expect(onCategoriesChange).toHaveBeenCalledWith([])
     })
@@ -173,7 +177,10 @@ describe('CategoryCheckboxes', () => {
       render(<CategoryCheckboxes {...defaultProps} />)
 
       expect(
-        screen.getByRole('checkbox', { name: /capability doubt/i })
+        screen.getByRole('checkbox', { name: /task skepticism/i })
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole('checkbox', { name: /intelligence skepticism/i })
       ).toBeInTheDocument()
       expect(
         screen.getByRole('checkbox', { name: /market/i })
@@ -189,23 +196,23 @@ describe('CategoryCheckboxes', () => {
     it('checkboxes are focusable with keyboard', () => {
       render(<CategoryCheckboxes {...defaultProps} />)
 
-      const capabilityCheckbox = screen.getByRole('checkbox', {
-        name: /capability doubt/i,
+      const taskSkepticismCheckbox = screen.getByRole('checkbox', {
+        name: /task skepticism/i,
       })
-      capabilityCheckbox.focus()
+      taskSkepticismCheckbox.focus()
 
-      expect(capabilityCheckbox).toHaveFocus()
+      expect(taskSkepticismCheckbox).toHaveFocus()
     })
 
-    it('Show All button is focusable', () => {
+    it('All categories checkbox is focusable', () => {
       render(<CategoryCheckboxes {...defaultProps} />)
 
-      const showAllButton = screen.getByRole('button', {
-        name: /showing all categories/i,
+      const allCategoriesCheckbox = screen.getByRole('checkbox', {
+        name: /all categories/i,
       })
-      showAllButton.focus()
+      allCategoriesCheckbox.focus()
 
-      expect(showAllButton).toHaveFocus()
+      expect(allCategoriesCheckbox).toHaveFocus()
     })
   })
 
@@ -214,14 +221,19 @@ describe('CategoryCheckboxes', () => {
       render(
         <CategoryCheckboxes
           {...defaultProps}
-          selectedCategories={['capability', 'market', 'agi', 'dismissive']}
+          selectedCategories={['capability-narrow', 'capability-reasoning', 'market', 'agi', 'dismissive']}
         />
       )
 
-      const checkboxes = screen.getAllByRole('checkbox')
-      checkboxes.forEach((checkbox) => {
-        expect(checkbox).toBeChecked()
-      })
+      // All 5 category checkboxes should be checked
+      expect(screen.getByRole('checkbox', { name: /task skepticism/i })).toBeChecked()
+      expect(screen.getByRole('checkbox', { name: /intelligence skepticism/i })).toBeChecked()
+      expect(screen.getByRole('checkbox', { name: /market/i })).toBeChecked()
+      expect(screen.getByRole('checkbox', { name: /agi skepticism/i })).toBeChecked()
+      expect(screen.getByRole('checkbox', { name: /dismissive framing/i })).toBeChecked()
+
+      // But "All categories" checkbox should NOT be checked (it's only checked when empty selection)
+      expect(screen.getByRole('checkbox', { name: /all categories/i })).not.toBeChecked()
     })
 
     it('applies custom className', () => {

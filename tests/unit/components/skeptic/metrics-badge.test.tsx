@@ -56,16 +56,16 @@ describe('MetricsBadge', () => {
   })
 
   describe('handles null metrics gracefully', () => {
-    it('shows -- for null ECI', () => {
+    it('shows N/A for null ECI', () => {
       render(<MetricsBadge metrics={partialMetrics} />)
-      expect(screen.getByText('--')).toBeInTheDocument()
+      expect(screen.getByText('N/A')).toBeInTheDocument()
       expect(screen.getByText('67.2%')).toBeInTheDocument()
     })
 
-    it('shows -- for both null MMLU and ECI', () => {
+    it('shows N/A for both null MMLU and ECI', () => {
       render(<MetricsBadge metrics={earlyMetrics} />)
-      const dashes = screen.getAllByText('--')
-      expect(dashes).toHaveLength(2) // MMLU and ECI both null
+      const nas = screen.getAllByText('N/A')
+      expect(nas).toHaveLength(2) // MMLU and ECI both null
     })
 
     it('always shows compute (never null)', () => {
@@ -107,7 +107,7 @@ describe('CurrentMetricsFooter', () => {
     expect(screen.getByText(/ECI 154\.4/)).toBeInTheDocument()
   })
 
-  it('handles null metrics with -- placeholder', () => {
+  it('handles null metrics with N/A placeholder', () => {
     const nullMetrics: MetricsSnapshot = {
       mmlu: null,
       eci: null,
@@ -115,8 +115,8 @@ describe('CurrentMetricsFooter', () => {
       computeFormatted: '10^26.7',
     }
     render(<CurrentMetricsFooter metrics={nullMetrics} />)
-    expect(screen.getByText(/MMLU --/)).toBeInTheDocument()
-    expect(screen.getByText(/ECI --/)).toBeInTheDocument()
+    expect(screen.getByText(/MMLU N\/A/)).toBeInTheDocument()
+    expect(screen.getByText(/ECI N\/A/)).toBeInTheDocument()
   })
 
   it('applies custom className', () => {

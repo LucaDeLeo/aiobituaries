@@ -45,20 +45,71 @@ export function isAnthropicConfigured(): boolean {
 
 /**
  * Classification prompt for Claude
+ *
+ * Enhanced with:
+ * - New categories (capability-narrow, capability-reasoning)
+ * - Quality scoring dimensions
+ * - Anti-pattern detection
+ * - Status determination
  */
 const CLASSIFICATION_PROMPT = `You are an AI claim classifier for a project tracking "AI obituaries" - predictions that AI will fail, is overhyped, or has fundamental limitations.
 
-Analyze the following content and determine:
-1. Is this an AI doom/skepticism claim? (predictions AI will fail, is overhyped, bubble will burst, has fundamental limits)
-2. Extract the core claim as a concise quote or paraphrase (max 200 chars)
-3. What category best fits this claim?
-   - "market": AI stocks/investment will crash, AI is overvalued, bubble predictions
-   - "capability": AI can't do X, fundamental limitations, "AI will never..."
-   - "agi": AGI is impossible, won't happen, is decades away
-   - "dismissive": AI is just hype, not real intelligence, "just" pattern matching
-4. How confident are you this is a valid AI doom claim (0.0-1.0)?
-5. Is the author notable enough to track? Why?
-6. Recommendation: "approve" (high confidence + notable), "review" (medium confidence), or "reject" (not a doom claim or not notable)
+## Your Task
+
+Analyze the content and classify it according to our quality criteria.
+
+## Categories
+
+- "capability-narrow": Task-specific skepticism (e.g., "AI will never write production code", "Self-driving cars won't work")
+- "capability-reasoning": Intelligence/reasoning skepticism (e.g., "LLMs are just stochastic parrots", "AI doesn't truly understand")
+- "market": Financial/bubble claims (e.g., "AI bubble will burst", "AI stocks overvalued")
+- "agi": AGI-specific skepticism (e.g., "AGI is impossible", "AGI won't happen for 100 years")
+- "dismissive": General AI dismissal (e.g., "AI is just hype", "This AI stuff is ridiculous")
+
+## Anti-Patterns (REJECT these)
+
+1. **Reasonable caution**: "We should be careful about AI" - NOT a doom claim
+2. **Risk warnings**: "AI poses existential risk" - This is the OPPOSITE thesis (AI worry, not AI dismissal)
+3. **Vague sentiments**: "I'm skeptical of AI" without specific falsifiable prediction
+4. **Satire/jokes**: Obviously humorous takes
+5. **Self-serving**: Competitors trashing each other
+
+## Quality Scoring (0-100, sum of 4 dimensions)
+
+**Falsifiability (0-25)**: How testable is the prediction?
+- 25: Specific timeline + capability ("won't do X by YYYY")
+- 20: Specific capability ("will never X")
+- 15: General timeline ("decades away")
+- 10: Vague but testable ("can't do creative work")
+- 5: Nearly unfalsifiable ("not real intelligence")
+
+**Source Authority (0-25)**: How credible is the source?
+- 25: Domain expert + tier 1 publication
+- 20: Adjacent expert or tech journalist
+- 15: Notable (10k+ followers)
+- 10: Tier 2 publication
+- 5: Minor source
+
+**Claim Boldness (0-25)**: How confident is the prediction?
+- 25: Absolute certainty ("will NEVER")
+- 20: Strong conviction ("confident it won't")
+- 15: Moderate conviction ("don't think it will")
+- 10: Hedged ("probably won't")
+- 5: Mild ("doubt it will")
+
+**Historical Value (0-25)**: How significant is this claim?
+- 25: Widely cited/influential
+- 20: Viral reach
+- 15: Notable person making specific claim
+- 10: Relevant expert perspective
+- 5: Historical artifact worth preserving
+
+## Claim Status
+
+Determine the claim's status:
+- "falsified": AI demonstrably does what claim said it couldn't, or predicted failure timeline passed
+- "aging": AI making progress toward claimed limitation, prediction looking increasingly unlikely
+- "pending": Timeline not reached, capability not yet demonstrable, prediction still plausible
 
 Content to analyze:
 ---
@@ -79,7 +130,16 @@ Respond in JSON format:
   "isNotable": boolean,
   "notabilityReason": "string",
   "extractedClaim": "string",
-  "suggestedCategory": "market" | "capability" | "agi" | "dismissive",
+  "suggestedCategory": "capability-narrow" | "capability-reasoning" | "market" | "agi" | "dismissive",
+  "qualityScore": {
+    "falsifiability": number,
+    "sourceAuthority": number,
+    "claimBoldness": number,
+    "historicalValue": number,
+    "total": number
+  },
+  "status": "falsified" | "aging" | "pending",
+  "antiPatternDetected": "reasonable_caution" | "risk_warning" | "vague_sentiment" | "satire" | "self_serving" | null,
   "recommendation": "approve" | "review" | "reject"
 }`
 
@@ -104,8 +164,15 @@ function parseClassificationResult(content: string): ClassificationResult | null
       return null
     }
 
-    // Validate category
-    const validCategories: Category[] = ['market', 'capability', 'agi', 'dismissive']
+    // Validate category - now includes new capability subcategories
+    const validCategories: Category[] = [
+      'capability-narrow',
+      'capability-reasoning',
+      'market',
+      'capability', // Legacy fallback
+      'agi',
+      'dismissive',
+    ]
     if (!validCategories.includes(parsed.suggestedCategory)) {
       parsed.suggestedCategory = 'dismissive' // default fallback
     }
@@ -116,6 +183,35 @@ function parseClassificationResult(content: string): ClassificationResult | null
       parsed.recommendation = 'review' // default fallback
     }
 
+    // Validate status
+    const validStatuses = ['falsified', 'aging', 'pending']
+    const status = validStatuses.includes(parsed.status) ? parsed.status : 'pending'
+
+    // Validate anti-pattern
+    const validAntiPatterns = [
+      'reasonable_caution',
+      'risk_warning',
+      'vague_sentiment',
+      'satire',
+      'self_serving',
+    ]
+    const antiPatternDetected = validAntiPatterns.includes(parsed.antiPatternDetected)
+      ? parsed.antiPatternDetected
+      : null
+
+    // Parse quality score if present
+    let qualityScore = undefined
+    if (parsed.qualityScore && typeof parsed.qualityScore === 'object') {
+      const qs = parsed.qualityScore
+      qualityScore = {
+        falsifiability: Math.max(0, Math.min(25, qs.falsifiability || 0)),
+        sourceAuthority: Math.max(0, Math.min(25, qs.sourceAuthority || 0)),
+        claimBoldness: Math.max(0, Math.min(25, qs.claimBoldness || 0)),
+        historicalValue: Math.max(0, Math.min(25, qs.historicalValue || 0)),
+        total: Math.max(0, Math.min(100, qs.total || 0)),
+      }
+    }
+
     return {
       isAIDoomClaim: parsed.isAIDoomClaim,
       claimConfidence: Math.max(0, Math.min(1, parsed.claimConfidence)),
@@ -123,6 +219,9 @@ function parseClassificationResult(content: string): ClassificationResult | null
       notabilityReason: parsed.notabilityReason || 'Unknown',
       extractedClaim: parsed.extractedClaim.slice(0, 200),
       suggestedCategory: parsed.suggestedCategory as Category,
+      qualityScore,
+      status,
+      antiPatternDetected,
       recommendation: parsed.recommendation as 'approve' | 'review' | 'reject',
     }
   } catch {

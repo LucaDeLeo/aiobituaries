@@ -214,12 +214,12 @@ export function DensityBar({
   }
 
   return (
-    <div className="px-4 py-3 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
-      {/* AI Era Progress Indicator */}
-      <div className="mb-2">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide">AI Progress</span>
-          <div className="flex-1 h-2 rounded-full overflow-hidden relative">
+    <div className="px-3 py-2 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
+      {/* AI Era Progress Indicator - more compact */}
+      <div className="mb-1.5">
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wide shrink-0">AI Progress</span>
+          <div className="flex-1 h-1.5 rounded-full overflow-hidden relative">
             {eraSections.map((section, index) => (
               <div
                 key={index}
@@ -228,19 +228,19 @@ export function DensityBar({
                   left: `${section.startPercent}%`,
                   width: `${section.widthPercent}%`,
                   backgroundColor: section.color,
-                  opacity: 0.7,
+                  opacity: 0.8,
                 }}
                 title={section.label}
               />
             ))}
           </div>
         </div>
-        {/* Era labels - show key milestones */}
-        <div className="flex gap-3 text-[9px]">
+        {/* Era labels - inline with dots */}
+        <div className="flex gap-2 mt-1 text-[8px]">
           {AI_ERA_MILESTONES.slice(-3).map((era) => (
-            <span key={era.year} className="flex items-center gap-1">
+            <span key={era.year} className="flex items-center gap-0.5">
               <span
-                className="w-2 h-2 rounded-full"
+                className="w-1.5 h-1.5 rounded-full"
                 style={{ backgroundColor: era.color }}
               />
               <span className="text-[var(--text-muted)]">{era.label}</span>
@@ -249,9 +249,9 @@ export function DensityBar({
         </div>
       </div>
 
-      {/* Density Bars - CSS containment for performance */}
+      {/* Density Bars - taller for better visibility */}
       <div
-        className="flex items-end gap-[2px] h-12 mb-2"
+        className="flex items-end gap-[1px] h-10 mb-1.5"
         role="group"
         aria-label="Obituary distribution over time"
         style={{ contain: 'layout style paint' }}
@@ -260,7 +260,7 @@ export function DensityBar({
           // Scale height: yearly bars use year count, monthly use month count
           const scaleFactor = item.isYearly ? 4 : 1 // Yearly bars represent ~12 months of potential data
           const normalizedCount = item.isYearly ? item.count / scaleFactor : item.count
-          const height = normalizedCount > 0 ? Math.max(4, (normalizedCount / maxCount) * 48) : 2
+          const height = normalizedCount > 0 ? Math.max(3, (normalizedCount / maxCount) * 40) : 1
           const isActive = isBarActive(item)
 
           return (
@@ -287,7 +287,7 @@ export function DensityBar({
       </div>
 
       {/* Year Labels - show subset for readability */}
-      <div className="flex justify-between text-xs text-[var(--text-muted)]">
+      <div className="flex justify-between text-[10px] text-[var(--text-muted)]">
         {years
           .filter((_, i) => i === 0 || i === years.length - 1 || (years.length > 10 && i % Math.ceil(years.length / 5) === 0))
           .map((year) => (
@@ -300,7 +300,7 @@ export function DensityBar({
         <button
           type="button"
           onClick={() => onPeriodSelect(null)}
-          className="mt-2 text-xs text-[var(--accent-primary)] underline"
+          className="mt-1.5 text-[10px] text-[var(--accent-primary)] underline"
         >
           Clear date filter
         </button>

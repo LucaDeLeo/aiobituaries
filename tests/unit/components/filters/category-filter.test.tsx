@@ -39,9 +39,10 @@ describe('CategoryFilter dependencies', () => {
   it('can import CATEGORY_ORDER from constants', async () => {
     const { CATEGORY_ORDER } = await import('@/lib/constants/categories')
     expect(CATEGORY_ORDER).toBeDefined()
-    expect(CATEGORY_ORDER).toHaveLength(4)
+    expect(CATEGORY_ORDER).toHaveLength(5)
     expect(CATEGORY_ORDER).toEqual([
-      'capability',
+      'capability-narrow',
+      'capability-reasoning',
       'market',
       'agi',
       'dismissive',
@@ -86,10 +87,10 @@ describe('Motion dependency integration', () => {
 })
 
 describe('CategoryFilter renders correct number of pills', () => {
-  it('CATEGORY_ORDER contains 4 categories for pill rendering', async () => {
+  it('CATEGORY_ORDER contains 5 categories for pill rendering', async () => {
     const { CATEGORY_ORDER } = await import('@/lib/constants/categories')
-    // Filter bar should render 4 pills (one per category) + All button
-    expect(CATEGORY_ORDER).toHaveLength(4)
+    // Filter bar should render 5 pills (one per category) + All button
+    expect(CATEGORY_ORDER).toHaveLength(5)
   })
 
   it('all categories in CATEGORY_ORDER have valid definitions', async () => {

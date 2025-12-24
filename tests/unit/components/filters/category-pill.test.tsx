@@ -43,7 +43,7 @@ describe('CategoryPill dependencies', () => {
     )
     expect(getCategory).toBeDefined()
     expect(CATEGORY_ORDER).toBeDefined()
-    expect(CATEGORY_ORDER).toHaveLength(4)
+    expect(CATEGORY_ORDER).toHaveLength(5)
   })
 
   it('can get category definition for each category', async () => {
@@ -106,10 +106,10 @@ describe('CategoryPill component contract', () => {
       expect(category.color).toMatch(/^#[0-9A-Fa-f]{6}$/)
     })
 
-    // Verify getCategory returns full definition
-    const capability = getCategory('capability')
-    expect(capability.color).toBe('#C9A962')
-    expect(capability.label).toBe('Capability Doubt')
+    // Verify getCategory returns full definition for new categories
+    const capabilityNarrow = getCategory('capability-narrow')
+    expect(capabilityNarrow.color).toBe('#C9A962')
+    expect(capabilityNarrow.label).toBe('Task Skepticism')
   })
 })
 

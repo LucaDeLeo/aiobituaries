@@ -53,6 +53,37 @@ export interface DiscoveryCandidate {
 export type ClassificationRecommendation = 'approve' | 'review' | 'reject'
 
 /**
+ * Anti-pattern types that should be rejected
+ */
+export type AntiPattern =
+  | 'reasonable_caution'
+  | 'risk_warning'
+  | 'vague_sentiment'
+  | 'satire'
+  | 'self_serving'
+
+/**
+ * Quality score breakdown by dimension
+ */
+export interface QualityScore {
+  /** How testable is the prediction (0-25) */
+  falsifiability: number
+  /** How credible is the source (0-25) */
+  sourceAuthority: number
+  /** How confident is the prediction (0-25) */
+  claimBoldness: number
+  /** How significant is this claim (0-25) */
+  historicalValue: number
+  /** Total quality score (0-100) */
+  total: number
+}
+
+/**
+ * Claim status - how has the prediction aged?
+ */
+export type ClaimStatusType = 'falsified' | 'aging' | 'pending'
+
+/**
  * Result of LLM classification for a candidate
  */
 export interface ClassificationResult {
@@ -68,6 +99,12 @@ export interface ClassificationResult {
   extractedClaim: string
   /** Suggested category for the claim */
   suggestedCategory: Category
+  /** Quality score breakdown (optional - for enhanced classifier) */
+  qualityScore?: QualityScore
+  /** Claim status determination (optional) */
+  status?: ClaimStatusType
+  /** Anti-pattern detected if any (optional) */
+  antiPatternDetected?: AntiPattern | null
   /** Overall recommendation */
   recommendation: ClassificationRecommendation
 }

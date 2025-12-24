@@ -22,7 +22,9 @@
   --accent-primary: #C9A962;
 
   /* Category colors (for timeline visualization) */
-  --category-capability: #C9A962;
+  --category-capability-narrow: #C9A962;
+  --category-capability-reasoning: #D4B896;
+  --category-capability: #C9A962; /* Legacy - same as capability-narrow */
   --category-market: #7B9E89;
   --category-agi: #9E7B7B;
   --category-dismissive: #7B7B9E;

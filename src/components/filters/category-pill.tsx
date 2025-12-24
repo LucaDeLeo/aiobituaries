@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { useBreakpoint } from '@/lib/hooks/use-breakpoint'
 import type { CategoryDefinition } from '@/lib/constants/categories'
 
 /**
@@ -21,6 +22,7 @@ export interface CategoryPillProps {
  *
  * Displays a colored dot and label for a category with
  * active/inactive states and hover/tap animations.
+ * Uses short labels on mobile for space efficiency.
  *
  * @example
  * ```tsx
@@ -37,6 +39,11 @@ export function CategoryPill({
   onClick,
 }: CategoryPillProps) {
   const shouldReduceMotion = useReducedMotion()
+  const breakpoint = useBreakpoint()
+  const isMobile = breakpoint === 'mobile'
+
+  // Use short label on mobile for better fit
+  const displayLabel = isMobile ? category.shortLabel : category.label
 
   return (
     <motion.button
@@ -45,7 +52,7 @@ export function CategoryPill({
       aria-pressed={isActive}
       aria-label={`Filter by ${category.label}`}
       className={cn(
-        'flex items-center gap-2 px-3 py-1.5 rounded-full',
+        'snap-start flex items-center gap-1.5 px-2.5 py-1.5 rounded-full',
         'text-sm font-medium transition-colors whitespace-nowrap',
         'min-h-[44px]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-secondary)]',
@@ -67,7 +74,7 @@ export function CategoryPill({
         }}
         aria-hidden="true"
       />
-      <span>{category.label}</span>
+      <span>{displayLabel}</span>
     </motion.button>
   )
 }

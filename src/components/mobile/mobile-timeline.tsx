@@ -86,14 +86,15 @@ export function MobileTimeline({ obituaries }: MobileTimelineProps) {
         onClearFilters={handleClearAllFilters}
       />
 
-      {/* Sticky Category Filter at bottom */}
-      <div className="sticky bottom-0 z-10 bg-[var(--bg-primary)] border-t border-[var(--border)] p-2">
+      {/* Category Filter - handles its own positioning */}
+      <div className="bg-[var(--bg-primary)] border-t border-[var(--border)] pb-[env(safe-area-inset-bottom)]">
         <CategoryFilter
           activeCategories={activeCategories}
           onToggle={toggleCategory}
           onShowAll={clearFilters}
           totalCount={obituaries.length}
           filteredCount={filteredObituaries.length}
+          className="!sticky !bottom-0"
         />
       </div>
 

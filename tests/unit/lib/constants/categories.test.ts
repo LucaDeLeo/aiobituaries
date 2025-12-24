@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   CATEGORIES,
   CATEGORY_ORDER,
+  ALL_CATEGORIES,
   CATEGORY_BG_CLASSES,
   CATEGORY_BADGE_CLASSES,
   CATEGORY_LABELS,
@@ -10,16 +11,20 @@ import {
   getCategoryLabel,
   getAllCategories,
   isValidCategory,
+  normalizeCategory,
+  normalizeCategories,
   type CategoryDefinition,
 } from '@/lib/constants/categories'
 
 describe('CATEGORIES constant', () => {
-  it('contains exactly 4 categories', () => {
-    expect(Object.keys(CATEGORIES)).toHaveLength(4)
+  it('contains exactly 6 categories (including legacy)', () => {
+    expect(Object.keys(CATEGORIES)).toHaveLength(6)
   })
 
   it('has all expected category keys', () => {
-    expect(CATEGORIES).toHaveProperty('capability')
+    expect(CATEGORIES).toHaveProperty('capability-narrow')
+    expect(CATEGORIES).toHaveProperty('capability-reasoning')
+    expect(CATEGORIES).toHaveProperty('capability') // Legacy
     expect(CATEGORIES).toHaveProperty('market')
     expect(CATEGORIES).toHaveProperty('agi')
     expect(CATEGORIES).toHaveProperty('dismissive')
@@ -62,6 +67,8 @@ describe('CATEGORIES constant', () => {
   })
 
   it('has correct colors matching globals.css', () => {
+    expect(CATEGORIES['capability-narrow'].color).toBe('#C9A962')
+    expect(CATEGORIES['capability-reasoning'].color).toBe('#D4B896')
     expect(CATEGORIES.capability.color).toBe('#C9A962')
     expect(CATEGORIES.market.color).toBe('#7B9E89')
     expect(CATEGORIES.agi.color).toBe('#9E7B7B')
@@ -69,6 +76,8 @@ describe('CATEGORIES constant', () => {
   })
 
   it('has correct labels', () => {
+    expect(CATEGORIES['capability-narrow'].label).toBe('Task Skepticism')
+    expect(CATEGORIES['capability-reasoning'].label).toBe('Intelligence Skepticism')
     expect(CATEGORIES.capability.label).toBe('Capability Doubt')
     expect(CATEGORIES.market.label).toBe('Market/Bubble')
     expect(CATEGORIES.agi.label).toBe('AGI Skepticism')
@@ -76,8 +85,14 @@ describe('CATEGORIES constant', () => {
   })
 
   it('has correct descriptions', () => {
+    expect(CATEGORIES['capability-narrow'].description).toBe(
+      'Claims AI cannot perform specific tasks'
+    )
+    expect(CATEGORIES['capability-reasoning'].description).toBe(
+      'Claims about AI reasoning/understanding limits'
+    )
     expect(CATEGORIES.capability.description).toBe(
-      'Claims AI cannot do specific tasks'
+      'Claims AI cannot do specific tasks (legacy)'
     )
     expect(CATEGORIES.market.description).toBe('AI is overhyped or a bubble')
     expect(CATEGORIES.agi.description).toBe(
@@ -89,6 +104,8 @@ describe('CATEGORIES constant', () => {
   })
 
   it('has correct colorVar values', () => {
+    expect(CATEGORIES['capability-narrow'].colorVar).toBe('--category-capability-narrow')
+    expect(CATEGORIES['capability-reasoning'].colorVar).toBe('--category-capability-reasoning')
     expect(CATEGORIES.capability.colorVar).toBe('--category-capability')
     expect(CATEGORIES.market.colorVar).toBe('--category-market')
     expect(CATEGORIES.agi.colorVar).toBe('--category-agi')
@@ -97,13 +114,14 @@ describe('CATEGORIES constant', () => {
 })
 
 describe('CATEGORY_ORDER array', () => {
-  it('contains exactly 4 elements', () => {
-    expect(CATEGORY_ORDER).toHaveLength(4)
+  it('contains exactly 5 elements (excludes legacy capability)', () => {
+    expect(CATEGORY_ORDER).toHaveLength(5)
   })
 
   it('has correct order', () => {
     expect(CATEGORY_ORDER).toEqual([
-      'capability',
+      'capability-narrow',
+      'capability-reasoning',
       'market',
       'agi',
       'dismissive',
@@ -115,10 +133,37 @@ describe('CATEGORY_ORDER array', () => {
       expect(CATEGORIES).toHaveProperty(id)
     })
   })
+
+  it('does not include legacy capability category', () => {
+    expect(CATEGORY_ORDER).not.toContain('capability')
+  })
+})
+
+describe('ALL_CATEGORIES array', () => {
+  it('contains exactly 6 elements (includes legacy)', () => {
+    expect(ALL_CATEGORIES).toHaveLength(6)
+  })
+
+  it('includes legacy capability category', () => {
+    expect(ALL_CATEGORIES).toContain('capability')
+  })
+
+  it('includes all new categories', () => {
+    expect(ALL_CATEGORIES).toContain('capability-narrow')
+    expect(ALL_CATEGORIES).toContain('capability-reasoning')
+  })
 })
 
 describe('getCategoryColor function', () => {
-  it('returns correct color for capability', () => {
+  it('returns correct color for capability-narrow', () => {
+    expect(getCategoryColor('capability-narrow')).toBe('#C9A962')
+  })
+
+  it('returns correct color for capability-reasoning', () => {
+    expect(getCategoryColor('capability-reasoning')).toBe('#D4B896')
+  })
+
+  it('returns correct color for capability (legacy)', () => {
     expect(getCategoryColor('capability')).toBe('#C9A962')
   })
 
@@ -142,7 +187,15 @@ describe('getCategoryColor function', () => {
 })
 
 describe('getCategoryLabel function', () => {
-  it('returns correct label for capability', () => {
+  it('returns correct label for capability-narrow', () => {
+    expect(getCategoryLabel('capability-narrow')).toBe('Task Skepticism')
+  })
+
+  it('returns correct label for capability-reasoning', () => {
+    expect(getCategoryLabel('capability-reasoning')).toBe('Intelligence Skepticism')
+  })
+
+  it('returns correct label for capability (legacy)', () => {
     expect(getCategoryLabel('capability')).toBe('Capability Doubt')
   })
 
@@ -171,6 +224,7 @@ describe('getCategory function', () => {
     expect(result).toEqual({
       id: 'market',
       label: 'Market/Bubble',
+      shortLabel: 'Market',
       description: 'AI is overhyped or a bubble',
       color: '#7B9E89',
       colorVar: '--category-market',
@@ -178,9 +232,10 @@ describe('getCategory function', () => {
   })
 
   it('returns object with all required properties', () => {
-    const result = getCategory('capability')
+    const result = getCategory('capability-narrow')
     expect(result).toHaveProperty('id')
     expect(result).toHaveProperty('label')
+    expect(result).toHaveProperty('shortLabel')
     expect(result).toHaveProperty('description')
     expect(result).toHaveProperty('color')
     expect(result).toHaveProperty('colorVar')
@@ -196,8 +251,8 @@ describe('getCategory function', () => {
 })
 
 describe('getAllCategories function', () => {
-  it('returns array of length 4', () => {
-    expect(getAllCategories()).toHaveLength(4)
+  it('returns array of length 5 (CATEGORY_ORDER length)', () => {
+    expect(getAllCategories()).toHaveLength(5)
   })
 
   it('returns CategoryDefinition objects', () => {
@@ -226,7 +281,15 @@ describe('getAllCategories function', () => {
 })
 
 describe('isValidCategory function', () => {
-  it('returns true for capability', () => {
+  it('returns true for capability-narrow', () => {
+    expect(isValidCategory('capability-narrow')).toBe(true)
+  })
+
+  it('returns true for capability-reasoning', () => {
+    expect(isValidCategory('capability-reasoning')).toBe(true)
+  })
+
+  it('returns true for capability (legacy)', () => {
     expect(isValidCategory('capability')).toBe(true)
   })
 
@@ -265,10 +328,49 @@ describe('isValidCategory function', () => {
   })
 })
 
+describe('normalizeCategory function', () => {
+  it('maps legacy capability to capability-narrow', () => {
+    expect(normalizeCategory('capability')).toBe('capability-narrow')
+  })
+
+  it('returns capability-narrow unchanged', () => {
+    expect(normalizeCategory('capability-narrow')).toBe('capability-narrow')
+  })
+
+  it('returns capability-reasoning unchanged', () => {
+    expect(normalizeCategory('capability-reasoning')).toBe('capability-reasoning')
+  })
+
+  it('returns other categories unchanged', () => {
+    expect(normalizeCategory('market')).toBe('market')
+    expect(normalizeCategory('agi')).toBe('agi')
+    expect(normalizeCategory('dismissive')).toBe('dismissive')
+  })
+})
+
+describe('normalizeCategories function', () => {
+  it('maps legacy capability in array to capability-narrow', () => {
+    expect(normalizeCategories(['capability', 'market'])).toEqual([
+      'capability-narrow',
+      'market',
+    ])
+  })
+
+  it('returns empty array for empty input', () => {
+    expect(normalizeCategories([])).toEqual([])
+  })
+
+  it('handles mixed legacy and new categories', () => {
+    expect(
+      normalizeCategories(['capability', 'capability-reasoning', 'agi'])
+    ).toEqual(['capability-narrow', 'capability-reasoning', 'agi'])
+  })
+})
+
 describe('Tailwind class constants', () => {
   describe('CATEGORY_BG_CLASSES', () => {
-    it('contains all four categories', () => {
-      expect(Object.keys(CATEGORY_BG_CLASSES)).toHaveLength(4)
+    it('contains all six categories', () => {
+      expect(Object.keys(CATEGORY_BG_CLASSES)).toHaveLength(6)
     })
 
     it('has Tailwind class format values', () => {
@@ -279,8 +381,8 @@ describe('Tailwind class constants', () => {
   })
 
   describe('CATEGORY_BADGE_CLASSES', () => {
-    it('contains all four categories', () => {
-      expect(Object.keys(CATEGORY_BADGE_CLASSES)).toHaveLength(4)
+    it('contains all six categories', () => {
+      expect(Object.keys(CATEGORY_BADGE_CLASSES)).toHaveLength(6)
     })
 
     it('has badge styling with opacity and text color', () => {
@@ -291,8 +393,8 @@ describe('Tailwind class constants', () => {
   })
 
   describe('CATEGORY_LABELS', () => {
-    it('contains all four categories', () => {
-      expect(Object.keys(CATEGORY_LABELS)).toHaveLength(4)
+    it('contains all six categories', () => {
+      expect(Object.keys(CATEGORY_LABELS)).toHaveLength(6)
     })
 
     it('matches CATEGORIES labels', () => {

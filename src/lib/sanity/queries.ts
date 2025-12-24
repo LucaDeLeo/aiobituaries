@@ -41,6 +41,7 @@ const obituaryProjection = `{
   date,
   categories,
   context,
+  status,
   "skeptic": skeptic->{
     name,
     "slug": slug.current
@@ -57,7 +58,8 @@ const summaryProjection = `{
   claim,
   source,
   date,
-  categories
+  categories,
+  status
 }`
 
 /**
@@ -172,6 +174,7 @@ export const obituaryWithNavQuery = `
   date,
   categories,
   context,
+  status,
 
   // Previous obituary (older)
   "previous": *[_type == "obituary" && date < ^.date] | order(date desc) [0] {

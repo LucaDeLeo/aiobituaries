@@ -134,17 +134,21 @@ export const ALL_NOTABLE_HANDLES = new Set([
 /**
  * Configuration for notability heuristics.
  * Used to evaluate unknown accounts that aren't in the whitelist.
+ *
+ * Thresholds adjusted for medium bar (2024-12 update):
+ * - Lower follower requirements to capture more relevant sources
+ * - Verified accounts get even lower threshold
  */
 export const NOTABILITY_CONFIG = {
-  /** Minimum follower count to consider notable */
-  minFollowers: 25000,
+  /** Minimum follower count to consider notable (lowered from 25k to 10k) */
+  minFollowers: 10000,
 
   /** Bio keywords that suggest AI expertise/relevance */
   bioKeywords:
     /\b(AI|artificial intelligence|machine learning|ML|deep learning|NLP|researcher|professor|PhD|founder|CEO|CTO|VP|director|engineer at|scientist at|journalist|reporter|analyst|author)\b/i,
 
-  /** Verified accounts get lower follower threshold */
-  verifiedMinFollowers: 10000,
+  /** Verified accounts get lower follower threshold (lowered from 10k to 5k) */
+  verifiedMinFollowers: 5000,
 } as const
 
 /**

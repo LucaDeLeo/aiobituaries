@@ -34,9 +34,10 @@ describe('useFilters dependencies', () => {
   it('can import CATEGORY_ORDER from constants', async () => {
     const { CATEGORY_ORDER } = await import('@/lib/constants/categories')
     expect(CATEGORY_ORDER).toBeDefined()
-    expect(CATEGORY_ORDER).toHaveLength(4)
+    expect(CATEGORY_ORDER).toHaveLength(5)
     expect(CATEGORY_ORDER).toEqual([
-      'capability',
+      'capability-narrow',
+      'capability-reasoning',
       'market',
       'agi',
       'dismissive',
@@ -66,12 +67,13 @@ describe('nuqs parseAsArrayOf with parseAsStringLiteral', () => {
 
   it('parseAsStringLiteral validates against allowed values', async () => {
     const { parseAsStringLiteral } = await import('nuqs')
-    const parser = parseAsStringLiteral(['market', 'agi', 'capability', 'dismissive'])
+    const parser = parseAsStringLiteral(['market', 'agi', 'capability-narrow', 'capability-reasoning', 'dismissive'])
     expect(parser).toBeDefined()
 
     // Valid value should parse
     expect(parser.parse('market')).toBe('market')
     expect(parser.parse('agi')).toBe('agi')
+    expect(parser.parse('capability-narrow')).toBe('capability-narrow')
 
     // Invalid value should return null
     expect(parser.parse('invalid')).toBeNull()
@@ -242,8 +244,8 @@ describe('Filter state logic (pure functions)', () => {
     })
 
     it('can set all categories', () => {
-      const newCategories = ['capability', 'market', 'agi', 'dismissive']
-      expect(newCategories).toHaveLength(4)
+      const newCategories = ['capability-narrow', 'capability-reasoning', 'market', 'agi', 'dismissive']
+      expect(newCategories).toHaveLength(5)
     })
   })
 })

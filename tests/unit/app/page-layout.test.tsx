@@ -367,13 +367,14 @@ describe('Homepage Layout Structure (Story TSR-1.1)', () => {
       expect(screen.queryByTestId('count-display-compact')).not.toBeInTheDocument()
     })
 
-    it('renders ControlSheet in mobile layout', async () => {
+    it('does NOT render ControlSheet in mobile layout (MobileTimeline has integrated CategoryFilter)', async () => {
       const Component = await Home()
       await act(async () => {
         render(Component)
       })
 
-      expect(screen.getByTestId('control-sheet')).toBeInTheDocument()
+      // Mobile uses MobileTimeline which has its own CategoryFilter - no need for ControlSheet FAB
+      expect(screen.queryByTestId('control-sheet')).not.toBeInTheDocument()
     })
   })
 

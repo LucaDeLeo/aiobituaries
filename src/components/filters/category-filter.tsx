@@ -156,15 +156,16 @@ export function CategoryFilter({
         aria-hidden="true"
       />
 
-      {/* Scrollable content */}
+      {/* Scrollable content with snap scrolling */}
       <div
         ref={scrollContainerRef}
         className={cn(
-          'flex items-center gap-2 px-4 py-2',
-          'bg-[var(--bg-secondary)]/80 backdrop-blur-md',
+          'flex items-center gap-1.5 px-3 py-2',
+          'bg-[var(--bg-secondary)]/90 backdrop-blur-md',
           'border border-[var(--border)] rounded-full',
           'shadow-lg',
-          'overflow-x-auto scrollbar-hide'
+          'overflow-x-auto scrollbar-hide',
+          'snap-x snap-mandatory scroll-px-3'
         )}
       >
         <button
@@ -173,7 +174,7 @@ export function CategoryFilter({
           aria-pressed={showingAll}
           className={cn(
             pillPadding,
-            'rounded-full text-sm font-medium transition-colors whitespace-nowrap',
+            'snap-start rounded-full text-sm font-medium transition-colors whitespace-nowrap',
             'min-h-[44px] flex items-center justify-center',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-secondary)]',
             showingAll

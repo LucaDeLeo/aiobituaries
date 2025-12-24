@@ -29,9 +29,10 @@ describe('CategoryChart dependencies', () => {
   it('can import CATEGORY_ORDER from constants', async () => {
     const { CATEGORY_ORDER } = await import('@/lib/constants/categories')
     expect(CATEGORY_ORDER).toBeDefined()
-    expect(CATEGORY_ORDER).toHaveLength(4)
+    expect(CATEGORY_ORDER).toHaveLength(5)
     expect(CATEGORY_ORDER).toEqual([
-      'capability',
+      'capability-narrow',
+      'capability-reasoning',
       'market',
       'agi',
       'dismissive',
@@ -183,8 +184,9 @@ describe('Category sorting logic', () => {
   it('sorts categories by count descending', async () => {
     const { CATEGORY_ORDER } = await import('@/lib/constants/categories')
 
-    const counts = {
-      capability: 3,
+    const counts: Record<string, number> = {
+      'capability-narrow': 3,
+      'capability-reasoning': 2,
       market: 10,
       agi: 1,
       dismissive: 5,
@@ -196,15 +198,17 @@ describe('Category sorting logic', () => {
 
     expect(sortedCategories[0]).toBe('market') // 10
     expect(sortedCategories[1]).toBe('dismissive') // 5
-    expect(sortedCategories[2]).toBe('capability') // 3
-    expect(sortedCategories[3]).toBe('agi') // 1
+    expect(sortedCategories[2]).toBe('capability-narrow') // 3
+    expect(sortedCategories[3]).toBe('capability-reasoning') // 2
+    expect(sortedCategories[4]).toBe('agi') // 1
   })
 
   it('highest count appears first', async () => {
     const { CATEGORY_ORDER } = await import('@/lib/constants/categories')
 
-    const counts = {
-      capability: 5,
+    const counts: Record<string, number> = {
+      'capability-narrow': 5,
+      'capability-reasoning': 4,
       market: 1,
       agi: 3,
       dismissive: 2,
@@ -214,15 +218,16 @@ describe('Category sorting logic', () => {
       (a, b) => counts[b] - counts[a]
     )
 
-    expect(sortedCategories[0]).toBe('capability')
+    expect(sortedCategories[0]).toBe('capability-narrow')
     expect(counts[sortedCategories[0]]).toBe(5)
   })
 
   it('maintains stable order for equal counts', async () => {
     const { CATEGORY_ORDER } = await import('@/lib/constants/categories')
 
-    const counts = {
-      capability: 2,
+    const counts: Record<string, number> = {
+      'capability-narrow': 2,
+      'capability-reasoning': 2,
       market: 2,
       agi: 2,
       dismissive: 2,
@@ -233,7 +238,7 @@ describe('Category sorting logic', () => {
     )
 
     // With equal counts, original order should be preserved
-    expect(sortedCategories).toHaveLength(4)
+    expect(sortedCategories).toHaveLength(5)
   })
 })
 
@@ -449,9 +454,9 @@ describe('Data testid attributes', () => {
 })
 
 describe('Component renders correct number of bars', () => {
-  it('CATEGORY_ORDER contains 4 categories for bar rendering', async () => {
+  it('CATEGORY_ORDER contains 5 categories for bar rendering', async () => {
     const { CATEGORY_ORDER } = await import('@/lib/constants/categories')
-    expect(CATEGORY_ORDER).toHaveLength(4)
+    expect(CATEGORY_ORDER).toHaveLength(5)
   })
 
   it('all categories in CATEGORY_ORDER have valid definitions', async () => {
