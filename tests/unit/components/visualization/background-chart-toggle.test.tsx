@@ -184,7 +184,7 @@ describe('Default metric state', () => {
 
     expect(allMetrics).toBeDefined()
     expect(Array.isArray(allMetrics)).toBe(true)
-    expect(allMetrics).toHaveLength(4) // arcagi, eci, compute, metr
+    expect(allMetrics).toHaveLength(5) // mmlu, arcagi, eci, compute, metr
 
     // Verify METR metric exists (this is the new default)
     expect(metrFrontier.id).toBe('metr')
@@ -266,7 +266,7 @@ describe('BackgroundChart - Single Metric Rendering', () => {
       expect(linePath?.getAttribute('style')).toContain('opacity')
     })
 
-    it('renders overlay metric with reduced opacity (0.3)', async () => {
+    it('renders metric with opacity when selected', async () => {
       const { BackgroundChart } = await import('@/components/visualization/background-chart')
       const { mmluFrontier } = await import('@/data/ai-metrics')
 
@@ -274,7 +274,7 @@ describe('BackgroundChart - Single Metric Rendering', () => {
         <svg>
           <BackgroundChart
             metrics={[mmluFrontier]}
-            selectedMetric="arcagi"
+            selectedMetric="mmlu"
             xScale={createMockXScale()}
             yScale={createMockLinearYScale()}
             innerHeight={400}
@@ -282,9 +282,10 @@ describe('BackgroundChart - Single Metric Rendering', () => {
         </svg>
       )
 
-      const arcagiGroup = container.querySelector('[data-metric-id="arcagi"]')
-      const linePath = arcagiGroup?.querySelector('path[stroke]')
-      // Overlay metrics have 0.3 opacity
+      // mmluFrontier is rendered when mmlu is selected
+      const mmluGroup = container.querySelector('[data-metric-id="mmlu"]')
+      const linePath = mmluGroup?.querySelector('path[stroke]')
+      // The path has inline opacity style
       expect(linePath?.getAttribute('style')).toContain('opacity')
     })
   })

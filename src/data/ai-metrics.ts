@@ -19,6 +19,7 @@ export const METR_MAX_FALLBACK_MINUTES = 300
 // Re-export everything from generated file
 export {
   mmluFrontier,
+  arcagiFrontier,
   eciFrontier,
   trainingComputeFrontier,
   metrFrontier,
@@ -117,6 +118,7 @@ export type { MetricType }
 import {
   trainingComputeFrontier,
   mmluFrontier,
+  arcagiFrontier,
   eciFrontier,
   metrFrontier,
   getMetricValueAtDate,
@@ -254,8 +256,10 @@ export function getMetricSeries(metricType: MetricType): AIMetricSeries {
   switch (metricType) {
     case 'compute':
       return trainingComputeFrontier
+    case 'mmlu':
+      return mmluFrontier
     case 'arcagi':
-      return mmluFrontier // mmluFrontier is aliased to arcagiFrontier
+      return arcagiFrontier
     case 'eci':
       return eciFrontier
     case 'metr':
@@ -335,22 +339,28 @@ export function getMinDataYear(): number {
 import type { MetricsSnapshot } from '@/types/skeptic'
 
 /**
- * Get all three AI metrics (MMLU, ECI, Compute) at a specific date.
+ * Get all 5 AI metrics at a specific date.
  * Returns null for metrics that don't have data before their start date.
  *
  * @param date - Target date to get metrics for
- * @returns MetricsSnapshot with all three metrics and formatted compute
+ * @returns MetricsSnapshot with all 5 metrics and formatted compute
  *
  * Metric availability:
  * - Compute: Always available (data from 1950)
+ * - METR: Available from Nov 2019
  * - MMLU: Available from Aug 2021
  * - ECI: Available from Feb 2023
+ * - ARC-AGI: Available from Sept 2024
  *
  * @example
- * const metrics = getAllMetricsAtDate(new Date('2022-03-15'))
- * // Returns: { mmlu: 67.2, compute: 24.4, computeFormatted: "10^24.4", eci: null }
+ * const metrics = getAllMetricsAtDate(new Date('2024-10-15'))
+ * // Returns: { mmlu: 88.1, arcagi: 21.0, eci: 154.4, metr: 180.5, compute: 26.7, computeFormatted: "10^26.7" }
  */
 export function getAllMetricsAtDate(date: Date): MetricsSnapshot {
+  // METR data starts Nov 2019
+  const metrStart = new Date('2019-11-01')
+  const metr = date >= metrStart ? getMetricValueAtDate(metrFrontier, date) : null
+
   // MMLU data starts Aug 2021
   const mmluStart = new Date('2021-08-01')
   const mmlu = date >= mmluStart ? getMetricValueAtDate(mmluFrontier, date) : null
@@ -359,13 +369,19 @@ export function getAllMetricsAtDate(date: Date): MetricsSnapshot {
   const eciStart = new Date('2023-02-01')
   const eci = date >= eciStart ? getMetricValueAtDate(eciFrontier, date) : null
 
+  // ARC-AGI data starts Sept 2024
+  const arcagiStart = new Date('2024-09-01')
+  const arcagi = date >= arcagiStart ? getMetricValueAtDate(arcagiFrontier, date) : null
+
   // Compute is always available (from 1950)
   const compute = getMetricValueAtDate(trainingComputeFrontier, date)
   const computeFormatted = `10^${compute.toFixed(1)}`
 
   return {
     mmlu: mmlu !== null ? Math.round(mmlu * 10) / 10 : null, // Round to 1 decimal
+    arcagi: arcagi !== null ? Math.round(arcagi * 10) / 10 : null,
     eci: eci !== null ? Math.round(eci * 10) / 10 : null,
+    metr: metr !== null ? Math.round(metr * 10) / 10 : null,
     compute: Math.round(compute * 10) / 10,
     computeFormatted,
   }

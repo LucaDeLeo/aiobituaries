@@ -62,8 +62,12 @@ export interface SkepticWithClaims extends Skeptic {
 export interface MetricsSnapshot {
   /** MMLU benchmark score (%), null if before Aug 2021 */
   mmlu: number | null
+  /** ARC-AGI benchmark score (%), null if before Sept 2024 */
+  arcagi: number | null
   /** Epoch Capability Index, null if before Feb 2023 */
   eci: number | null
+  /** METR Task Horizon (minutes), null if before Nov 2019 */
+  metr: number | null
   /** Training compute (log₁₀ FLOP), always available */
   compute: number
   /** Formatted compute string, e.g., "10^25.3" */

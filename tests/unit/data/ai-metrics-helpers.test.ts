@@ -10,7 +10,9 @@ import {
   getCurrentMetrics,
   trainingComputeFrontier,
   mmluFrontier,
+  arcagiFrontier,
   eciFrontier,
+  metrFrontier,
   type AIMetricSeries,
 } from '@/data/ai-metrics'
 
@@ -159,9 +161,15 @@ describe('AI Metrics Helpers', () => {
       expect(series.id).toBe('compute')
     })
 
-    it('returns mmluFrontier (arcagi) for arcagi', () => {
+    it('returns mmluFrontier for mmlu', () => {
+      const series = getMetricSeries('mmlu')
+      expect(series).toBe(mmluFrontier)
+      expect(series.id).toBe('mmlu')
+    })
+
+    it('returns arcagiFrontier for arcagi', () => {
       const series = getMetricSeries('arcagi')
-      expect(series).toBe(mmluFrontier) // mmluFrontier is aliased to arcagiFrontier
+      expect(series).toBe(arcagiFrontier)
       expect(series.id).toBe('arcagi')
     })
 
@@ -169,6 +177,12 @@ describe('AI Metrics Helpers', () => {
       const series = getMetricSeries('eci')
       expect(series).toBe(eciFrontier)
       expect(series.id).toBe('eci')
+    })
+
+    it('returns metrFrontier for metr', () => {
+      const series = getMetricSeries('metr')
+      expect(series).toBe(metrFrontier)
+      expect(series.id).toBe('metr')
     })
   })
 
@@ -181,20 +195,41 @@ describe('AI Metrics Helpers', () => {
       expect(isFlopMetric('mmlu')).toBe(false)
     })
 
+    it('returns false for arcagi', () => {
+      expect(isFlopMetric('arcagi')).toBe(false)
+    })
+
     it('returns false for eci', () => {
       expect(isFlopMetric('eci')).toBe(false)
+    })
+
+    it('returns false for metr', () => {
+      expect(isFlopMetric('metr')).toBe(false)
     })
   })
 
   describe('getAllMetricsAtDate (Skeptic Pages)', () => {
-    it('returns all metrics for recent date', () => {
+    it('returns all metrics for recent date (post Sept 2024)', () => {
+      const date = new Date('2024-10-01')
+      const metrics = getAllMetricsAtDate(date)
+
+      expect(metrics.mmlu).not.toBeNull()
+      expect(metrics.arcagi).not.toBeNull() // ARC-AGI available from Sept 2024
+      expect(metrics.eci).not.toBeNull()
+      expect(metrics.metr).not.toBeNull()
+      expect(metrics.compute).toBeGreaterThan(0)
+      expect(metrics.computeFormatted).toMatch(/^10\^\d+\.\d$/)
+    })
+
+    it('returns null arcagi for dates before Sept 2024', () => {
       const date = new Date('2024-06-01')
       const metrics = getAllMetricsAtDate(date)
 
       expect(metrics.mmlu).not.toBeNull()
+      expect(metrics.arcagi).toBeNull() // ARC-AGI not yet available
       expect(metrics.eci).not.toBeNull()
+      expect(metrics.metr).not.toBeNull()
       expect(metrics.compute).toBeGreaterThan(0)
-      expect(metrics.computeFormatted).toMatch(/^10\^\d+\.\d$/)
     })
 
     it('returns null mmlu for dates before Aug 2021', () => {
@@ -202,6 +237,7 @@ describe('AI Metrics Helpers', () => {
       const metrics = getAllMetricsAtDate(date)
 
       expect(metrics.mmlu).toBeNull()
+      expect(metrics.metr).not.toBeNull() // METR available from Nov 2019
       expect(metrics.compute).toBeGreaterThan(0)
     })
 
@@ -211,6 +247,18 @@ describe('AI Metrics Helpers', () => {
 
       expect(metrics.mmlu).not.toBeNull() // MMLU available
       expect(metrics.eci).toBeNull() // ECI not yet available
+      expect(metrics.metr).not.toBeNull() // METR available
+      expect(metrics.compute).toBeGreaterThan(0)
+    })
+
+    it('returns null metr for dates before Nov 2019', () => {
+      const date = new Date('2019-06-01')
+      const metrics = getAllMetricsAtDate(date)
+
+      expect(metrics.mmlu).toBeNull()
+      expect(metrics.arcagi).toBeNull()
+      expect(metrics.eci).toBeNull()
+      expect(metrics.metr).toBeNull() // METR not yet available
       expect(metrics.compute).toBeGreaterThan(0)
     })
 
@@ -224,14 +272,20 @@ describe('AI Metrics Helpers', () => {
     })
 
     it('rounds values to 1 decimal place', () => {
-      const date = new Date('2024-01-15')
+      const date = new Date('2024-10-15')
       const metrics = getAllMetricsAtDate(date)
 
       if (metrics.mmlu !== null) {
         expect(metrics.mmlu.toString()).toMatch(/^\d+(\.\d)?$/)
       }
+      if (metrics.arcagi !== null) {
+        expect(metrics.arcagi.toString()).toMatch(/^\d+(\.\d)?$/)
+      }
       if (metrics.eci !== null) {
         expect(metrics.eci.toString()).toMatch(/^\d+(\.\d)?$/)
+      }
+      if (metrics.metr !== null) {
+        expect(metrics.metr.toString()).toMatch(/^\d+(\.\d)?$/)
       }
       expect(metrics.compute.toString()).toMatch(/^\d+(\.\d)?$/)
     })
@@ -241,7 +295,9 @@ describe('AI Metrics Helpers', () => {
       const metrics = getAllMetricsAtDate(date)
 
       expect(metrics.mmlu).toBeNull()
+      expect(metrics.arcagi).toBeNull()
       expect(metrics.eci).toBeNull()
+      expect(metrics.metr).toBeNull()
       expect(metrics.compute).toBeGreaterThan(0)
       expect(metrics.computeFormatted).toBeDefined()
     })
@@ -252,7 +308,9 @@ describe('AI Metrics Helpers', () => {
       const metrics = getCurrentMetrics()
 
       expect(metrics.mmlu).not.toBeNull()
+      expect(metrics.arcagi).not.toBeNull()
       expect(metrics.eci).not.toBeNull()
+      expect(metrics.metr).not.toBeNull()
       expect(metrics.compute).toBeGreaterThan(0)
       expect(metrics.computeFormatted).toBeDefined()
     })
@@ -263,10 +321,22 @@ describe('AI Metrics Helpers', () => {
       expect(metrics.mmlu).toBeGreaterThan(85)
     })
 
+    it('returns recent ARC-AGI values', () => {
+      const metrics = getCurrentMetrics()
+      // Current ARC-AGI should be above 20%
+      expect(metrics.arcagi).toBeGreaterThan(20)
+    })
+
     it('returns recent ECI values', () => {
       const metrics = getCurrentMetrics()
       // Current ECI should be above 140
       expect(metrics.eci).toBeGreaterThan(140)
+    })
+
+    it('returns recent METR values', () => {
+      const metrics = getCurrentMetrics()
+      // Current METR should be above 100 minutes
+      expect(metrics.metr).toBeGreaterThan(100)
     })
   })
 })

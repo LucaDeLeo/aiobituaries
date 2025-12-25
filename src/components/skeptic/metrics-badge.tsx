@@ -9,7 +9,7 @@ interface MetricsBadgeProps {
 }
 
 /**
- * Displays AI metrics (MMLU, Compute, ECI) in a badge format.
+ * Displays AI metrics (Compute, MMLU, ARC-AGI, ECI, METR) in a badge format.
  * Shows "N/A" for unavailable metrics (before their measurement start date).
  *
  * Used on skeptic pages to show what AI capabilities looked like
@@ -25,18 +25,28 @@ export function MetricsBadge({ metrics, className, compact = false }: MetricsBad
       )}
     >
       <MetricRow
-        label="MMLU"
-        value={metrics.mmlu !== null ? `${metrics.mmlu}%` : 'N/A'}
-        compact={compact}
-      />
-      <MetricRow
         label="Compute"
         value={metrics.computeFormatted}
         compact={compact}
       />
       <MetricRow
+        label="MMLU"
+        value={metrics.mmlu !== null ? `${metrics.mmlu}%` : 'N/A'}
+        compact={compact}
+      />
+      <MetricRow
+        label="ARC-AGI"
+        value={metrics.arcagi !== null ? `${metrics.arcagi}%` : 'N/A'}
+        compact={compact}
+      />
+      <MetricRow
         label="ECI"
         value={metrics.eci !== null ? metrics.eci.toString() : 'N/A'}
+        compact={compact}
+      />
+      <MetricRow
+        label="METR"
+        value={metrics.metr !== null ? `${metrics.metr} min` : 'N/A'}
         compact={compact}
       />
     </div>
@@ -82,9 +92,11 @@ export function CurrentMetricsFooter({ metrics, className }: CurrentMetricsFoote
     >
       <p className="text-sm text-[var(--text-muted)] mb-2">Today&apos;s AI Metrics</p>
       <p className="font-mono text-sm text-[var(--text-secondary)]">
-        MMLU {metrics.mmlu !== null ? `${metrics.mmlu}%` : 'N/A'} · Compute{' '}
-        {metrics.computeFormatted} · ECI{' '}
-        {metrics.eci !== null ? metrics.eci : 'N/A'}
+        Compute {metrics.computeFormatted} · MMLU{' '}
+        {metrics.mmlu !== null ? `${metrics.mmlu}%` : 'N/A'} · ARC-AGI{' '}
+        {metrics.arcagi !== null ? `${metrics.arcagi}%` : 'N/A'} · ECI{' '}
+        {metrics.eci !== null ? metrics.eci : 'N/A'} · METR{' '}
+        {metrics.metr !== null ? `${metrics.metr}min` : 'N/A'}
       </p>
     </div>
   )

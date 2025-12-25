@@ -12,6 +12,7 @@ import {
   isDateInMetricRange,
   getMetricYValue,
   formatMetrTick,
+  formatMmluTick,
   formatComputeTick,
   formatEciTick,
   formatArcagiTick,
@@ -19,8 +20,8 @@ import {
 import type { MetricType } from '@/types/metrics'
 
 describe('METRIC_CONFIGS', () => {
-  it('contains all four metric types', () => {
-    const metricTypes: MetricType[] = ['metr', 'compute', 'eci', 'arcagi']
+  it('contains all five metric types', () => {
+    const metricTypes: MetricType[] = ['metr', 'mmlu', 'compute', 'eci', 'arcagi']
     metricTypes.forEach((type) => {
       expect(METRIC_CONFIGS[type]).toBeDefined()
     })
@@ -42,7 +43,7 @@ describe('METRIC_CONFIGS', () => {
   it('domains are computed from actual data with headroom', () => {
     // METR domain should start at 0 and include headroom above max
     expect(METRIC_CONFIGS.metr.domain[0]).toBe(0)
-    expect(METRIC_CONFIGS.metr.domain[1]).toBeGreaterThan(288) // Max is ~289
+    expect(METRIC_CONFIGS.metr.domain[1]).toBeGreaterThan(137) // Max is ~137
 
     // ECI domain should not start at 100 (old hardcoded value)
     // Should start at rounded-down actual min (~109.8 -> 100)
@@ -80,6 +81,7 @@ describe('METRIC_CONFIGS', () => {
 describe('getMetricConfig', () => {
   it('returns correct config for each metric type', () => {
     expect(getMetricConfig('metr').id).toBe('metr')
+    expect(getMetricConfig('mmlu').id).toBe('mmlu')
     expect(getMetricConfig('compute').id).toBe('compute')
     expect(getMetricConfig('eci').id).toBe('eci')
     expect(getMetricConfig('arcagi').id).toBe('arcagi')
@@ -87,6 +89,7 @@ describe('getMetricConfig', () => {
 
   it('returns same reference as METRIC_CONFIGS', () => {
     expect(getMetricConfig('metr')).toBe(METRIC_CONFIGS.metr)
+    expect(getMetricConfig('mmlu')).toBe(METRIC_CONFIGS.mmlu)
     expect(getMetricConfig('compute')).toBe(METRIC_CONFIGS.compute)
   })
 })
@@ -121,13 +124,17 @@ describe('isDateInMetricRange', () => {
     expect(isDateInMetricRange('compute', new Date('2000-01-01'))).toBe(true)
     // ECI data starts 2023-02-01
     expect(isDateInMetricRange('eci', new Date('2024-01-01'))).toBe(true)
+    // MMLU data starts 2021-08-01
+    expect(isDateInMetricRange('mmlu', new Date('2023-01-01'))).toBe(true)
   })
 
   it('returns false for dates before metric data starts', () => {
     // ECI data starts 2023-02-01
     expect(isDateInMetricRange('eci', new Date('2022-01-01'))).toBe(false)
-    // ARC-AGI data starts 2021-08-01
-    expect(isDateInMetricRange('arcagi', new Date('2020-01-01'))).toBe(false)
+    // ARC-AGI data starts 2024-09-01
+    expect(isDateInMetricRange('arcagi', new Date('2024-06-01'))).toBe(false)
+    // MMLU data starts 2021-08-01
+    expect(isDateInMetricRange('mmlu', new Date('2020-01-01'))).toBe(false)
   })
 })
 
@@ -213,6 +220,13 @@ describe('Tick Formatters', () => {
       expect(formatArcagiTick(25.7)).toBe('26%')
     })
   })
+
+  describe('formatMmluTick', () => {
+    it('formats with % suffix', () => {
+      expect(formatMmluTick(85)).toBe('85%')
+      expect(formatMmluTick(67.3)).toBe('67%')
+    })
+  })
 })
 
 describe('Data Start Dates', () => {
@@ -234,8 +248,14 @@ describe('Data Start Dates', () => {
     expect(start.getUTCMonth()).toBe(1) // February = 1
   })
 
-  it('ARC-AGI starts August 2021', () => {
+  it('ARC-AGI starts September 2024', () => {
     const start = METRIC_CONFIGS.arcagi.dataStartDate
+    expect(start.getUTCFullYear()).toBe(2024)
+    expect(start.getUTCMonth()).toBe(8) // September = 8
+  })
+
+  it('MMLU starts August 2021', () => {
+    const start = METRIC_CONFIGS.mmlu.dataStartDate
     expect(start.getUTCFullYear()).toBe(2021)
     expect(start.getUTCMonth()).toBe(7) // August = 7
   })
@@ -256,5 +276,9 @@ describe('Metric Labels', () => {
 
   it('ARC-AGI label mentions Score', () => {
     expect(METRIC_CONFIGS.arcagi.label).toContain('Score')
+  })
+
+  it('MMLU label mentions Score', () => {
+    expect(METRIC_CONFIGS.mmlu.label).toContain('Score')
   })
 })

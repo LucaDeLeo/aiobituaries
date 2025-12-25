@@ -18,6 +18,7 @@ import {
   trainingComputeFrontier,
   eciFrontier,
   arcagiFrontier,
+  mmluFrontier,
   type AIMetricSeries,
 } from '@/data/ai-metrics.generated'
 
@@ -133,6 +134,15 @@ const eciDomain: [number, number] = [
   Math.ceil(eciDataMax * 1.1 / 10) * 10, // 10% headroom, round up
 ]
 const arcagiDomain = computeDomainFromData(arcagiFrontier, 20)
+// MMLU: percentage scores, floor at 20
+const mmluDomain = computeDomainFromData(mmluFrontier, 20)
+
+/**
+ * Format MMLU tick: "X%"
+ */
+function formatMmluTick(value: number): string {
+  return `${Math.round(value)}%`
+}
 
 /**
  * Metric configurations - domains computed from actual data
@@ -146,6 +156,17 @@ export const METRIC_CONFIGS: Record<MetricType, MetricConfig> = {
     formatTick: formatMetrTick,
     label: 'Task Horizon (minutes)',
     dataStartDate: new Date('2019-11-01'),
+  },
+  mmlu: {
+    id: 'mmlu',
+    series: mmluFrontier,
+    domain: mmluDomain,
+    tickValues: [20, 40, 60, 80, 100].filter(
+      v => v >= mmluDomain[0] && v <= mmluDomain[1]
+    ),
+    formatTick: formatMmluTick,
+    label: 'MMLU Score (%)',
+    dataStartDate: new Date('2021-08-01'),
   },
   compute: {
     id: 'compute',
@@ -178,7 +199,7 @@ export const METRIC_CONFIGS: Record<MetricType, MetricConfig> = {
     ),
     formatTick: formatArcagiTick,
     label: 'ARC-AGI Score (%)',
-    dataStartDate: new Date('2021-08-01'),
+    dataStartDate: new Date('2024-09-01'),
   },
 }
 
@@ -256,4 +277,4 @@ export function getMetricYValue(
 }
 
 // Re-export formatters for direct use
-export { formatMetrTick, formatComputeTick, formatEciTick, formatArcagiTick }
+export { formatMetrTick, formatMmluTick, formatComputeTick, formatEciTick, formatArcagiTick }

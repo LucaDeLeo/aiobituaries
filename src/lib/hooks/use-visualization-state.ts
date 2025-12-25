@@ -33,7 +33,7 @@ import type { MetricType } from '@/types/metrics'
 import { CATEGORY_ORDER } from '@/lib/constants/categories'
 
 // Valid metric types for URL parsing - derived from MetricType
-const METRIC_TYPES = ['compute', 'arcagi', 'eci', 'metr'] as const satisfies readonly MetricType[]
+const METRIC_TYPES = ['compute', 'mmlu', 'arcagi', 'eci', 'metr'] as const satisfies readonly MetricType[]
 
 /**
  * Parser for single metric URL parameter.

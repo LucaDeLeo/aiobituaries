@@ -10,24 +10,22 @@ import { useHydrated } from '@/lib/hooks/use-hydrated'
  */
 const METRIC_DESCRIPTIONS: Record<MetricType, string> = {
   compute: 'Historical training compute trend',
-  arcagi: 'Novel reasoning benchmark progress',
-  eci: 'Composite capability',
-  metr: 'Primary Y-axis (aligns with dot positions)',
+  mmlu: 'Knowledge & reasoning benchmark (Aug 2021+)',
+  arcagi: 'Novel reasoning benchmark (Sept 2024+)',
+  eci: 'Composite AI capability index (Feb 2023+)',
+  metr: 'Agentic task duration (Nov 2019+)',
 }
 
 /**
  * Derive metrics config from generated data with UI descriptions.
- * Shows METR (primary Y-axis), Training Compute, and ARC-AGI.
- * ECI is hidden as it doesn't add meaningful visual information.
+ * Shows all 5 metrics for unified modal/selector consistency.
  */
-const METRICS = allMetrics
-  .filter((metric) => metric.id === 'compute' || metric.id === 'arcagi' || metric.id === 'metr')
-  .map((metric) => ({
-    id: metric.id as MetricType,
-    label: metric.label,
-    description: METRIC_DESCRIPTIONS[metric.id as MetricType],
-    color: metric.color,
-  }))
+const METRICS = allMetrics.map((metric) => ({
+  id: metric.id as MetricType,
+  label: metric.label,
+  description: METRIC_DESCRIPTIONS[metric.id as MetricType],
+  color: metric.color,
+}))
 
 export interface MetricsToggleProps {
   /** Currently selected metric */

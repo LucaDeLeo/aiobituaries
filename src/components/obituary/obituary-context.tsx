@@ -76,11 +76,27 @@ export function ObituaryContext({ context, date }: ObituaryContextProps) {
                 </span>
               </div>
             )}
+            {aiMetrics.arcagi !== null && (
+              <div className="flex justify-between">
+                <span className="text-[var(--text-secondary)]">ARC-AGI Score</span>
+                <span className="text-[var(--accent-primary)] font-mono">
+                  {aiMetrics.arcagi}%
+                </span>
+              </div>
+            )}
             {aiMetrics.eci !== null && (
               <div className="flex justify-between">
                 <span className="text-[var(--text-secondary)]">Capability Index</span>
                 <span className="text-[var(--text-primary)] font-mono">
                   {aiMetrics.eci}
+                </span>
+              </div>
+            )}
+            {aiMetrics.metr !== null && (
+              <div className="flex justify-between">
+                <span className="text-[var(--text-secondary)]">METR Task Horizon</span>
+                <span className="text-[var(--text-primary)] font-mono">
+                  {aiMetrics.metr} min
                 </span>
               </div>
             )}
@@ -95,13 +111,56 @@ export function ObituaryContext({ context, date }: ObituaryContextProps) {
                 Frontier Model
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-[var(--text-primary)] font-medium">
-                {aiMetrics.frontierModel.model}
-              </p>
+            <CardContent className="space-y-2">
+              <div className="flex items-center gap-2">
+                <p className="text-[var(--text-primary)] font-medium">
+                  {aiMetrics.frontierModel.model}
+                </p>
+                {aiMetrics.frontierModel.link && (
+                  <a
+                    href={aiMetrics.frontierModel.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--accent-primary)] hover:underline"
+                    aria-label={`View ${aiMetrics.frontierModel.model} announcement`}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  </a>
+                )}
+              </div>
               <p className="text-sm text-[var(--text-muted)]">
                 {aiMetrics.frontierModel.org}
               </p>
+              <div className="flex justify-between text-sm">
+                <span className="text-[var(--text-secondary)]">Released</span>
+                <span className="text-[var(--text-primary)]">
+                  {new Intl.DateTimeFormat('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  }).format(new Date(aiMetrics.frontierModel.date))}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-[var(--text-secondary)]">Training Compute</span>
+                <span className="text-[var(--text-primary)] font-mono">
+                  10^{aiMetrics.frontierModel.compute.toFixed(1)} FLOP
+                </span>
+              </div>
             </CardContent>
           </Card>
         )}

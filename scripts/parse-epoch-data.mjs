@@ -12,7 +12,6 @@ import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const EPOCH_DIR = join(__dirname, '..', 'epoch_data')
-const BENCHMARK_DIR = join(__dirname, '..', 'benchmark_data')
 
 // Parse CSV file
 function parseCSV(filepath) {
@@ -89,7 +88,8 @@ function computeFrontierModelTimeline(records) {
         date: record['Publication date'],
         model: record['Model'],
         compute: compute,
-        org: record['Organization'] || 'Unknown'
+        org: record['Organization'] || 'Unknown',
+        link: record['Link'] || null
       })
     }
   }
@@ -150,9 +150,17 @@ async function main() {
   console.log(`  Hardware records: ${hwRecords.length}`)
 
   // 5. Parse METR Time Horizons for agentic task capability
-  const metrPath = join(BENCHMARK_DIR, 'metr_time_horizons_external.csv')
+  const metrPath = join(EPOCH_DIR, 'AI Trajectory Benchmark Data', 'metr_time_horizons_external.csv')
   const metrRecords = parseCSV(metrPath)
   console.log(`  METR records: ${metrRecords.length}`)
+
+  // 6. Parse ARC-AGI for novel reasoning benchmark (separate from MMLU!)
+  const arcagiPath = join(EPOCH_DIR, 'AI Trajectory Benchmark Data', 'arc_agi_external.csv')
+  const arcagiRecords = parseCSV(arcagiPath)
+  console.log(`  ARC-AGI records: ${arcagiRecords.length}`)
+
+  const arcagiFrontier = computeFrontierEnvelope(arcagiRecords, 'Release date', 'Score')
+  console.log(`  ARC-AGI frontier points: ${arcagiFrontier.length}`)
 
   const metrFrontier = computeFrontierEnvelope(metrRecords, 'Release date', 'Time horizon')
   console.log(`  METR frontier points: ${metrFrontier.length}`)
@@ -162,6 +170,7 @@ async function main() {
   const eciMonthly = aggregateByMonth(eciFrontier)
   const computeMonthly = aggregateByMonth(computeFrontier)
   const metrMonthly = aggregateByMonth(metrFrontier)
+  const arcagiMonthly = aggregateByMonth(arcagiFrontier)
 
   // Generate TypeScript output
   // P1.1 fix: Write to ai-metrics.generated.ts to protect handwritten helpers in ai-metrics.ts
@@ -189,26 +198,40 @@ export interface AIMetricSeries {
 }
 
 /**
+ * MMLU Benchmark Frontier
+ * Best MMLU (Massive Multitask Language Understanding) score at each point in time.
+ * Measures knowledge and reasoning across 57 academic subjects.
+ * Source: https://epoch.ai/data - mmlu_external.csv
+ * Data starts: Aug 2021
+ */
+export const mmluFrontier: AIMetricSeries = {
+  id: 'mmlu',
+  label: 'MMLU Score',
+  color: 'rgb(34, 197, 94)', // Green
+  unit: '%',
+  data: ${JSON.stringify(mmluMonthly.map(p => ({ date: p.date, value: Math.round(p.value * 1000) / 10 })), null, 4).replace(/\n/g, '\n  ')},
+}
+
+/**
  * ARC-AGI Benchmark Frontier
- * Best ARC-AGI score achieved at each point in time.
- * Shows dramatic capability progress on novel reasoning tasks.
- * Source: https://arcprize.org/
+ * Best ARC-AGI (Abstraction and Reasoning Corpus) score at each point in time.
+ * Measures novel pattern recognition and abstract reasoning.
+ * Source: https://arcprize.org/ - arc_agi_external.csv
+ * Data starts: Sept 2024
  */
 export const arcagiFrontier: AIMetricSeries = {
   id: 'arcagi',
   label: 'ARC-AGI Score',
   color: 'rgb(234, 179, 8)', // Amber
   unit: '%',
-  data: ${JSON.stringify(mmluMonthly.map(p => ({ date: p.date, value: Math.round(p.value * 1000) / 10 })), null, 4).replace(/\n/g, '\n  ')},
+  data: ${JSON.stringify(arcagiMonthly.map(p => ({ date: p.date, value: Math.round(p.value * 1000) / 10 })), null, 4).replace(/\n/g, '\n  ')},
 }
-
-// Legacy export for backward compatibility
-export const mmluFrontier = arcagiFrontier
 
 /**
  * Epoch Capabilities Index (ECI) Frontier
  * Composite capability score from Epoch AI.
  * Higher is better - tracks overall AI capability.
+ * Data starts: Feb 2023
  */
 export const eciFrontier: AIMetricSeries = {
   id: 'eci',
@@ -236,6 +259,7 @@ export const trainingComputeFrontier: AIMetricSeries = {
  * Maximum task horizon (autonomous work duration) achieved by AI models.
  * Measures agentic capability - how long models can work on tasks autonomously.
  * Source: https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks/
+ * Data starts: Nov 2019
  */
 export const metrFrontier: AIMetricSeries = {
   id: 'metr',
@@ -248,11 +272,11 @@ export const metrFrontier: AIMetricSeries = {
 /**
  * All metric series for visualization
  */
-export const allMetrics: AIMetricSeries[] = [arcagiFrontier, eciFrontier, trainingComputeFrontier, metrFrontier]
+export const allMetrics: AIMetricSeries[] = [mmluFrontier, arcagiFrontier, eciFrontier, trainingComputeFrontier, metrFrontier]
 
 /**
  * Frontier model timeline - which model was the frontier at each date
- * Based on training compute from Epoch's frontier_ai_models.csv
+ * Based on training compute from Epoch's all_ai_models.csv
  */
 export interface FrontierModelEntry {
   /** Date this model became the frontier */
@@ -261,10 +285,20 @@ export interface FrontierModelEntry {
   model: string
   /** Organization that created the model */
   org: string
+  /** Link to announcement/paper (nullable) */
+  link: string | null
+  /** Training compute in log₁₀ FLOP */
+  compute: number
 }
 
 export const frontierModelTimeline: FrontierModelEntry[] = ${JSON.stringify(
-  modelTimeline.map(m => ({ date: m.date, model: m.model, org: m.org })),
+  modelTimeline.map(m => ({
+    date: m.date,
+    model: m.model,
+    org: m.org,
+    link: m.link || null,
+    compute: Math.round(Math.log10(m.compute) * 10) / 10
+  })),
   null,
   2
 )}
@@ -339,6 +373,7 @@ export function getNormalizedMetricAtDate(series: AIMetricSeries, date: Date): n
   // Print date ranges
   console.log('\nDate ranges:')
   console.log(`  MMLU: ${mmluMonthly[0]?.date} to ${mmluMonthly[mmluMonthly.length - 1]?.date}`)
+  console.log(`  ARC-AGI: ${arcagiMonthly[0]?.date} to ${arcagiMonthly[arcagiMonthly.length - 1]?.date}`)
   console.log(`  ECI: ${eciMonthly[0]?.date} to ${eciMonthly[eciMonthly.length - 1]?.date}`)
   console.log(`  Compute: ${computeMonthly[0]?.date} to ${computeMonthly[computeMonthly.length - 1]?.date}`)
   console.log(`  METR: ${metrMonthly[0]?.date} to ${metrMonthly[metrMonthly.length - 1]?.date}`)
