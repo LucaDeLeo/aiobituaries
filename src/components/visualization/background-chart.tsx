@@ -1,7 +1,6 @@
 import { useMemo, memo, useRef, useEffect, useState } from 'react'
 import { AreaClosed } from '@visx/shape'
 import { curveMonotoneX } from '@visx/curve'
-import { scaleLinear } from '@visx/scale'
 import { useReducedMotion } from 'framer-motion'
 import type { ScaleTime } from 'd3-scale'
 import type { AIMetricSeries } from '@/data/ai-metrics'
@@ -113,11 +112,8 @@ function BackgroundChartComponent({
   const [animationProgress, setAnimationProgress] = useState(1)
   const animationFrameRef = useRef<number | null>(null)
 
-  // Memoized linear scale for normalized (non-FLOP) metrics
-  const normalizedYScale = useMemo(
-    () => scaleLinear({ domain: [0, 1], range: [innerHeight, 0] }),
-    [innerHeight]
-  )
+  // NOTE: normalizedYScale removed - all metrics now use the shared yScale
+  // whose domain animates when switching metrics, ensuring consistent positioning
 
   // Get the currently selected metric data
   const currentMetric = useMemo(() => {
@@ -211,20 +207,16 @@ function BackgroundChartComponent({
   // Use current metric's color (area fill updates with metric change)
   const currentColor = currentMetric.color
 
-  // For area fill, use current metric's transform
+  // For area fill, use current metric's data with raw values
+  // All metrics now use the shared yScale (no normalization needed)
   const [domainStart, domainEnd] = xScale.domain()
   const visibleData = currentMetric.data
     .map((d) => {
       const date = new Date(d.date)
-      const values = currentMetric.data.map((p) => p.value)
-      const dataMin = Math.min(...values)
-      const dataMax = Math.max(...values)
-      const range = dataMax - dataMin || 1
-
       return {
         date,
         value: d.value,
-        yValue: isPrimary ? d.value : (d.value - dataMin) / range,
+        yValue: d.value, // Raw metric value - yScale handles conversion
       }
     })
     .filter((d) => d.date >= domainStart && d.date <= domainEnd)
@@ -234,15 +226,12 @@ function BackgroundChartComponent({
   if (visibleData.length < 2 || currentPoints.length === 0) return null
 
   const getX = (d: TransformedDataPoint) => xScale(d.date) ?? 0
-  const getY = (d: TransformedDataPoint) => {
-    if (isPrimary) {
-      return yScale(d.yValue) ?? 0
-    } else {
-      return innerHeight * (1 - d.yValue)
-    }
-  }
+  // All metrics use yScale directly - the yScale domain is set to the selected
+  // metric's domain and animates when switching, ensuring consistent positioning
+  const getY = (d: TransformedDataPoint) => yScale(d.yValue) ?? 0
 
-  const areaYScale = isPrimary ? yScale : normalizedYScale
+  // Use the shared yScale for area fill (domain matches selected metric)
+  const areaYScale = yScale
 
   return (
     <g className="background-chart" data-metric-id={currentMetric.id}>

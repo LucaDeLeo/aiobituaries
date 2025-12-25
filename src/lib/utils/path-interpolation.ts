@@ -23,8 +23,11 @@ const RESAMPLE_POINTS = 100
 
 /**
  * Check if a metric uses the primary Y-axis scale (METR Task Horizon).
- * METR uses the actual linear Y-axis values.
- * All other metrics are normalized overlays (0-1 range).
+ *
+ * NOTE: This is now used only for visual styling (opacity, stroke width).
+ * All metrics use the same yScale for positioning - the yScale domain
+ * is animated when switching metrics, so all metrics should use yScale
+ * directly for consistent positioning of both dots and lines.
  */
 export function isPrimaryMetric(metricId: string): boolean {
   return metricId === 'metr'
@@ -45,11 +48,10 @@ export function resampleMetricToPoints(
   metric: AIMetricSeries,
   xScale: ScaleTime<number, number>,
   yScale: LinearScale,
-  innerHeight: number,
+  _innerHeight: number, // Kept for API compatibility, no longer used
   numPoints: number = RESAMPLE_POINTS
 ): Point[] {
   const [domainStart, domainEnd] = xScale.domain()
-  const isPrimary = isPrimaryMetric(metric.id)
 
   // Filter data to visible range
   const visibleData = metric.data.filter((d) => {
@@ -60,12 +62,6 @@ export function resampleMetricToPoints(
   if (visibleData.length < 2) {
     return []
   }
-
-  // Calculate min/max for normalization (overlay metrics)
-  const values = visibleData.map((p) => p.value)
-  const dataMin = Math.min(...values)
-  const dataMax = Math.max(...values)
-  const range = dataMax - dataMin || 1
 
   // Get date range for visible data
   const visibleDates = visibleData.map((d) => new Date(d.date).getTime())
@@ -82,18 +78,11 @@ export function resampleMetricToPoints(
     // Find the interval containing this time and interpolate
     const yValue = interpolateValueAtTime(visibleData, targetTime)
 
-    // Convert to pixel coordinates
+    // Convert to pixel coordinates using the shared yScale
+    // The yScale domain is set to the selected metric's domain and animates
+    // when switching metrics, ensuring dots and lines share the same coordinate system
     const x = xScale(targetDate) ?? 0
-
-    let y: number
-    if (isPrimary) {
-      // METR: use linear yScale directly
-      y = yScale(yValue) ?? 0
-    } else {
-      // Overlay: normalize to 0-1 and map to chart height
-      const normalizedY = (yValue - dataMin) / range
-      y = innerHeight * (1 - normalizedY)
-    }
+    const y = yScale(yValue) ?? 0
 
     points.push({ x, y })
   }

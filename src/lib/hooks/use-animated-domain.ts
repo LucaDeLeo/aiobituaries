@@ -104,19 +104,26 @@ export function useAnimatedDomain({
       animationFrameRef.current = null
     }
 
-    // Instant transition for reduced motion
-    if (shouldReduceMotion) {
-      setAnimatedDomain(targetDomain)
-      previousDomainRef.current = targetDomain
-      return
-    }
-
     // Capture the starting domain from ref (not stale state)
     const fromDomain: [number, number] = [...animatedDomainRef.current] as [number, number]
     const startTime = performance.now()
-    setIsAnimating(true)
 
+    let hasStarted = false
     const animate = (currentTime: number) => {
+      // Instant transition for reduced motion
+      if (shouldReduceMotion) {
+        setAnimatedDomain(targetDomain)
+        previousDomainRef.current = targetDomain
+        animationFrameRef.current = null
+        return
+      }
+
+      // Signal animation start on first frame
+      if (!hasStarted) {
+        setIsAnimating(true)
+        hasStarted = true
+      }
+
       const elapsed = currentTime - startTime
       const rawProgress = Math.min(elapsed / duration, 1)
       const easedProgress = easeOutQuart(rawProgress)

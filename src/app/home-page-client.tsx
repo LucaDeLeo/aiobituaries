@@ -61,9 +61,14 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
     selectedSkeptic,
   } = useVisualizationState()
 
-  // Calculate visible count based on category, search, and skeptic filters
+  // Calculate visible count based on year, category, search, and skeptic filters
+  // Only counts claims from year 2000+ (matching visualization filter)
+  const VISUALIZATION_MIN_YEAR = 2000
   const visibleCount = useMemo(() => {
     return obituaries.filter((obit) => {
+      // Year filter (2000+) - matches visualization
+      const year = new Date(obit.date).getFullYear()
+      const isYear2000Plus = year >= VISUALIZATION_MIN_YEAR
       // Category filter (empty = all)
       const matchesCategory = categories.length === 0 ||
         obit.categories?.some((cat) => categories.includes(cat))
@@ -71,7 +76,7 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
       const matchesSearchQuery = matchesSearch(obit, searchQuery)
       // Skeptic filter (null = all)
       const matchesSkeptic = !selectedSkeptic || obit.skeptic?.slug === selectedSkeptic
-      return matchesCategory && matchesSearchQuery && matchesSkeptic
+      return isYear2000Plus && matchesCategory && matchesSearchQuery && matchesSkeptic
     }).length
   }, [obituaries, categories, searchQuery, selectedSkeptic])
 

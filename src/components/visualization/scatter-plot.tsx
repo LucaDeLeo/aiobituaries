@@ -187,23 +187,30 @@ export function ScatterPlotInner({
   const innerHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
 
   // Compute scales with useMemo and performance monitoring
+  // X-axis ALWAYS starts at year 2000 - hardcoded to match visualization filter
   const xScale = useMemo(() => {
     markPerformance('scale-compute-start')
 
+    // Always start at Jan 1, 2000 (matches VISUALIZATION_MIN_YEAR filter in home-client.tsx)
+    const X_AXIS_START = new Date(2000, 0, 1)
+
     if (data.length === 0) {
       return scaleTime({
-        domain: [new Date('2020-01-01'), new Date()],
+        domain: [X_AXIS_START, new Date()],
         range: [0, innerWidth],
       })
     }
+
     const dates = data.map((d) => new Date(d.date))
-    const minDate = new Date(Math.min(...dates.map((d) => d.getTime())))
     const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())))
-    // Add padding to domain
-    const padding = (maxDate.getTime() - minDate.getTime()) * 0.05
+
+    // Add 5% padding to the end only
+    const timeRange = maxDate.getTime() - X_AXIS_START.getTime()
+    const padding = timeRange * 0.05
+
     const scale = scaleTime({
       domain: [
-        new Date(minDate.getTime() - padding),
+        X_AXIS_START,
         new Date(maxDate.getTime() + padding),
       ],
       range: [0, innerWidth],

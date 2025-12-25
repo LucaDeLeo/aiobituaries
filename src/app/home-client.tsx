@@ -130,6 +130,17 @@ export function HomeClient({
     return filtered
   }, [obituaries, searchQuery, selectedSkeptic])
 
+  // Visualization filter: Only show claims from year 2000 onwards in the scatter plot
+  // Uses getFullYear() for unambiguous year comparison
+  // Table view continues to show all claims for historical completeness
+  const VISUALIZATION_MIN_YEAR = 2000
+  const visualizationObituaries = useMemo(() => {
+    return filteredObituaries.filter(obit => {
+      const year = new Date(obit.date).getFullYear()
+      return year >= VISUALIZATION_MIN_YEAR
+    })
+  }, [filteredObituaries])
+
   // Calculate filtered count for accessibility announcements
   const filteredCount = useMemo(() => {
     if (categories.length === 0) return filteredObituaries.length
@@ -161,7 +172,7 @@ export function HomeClient({
         <div className="flex-1 relative">
           {!isHydrated || mode === 'visualization' ? (
             <ScatterPlot
-              data={filteredObituaries}
+              data={visualizationObituaries}
               activeCategories={categories}
               selectedMetric={selectedMetric}
               fillContainer
@@ -192,7 +203,7 @@ export function HomeClient({
         {/* After hydration, show based on user preference */}
         {!isHydrated || mode === 'visualization' ? (
           <>
-            <ScatterPlot data={obituaries} activeCategories={categories} />
+            <ScatterPlot data={visualizationObituaries} activeCategories={categories} />
             <div className="mt-3 flex justify-center">
               <BackgroundChartLegend metrics={allMetrics} />
             </div>
