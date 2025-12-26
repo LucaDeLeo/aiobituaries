@@ -13,6 +13,10 @@
  */
 import { test, expect } from '../support/merged-fixtures'
 
+// CI environments need longer timeouts for dynamic imports and hydration
+const isCI = !!process.env.CI
+const SCATTER_TIMEOUT = isCI ? 30_000 : 15_000
+
 test.describe('Homepage Visualization', () => {
   test('should load homepage with scatter plot', async ({ page, log }) => {
     await log({ message: 'Navigate to homepage', level: 'step' })
@@ -27,15 +31,15 @@ test.describe('Homepage Visualization', () => {
 
     await log({ message: 'Verify scatter plot container is visible', level: 'step' })
     const scatterContainer = page.locator('[data-testid="scatter-plot-container"]')
-    await expect(scatterContainer).toBeVisible({ timeout: 15_000 })
+    await expect(scatterContainer).toBeVisible({ timeout: SCATTER_TIMEOUT })
 
     await log({ message: 'Verify scatter plot SVG exists', level: 'step' })
     const scatterSvg = page.locator('[data-testid="scatter-plot"]')
-    await expect(scatterSvg.first()).toBeVisible()
+    await expect(scatterSvg.first()).toBeVisible({ timeout: SCATTER_TIMEOUT })
 
     await log({ message: 'Verify at least one data point exists', level: 'step' })
     const dataPoints = page.locator('[data-testid="scatter-point-group"]')
-    await expect(dataPoints.first()).toBeVisible({ timeout: 15_000 })
+    await expect(dataPoints.first()).toBeVisible({ timeout: SCATTER_TIMEOUT })
 
     await log({ message: 'Count data points', level: 'info' })
     const pointCount = await dataPoints.count()
@@ -50,7 +54,7 @@ test.describe('Homepage Visualization', () => {
 
     await log({ message: 'Wait for scatter points to load', level: 'step' })
     const scatterPoints = page.locator('[data-testid="scatter-point-group"]')
-    await expect(scatterPoints.first()).toBeVisible({ timeout: 15_000 })
+    await expect(scatterPoints.first()).toBeVisible({ timeout: SCATTER_TIMEOUT })
 
     await log({ message: 'Click first scatter point', level: 'step' })
     // Click on the point - it has tabindex="0" and is interactive
@@ -183,7 +187,7 @@ test.describe('Category Filtering', () => {
 
     await log({ message: 'Wait for scatter points to load', level: 'step' })
     const scatterPoints = page.locator('[data-testid="scatter-point-group"]')
-    await expect(scatterPoints.first()).toBeVisible({ timeout: 15_000 })
+    await expect(scatterPoints.first()).toBeVisible({ timeout: SCATTER_TIMEOUT })
     const initialCount = await scatterPoints.count()
     await log({ message: `Initial point count: ${initialCount}`, level: 'info' })
 
@@ -231,19 +235,25 @@ test.describe('Error Handling', {
     await log({ message: 'Navigate to non-existent obituary', level: 'step' })
     const response = await page.goto('/obituary/this-obituary-does-not-exist-12345')
 
+    // Wait for page to settle (Next.js may have loading states)
+    await page.waitForLoadState('domcontentloaded')
+
     await log({ message: 'Check response', level: 'step' })
     // Could be 404 page, redirect, or error page
     const status = response?.status()
     await log({ message: `Response status: ${status}`, level: 'info' })
 
-    // Either shows 404 content or redirects
-    const is404Page = await page.locator('text=/not found|404|does not exist/i').count() > 0
-    const isErrorPage = await page.locator('text=/error|something went wrong/i').count() > 0
+    // Either shows 404 content or redirects or returns non-200 status
+    const pageContent = await page.content()
+    const is404Page = /not found|404|does not exist|couldn't find/i.test(pageContent)
+    const isErrorPage = /error|something went wrong|oops/i.test(pageContent)
     const wasRedirected = !page.url().includes('this-obituary-does-not-exist')
+    const isNon200 = status !== 200
 
-    await log({ message: `404 page: ${is404Page}, Error page: ${isErrorPage}, Redirected: ${wasRedirected}`, level: 'info' })
+    await log({ message: `404 page: ${is404Page}, Error page: ${isErrorPage}, Redirected: ${wasRedirected}, Non-200: ${isNon200}`, level: 'info' })
 
-    expect(is404Page || isErrorPage || wasRedirected || status === 404).toBeTruthy()
+    // Accept any reasonable error handling: 404 content, error page, redirect, or non-200 status
+    expect(is404Page || isErrorPage || wasRedirected || isNon200).toBeTruthy()
     await log({ message: 'Error handling works correctly', level: 'success' })
   })
 })

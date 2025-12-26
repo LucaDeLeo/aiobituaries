@@ -13,8 +13,11 @@ const VIEWPORTS = {
   mobile: { width: 375, height: 667 },
 }
 
-// Allow extra time for data loading
-const DATA_LOAD_WAIT = 3000
+// CI environments need longer waits for dynamic imports and hydration
+const isCI = !!process.env.CI
+
+// Allow extra time for data loading (longer in CI)
+const DATA_LOAD_WAIT = isCI ? 5000 : 3000
 
 test.describe('Comprehensive Website Testing', () => {
   test.describe('Desktop Experience', () => {
