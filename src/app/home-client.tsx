@@ -195,7 +195,7 @@ export function HomeClient({
         <div className="flex justify-end p-2 absolute top-2 right-2 z-10">
           <TableViewToggle mode={mode} onModeChange={handleModeChange} />
         </div>
-        <div className="flex-1 relative">
+        <div className="flex-1 relative overflow-hidden">
           {!isHydrated || mode === 'visualization' ? (
             <ScatterPlot
               data={visualizationObituaries}
@@ -204,10 +204,12 @@ export function HomeClient({
               fillContainer
             />
           ) : (
-            <ObituaryTable
-              obituaries={filteredObituaries}
-              activeCategories={categories}
-            />
+            <div className="absolute inset-0 overflow-y-auto p-4">
+              <ObituaryTable
+                obituaries={filteredObituaries}
+                activeCategories={categories}
+              />
+            </div>
           )}
         </div>
       </div>
