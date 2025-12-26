@@ -279,33 +279,26 @@ describe('Homepage Layout Structure (Story TSR-1.1)', () => {
   })
 
   describe('Grid Structure (AC-1.1.3)', () => {
-    it('renders grid with gap-0 (no gap between regions)', async () => {
+    it('renders grid with two-column layout [1fr_320px]', async () => {
       const Component = await Home()
       await act(async () => {
         render(Component)
       })
 
-      const grid = document.querySelector('.grid.gap-0')
+      // Desktop layout uses grid-cols-[1fr_320px] for main + sidebar
+      const grid = document.querySelector('.grid.grid-cols-\\[1fr_320px\\]')
       expect(grid).toBeInTheDocument()
     })
 
-    it('renders grid with flex-1 for height', async () => {
+    it('renders grid with viewport-based height', async () => {
       const Component = await Home()
       await act(async () => {
         render(Component)
       })
 
-      const grid = document.querySelector('.grid.flex-1')
-      expect(grid).toBeInTheDocument()
-    })
-
-    it('renders grid with min-h-[500px] minimum height', async () => {
-      const Component = await Home()
-      await act(async () => {
-        render(Component)
-      })
-
-      const grid = document.querySelector('.grid.min-h-\\[500px\\]')
+      // Desktop layout uses h-[calc(100dvh-var(--header-height))] for full viewport minus header
+      // Note: Tailwind escapes the class, so we check for the grid with a height class starting with h-
+      const grid = document.querySelector('.grid[class*="h-\\[calc"]')
       expect(grid).toBeInTheDocument()
     })
   })
