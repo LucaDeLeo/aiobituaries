@@ -45,13 +45,12 @@ export default async function Home() {
   );
 
   // Desktop: >= 1024px - Full dashboard layout
+  // Single grid with explicit height - no nested flex wrappers for reliable height inheritance
   const desktopContent = (
-    <div className="flex flex-col min-h-screen">
-      <div className="grid grid-cols-[1fr_320px] flex-1 min-h-[500px] gap-0">
-        <Suspense fallback={null}>
-          <HomePageClient obituaries={obituaries} />
-        </Suspense>
-      </div>
+    <div className="grid grid-cols-[1fr_320px] h-[calc(100dvh-var(--header-height))]">
+      <Suspense fallback={null}>
+        <HomePageClient obituaries={obituaries} />
+      </Suspense>
     </div>
   );
 

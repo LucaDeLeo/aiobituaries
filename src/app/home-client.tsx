@@ -30,7 +30,7 @@ const ScatterPlot = dynamic(
     ssr: false,
     loading: () => (
       <div
-        className="w-full h-full min-h-[300px] md:min-h-[400px] bg-[var(--bg-secondary)]"
+        className="w-full h-full bg-[var(--bg-secondary)]"
         role="status"
         aria-label="Loading visualization"
       >
@@ -186,11 +186,11 @@ export function HomeClient({
   }
 
   // Hero variant: Full-height chart only (controls in sidebar)
-  // min-h-[500px] prevents CLS during hydration
+  // No min-height - parent grid cell provides height, prevents overflow on small viewports
   // P0.8 fix: Add view toggle so users can switch between visualization and table
   if (variant === 'hero') {
     return (
-      <div className="h-full min-h-[500px] flex flex-col relative">
+      <div className="h-full flex flex-col relative">
         {/* P0.8 fix: View toggle for hero variant - positioned top-right */}
         <div className="flex justify-end p-2 absolute top-2 right-2 z-10">
           <TableViewToggle mode={mode} onModeChange={handleModeChange} />

@@ -18,6 +18,7 @@ export interface AIMetricSeries {
   label: string
   color: string
   unit: string
+  source: string
   data: MetricDataPoint[]
 }
 
@@ -33,6 +34,7 @@ export const mmluFrontier: AIMetricSeries = {
   label: 'MMLU Score',
   color: 'rgb(34, 197, 94)', // Green
   unit: '%',
+  source: 'https://epoch.ai/data/mmlu',
   data: [
       {
           "date": "2021-08-01",
@@ -81,6 +83,7 @@ export const arcagiFrontier: AIMetricSeries = {
   label: 'ARC-AGI Score',
   color: 'rgb(234, 179, 8)', // Amber
   unit: '%',
+  source: 'https://arcprize.org/',
   data: [
       {
           "date": "2024-09-01",
@@ -124,6 +127,7 @@ export const eciFrontier: AIMetricSeries = {
   label: 'Epoch Capability Index',
   color: 'rgb(99, 102, 241)', // Indigo
   unit: 'ECI',
+  source: 'https://epoch.ai/data/epochai-llm-capability-index',
   data: [
       {
           "date": "2023-02-01",
@@ -198,6 +202,7 @@ export const trainingComputeFrontier: AIMetricSeries = {
   label: 'Training Compute',
   color: 'rgb(118, 185, 0)', // Green
   unit: 'log₁₀ FLOP',
+  source: 'https://epoch.ai/data/notable-ai-models',
   data: [
       {
           "date": "1950-07-01",
@@ -338,6 +343,7 @@ export const metrFrontier: AIMetricSeries = {
   label: 'METR Task Horizon',
   color: 'rgb(236, 72, 153)', // Pink
   unit: 'minutes',
+  source: 'https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks/',
   data: [
       {
           "date": "2019-11-01",
@@ -389,7 +395,7 @@ export const metrFrontier: AIMetricSeries = {
 /**
  * All metric series for visualization
  */
-export const allMetrics: AIMetricSeries[] = [mmluFrontier, arcagiFrontier, eciFrontier, trainingComputeFrontier, metrFrontier]
+export const allMetrics: AIMetricSeries[] = [metrFrontier, mmluFrontier, arcagiFrontier, eciFrontier, trainingComputeFrontier]
 
 /**
  * Frontier model timeline - which model was the frontier at each date

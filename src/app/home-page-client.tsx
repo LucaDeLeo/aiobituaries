@@ -82,8 +82,8 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
 
   return (
     <>
-      {/* Chart section - adaptive height using CSS classes for hydration consistency */}
-      <section className="relative overflow-hidden h-[calc(100dvh-var(--header-height)-16px)] min-h-[400px] max-h-[800px]">
+      {/* Chart section - fills grid cell, no min-height to prevent overflow */}
+      <section className="relative overflow-hidden h-full">
         <HomeClient
           obituaries={obituaries}
           variant="hero"

@@ -4,6 +4,7 @@ import type { MetricType } from '@/types/metrics'
 import { cn } from '@/lib/utils'
 import { allMetrics } from '@/data/ai-metrics.generated'
 import { useHydrated } from '@/lib/hooks/use-hydrated'
+import { ExternalLink } from 'lucide-react'
 
 /**
  * UI-specific descriptions for each metric (not in generated data)
@@ -25,6 +26,7 @@ const METRICS = allMetrics.map((metric) => ({
   label: metric.label,
   description: METRIC_DESCRIPTIONS[metric.id as MetricType],
   color: metric.color,
+  source: metric.source,
 }))
 
 export interface MetricsToggleProps {
@@ -111,7 +113,7 @@ export function MetricsToggle({
             </div>
 
             {/* Label and description */}
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-0.5 flex-1 min-w-0">
               <span className="text-sm font-medium leading-none">
                 {metric.label}
               </span>
@@ -119,6 +121,18 @@ export function MetricsToggle({
                 {metric.description}
               </span>
             </div>
+
+            {/* Source link */}
+            <a
+              href={metric.source}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="p-1 text-muted-foreground/50 hover:text-muted-foreground transition-colors flex-shrink-0"
+              aria-label={`View ${metric.label} data source`}
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
           </label>
         )
       })}

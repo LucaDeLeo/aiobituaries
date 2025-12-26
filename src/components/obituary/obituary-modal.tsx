@@ -182,15 +182,40 @@ export function ObituaryModal({
               />
             </Dialog.Overlay>
 
-            {/* Dialog content with origin animation */}
-            <Dialog.Content asChild>
+            {/* Dialog content - no asChild to ensure Radix detects Dialog.Title */}
+            <Dialog.Content
+              className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-lg max-h-[85vh] overflow-visible bg-transparent border-0 p-0 focus:outline-none"
+              data-testid="obituary-modal"
+              aria-labelledby={titleId}
+              aria-describedby={descriptionId}
+              forceMount
+            >
+              {/* Accessible title/description for screen readers */}
+              <Dialog.Title id={titleId} className="sr-only">
+                {isLoading
+                  ? 'Loading obituary'
+                  : error
+                    ? 'Error loading obituary'
+                    : obituary
+                      ? `Obituary from ${obituary.source}`
+                      : 'Obituary'}
+              </Dialog.Title>
+              <Dialog.Description id={descriptionId} className="sr-only">
+                {isLoading
+                  ? 'Loading obituary details, please wait'
+                  : error
+                    ? error
+                    : obituary
+                      ? `${formatDate(obituary.date)}: ${obituary.claim.slice(0, 100)}${obituary.claim.length > 100 ? '...' : ''}`
+                      : 'Obituary details'}
+              </Dialog.Description>
+
+              {/* Animated content wrapper */}
               <motion.div
                 className={cn(
-                  'fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2',
-                  'w-[calc(100%-2rem)] max-w-lg max-h-[85vh]',
-                  'overflow-y-auto rounded-xl shadow-2xl',
+                  'overflow-y-auto rounded-xl shadow-2xl max-h-[85vh]',
                   'bg-[var(--bg-primary)] border border-[var(--border)]',
-                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]'
+                  'focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]'
                 )}
                 variants={shouldReduceMotion ? undefined : contentVariants}
                 initial={shouldReduceMotion ? undefined : 'initial'}
@@ -200,9 +225,6 @@ export function ObituaryModal({
                   transformOrigin: getTransformOrigin(),
                   willChange: shouldReduceMotion ? 'auto' : 'transform, opacity',
                 }}
-                data-testid="obituary-modal"
-                aria-labelledby={titleId}
-                aria-describedby={descriptionId}
               >
                 {/* Header with close button */}
                 <div className="sticky top-0 z-10 flex justify-end p-3 bg-[var(--bg-primary)] border-b border-[var(--border)]">
@@ -215,26 +237,6 @@ export function ObituaryModal({
                     </button>
                   </Dialog.Close>
                 </div>
-
-                {/* Accessible title (visually hidden) */}
-                <Dialog.Title id={titleId} className="sr-only">
-                  {isLoading
-                    ? 'Loading obituary'
-                    : error
-                      ? 'Error loading obituary'
-                      : obituary
-                        ? `Obituary from ${obituary.source}`
-                        : 'Obituary'}
-                </Dialog.Title>
-                <Dialog.Description id={descriptionId} className="sr-only">
-                  {isLoading
-                    ? 'Loading obituary details, please wait'
-                    : error
-                      ? error
-                      : obituary
-                        ? `${formatDate(obituary.date)}: ${obituary.claim.slice(0, 100)}${obituary.claim.length > 100 ? '...' : ''}`
-                        : 'Obituary details'}
-                </Dialog.Description>
 
                 {/* Content area */}
                 <div className="p-6">

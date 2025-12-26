@@ -20,7 +20,7 @@ export function CollapsibleSection({
         <span className="text-sm font-medium text-foreground">{title}</span>
         <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
       </Collapsible.Trigger>
-      <Collapsible.Content className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+      <Collapsible.Content className="data-[state=closed]:overflow-hidden data-[state=open]:overflow-visible data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
         <div className="px-4 pb-4">
           {children}
         </div>
