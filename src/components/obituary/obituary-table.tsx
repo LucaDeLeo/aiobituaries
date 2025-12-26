@@ -6,25 +6,23 @@
  * Accessible sortable data table displaying obituaries as an alternative
  * to the scatter plot timeline visualization. Features:
  * - Sortable columns: Date, Source, Category (Claim is not sortable)
- * - Proper ARIA semantics: role="grid", scope="col", aria-sort on th elements
- * - sr-only caption describing current state
- * - Respects category filter state
+ * - Clickable rows open ObituaryModal (unified UX with ScatterPlot)
+ * - Standard table semantics with scope="col", aria-sort on sortable headers
+ * - Rows have role="button" + tabIndex for keyboard accessibility
+ * - sr-only caption describing current sort/filter state
+ * - Respects category filter state from parent
  * - Empty state when no matches
- * - Alternating row colors for readability
- *
- * CRITICAL: ObituarySummary does NOT have sourceUrl, so Source column
- * displays plain text. Actions column links to /obituary/[slug] detail page.
+ * - Interactive hover/focus states with accent color highlight
  */
 
-import { useState, useMemo, useCallback } from 'react'
-import Link from 'next/link'
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { ArrowUp, ArrowDown } from 'lucide-react'
 import { formatDate } from '@/lib/utils/date'
+import { DURATIONS } from '@/lib/utils/animation'
 import type { ObituarySummary, Category } from '@/types/obituary'
 import type { TableSortConfig } from '@/types/accessibility'
 import { cn } from '@/lib/utils'
 import { getCategoryColor, getCategoryLabel } from '@/lib/constants/categories'
-import { VisuallyHidden } from '@/components/accessibility/visually-hidden'
 import {
   TooltipProvider,
   Tooltip,
@@ -32,6 +30,7 @@ import {
   TooltipContent,
 } from '@/components/ui/tooltip'
 import { AIContextCell } from './ai-context-cell'
+import { ObituaryModal } from './obituary-modal'
 import { Info } from 'lucide-react'
 
 export interface ObituaryTableProps {
@@ -130,6 +129,22 @@ export function ObituaryTable({
     direction: 'desc',
   })
 
+  // Modal state (mirrors ScatterPlot pattern)
+  const [selectedSummary, setSelectedSummary] = useState<ObituarySummary | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [clickOrigin, setClickOrigin] = useState<{ x: number; y: number } | null>(null)
+  const clickedRowRef = useRef<HTMLTableRowElement | null>(null)
+  const modalCloseTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup timeout on unmount (P2.4 fix: prevent state update on unmounted component)
+  useEffect(() => {
+    return () => {
+      if (modalCloseTimeoutRef.current) {
+        clearTimeout(modalCloseTimeoutRef.current)
+      }
+    }
+  }, [])
+
   // Filter and sort data
   const displayData = useMemo(() => {
     let filtered = obituaries
@@ -172,6 +187,36 @@ export function ObituaryTable({
     }))
   }, [])
 
+  // Handler for row activation - opens modal (supports both mouse and keyboard)
+  const handleRowActivate = useCallback(
+    (obituary: ObituarySummary, element: HTMLTableRowElement, clientX?: number) => {
+      // Capture click origin for animation
+      const rect = element.getBoundingClientRect()
+      const originX = clientX ?? rect.left + rect.width / 2 // Center if keyboard
+      const originY = rect.top + rect.height / 2
+      setClickOrigin({ x: originX, y: originY })
+
+      setSelectedSummary(obituary)
+      setIsModalOpen(true)
+      clickedRowRef.current = element
+    },
+    []
+  )
+
+  // Handler for modal close (mirrors ScatterPlot pattern with proper cleanup)
+  const handleModalClose = useCallback(() => {
+    setIsModalOpen(false)
+    // Clear any previous timeout
+    if (modalCloseTimeoutRef.current) {
+      clearTimeout(modalCloseTimeoutRef.current)
+    }
+    // Delay clearing selectedSummary to allow exit animation
+    modalCloseTimeoutRef.current = setTimeout(() => {
+      setSelectedSummary(null)
+      modalCloseTimeoutRef.current = null
+    }, DURATIONS.slow * 1000) // Convert seconds to ms
+  }, [])
+
   // Build caption text for screen readers
   const captionText = useMemo(() => {
     const sortText = `sorted by ${sortConfig.column} in ${
@@ -191,7 +236,6 @@ export function ObituaryTable({
       <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
         <table
         className="w-full text-left border-collapse"
-        role="grid"
         aria-label="AI Obituaries"
       >
         <caption className="sr-only">{captionText}</caption>
@@ -247,9 +291,6 @@ export function ObituaryTable({
             >
               Category
             </SortableHeader>
-            <th scope="col" className="py-3 px-4">
-              <VisuallyHidden>Actions</VisuallyHidden>
-            </th>
           </tr>
         </thead>
 
@@ -257,7 +298,7 @@ export function ObituaryTable({
           {displayData.length === 0 ? (
             <tr>
               <td
-                colSpan={6}
+                colSpan={5}
                 className="py-12 text-center text-[var(--text-muted)]"
               >
                 No obituaries match the selected filters.
@@ -267,17 +308,30 @@ export function ObituaryTable({
             displayData.map((obituary, index) => (
               <tr
                 key={obituary._id}
+                onClick={(e) => handleRowActivate(obituary, e.currentTarget, e.clientX)}
                 className={cn(
-                  'border-b border-[var(--border)] hover:bg-[var(--bg-tertiary)] transition-colors',
+                  'border-b border-[var(--border)] cursor-pointer transition-all duration-150',
+                  'hover:bg-[var(--accent-primary)]/8 hover:shadow-[inset_2px_0_0_var(--accent-primary)]',
+                  'focus-within:bg-[var(--accent-primary)]/8 focus-within:shadow-[inset_2px_0_0_var(--accent-primary)]',
                   index % 2 === 0 ? 'bg-[var(--bg-secondary)]/30' : 'bg-[var(--bg-primary)]'
                 )}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    // Keyboard activation uses center of row for animation origin
+                    handleRowActivate(obituary, e.currentTarget)
+                  }
+                }}
+                aria-label={`View details for ${obituary.source} obituary`}
               >
                 <td className="py-3 px-4 whitespace-nowrap text-[var(--text-secondary)]">
                   <time dateTime={obituary.date}>
                     {formatDate(obituary.date)}
                   </time>
                 </td>
-                <td className="py-3 px-4 text-[var(--text-primary)]">
+                <td className="py-3 px-4 text-[var(--text-primary)] font-medium">
                   {obituary.source}
                 </td>
                 <td className="py-3 px-4 max-w-md">
@@ -285,7 +339,9 @@ export function ObituaryTable({
                     {obituary.claim}
                   </p>
                 </td>
-                <td className="py-3 px-4">
+                {/* AIContextCell: stopPropagation prevents row click when user clicks tooltip area.
+                    Keyboard users access same info via modal. This is intentional UX separation. */}
+                <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
                   <AIContextCell date={obituary.date} />
                 </td>
                 <td className="py-3 px-4">
@@ -295,18 +351,6 @@ export function ObituaryTable({
                     ))}
                   </div>
                 </td>
-                <td className="py-3 px-4">
-                  <Link
-                    href={`/obituary/${obituary.slug}`}
-                    className="text-sm text-[var(--accent-primary)] hover:underline whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)] rounded"
-                  >
-                    View details
-                    <VisuallyHidden>
-                      {' '}
-                      for {obituary.source} obituary
-                    </VisuallyHidden>
-                  </Link>
-                </td>
               </tr>
             ))
           )}
@@ -314,13 +358,22 @@ export function ObituaryTable({
 
         <tfoot className="bg-[var(--bg-tertiary)]">
           <tr>
-            <td colSpan={6} className="py-3 px-4 text-[var(--text-muted)] text-sm">
+            <td colSpan={5} className="py-3 px-4 text-[var(--text-muted)] text-sm">
               Showing {displayData.length} of {obituaries.length} obituaries
             </td>
           </tr>
         </tfoot>
         </table>
       </div>
+
+      {/* Obituary Detail Modal - same as ScatterPlot */}
+      <ObituaryModal
+        selectedSummary={selectedSummary}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        triggerRef={clickedRowRef}
+        clickOrigin={clickOrigin}
+      />
     </TooltipProvider>
   )
 }

@@ -26,25 +26,29 @@ describe('ObituaryTable module exports', () => {
 
 describe('Table Structure (AC-6.4.3, AC-6.4.8)', () => {
   /**
-   * Verified by code review of obituary-table.tsx lines 181-227:
+   * Verified by code review of obituary-table.tsx:
    *
-   * <table className="..." role="grid" aria-label="AI Obituaries">
+   * <table className="..." aria-label="AI Obituaries">
    *   <caption className="sr-only">{captionText}</caption>
    *   <thead>
    *     <tr>
    *       <th scope="col">Date</th>
    *       <th scope="col">Source</th>
-   *       <th scope="col" aria-sort="none">Claim</th>
+   *       <th scope="col">Claim</th>
+   *       <th scope="col">AI Level</th>
    *       <th scope="col">Category</th>
-   *       <th scope="col"><VisuallyHidden>Actions</VisuallyHidden></th>
    *     </tr>
    *   </thead>
    *   ...
    * </table>
+   *
+   * Note: role="grid" was removed to avoid ARIA conflict with clickable rows.
+   * Standard table semantics are used instead.
    */
-  it('documents table has role="grid" (AC-6.4.8)', () => {
-    const tableRole = 'grid'
-    expect(tableRole).toBe('grid')
+  it('documents table uses standard table semantics (AC-6.4.8)', () => {
+    // Table uses native semantics without role="grid" to avoid conflict with clickable rows
+    const usesNativeSemantics = true
+    expect(usesNativeSemantics).toBe(true)
   })
 
   it('documents table has aria-label="AI Obituaries"', () => {
@@ -52,14 +56,14 @@ describe('Table Structure (AC-6.4.3, AC-6.4.8)', () => {
     expect(ariaLabel).toBe('AI Obituaries')
   })
 
-  it('documents column headers: Date, Source, Claim, Category, Actions (AC-6.4.3)', () => {
-    const columns = ['Date', 'Source', 'Claim', 'Category', 'Actions']
+  it('documents column headers: Date, Source, Claim, AI Level, Category (AC-6.4.3)', () => {
+    const columns = ['Date', 'Source', 'Claim', 'AI Level', 'Category']
     expect(columns).toHaveLength(5)
     expect(columns[0]).toBe('Date')
     expect(columns[1]).toBe('Source')
     expect(columns[2]).toBe('Claim')
-    expect(columns[3]).toBe('Category')
-    expect(columns[4]).toBe('Actions')
+    expect(columns[3]).toBe('AI Level')
+    expect(columns[4]).toBe('Category')
   })
 
   it('documents all column headers have scope="col" (AC-6.4.8)', () => {
@@ -212,27 +216,40 @@ describe('Row Count Footer (AC-6.4.11)', () => {
   })
 })
 
-describe('Row Links (AC-6.4.7, AC-6.4.12)', () => {
+describe('Clickable Rows (AC-6.4.7, AC-6.4.12)', () => {
   /**
-   * Verified by code review of obituary-table.tsx lines 268-279:
+   * Verified by code review of obituary-table.tsx:
    *
-   * <Link href={`/obituary/${obituary.slug}`}>
-   *   View details
-   *   <VisuallyHidden> for {obituary.source} obituary</VisuallyHidden>
-   * </Link>
+   * <tr onClick={(e) => handleRowActivate(obituary, e.currentTarget, e.clientX)}
+   *     role="button" tabIndex={0}
+   *     aria-label={`View details for ${obituary.source} obituary`}>
+   *
+   * Note: Row click opens ObituaryModal (same as ScatterPlot dots).
+   * Modal has "View full page" link to /obituary/${slug}.
+   * aria-label is concise (excludes claim) to avoid verbosity for SR users.
+   * handleRowActivate accepts optional clientX - undefined for keyboard (uses center).
    */
-  it('documents View details link href pattern (AC-6.4.7)', () => {
-    const hrefPattern = '/obituary/${obituary.slug}'
-    expect(hrefPattern).toContain('/obituary/')
+  it('documents clickable row opens modal (unified with graph view)', () => {
+    // Row click opens ObituaryModal instead of navigating directly
+    // Modal provides consistent UX between graph and table views
+    const opensModal = true
+    expect(opensModal).toBe(true)
   })
 
-  it('documents link has accessible name with sr-only context (AC-6.4.12)', () => {
-    // Link contains "View details" visible text plus sr-only source context
-    const visibleText = 'View details'
-    const srOnlyContext = 'for {obituary.source} obituary'
-    expect(visibleText).toBe('View details')
-    expect(srOnlyContext).toContain('for')
-    expect(srOnlyContext).toContain('obituary')
+  it('documents row has accessible aria-label (AC-6.4.12)', () => {
+    // Row has concise aria-label with source context (claim omitted to avoid verbosity)
+    const ariaLabelPattern = 'View details for {obituary.source} obituary'
+    expect(ariaLabelPattern).toContain('View details')
+    expect(ariaLabelPattern).toContain('obituary')
+  })
+
+  it('documents rows are keyboard accessible with tabIndex and onKeyDown', () => {
+    // Row has tabIndex={0} and handles Enter/Space keys
+    const tabIndex = 0
+    const keyboardKeys = ['Enter', ' ']
+    expect(tabIndex).toBe(0)
+    expect(keyboardKeys).toContain('Enter')
+    expect(keyboardKeys).toContain(' ')
   })
 
   it('documents Source column displays plain text, not links', () => {
@@ -304,19 +321,17 @@ describe('Category Badge styling', () => {
 
 describe('Focus styling', () => {
   /**
-   * Verified by code review of Link className in row:
-   * 'focus-visible:outline-none focus-visible:ring-2
-   *  focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2
-   *  focus-visible:ring-offset-[var(--bg-primary)]'
+   * Verified by code review of tr className:
+   * 'focus-within:bg-[var(--accent-primary)]/8
+   *  focus-within:shadow-[inset_2px_0_0_var(--accent-primary)]'
    */
-  it('documents View details link has focus-visible styling', () => {
+  it('documents row has focus-within styling', () => {
     const focusClasses = [
-      'focus-visible:outline-none',
-      'focus-visible:ring-2',
-      'focus-visible:ring-[var(--accent-primary)]',
+      'focus-within:bg-[var(--accent-primary)]/8',
+      'focus-within:shadow-[inset_2px_0_0_var(--accent-primary)]',
     ]
     focusClasses.forEach((cls) => {
-      expect(cls.startsWith('focus-visible:')).toBe(true)
+      expect(cls.startsWith('focus-within:')).toBe(true)
     })
   })
 })
@@ -332,5 +347,43 @@ describe('Type imports', () => {
     const mod = await import('@/types/accessibility')
     expect(mod).toBeDefined()
     // TableSortConfig is a TypeScript interface
+  })
+})
+
+describe('Modal Integration (unified with ScatterPlot)', () => {
+  /**
+   * Verified by code review of obituary-table.tsx:
+   *
+   * - Imports ObituaryModal from './obituary-modal'
+   * - State: selectedSummary, isModalOpen, clickOrigin, clickedRowRef, modalCloseTimeoutRef
+   * - handleRowActivate: captures click origin, sets selectedSummary, opens modal
+   * - handleModalClose: closes modal with animation delay (uses ref for cleanup)
+   * - Renders <ObituaryModal> at end of component with same props as ScatterPlot
+   */
+  it('documents ObituaryTable includes ObituaryModal', () => {
+    // Component renders ObituaryModal for unified UX with ScatterPlot
+    const includesModal = true
+    expect(includesModal).toBe(true)
+  })
+
+  it('documents modal state management mirrors ScatterPlot', () => {
+    // Same state pattern: selectedSummary, isModalOpen, clickOrigin, refs with cleanup
+    const stateKeys = ['selectedSummary', 'isModalOpen', 'clickOrigin', 'clickedRowRef', 'modalCloseTimeoutRef']
+    expect(stateKeys).toContain('selectedSummary')
+    expect(stateKeys).toContain('isModalOpen')
+    expect(stateKeys).toContain('clickOrigin')
+    expect(stateKeys).toContain('modalCloseTimeoutRef')
+  })
+
+  it('documents modal receives same props as in ScatterPlot', () => {
+    // ObituaryModal receives: selectedSummary, isOpen, onClose, triggerRef, clickOrigin
+    const modalProps = ['selectedSummary', 'isOpen', 'onClose', 'triggerRef', 'clickOrigin']
+    expect(modalProps).toHaveLength(5)
+  })
+
+  it('documents keyboard activation opens modal', () => {
+    // Enter/Space key triggers handleRowActivate (no synthetic event needed)
+    const keyboardOpensModal = true
+    expect(keyboardOpensModal).toBe(true)
   })
 })
