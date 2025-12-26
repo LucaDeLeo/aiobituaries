@@ -187,14 +187,10 @@ export function HomeClient({
 
   // Hero variant: Full-height chart only (controls in sidebar)
   // No min-height - parent grid cell provides height, prevents overflow on small viewports
-  // P0.8 fix: Add view toggle so users can switch between visualization and table
+  // View toggle moved to sidebar ControlPanel for better UX
   if (variant === 'hero') {
     return (
-      <div className="h-full flex flex-col relative">
-        {/* P0.8 fix: View toggle for hero variant - positioned top-right */}
-        <div className="flex justify-end p-2 absolute top-2 right-2 z-10">
-          <TableViewToggle mode={mode} onModeChange={handleModeChange} />
-        </div>
+      <div className="h-full flex flex-col">
         <div className="flex-1 relative overflow-hidden">
           {!isHydrated || mode === 'visualization' ? (
             <ScatterPlot

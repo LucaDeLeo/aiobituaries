@@ -43,7 +43,7 @@ export function ControlPanelWrapper({
     setSelectedSkeptic,
   } = useVisualizationState()
 
-  const { mode, isHydrated } = useViewModeStorage()
+  const { mode, setMode, isHydrated } = useViewModeStorage()
 
   // Hide chart controls when in table view (after hydration)
   const isChartControlsHidden = isHydrated && mode === 'table'
@@ -67,6 +67,8 @@ export function ControlPanelWrapper({
       }}
       variant={variant}
       isChartControlsHidden={isChartControlsHidden}
+      viewMode={mode}
+      onViewModeChange={setMode}
     />
   )
 }

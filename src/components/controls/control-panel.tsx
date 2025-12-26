@@ -2,12 +2,14 @@
 
 import type { Category, ObituarySummary } from '@/types/obituary'
 import type { MetricType } from '@/types/metrics'
+import type { TimelineViewMode } from '@/types/accessibility'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { CollapsibleSection } from './collapsible-section'
 import { MetricsToggle } from './metrics-toggle'
 import { CategoryCheckboxes } from './category-checkboxes'
 import { SearchInput } from './search-input'
 import { SkepticFilter } from './skeptic-filter'
+import { TableViewToggle } from '@/components/obituary/table-view-toggle'
 import { cn } from '@/lib/utils'
 import { CATEGORY_ORDER, CATEGORIES } from '@/lib/constants/categories'
 
@@ -41,6 +43,10 @@ export interface ControlPanelProps {
   variant?: 'sidebar' | 'sheet' | 'drawer'
   /** Hide chart-specific controls (Background Metrics) in table view */
   isChartControlsHidden?: boolean
+  /** Current view mode (timeline/table) */
+  viewMode?: TimelineViewMode
+  /** Callback when view mode changes */
+  onViewModeChange?: (mode: TimelineViewMode) => void
 }
 
 const variantStyles = {
@@ -62,16 +68,23 @@ export function ControlPanel({
   stats,
   variant = 'sidebar',
   isChartControlsHidden = false,
+  viewMode = 'visualization',
+  onViewModeChange,
 }: ControlPanelProps) {
   return (
     <div className={cn('flex flex-col h-full', variantStyles[variant])}>
-      {/* Header with stats and search */}
+      {/* Header with stats, view toggle, and search */}
       <div className="p-4 border-b border-border space-y-3">
-        <div>
-          <h2 className="font-semibold">Controls</h2>
-          <p className="text-sm text-muted-foreground">
-            Showing {stats.visible} of {stats.total}
-          </p>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h2 className="font-semibold">Controls</h2>
+            <p className="text-sm text-muted-foreground">
+              Showing {stats.visible} of {stats.total}
+            </p>
+          </div>
+          {onViewModeChange && (
+            <TableViewToggle mode={viewMode} onModeChange={onViewModeChange} />
+          )}
         </div>
         <SearchInput
           value={searchQuery}
