@@ -16,10 +16,12 @@ export async function POST(request: NextRequest) {
   revalidateTag('obituaries', { expire: 0 })
   revalidateTag('obituary', { expire: 0 }) // Used by getObituaryCount
 
-  // Also revalidate paths for good measure
+  // Also revalidate static paths
+  // P2.3 fix: Use 'layout' type for dynamic routes to properly invalidate all pages
+  // The literal '[slug]' pattern doesn't match actual paths
   revalidatePath('/')
   revalidatePath('/about')
-  revalidatePath('/obituary/[slug]', 'page')
+  revalidatePath('/obituary/[slug]', 'layout') // 'layout' invalidates all matching routes
   revalidatePath('/sitemap.xml')
 
   return NextResponse.json({ revalidated: true })

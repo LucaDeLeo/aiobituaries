@@ -32,17 +32,20 @@ async function toDraft(classified: ClassifiedCandidate): Promise<ObituaryDraft> 
       ? candidate.author?.name || 'Twitter'
       : extractDomain(candidate.url) || 'Unknown'
 
+  // P1.3 fix: Pass date to generateSlug for uniqueness
+  const claimDate = candidate.publishedDate.slice(0, 10) // YYYY-MM-DD
+
   return {
     _type: 'obituary',
     claim: result.extractedClaim,
     source: sourceName,
     sourceUrl: candidate.url,
-    date: candidate.publishedDate.slice(0, 10), // YYYY-MM-DD
+    date: claimDate,
     categories: [result.suggestedCategory],
     context,
     slug: {
       _type: 'slug',
-      current: generateSlug(result.extractedClaim),
+      current: generateSlug(result.extractedClaim, claimDate),
     },
     discoveryMetadata: {
       discoveredAt: new Date().toISOString(),

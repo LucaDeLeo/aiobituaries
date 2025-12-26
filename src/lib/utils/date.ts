@@ -80,3 +80,36 @@ export function getUTCMonthEnd(year: number, month: number): Date {
   // Day 0 of next month = last day of current month
   return new Date(Date.UTC(year, month + 1, 0))
 }
+
+/**
+ * Get UTC year from a date string or Date object.
+ * Avoids local timezone issues that can cause off-by-one errors.
+ *
+ * @param date - ISO date string or Date object
+ * @returns UTC year (e.g., 2024)
+ *
+ * @example
+ * ```ts
+ * getUTCYear("2024-01-01") // 2024 (always, regardless of local timezone)
+ * getUTCYear(new Date("2024-01-01")) // 2024
+ * ```
+ */
+export function getUTCYear(date: string | Date): number {
+  const d = typeof date === 'string' ? parseUTCDate(date) : date
+  return d.getUTCFullYear()
+}
+
+/**
+ * Format a date for screen reader announcements in UTC.
+ *
+ * @param dateString - ISO date string
+ * @returns Formatted date (e.g., "January 2024")
+ */
+export function formatDateForAnnouncement(dateString: string): string {
+  const date = parseUTCDate(dateString)
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+}

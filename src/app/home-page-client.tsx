@@ -27,6 +27,9 @@ import { useMemo } from 'react'
 import { HomeClient } from './home-client'
 import { ControlPanelWrapper } from '@/components/controls'
 import { useVisualizationState } from '@/lib/hooks/use-visualization-state'
+import { useViewModeStorage } from '@/components/obituary/table-view-toggle'
+import { getUTCYear } from '@/lib/utils/date'
+import { matchesSearch } from '@/lib/utils/filters'
 import type { ObituarySummary } from '@/types/obituary'
 
 interface HomePageClientProps {
@@ -38,20 +41,7 @@ interface HomePageClientProps {
  * Client wrapper for desktop homepage that coordinates state between
  * ControlPanel and visualization. Single source of truth for URL state.
  */
-/**
- * Helper function to check if an obituary matches a search query.
- * Searches in claim text and source name (case-insensitive).
- */
-function matchesSearch(obit: ObituarySummary, query: string): boolean {
-  if (!query) return true
-  const lowerQuery = query.toLowerCase()
-  return (
-    obit.claim.toLowerCase().includes(lowerQuery) ||
-    obit.source.toLowerCase().includes(lowerQuery) ||
-    obit.categories?.some(cat => cat.toLowerCase().includes(lowerQuery)) ||
-    false
-  )
-}
+// P2.5 fix: matchesSearch moved to @/lib/utils/filters for deduplication
 
 export function HomePageClient({ obituaries }: HomePageClientProps) {
   const {
@@ -61,14 +51,24 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
     selectedSkeptic,
   } = useVisualizationState()
 
-  // Calculate visible count based on year, category, search, and skeptic filters
-  // Only counts claims from year 2000+ (matching visualization filter)
+  // P2.1 fix: Get view mode to calculate count matching the actual view
+  const { mode, isHydrated } = useViewModeStorage()
+
+  // Calculate visible count based on active filters
+  // P2.1 fix: Year filter only applies to visualization view, not table view
+  // P1.2 fix: Use UTC year to avoid timezone-related off-by-one errors
   const VISUALIZATION_MIN_YEAR = 2000
   const visibleCount = useMemo(() => {
+    // During SSR/hydration, assume visualization mode (year filter applies)
+    const applyYearFilter = !isHydrated || mode === 'visualization'
+
     return obituaries.filter((obit) => {
-      // Year filter (2000+) - matches visualization
-      const year = new Date(obit.date).getFullYear()
-      const isYear2000Plus = year >= VISUALIZATION_MIN_YEAR
+      // Year filter (2000+) - only for visualization mode
+      // Use UTC to avoid off-by-one errors in negative timezones
+      if (applyYearFilter) {
+        const year = getUTCYear(obit.date)
+        if (year < VISUALIZATION_MIN_YEAR) return false
+      }
       // Category filter (empty = all)
       const matchesCategory = categories.length === 0 ||
         obit.categories?.some((cat) => categories.includes(cat))
@@ -76,9 +76,9 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
       const matchesSearchQuery = matchesSearch(obit, searchQuery)
       // Skeptic filter (null = all)
       const matchesSkeptic = !selectedSkeptic || obit.skeptic?.slug === selectedSkeptic
-      return isYear2000Plus && matchesCategory && matchesSearchQuery && matchesSkeptic
+      return matchesCategory && matchesSearchQuery && matchesSkeptic
     }).length
-  }, [obituaries, categories, searchQuery, selectedSkeptic])
+  }, [obituaries, categories, searchQuery, selectedSkeptic, mode, isHydrated])
 
   return (
     <>

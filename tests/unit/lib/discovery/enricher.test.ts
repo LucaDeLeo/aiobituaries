@@ -112,12 +112,23 @@ describe('enricher', () => {
       expect(slug.length).toBeLessThanOrEqual(80)
     })
 
-    it('handles empty string', () => {
-      expect(generateSlug('')).toBe('')
+    // P1.3 fix: Empty/special-char inputs now return fallback slugs
+    it('handles empty string with fallback', () => {
+      const slug = generateSlug('')
+      expect(slug).toMatch(/^claim-\d+$/)  // fallback with timestamp
     })
 
-    it('handles string with only special characters', () => {
-      expect(generateSlug('!@#$%')).toBe('')
+    it('handles empty string with date fallback', () => {
+      expect(generateSlug('', '2024-01-15')).toBe('claim-20240115')
+    })
+
+    it('handles string with only special characters with fallback', () => {
+      const slug = generateSlug('!@#$%')
+      expect(slug).toMatch(/^claim-\d+$/)  // fallback with timestamp
+    })
+
+    it('appends date for uniqueness when provided', () => {
+      expect(generateSlug('test claim', '2024-03-20')).toBe('test-claim-20240320')
     })
   })
 })

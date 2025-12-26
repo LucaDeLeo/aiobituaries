@@ -17,7 +17,7 @@
  * for single-source-of-truth URL state management.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { CategoryFilter } from '@/components/filters/category-filter'
 
@@ -53,6 +53,9 @@ import { useLiveRegionOptional } from '@/components/accessibility/live-region'
 import type { ObituarySummary, Category } from '@/types/obituary'
 import type { MetricType } from '@/types/metrics'
 import { useFilters } from '@/lib/hooks/use-filters'
+import { useVisualizationState } from '@/lib/hooks/use-visualization-state'
+import { getUTCYear } from '@/lib/utils/date'
+import { matchesSearch } from '@/lib/utils/filters'
 
 export interface HomeClientProps {
   /** Obituary data from server-side fetch */
@@ -73,45 +76,68 @@ export interface HomeClientProps {
  * Client-side portion of the homepage.
  * Manages filter state and passes it to visualization components.
  */
-/**
- * Helper function to check if an obituary matches a search query.
- * Searches in claim text and source name (case-insensitive).
- */
-function matchesSearch(obit: ObituarySummary, query: string): boolean {
-  if (!query) return true
-  const lowerQuery = query.toLowerCase()
-  return (
-    obit.claim.toLowerCase().includes(lowerQuery) ||
-    obit.source.toLowerCase().includes(lowerQuery) ||
-    obit.categories?.some(cat => cat.toLowerCase().includes(lowerQuery)) ||
-    false
-  )
-}
+// P2.5 fix: matchesSearch moved to @/lib/utils/filters for deduplication
 
 export function HomeClient({
   obituaries,
   variant = 'default',
-  selectedMetric,
+  selectedMetric: externalMetric,
   activeCategories: externalCategories,
   searchQuery: externalSearchQuery,
   selectedSkeptic: externalSkeptic,
 }: HomeClientProps) {
-  // For default variant, use internal useFilters (backward compat)
-  // For hero variant, use external state if provided
-  const { categories: internalCategories, toggleCategory, clearFilters } = useFilters()
+  // For default variant, use useVisualizationState directly (syncs with ControlSheet)
+  // For hero variant, use external state from parent (HomePageClient)
+  const visualizationState = useVisualizationState()
+  const { categories: legacyCategories, toggleCategory, clearFilters } = useFilters()
   const { mode, setMode, isHydrated } = useViewModeStorage()
   const liveRegion = useLiveRegionOptional()
 
-  // Determine which categories to use based on variant and props
+  // Determine state based on variant:
+  // - hero: use external props from parent (HomePageClient owns the state)
+  // - default: use useVisualizationState directly (syncs with ControlSheet on tablet)
   const categories = variant === 'hero' && externalCategories !== undefined
     ? externalCategories
-    : internalCategories
+    : variant === 'default'
+      ? visualizationState.categories
+      : legacyCategories
 
-  // Determine search query based on variant
-  const searchQuery = variant === 'hero' ? (externalSearchQuery ?? '') : ''
+  // Search query: hero uses external props, default uses URL state
+  const searchQuery = variant === 'hero'
+    ? (externalSearchQuery ?? '')
+    : visualizationState.searchQuery
 
-  // Determine skeptic filter based on variant
-  const selectedSkeptic = variant === 'hero' ? (externalSkeptic ?? null) : null
+  // Skeptic filter: hero uses external props, default uses URL state
+  const selectedSkeptic = variant === 'hero'
+    ? (externalSkeptic ?? null)
+    : visualizationState.selectedSkeptic
+
+  // Selected metric: hero uses external props, default uses URL state
+  const selectedMetric = variant === 'hero'
+    ? externalMetric
+    : visualizationState.metric
+
+  // Category toggle/clear handlers - use appropriate state manager based on variant
+  const handleToggleCategory = useCallback((category: Category) => {
+    if (variant === 'default') {
+      // Use URL state via visualizationState
+      const newCategories = categories.includes(category)
+        ? categories.filter(c => c !== category)
+        : [...categories, category]
+      visualizationState.setCategories(newCategories)
+    } else {
+      // Use legacy useFilters (or let parent handle via externalCategories)
+      toggleCategory(category)
+    }
+  }, [variant, categories, visualizationState, toggleCategory])
+
+  const handleClearFilters = useCallback(() => {
+    if (variant === 'default') {
+      visualizationState.setCategories([])
+    } else {
+      clearFilters()
+    }
+  }, [variant, visualizationState, clearFilters])
 
   // Filter obituaries based on search query and skeptic (for hero variant)
   const filteredObituaries = useMemo(() => {
@@ -131,12 +157,12 @@ export function HomeClient({
   }, [obituaries, searchQuery, selectedSkeptic])
 
   // Visualization filter: Only show claims from year 2000 onwards in the scatter plot
-  // Uses getFullYear() for unambiguous year comparison
+  // P1.2 fix: Use getUTCYear to avoid timezone-related off-by-one errors
   // Table view continues to show all claims for historical completeness
   const VISUALIZATION_MIN_YEAR = 2000
   const visualizationObituaries = useMemo(() => {
     return filteredObituaries.filter(obit => {
-      const year = new Date(obit.date).getFullYear()
+      const year = getUTCYear(obit.date)
       return year >= VISUALIZATION_MIN_YEAR
     })
   }, [filteredObituaries])
@@ -203,14 +229,21 @@ export function HomeClient({
         {/* After hydration, show based on user preference */}
         {!isHydrated || mode === 'visualization' ? (
           <>
-            <ScatterPlot data={visualizationObituaries} activeCategories={categories} />
+            <ScatterPlot
+              data={visualizationObituaries}
+              activeCategories={categories}
+              selectedMetric={selectedMetric}
+            />
             <div className="mt-3 flex justify-center">
               <BackgroundChartLegend metrics={allMetrics} />
             </div>
           </>
         ) : (
+          // P2.1 fix: Use filteredObituaries (applies search/skeptic filters)
+          // Note: Table shows all years for historical completeness,
+          // but visibleCount in sidebar should reflect the active view
           <ObituaryTable
-            obituaries={obituaries}
+            obituaries={filteredObituaries}
             activeCategories={categories}
           />
         )}
@@ -224,15 +257,15 @@ export function HomeClient({
         <CategoryChart
           obituaries={obituaries}
           activeCategories={categories}
-          onCategoryClick={toggleCategory}
+          onCategoryClick={handleToggleCategory}
         />
       </section>
 
       {/* Category Filter Bar */}
       <CategoryFilter
         activeCategories={categories}
-        onToggle={toggleCategory}
-        onShowAll={clearFilters}
+        onToggle={handleToggleCategory}
+        onShowAll={handleClearFilters}
         totalCount={obituaries.length}
         filteredCount={filteredCount}
       />

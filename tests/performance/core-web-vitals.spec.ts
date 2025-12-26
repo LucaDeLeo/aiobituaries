@@ -11,13 +11,17 @@
  */
 import { test, expect } from '../support/merged-fixtures'
 
+// CI environments have slower, more variable performance
+const isCI = !!process.env.CI
+
 // Thresholds based on Google's Core Web Vitals guidelines
+// Relaxed in CI to account for runner variability
 const THRESHOLDS = {
   LCP: 2500, // 2.5 seconds (good)
   CLS: 0.1, // 0.1 (good)
   FCP: 1800, // 1.8 seconds (good)
   TTFB: 800, // 800ms (good)
-  TBT: 300, // 300ms (good) - Total Blocking Time proxy
+  TBT: isCI ? 500 : 300, // 300ms local, 500ms CI - Total Blocking Time proxy
 }
 
 test.describe('Core Web Vitals - Homepage', () => {

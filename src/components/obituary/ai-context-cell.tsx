@@ -23,6 +23,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { getAllMetricsAtDate } from '@/data/ai-metrics'
+import { parseUTCDate } from '@/lib/utils/date'
 
 interface AIContextCellProps {
   /** ISO date string for the obituary */
@@ -95,10 +96,15 @@ export function formatComputeCompact(logFlop: number): string {
 
 /**
  * Check if a date string produces a valid Date object.
+ * P1.2 fix: Use parseUTCDate for consistent parsing.
  */
 function isValidDate(dateStr: string): boolean {
-  const d = new Date(dateStr)
-  return !Number.isNaN(d.getTime())
+  try {
+    const d = parseUTCDate(dateStr)
+    return !Number.isNaN(d.getTime())
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -106,13 +112,14 @@ function isValidDate(dateStr: string): boolean {
  * Displays compute level with era-based coloring and detailed tooltip.
  *
  * NOTE: Requires TooltipProvider at a higher level.
+ * P1.2 fix: Use parseUTCDate for consistent date parsing.
  */
 export function AIContextCell({ date }: AIContextCellProps) {
   const { metrics, isValid } = useMemo(() => {
     if (!isValidDate(date)) {
       return { metrics: null, isValid: false }
     }
-    return { metrics: getAllMetricsAtDate(new Date(date)), isValid: true }
+    return { metrics: getAllMetricsAtDate(parseUTCDate(date)), isValid: true }
   }, [date])
 
   // Handle invalid date gracefully

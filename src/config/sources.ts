@@ -69,54 +69,51 @@ export const NOTABLE_HANDLES = {
   aiResearchers: [
     'GaryMarcus', // NYU professor, prominent AI critic
     'emilymbender', // U Washington, Stochastic Parrots author
-    'timaborochin', // AI researcher, critic
-    'mmitchell_ai', // Google AI Ethics former lead
+    'timnitGebru', // DAIR Institute founder, Stochastic Parrots co-author
+    'mmitchell_ai', // Google AI Ethics former lead (Margaret Mitchell)
     'ylecun', // Meta AI Chief (for his takes on AGI timelines)
     'jackclarkSF', // Anthropic co-founder, policy focused
-    'drfeifei', // Stanford HAI
+    'drfeifei', // Stanford HAI (Fei-Fei Li)
     'geoffreyhinton', // Godfather of AI (now warning about risks)
-    'tegaboroci', // AI researcher
-    'tiaborocz', // AI researcher
-    'melaborocin', // AI researcher
+    'mer__edith', // Signal president, AI Now co-founder (Meredith Whittaker)
+    'MelMitchell1', // Santa Fe Institute, AI researcher (Melanie Mitchell)
   ],
   // Tech executives and leaders
   techExecs: [
     'elonmusk', // For his AI doom takes
-    'sundaborochin', // Google CEO
-    'sataborochin', // Microsoft CEO
-    'timaborochin', // Apple CEO
-    'jeffboroci', // Amazon founder
-    'marcaborociner', // Salesforce CEO
+    'sundarpichai', // Google/Alphabet CEO
+    'satyanadella', // Microsoft CEO (Satya Nadella)
+    'tim_cook', // Apple CEO
+    'JeffBezos', // Amazon founder
+    'Benioff', // Salesforce CEO (Marc Benioff)
   ],
   // VCs and investors
   vcs: [
-    'marcaborociner', // a16z
     'paulg', // Y Combinator founder
     'sama', // OpenAI CEO
     'naval', // Naval Ravikant
     'balajis', // Balaji Srinivasan
     'chamath', // Chamath Palihapitiya
     'benedictevans', // Tech analyst
-    'pmarca', // Marc Andreessen
+    'pmarca', // Marc Andreessen (a16z)
   ],
   // Tech journalists and analysts
   journalists: [
-    'karaborociner', // NYT tech
-    'caborociner', // WSJ tech
-    'emilyzhang', // Journalist
-    'willaborociner', // Tech reporter
-    'keviaborociner', // NYT tech
-    'caseyaborociner', // Tech reporter
+    'karaswisher', // NYT contributor, Pivot podcast
+    'JoannaStern', // WSJ personal tech columnist
+    'WillOremus', // Washington Post tech reporter
+    'kevinroose', // NYT tech columnist
+    'CaseyNewton', // Platformer founder
     'zoeschiffer', // Platformer
-    'alexaborociner', // The Verge
+    'alexeheath', // The Verge deputy editor
+    'emilychangtv', // Bloomberg Technology anchor
   ],
   // Academics and researchers (non-AI focused)
   academics: [
-    'noaborociner', // Cognitive scientist
-    'stevepinker', // Harvard psychologist
-    'tylercowen', // Economist
-    'robinaborociner', // Futurist
-    'maxaborociner', // Physicist
+    'sapinker', // Harvard psychologist (Steven Pinker)
+    'tylercowen', // Economist (Marginal Revolution)
+    'robinhanson', // George Mason economist, futurist
+    'tegmark', // MIT physicist, AI safety (Max Tegmark)
   ],
 } as const
 

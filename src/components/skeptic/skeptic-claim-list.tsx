@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { formatDate } from '@/lib/utils/date'
+import { formatDate, parseUTCDate } from '@/lib/utils/date'
 import { getAllMetricsAtDate } from '@/data/ai-metrics'
 import { MetricsBadge } from './metrics-badge'
 import type { ObituarySummary } from '@/types/obituary'
@@ -50,7 +50,8 @@ interface ClaimRowProps {
 }
 
 function ClaimRow({ claim }: ClaimRowProps) {
-  const claimDate = new Date(claim.date)
+  // P1.2 fix: Use parseUTCDate for consistent date parsing
+  const claimDate = parseUTCDate(claim.date)
   const metrics = getAllMetricsAtDate(claimDate)
 
   return (

@@ -16,20 +16,19 @@ import { AxisBottom, AxisLeft } from '@visx/axis'
 import { GridColumns, GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
 import type { ObituarySummary, Category } from '@/types/obituary'
-import type { ViewState, PointCluster, TooltipData } from '@/types/visualization'
+import type { ViewState, TooltipData } from '@/types/visualization'
+// P2.4: PointCluster type removed (clustering is disabled)
 import { ScatterPoint } from './scatter-point'
-import { ClusterBadge } from './cluster-badge'
+// DEAD CODE REMOVED (P2.4): ClusterBadge unused since clustering is disabled
 import { TooltipCard } from './tooltip-card'
 import { ObituaryModal } from '@/components/obituary/obituary-modal'
 import { hashToJitter, getCategoryColor } from '@/lib/utils/scatter-helpers'
 import { useTimelinePosition } from '@/lib/hooks/use-timeline-position'
 import { SPRINGS } from '@/lib/utils/animation'
 import { markPerformance, measurePerformance } from '@/lib/utils/performance'
-import {
-  computeClusters,
-  shouldShowClusters,
-  DEFAULT_CLUSTER_CONFIG,
-} from '@/lib/utils/clustering'
+// DEAD CODE REMOVED (P2.4): Clustering is disabled (zoom always = 1, shouldShowClusters(1) = false)
+// If re-enabling, import: computeClusters, shouldShowClusters, DEFAULT_CLUSTER_CONFIG
+// from '@/lib/utils/clustering'
 import { useRovingFocus } from '@/lib/hooks/use-roving-focus'
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint'
 import { BackgroundChart } from './background-chart'
@@ -46,6 +45,7 @@ import {
 } from '@/lib/utils/metric-scales'
 import { useAnimatedDomain } from '@/lib/hooks/use-animated-domain'
 import type { MetricType } from '@/types/metrics'
+import { formatDateForAnnouncement } from '@/lib/utils/date'
 
 export interface ScatterPlotProps {
   data: ObituarySummary[]
@@ -154,8 +154,7 @@ export function ScatterPlotInner({
   // State for cursor (triggers re-render for cursor change)
   const [isDragging, setIsDragging] = useState(false)
 
-  // State for hovered cluster badge
-  const [hoveredClusterId, setHoveredClusterId] = useState<string | null>(null)
+  // DEAD CODE REMOVED (P2.4): hoveredClusterId state removed (clustering disabled)
 
   // Check reduced motion preference (null means preference unknown, treat as false)
   const prefersReducedMotion = useReducedMotion()
@@ -279,20 +278,9 @@ export function ScatterPlotInner({
     })
   }, [data, xScale, yScale, selectedMetric, metricConfig.domain])
 
-  // Compute clusters based on current positions
-  const clusters = useMemo(() => {
-    if (!shouldShowClusters(1)) {
-      return []
-    }
-
-    return computeClusters(pointPositions, DEFAULT_CLUSTER_CONFIG, 1)
-  }, [pointPositions])
-
-  // P0.3 fix: Precompute clustered IDs as Set for O(1) membership checks
-  const clusteredIds = useMemo(
-    () => new Set(clusters.flatMap(c => c.obituaryIds)),
-    [clusters]
-  )
+  // DEAD CODE REMOVED (P2.4): Clustering computation removed
+  // Clustering was disabled (shouldShowClusters(1) always returned false since zoom = 1)
+  // If re-enabling clustering, add back: clusters, clusteredIds computations
 
   // Determine if a point should be filtered-in (visible at full opacity)
   // Empty activeCategories = show all; otherwise match any category (OR logic)
@@ -311,16 +299,10 @@ export function ScatterPlotInner({
   )
 
   // Filter visible data for keyboard navigation - skips filtered points (AC-6.2.9)
-  // Also exclude clustered points from keyboard navigation
+  // P2.4 fix: Removed clustering filter (clustering is disabled)
   const visibleData = useMemo(
-    () =>
-      sortedData.filter((ob) => {
-        const matchesFilter = isPointFiltered(ob)
-        // P0.3 fix: O(1) Set lookup instead of linear scan
-        const isClustered = clusteredIds.has(ob._id) && shouldShowClusters(1)
-        return matchesFilter && !isClustered
-      }),
-    [sortedData, isPointFiltered, clusteredIds]
+    () => sortedData.filter((ob) => isPointFiltered(ob)),
+    [sortedData, isPointFiltered]
   )
 
   // P0.2 fix: Precompute ID → index map to avoid O(n²) findIndex in render loop
@@ -385,21 +367,7 @@ export function ScatterPlotInner({
     savePosition({ scrollX: viewState.translateX, zoom: 1 })
   }, [viewState.translateX, savePosition, positionLoaded, wasRestored])
 
-  // Handler for cluster click - pan to center the cluster
-  const handleClusterClick = useCallback(
-    (cluster: PointCluster) => {
-      const minDateX = xScale(cluster.minDate)
-      const maxDateX = xScale(cluster.maxDate)
-      const centerX = (minDateX + maxDateX) / 2
-
-      // Pan to center the cluster in view
-      setViewState((prev) => ({
-        ...prev,
-        translateX: innerWidth / 2 - centerX,
-      }))
-    },
-    [xScale, innerWidth, setViewState]
-  )
+  // DEAD CODE REMOVED (P2.4): handleClusterClick removed (clustering is disabled)
 
   // Handler for point mouse enter with 300ms debounce
   const handlePointMouseEnter = useCallback(
@@ -542,14 +510,12 @@ export function ScatterPlotInner({
   )
 
   // Handle focus change announcements (AC-6.2.6)
+  // P1.2 fix: Use formatDateForAnnouncement for UTC-safe formatting
   const handlePointFocus = useCallback(
     (index: number, obituary: ObituarySummary) => {
       const position = index + 1
       const total = visibleData.length
-      const formattedDate = new Date(obituary.date).toLocaleDateString('en-US', {
-        month: 'long',
-        year: 'numeric',
-      })
+      const formattedDate = formatDateForAnnouncement(obituary.date)
       const claimPreview = obituary.claim.slice(0, 100) + (obituary.claim.length > 100 ? '...' : '')
 
       setAnnouncement(
@@ -898,11 +864,6 @@ export function ScatterPlotInner({
               aria-label="Obituary data points"
             >
               {visiblePointPositions.map(({ obituary, x: xPos, y: yPos, color, isOutOfRange }) => {
-                // P0.3 fix: O(1) Set lookup instead of linear scan
-                const isClustered =
-                  clusteredIds.has(obituary._id) &&
-                  shouldShowClusters(1)
-
                 // Find index in visibleData for keyboard navigation (P0.2: O(1) Map lookup)
                 const visibleIndex = visibleIndexById.get(obituary._id) ?? -1
                 const isKeyboardNavigable = visibleIndex !== -1
@@ -916,7 +877,7 @@ export function ScatterPlotInner({
                     y={yPos}
                     color={color}
                     isFiltered={isPointFiltered(obituary)}
-                    isClustered={isClustered}
+                    isClustered={false} // P2.4: Clustering disabled
                     isHovered={hoveredId === obituary._id}
                     isSelected={isModalOpen && selectedSummary?._id === obituary._id}
                     isOutOfRange={isOutOfRange}
@@ -943,19 +904,7 @@ export function ScatterPlotInner({
               })}
             </g>
 
-            {/* Cluster badges - render AFTER individual dots for proper z-index layering */}
-            <AnimatePresence>
-              {clusters.map((cluster) => (
-                <ClusterBadge
-                  key={cluster.id}
-                  cluster={cluster}
-                  onClick={() => handleClusterClick(cluster)}
-                  isHovered={hoveredClusterId === cluster.id}
-                  onMouseEnter={() => setHoveredClusterId(cluster.id)}
-                  onMouseLeave={() => setHoveredClusterId(null)}
-                />
-              ))}
-            </AnimatePresence>
+            {/* P2.4: ClusterBadge rendering removed (clustering is disabled) */}
           </motion.g>
         </Group>
       </svg>

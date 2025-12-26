@@ -1,6 +1,7 @@
 'use client'
 
-import { ControlPanel, type DisplayOptions } from './control-panel'
+import { ControlPanel } from './control-panel'
+// P2.4: DisplayOptions type removed (Display Options section is unused)
 import { useVisualizationState } from '@/lib/hooks/use-visualization-state'
 import { useViewModeStorage } from '@/components/obituary/table-view-toggle'
 import type { ObituarySummary } from '@/types/obituary'
@@ -47,12 +48,7 @@ export function ControlPanelWrapper({
   // Hide chart controls when in table view (after hydration)
   const isChartControlsHidden = isHydrated && mode === 'table'
 
-  // Placeholder for future display options (Story 3.X)
-  const displayOptions: DisplayOptions = {
-    showTrendAnnotations: true,
-    enableClustering: false,
-  }
-  const handleDisplayOptionsChange = () => {}
+  // P2.4: displayOptions removed (Display Options section is commented out in ControlPanel)
 
   return (
     <ControlPanel
@@ -65,8 +61,6 @@ export function ControlPanelWrapper({
       selectedSkeptic={selectedSkeptic}
       onSkepticChange={setSelectedSkeptic}
       obituaries={obituaries}
-      displayOptions={displayOptions}
-      onDisplayOptionsChange={handleDisplayOptionsChange}
       stats={{
         total: totalCount,
         visible: visibleCount ?? totalCount,

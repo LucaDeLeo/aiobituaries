@@ -81,15 +81,37 @@ export async function enrichContext(dateStr: string): Promise<ContextMetadata> {
 }
 
 /**
- * Generate a slug from claim text
+ * Generate a slug from claim text with fallback and uniqueness suffix.
+ *
+ * P1.3 fix: Handles edge cases:
+ * - Empty claims or punctuation-only strings get fallback slug
+ * - Optional date suffix for uniqueness
+ * - Never returns empty string
  *
  * @param claim - The claim text
- * @returns URL-safe slug
+ * @param date - Optional ISO date string for uniqueness suffix
+ * @returns URL-safe slug (never empty)
  */
-export function generateSlug(claim: string): string {
-  return claim
+export function generateSlug(claim: string, date?: string): string {
+  // Generate base slug from claim text
+  const baseSlug = claim
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 80)
+
+  // If slug is empty (punctuation-only input), use fallback
+  if (!baseSlug) {
+    const dateSuffix = date ? `-${date.replace(/-/g, '')}` : `-${Date.now()}`
+    return `claim${dateSuffix}`
+  }
+
+  // Add date suffix for uniqueness if provided
+  if (date) {
+    // Extract YYYYMMDD for compact suffix
+    const dateCompact = date.replace(/-/g, '').slice(0, 8)
+    return `${baseSlug}-${dateCompact}`.slice(0, 80)
+  }
+
+  return baseSlug
 }

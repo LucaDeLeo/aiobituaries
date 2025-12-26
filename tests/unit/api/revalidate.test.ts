@@ -148,7 +148,8 @@ describe('POST /api/revalidate', () => {
 
       await POST(request)
 
-      expect(revalidatePath).toHaveBeenCalledWith('/obituary/[slug]', 'page')
+      // P2.3 fix: Use 'layout' type to invalidate all dynamic route pages
+      expect(revalidatePath).toHaveBeenCalledWith('/obituary/[slug]', 'layout')
     })
 
     // P1.6 fix: Now 4 paths (/, /about, /obituary/[slug], /sitemap.xml) and 2 tags

@@ -14,10 +14,7 @@ import { CATEGORY_ORDER, CATEGORIES } from '@/lib/constants/categories'
 // Re-export for consumers that import from control-panel
 export type { MetricType }
 
-export interface DisplayOptions {
-  showTrendAnnotations: boolean
-  enableClustering: boolean
-}
+// P2.4: DisplayOptions interface removed (Display Options section is unused/commented out)
 
 export interface ControlPanelProps {
   /** Currently selected background metric */
@@ -38,10 +35,6 @@ export interface ControlPanelProps {
   onSkepticChange: (slug: string | null) => void
   /** Obituaries for skeptic filter derivation */
   obituaries: ObituarySummary[]
-  /** Display options (trend annotations, clustering) */
-  displayOptions: DisplayOptions
-  /** Callback when display options change */
-  onDisplayOptionsChange: (options: DisplayOptions) => void
   /** Obituary counts for stats display */
   stats: { total: number; visible: number }
   /** Layout variant - affects padding and spacing */

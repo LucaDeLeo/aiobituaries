@@ -48,8 +48,16 @@ export function SearchInput({
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Sync local value with external value (e.g., URL changes)
+  // Sync local value with external value (e.g., URL changes via back/forward navigation)
+  // P2.2 fix: Clear any pending debounce when external value changes to prevent stale updates
   useEffect(() => {
+    // Clear pending debounce to prevent stale value from overwriting URL state
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+      debounceRef.current = null
+    }
+    // This setState is intentional: syncing external prop to local state for controlled input
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalValue(value)
   }, [value])
 
