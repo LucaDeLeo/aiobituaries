@@ -23,6 +23,14 @@ test.describe('Accessibility Audit with axe-core', () => {
     // Wait for page to be fully loaded
     await page.waitForLoadState('networkidle')
 
+    // Wait for scatter plot to actually render (not just loading state)
+    // This prevents false positives from "Loading visualization..." text
+    // Dynamic imports via next/dynamic can take 45-60s in CI environments
+    const scatterPoints = page.locator('[data-testid="scatter-point-group"]')
+    await scatterPoints.first().waitFor({ state: 'visible', timeout: 60_000 }).catch(() => {
+      // If scatter points don't load, continue anyway - axe will test what's visible
+    })
+
     // Run axe accessibility scan with WCAG 2.1 AA tags
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

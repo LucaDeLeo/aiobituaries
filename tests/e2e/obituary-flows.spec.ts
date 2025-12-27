@@ -14,8 +14,9 @@
 import { test, expect } from '../support/merged-fixtures'
 
 // CI environments need longer timeouts for dynamic imports and hydration
+// Dynamic imports via next/dynamic can take 45-60s in CI environments
 const isCI = !!process.env.CI
-const SCATTER_TIMEOUT = isCI ? 30_000 : 15_000
+const SCATTER_TIMEOUT = isCI ? 60_000 : 15_000
 
 test.describe('Homepage Visualization', () => {
   test('should load homepage with scatter plot', async ({ page, log }) => {

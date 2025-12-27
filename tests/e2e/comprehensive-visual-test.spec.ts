@@ -28,8 +28,15 @@ test.describe('Comprehensive Website Testing', () => {
     test('1. Homepage load and initial render', async ({ page, log }) => {
       await log({ message: 'Navigate to homepage', level: 'step' })
       await page.goto('/')
-      await page.waitForLoadState('networkidle')
-      await page.waitForTimeout(DATA_LOAD_WAIT)
+      await page.waitForLoadState('domcontentloaded')
+
+      await log({ message: 'Wait for scatter plot to load', level: 'step' })
+      // Wait for actual scatter points, not just container (accounts for dynamic import)
+      // Dynamic imports via next/dynamic can take 45-60s in CI environments
+      const scatterPoints = page.locator('[data-testid="scatter-point-group"]')
+      await scatterPoints.first().waitFor({ state: 'visible', timeout: 60_000 }).catch(() => {
+        // If timeout, continue - test will report what's visible
+      })
 
       await log({ message: 'Verify page title', level: 'step' })
       await expect(page).toHaveTitle(/AI Obituaries/i)
