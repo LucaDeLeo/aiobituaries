@@ -29,6 +29,7 @@ import { ControlPanelWrapper } from '@/components/controls'
 import { useVisualizationState } from '@/lib/hooks/use-visualization-state'
 import { useViewModeStorage } from '@/components/obituary/table-view-toggle'
 import { getUTCYear } from '@/lib/utils/date'
+import { getMetricConfig } from '@/lib/utils/metric-scales'
 import { matchesSearch } from '@/lib/utils/filters'
 import type { ObituarySummary } from '@/types/obituary'
 
@@ -57,17 +58,19 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
   // Calculate visible count based on active filters
   // P2.1 fix: Year filter only applies to visualization view, not table view
   // P1.2 fix: Use UTC year to avoid timezone-related off-by-one errors
-  const VISUALIZATION_MIN_YEAR = 2000
+  // Dynamic year filter based on selected metric's data start date
+  const metricConfig = getMetricConfig(metric)
+  const visualizationMinYear = metricConfig.dataStartDate.getUTCFullYear()
   const visibleCount = useMemo(() => {
     // During SSR/hydration, assume visualization mode (year filter applies)
     const applyYearFilter = !isHydrated || mode === 'visualization'
 
     return obituaries.filter((obit) => {
-      // Year filter (2000+) - only for visualization mode
-      // Use UTC to avoid off-by-one errors in negative timezones
+      // Year filter - only for visualization mode
+      // Uses selected metric's start date to match x-axis domain
       if (applyYearFilter) {
         const year = getUTCYear(obit.date)
-        if (year < VISUALIZATION_MIN_YEAR) return false
+        if (year < visualizationMinYear) return false
       }
       // Category filter (empty = all)
       const matchesCategory = categories.length === 0 ||
@@ -78,7 +81,7 @@ export function HomePageClient({ obituaries }: HomePageClientProps) {
       const matchesSkeptic = !selectedSkeptic || obit.skeptic?.slug === selectedSkeptic
       return matchesCategory && matchesSearchQuery && matchesSkeptic
     }).length
-  }, [obituaries, categories, searchQuery, selectedSkeptic, mode, isHydrated])
+  }, [obituaries, categories, searchQuery, selectedSkeptic, mode, isHydrated, visualizationMinYear])
 
   return (
     <>

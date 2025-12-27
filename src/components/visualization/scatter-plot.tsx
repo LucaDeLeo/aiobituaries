@@ -44,6 +44,7 @@ import {
   isDateInMetricRange,
 } from '@/lib/utils/metric-scales'
 import { useAnimatedDomain } from '@/lib/hooks/use-animated-domain'
+import { useAnimatedDateDomain } from '@/lib/hooks/use-animated-date-domain'
 import type { MetricType } from '@/types/metrics'
 import { formatDateForAnnouncement } from '@/lib/utils/date'
 
@@ -185,33 +186,42 @@ export function ScatterPlotInner({
   const innerWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
   const innerHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
 
-  // Compute scales with useMemo and performance monitoring
-  // X-axis ALWAYS starts at year 2000 - hardcoded to match visualization filter
-  const xScale = useMemo(() => {
-    markPerformance('scale-compute-start')
+  // Get metric configuration for selected metric (must be before xScale and yScale)
+  const metricConfig = useMemo(
+    () => getMetricConfig(selectedMetric),
+    [selectedMetric]
+  )
 
-    // Always start at Jan 1, 2000 (matches VISUALIZATION_MIN_YEAR filter in home-client.tsx)
-    const X_AXIS_START = new Date(2000, 0, 1)
+  // Compute target x-domain based on selected metric's dataStartDate
+  const targetXDomain = useMemo((): [Date, Date] => {
+    // Get the start date from the selected metric's config
+    const startDate = metricConfig.dataStartDate
 
     if (data.length === 0) {
-      return scaleTime({
-        domain: [X_AXIS_START, new Date()],
-        range: [0, innerWidth],
-      })
+      return [startDate, new Date()]
     }
 
     const dates = data.map((d) => new Date(d.date))
     const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())))
 
     // Add 5% padding to the end only
-    const timeRange = maxDate.getTime() - X_AXIS_START.getTime()
+    const timeRange = maxDate.getTime() - startDate.getTime()
     const padding = timeRange * 0.05
 
+    return [startDate, new Date(maxDate.getTime() + padding)]
+  }, [data, metricConfig.dataStartDate])
+
+  // Animate X-axis domain transitions (600ms to match Y-axis and line morph)
+  const { domain: animatedXDomain } = useAnimatedDateDomain({
+    targetDomain: targetXDomain,
+  })
+
+  // Compute X-axis scale with animated domain
+  const xScale = useMemo(() => {
+    markPerformance('scale-compute-start')
+
     const scale = scaleTime({
-      domain: [
-        X_AXIS_START,
-        new Date(maxDate.getTime() + padding),
-      ],
+      domain: animatedXDomain,
       range: [0, innerWidth],
     })
 
@@ -219,13 +229,7 @@ export function ScatterPlotInner({
     measurePerformance('scale-computation', 'scale-compute-start', 'scale-compute-end', 10)
 
     return scale
-  }, [data, innerWidth])
-
-  // Get metric configuration for selected metric
-  const metricConfig = useMemo(
-    () => getMetricConfig(selectedMetric),
-    [selectedMetric]
-  )
+  }, [animatedXDomain, innerWidth])
 
   // Animate Y-axis domain transitions (600ms to match line morph)
   const { domain: animatedDomain } = useAnimatedDomain({

@@ -1,9 +1,9 @@
 /**
- * useAnimatedDomain Hook
+ * useAnimatedDateDomain Hook
  *
- * Animates Y-axis domain transitions when switching metrics.
+ * Animates X-axis date domain transitions when switching metrics.
  * Uses requestAnimationFrame for smooth 600ms transitions
- * with easeOutQuart easing to match the background line morph.
+ * with easeOutQuart easing to match the Y-axis and background line morph.
  *
  * Respects prefers-reduced-motion for accessibility.
  */
@@ -16,62 +16,75 @@ import { ANIMATION_DURATION_MS, easeOutQuart } from '@/lib/utils/animation-easin
 export { ANIMATION_DURATION_MS }
 
 /**
- * Interpolate between two domain values
+ * Interpolate between two date domain values using timestamps.
+ *
+ * Converts Date objects to milliseconds for linear interpolation,
+ * then converts back to Date objects for the result.
+ *
+ * @param from - Starting domain [startDate, endDate]
+ * @param to - Target domain [startDate, endDate]
+ * @param progress - Interpolation progress from 0 to 1
+ * @returns Interpolated domain as [Date, Date]
  */
-function lerpDomain(
-  from: [number, number],
-  to: [number, number],
+function lerpDateDomain(
+  from: [Date, Date],
+  to: [Date, Date],
   progress: number
-): [number, number] {
+): [Date, Date] {
+  const fromStartMs = from[0].getTime()
+  const fromEndMs = from[1].getTime()
+  const toStartMs = to[0].getTime()
+  const toEndMs = to[1].getTime()
+
   return [
-    from[0] + (to[0] - from[0]) * progress,
-    from[1] + (to[1] - from[1]) * progress,
+    new Date(fromStartMs + (toStartMs - fromStartMs) * progress),
+    new Date(fromEndMs + (toEndMs - fromEndMs) * progress),
   ]
 }
 
-export interface UseAnimatedDomainOptions {
+export interface UseAnimatedDateDomainOptions {
   /** Target domain to animate to */
-  targetDomain: [number, number]
+  targetDomain: [Date, Date]
   /** Animation duration in ms (default: 600) */
   duration?: number
 }
 
-export interface UseAnimatedDomainResult {
+export interface UseAnimatedDateDomainResult {
   /** Current animated domain value */
-  domain: [number, number]
+  domain: [Date, Date]
   /** Whether animation is currently in progress */
   isAnimating: boolean
 }
 
 /**
- * Hook that provides smooth domain transitions for Y-axis scales.
+ * Hook that provides smooth date domain transitions for X-axis scales.
  *
- * @param options.targetDomain - The domain to animate towards
+ * @param options.targetDomain - The date domain to animate towards
  * @param options.duration - Animation duration in ms (default 600)
  * @returns { domain, isAnimating } - Current animated domain and animation state
  *
  * @example
- * const { domain, isAnimating } = useAnimatedDomain({
- *   targetDomain: metricConfig.domain
+ * const { domain, isAnimating } = useAnimatedDateDomain({
+ *   targetDomain: [metricStartDate, endDate]
  * })
- * const yScale = createLinearYScale(height, domain)
+ * const xScale = scaleTime({ domain, range: [0, width] })
  */
-export function useAnimatedDomain({
+export function useAnimatedDateDomain({
   targetDomain,
   duration = ANIMATION_DURATION_MS,
-}: UseAnimatedDomainOptions): UseAnimatedDomainResult {
+}: UseAnimatedDateDomainOptions): UseAnimatedDateDomainResult {
   // Check reduced motion preference
   const prefersReducedMotion = useReducedMotion()
   const shouldReduceMotion = prefersReducedMotion ?? false
 
   // Current animated domain
-  const [animatedDomain, setAnimatedDomain] = useState<[number, number]>(targetDomain)
+  const [animatedDomain, setAnimatedDomain] = useState<[Date, Date]>(targetDomain)
 
   // Animation refs
   const animationFrameRef = useRef<number | null>(null)
-  const previousDomainRef = useRef<[number, number]>(targetDomain)
+  const previousDomainRef = useRef<[Date, Date]>(targetDomain)
   // Use ref to capture current domain at animation start (avoids stale closure)
-  const animatedDomainRef = useRef<[number, number]>(targetDomain)
+  const animatedDomainRef = useRef<[Date, Date]>(targetDomain)
   const [isAnimating, setIsAnimating] = useState(false)
 
   // Keep animatedDomainRef in sync with state
@@ -81,10 +94,10 @@ export function useAnimatedDomain({
 
   // Handle domain changes
   useEffect(() => {
-    // Check if domain actually changed
+    // Check if domain actually changed (compare timestamps)
     const domainChanged =
-      previousDomainRef.current[0] !== targetDomain[0] ||
-      previousDomainRef.current[1] !== targetDomain[1]
+      previousDomainRef.current[0].getTime() !== targetDomain[0].getTime() ||
+      previousDomainRef.current[1].getTime() !== targetDomain[1].getTime()
 
     if (!domainChanged) return
 
@@ -95,7 +108,10 @@ export function useAnimatedDomain({
     }
 
     // Capture the starting domain from ref (not stale state)
-    const fromDomain: [number, number] = [...animatedDomainRef.current] as [number, number]
+    const fromDomain: [Date, Date] = [
+      new Date(animatedDomainRef.current[0].getTime()),
+      new Date(animatedDomainRef.current[1].getTime()),
+    ]
     const startTime = performance.now()
 
     let hasStarted = false
@@ -118,7 +134,7 @@ export function useAnimatedDomain({
       const rawProgress = Math.min(elapsed / duration, 1)
       const easedProgress = easeOutQuart(rawProgress)
 
-      const interpolated = lerpDomain(fromDomain, targetDomain, easedProgress)
+      const interpolated = lerpDateDomain(fromDomain, targetDomain, easedProgress)
       setAnimatedDomain(interpolated)
 
       if (rawProgress < 1) {

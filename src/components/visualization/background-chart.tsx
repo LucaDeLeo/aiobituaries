@@ -13,6 +13,7 @@ import {
   isPrimaryMetric,
   type Point,
 } from '@/lib/utils/path-interpolation'
+import { ANIMATION_DURATION_MS, easeOutQuart } from '@/lib/utils/animation-easing'
 
 export interface BackgroundChartProps {
   metrics: AIMetricSeries[]
@@ -72,19 +73,6 @@ function arePropsEqual(
   if (prev.metrics !== next.metrics) return false
 
   return true
-}
-
-/**
- * Animation duration for line morph (milliseconds).
- */
-const MORPH_DURATION_MS = 600
-
-/**
- * Ease-out quart function for smooth deceleration.
- * Provides a similar feel to Material Design ease-out [0.4, 0, 0.2, 1].
- */
-function easeOutQuart(t: number): number {
-  return 1 - Math.pow(1 - t, 4)
 }
 
 /**
@@ -152,7 +140,7 @@ function BackgroundChartComponent({
     if (previousMetricId !== selectedMetric) {
       // Start morph animation (or instant swap for reduced motion)
       const startTime = performance.now()
-      const duration = shouldReduceMotion ? 0 : MORPH_DURATION_MS
+      const duration = shouldReduceMotion ? 0 : ANIMATION_DURATION_MS
 
       const animate = (currentTime: number) => {
         const elapsed = currentTime - startTime

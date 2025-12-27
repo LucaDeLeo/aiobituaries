@@ -56,6 +56,7 @@ import { useFilters } from '@/lib/hooks/use-filters'
 import { useVisualizationState } from '@/lib/hooks/use-visualization-state'
 import { getUTCYear } from '@/lib/utils/date'
 import { matchesSearch } from '@/lib/utils/filters'
+import { getMetricConfig } from '@/lib/utils/metric-scales'
 
 export interface HomeClientProps {
   /** Obituary data from server-side fetch */
@@ -156,16 +157,18 @@ export function HomeClient({
     return filtered
   }, [obituaries, searchQuery, selectedSkeptic])
 
-  // Visualization filter: Only show claims from year 2000 onwards in the scatter plot
+  // Visualization filter: Only show claims from metric's start year onwards
   // P1.2 fix: Use getUTCYear to avoid timezone-related off-by-one errors
   // Table view continues to show all claims for historical completeness
-  const VISUALIZATION_MIN_YEAR = 2000
+  // Dynamic year filter based on selected metric's data start date
+  const metricConfig = selectedMetric ? getMetricConfig(selectedMetric) : null
+  const visualizationMinYear = metricConfig?.dataStartDate.getUTCFullYear() ?? 2000
   const visualizationObituaries = useMemo(() => {
     return filteredObituaries.filter(obit => {
       const year = getUTCYear(obit.date)
-      return year >= VISUALIZATION_MIN_YEAR
+      return year >= visualizationMinYear
     })
-  }, [filteredObituaries])
+  }, [filteredObituaries, visualizationMinYear])
 
   // Calculate filtered count for accessibility announcements
   const filteredCount = useMemo(() => {
