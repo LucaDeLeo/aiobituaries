@@ -26,9 +26,9 @@ test.describe('Homepage Visualization', () => {
     await log({ message: 'Wait for page to be fully loaded', level: 'step' })
     await page.waitForLoadState('domcontentloaded')
 
-    await log({ message: 'Verify page title contains AI Obituaries', level: 'step' })
-    // Title could be "AI Obituaries", "AI Obituaries - Documenting AI Skepticism", etc.
-    await expect(page).toHaveTitle(/AI Obituaries/i)
+    await log({ message: 'Verify page title', level: 'step' })
+    // Homepage title is "Documenting AI Skepticism | AI Obituaries"
+    await expect(page).toHaveTitle(/Documenting AI Skepticism|AI Obituaries/i)
 
     await log({ message: 'Verify scatter plot container is visible', level: 'step' })
     const scatterContainer = page.locator('[data-testid="scatter-plot-container"]')
